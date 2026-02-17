@@ -419,6 +419,24 @@ func (tx *Transaction) Nonce() uint64 { return tx.inner.nonce() }
 // To returns the recipient address, or nil for contract creation.
 func (tx *Transaction) To() *Address { return tx.inner.to() }
 
+// RawSignatureValues returns the V, R, S signature values of the transaction.
+func (tx *Transaction) RawSignatureValues() (v, r, s *big.Int) {
+	switch t := tx.inner.(type) {
+	case *LegacyTx:
+		return t.V, t.R, t.S
+	case *AccessListTx:
+		return t.V, t.R, t.S
+	case *DynamicFeeTx:
+		return t.V, t.R, t.S
+	case *BlobTx:
+		return t.V, t.R, t.S
+	case *SetCodeTx:
+		return t.V, t.R, t.S
+	default:
+		return nil, nil, nil
+	}
+}
+
 // Hash returns the transaction hash (Keccak-256 of RLP encoding), caching on first call.
 func (tx *Transaction) Hash() Hash {
 	if h := tx.hash.Load(); h != nil {

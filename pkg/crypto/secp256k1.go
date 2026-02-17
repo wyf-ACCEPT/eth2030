@@ -2,7 +2,6 @@ package crypto
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"errors"
 	"math/big"
@@ -10,12 +9,10 @@ import (
 	"github.com/eth2028/eth2028/core/types"
 )
 
-// TODO: Replace elliptic.P256() with actual secp256k1 curve parameters.
-// Go stdlib does not include secp256k1; using P256 as a placeholder.
-var s256 = elliptic.P256()
+// s256 is the secp256k1 curve used throughout Ethereum.
+var s256 = S256()
 
 // secp256k1N is the order of the secp256k1 curve.
-// This is the real secp256k1 N value used for signature validation.
 var secp256k1N, _ = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
 
 // secp256k1halfN is half the order, used for Homestead low-S check.
@@ -27,8 +24,7 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 }
 
 // Sign calculates an ECDSA signature (65 bytes [R || S || V]).
-// TODO: V (recovery ID) is set to 0 as a placeholder. A proper implementation
-// requires trial recovery to determine the correct V value.
+// V is the recovery ID (0 or 1) determined by trial recovery.
 func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	if len(hash) != 32 {
 		return nil, errors.New("hash must be 32 bytes")
@@ -37,19 +33,48 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Encode R and S as 32-byte big-endian, plus V=0 placeholder.
+
+	// Normalize s to lower half of curve order (EIP-2).
+	if ss.Cmp(secp256k1halfN) > 0 {
+		ss = new(big.Int).Sub(secp256k1N, ss)
+	}
+
+	// Encode R and S as 32-byte big-endian.
 	sig := make([]byte, 65)
 	rBytes := r.Bytes()
 	sBytes := ss.Bytes()
 	copy(sig[32-len(rBytes):32], rBytes)
 	copy(sig[64-len(sBytes):64], sBytes)
-	sig[64] = 0 // V placeholder
+
+	// Determine V by trial recovery.
+	expectedPub := FromECDSAPub(&prv.PublicKey)
+	for v := byte(0); v <= 1; v++ {
+		sig[64] = v
+		recovered, err := Ecrecover(hash, sig)
+		if err != nil {
+			continue
+		}
+		if len(recovered) == len(expectedPub) {
+			match := true
+			for i := range recovered {
+				if recovered[i] != expectedPub[i] {
+					match = false
+					break
+				}
+			}
+			if match {
+				return sig, nil
+			}
+		}
+	}
+
+	// Fallback: set V=0 if recovery fails (shouldn't happen with correct curve).
+	sig[64] = 0
 	return sig, nil
 }
 
 // Ecrecover recovers the uncompressed public key from hash and signature.
-// TODO: Proper ecrecover requires secp256k1 curve and recovery ID (V).
-// This placeholder verifies the signature against the recovered key.
+// Returns a 65-byte public key [0x04 || X || Y].
 func Ecrecover(hash, sig []byte) ([]byte, error) {
 	pub, err := SigToPub(hash, sig)
 	if err != nil {
@@ -59,9 +84,7 @@ func Ecrecover(hash, sig []byte) ([]byte, error) {
 }
 
 // SigToPub recovers the public key from hash and signature.
-// TODO: This is a placeholder. Real implementation needs secp256k1 recovery
-// using the V byte. Currently returns an error as proper recovery is not
-// possible with the P256 placeholder curve.
+// The signature must be 65 bytes [R || S || V] where V is 0 or 1.
 func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 	if len(sig) != 65 {
 		return nil, errors.New("signature must be 65 bytes [R || S || V]")
@@ -69,8 +92,21 @@ func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 	if len(hash) != 32 {
 		return nil, errors.New("hash must be 32 bytes")
 	}
-	// TODO: Implement proper secp256k1 public key recovery using V byte.
-	return nil, errors.New("ecrecover not implemented: requires secp256k1 curve")
+
+	r := new(big.Int).SetBytes(sig[0:32])
+	s := new(big.Int).SetBytes(sig[32:64])
+	v := sig[64]
+
+	if v > 1 {
+		return nil, errInvalidRecoveryID
+	}
+
+	qx, qy, err := recoverPublicKey(hash, r, s, v)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ecdsa.PublicKey{Curve: s256, X: qx, Y: qy}, nil
 }
 
 // ValidateSignature verifies that the given signature (64 bytes, no V) is valid
@@ -130,7 +166,15 @@ func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 	if pubkey == nil || pubkey.X == nil || pubkey.Y == nil {
 		return nil
 	}
-	return elliptic.MarshalCompressed(s256, pubkey.X, pubkey.Y)
+	compressed := make([]byte, 33)
+	if pubkey.Y.Bit(0) == 0 {
+		compressed[0] = 0x02
+	} else {
+		compressed[0] = 0x03
+	}
+	xBytes := pubkey.X.Bytes()
+	copy(compressed[1+32-len(xBytes):], xBytes)
+	return compressed
 }
 
 // DecompressPubkey decompresses a 33-byte compressed public key.
@@ -138,17 +182,39 @@ func DecompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
 	if len(pubkey) != 33 {
 		return nil, errors.New("invalid compressed public key length")
 	}
-	x, y := elliptic.UnmarshalCompressed(s256, pubkey)
-	if x == nil {
+	prefix := pubkey[0]
+	if prefix != 0x02 && prefix != 0x03 {
+		return nil, errors.New("invalid compressed public key prefix")
+	}
+	curve := s256.(*secp256k1Curve)
+	x := new(big.Int).SetBytes(pubkey[1:33])
+	if x.Cmp(curve.p) >= 0 {
+		return nil, errors.New("invalid compressed public key")
+	}
+	y := computeY(x, curve.p)
+	if y == nil {
+		return nil, errors.New("invalid compressed public key")
+	}
+	// Choose y parity based on prefix: 0x02 = even, 0x03 = odd.
+	if y.Bit(0) != uint(prefix&1) {
+		y.Sub(curve.p, y)
+	}
+	if !curve.IsOnCurve(x, y) {
 		return nil, errors.New("invalid compressed public key")
 	}
 	return &ecdsa.PublicKey{Curve: s256, X: x, Y: y}, nil
 }
 
-// FromECDSAPub marshals a public key to 65-byte uncompressed format.
+// FromECDSAPub marshals a public key to 65-byte uncompressed format [0x04 || X || Y].
 func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	if pub == nil || pub.X == nil || pub.Y == nil {
 		return nil
 	}
-	return elliptic.Marshal(pub.Curve, pub.X, pub.Y)
+	ret := make([]byte, 65)
+	ret[0] = 0x04
+	xBytes := pub.X.Bytes()
+	yBytes := pub.Y.Bytes()
+	copy(ret[1+32-len(xBytes):33], xBytes)
+	copy(ret[33+32-len(yBytes):65], yBytes)
+	return ret
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/p2p"
+	ethsync "github.com/eth2028/eth2028/sync"
 )
 
 var (
@@ -15,6 +16,12 @@ var (
 	ErrGenesisMismatch     = errors.New("eth: genesis block mismatch")
 )
 
+// SyncNotifier is an optional callback interface for triggering sync on
+// new block announcements.
+type SyncNotifier interface {
+	OnNewBlock(peerID string, blockNum uint64)
+}
+
 // Handler implements the eth/68 protocol message handling. It connects
 // incoming P2P messages to the blockchain and transaction pool.
 type Handler struct {
@@ -22,6 +29,13 @@ type Handler struct {
 	txPool    TxPool
 	networkID uint64
 	peers     *p2p.PeerSet
+
+	// Optional sync notifier triggered by NewBlock messages.
+	syncNotifier SyncNotifier
+
+	// Optional downloader for responding to header/body requests
+	// received as responses (from sync).
+	downloader *ethsync.Downloader
 }
 
 // NewHandler creates a new eth protocol handler.
@@ -32,6 +46,26 @@ func NewHandler(chain Blockchain, txPool TxPool, networkID uint64) *Handler {
 		networkID: networkID,
 		peers:     p2p.NewPeerSet(),
 	}
+}
+
+// SetSyncNotifier configures an optional callback for new block events.
+func (h *Handler) SetSyncNotifier(sn SyncNotifier) {
+	h.syncNotifier = sn
+}
+
+// SetDownloader configures the downloader for the handler.
+func (h *Handler) SetDownloader(dl *ethsync.Downloader) {
+	h.downloader = dl
+}
+
+// Peers returns the handler's peer set.
+func (h *Handler) Peers() *p2p.PeerSet {
+	return h.peers
+}
+
+// Chain returns the handler's blockchain.
+func (h *Handler) Chain() Blockchain {
+	return h.chain
 }
 
 // Protocol returns a p2p.Protocol that can be registered with the P2P server.
@@ -123,6 +157,51 @@ func (h *Handler) handleMsg(ep *EthPeer, msg p2p.Msg) error {
 	default:
 		log.Printf("eth: ignoring unknown message code 0x%02x from %s", msg.Code, ep.ID())
 		return nil
+	}
+}
+
+// HandleGetBlockHeaders responds to a header request by looking up blocks
+// in the local chain and returning their headers. Exported for use by
+// sync adapters.
+func (h *Handler) HandleGetBlockHeaders(origin p2p.HashOrNumber, amount, skip uint64, reverse bool) []*types.Header {
+	return h.collectHeaders(p2p.GetBlockHeadersRequest{
+		Origin:  origin,
+		Amount:  amount,
+		Skip:    skip,
+		Reverse: reverse,
+	})
+}
+
+// HandleGetBlockBodies retrieves block bodies for the given hashes from
+// the local chain. Exported for use by sync adapters.
+func (h *Handler) HandleGetBlockBodies(hashes []types.Hash) []*types.Body {
+	var bodies []*types.Body
+	count := len(hashes)
+	if count > MaxBodies {
+		count = MaxBodies
+	}
+
+	for _, hash := range hashes[:count] {
+		block := h.chain.GetBlock(hash)
+		if block == nil {
+			// Return an empty body to keep index alignment.
+			bodies = append(bodies, &types.Body{})
+			continue
+		}
+		bodies = append(bodies, block.Body())
+	}
+	return bodies
+}
+
+// HandleNewBlock processes a new block announcement and optionally triggers
+// a sync if the announced block is higher than our head. Exported for
+// testing and external use.
+func (h *Handler) HandleNewBlock(peerID string, block *types.Block, td uint64) {
+	localHead := h.chain.CurrentBlock().NumberU64()
+	remoteNum := block.NumberU64()
+
+	if remoteNum > localHead && h.syncNotifier != nil {
+		h.syncNotifier.OnNewBlock(peerID, remoteNum)
 	}
 }
 
@@ -258,6 +337,9 @@ func (h *Handler) handleNewBlock(ep *EthPeer, msg p2p.Msg) error {
 	// Update peer's head.
 	ep.peer.SetHead(data.Block.Hash(), data.TD)
 
+	// Notify sync manager if the block is higher than our head.
+	h.HandleNewBlock(ep.ID(), data.Block, data.Block.NumberU64())
+
 	// Try to insert the block.
 	if err := h.chain.InsertBlock(data.Block); err != nil {
 		log.Printf("eth: failed to insert block #%d from %s: %v", data.Block.NumberU64(), ep.ID(), err)
@@ -282,6 +364,50 @@ func (h *Handler) handleTransactions(ep *EthPeer, msg p2p.Msg) error {
 		}
 	}
 	return nil
+}
+
+// PeerFetcher adapts the eth handler to implement the sync.HeaderFetcher
+// and sync.BodyFetcher interfaces, enabling the sync package to fetch
+// data from the local chain (for testing) or remote peers.
+type PeerFetcher struct {
+	chain Blockchain
+}
+
+// NewPeerFetcher creates a PeerFetcher backed by the given blockchain.
+func NewPeerFetcher(chain Blockchain) *PeerFetcher {
+	return &PeerFetcher{chain: chain}
+}
+
+// FetchHeaders fetches headers from the local chain starting at `from`.
+func (pf *PeerFetcher) FetchHeaders(from uint64, count int) ([]*types.Header, error) {
+	var headers []*types.Header
+	for i := 0; i < count; i++ {
+		num := from + uint64(i)
+		block := pf.chain.GetBlockByNumber(num)
+		if block == nil {
+			break
+		}
+		headers = append(headers, block.Header())
+	}
+	if len(headers) == 0 {
+		return nil, fmt.Errorf("no headers found starting at %d", from)
+	}
+	return headers, nil
+}
+
+// FetchBodies fetches block bodies from the local chain by hash.
+func (pf *PeerFetcher) FetchBodies(hashes []types.Hash) ([]*types.Body, error) {
+	bodies := make([]*types.Body, 0, len(hashes))
+	for _, hash := range hashes {
+		block := pf.chain.GetBlock(hash)
+		if block == nil {
+			// Return empty body to keep alignment.
+			bodies = append(bodies, &types.Body{})
+			continue
+		}
+		bodies = append(bodies, block.Body())
+	}
+	return bodies, nil
 }
 
 // decodeMsg is a helper that converts a p2p.Msg to p2p.Message and decodes.

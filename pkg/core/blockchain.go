@@ -9,6 +9,7 @@ import (
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/rlp"
 )
 
 var (
@@ -49,6 +50,9 @@ type Blockchain struct {
 	// Transaction lookup: txHash -> location in chain.
 	txLookup map[types.Hash]TxLookupEntry
 
+	// State snapshot cache to avoid re-execution from genesis.
+	sc *stateCache
+
 	// Genesis state (used as base for re-execution).
 	genesisState *state.MemoryStateDB
 
@@ -78,6 +82,7 @@ func NewBlockchain(config *ChainConfig, genesis *types.Block, statedb *state.Mem
 		canonCache:   make(map[uint64]types.Hash),
 		receiptCache: make(map[types.Hash][]*types.Receipt),
 		txLookup:     make(map[types.Hash]TxLookupEntry),
+		sc:           newStateCache(),
 		genesisState: statedb,
 		currentState: statedb.Copy(),
 		genesis:      genesis,
@@ -200,6 +205,11 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 
 		// Update header chain.
 		bc.hc.InsertHeaders([]*types.Header{header})
+
+		// Cache state snapshot at regular intervals.
+		if shouldSnapshot(num) {
+			bc.sc.put(hash, num, bc.currentState)
+		}
 	}
 
 	return nil
@@ -221,10 +231,15 @@ func (bc *Blockchain) InsertChain(blocks []*types.Block) (int, error) {
 }
 
 // GetBlock retrieves a block by hash, or nil if not found.
+// It checks the in-memory cache first, then falls back to rawdb.
 func (bc *Blockchain) GetBlock(hash types.Hash) *types.Block {
 	bc.mu.RLock()
 	defer bc.mu.RUnlock()
-	return bc.blockCache[hash]
+	if b, ok := bc.blockCache[hash]; ok {
+		return b
+	}
+	// Fallback: try reading from rawdb.
+	return bc.readBlock(hash)
 }
 
 // GetBlockByNumber retrieves the canonical block for a given number.
@@ -328,15 +343,31 @@ func (bc *Blockchain) State() *state.MemoryStateDB {
 
 // stateAt returns the state after executing up to (and including) the given block.
 // For the genesis block, this is the genesis state directly.
+// It checks the state cache for a snapshot closer to the target block to avoid
+// re-executing the entire chain from genesis.
 func (bc *Blockchain) stateAt(block *types.Block) (state.StateDB, error) {
 	if block.Hash() == bc.genesis.Hash() {
 		return bc.genesisState.Copy(), nil
 	}
 
-	// Collect the chain of blocks from genesis to this block.
+	// Check if we have an exact cached state for this block.
+	if cached, ok := bc.sc.get(block.Hash()); ok {
+		return cached, nil
+	}
+
+	// Collect the chain of blocks from genesis (or a cached snapshot) to this block.
 	var chain []*types.Block
 	current := block
+	var baseState *state.MemoryStateDB
+
 	for current.Hash() != bc.genesis.Hash() {
+		// Check if we have a cached state for this ancestor.
+		if cached, ok := bc.sc.get(current.ParentHash()); ok {
+			// We have a cached state at the parent; re-execute from there.
+			baseState = cached
+			chain = append(chain, current)
+			break
+		}
 		chain = append(chain, current)
 		parent, ok := bc.blockCache[current.ParentHash()]
 		if !ok {
@@ -345,24 +376,169 @@ func (bc *Blockchain) stateAt(block *types.Block) (state.StateDB, error) {
 		current = parent
 	}
 
-	// Re-execute from genesis.
-	statedb := bc.genesisState.Copy()
+	// Use genesis state as base if no cached snapshot was found.
+	if baseState == nil {
+		baseState = bc.genesisState.Copy()
+	}
+
+	// Re-execute from the base state.
 	for i := len(chain) - 1; i >= 0; i-- {
 		b := chain[i]
-		if _, err := bc.processor.Process(b, statedb); err != nil {
+		if _, err := bc.processor.Process(b, baseState); err != nil {
 			return nil, fmt.Errorf("re-execute block %d: %w", b.NumberU64(), err)
 		}
 	}
-	return statedb, nil
+	return baseState, nil
 }
 
-// writeBlock persists a block's header data to rawdb.
+// writeBlock persists a block's header and body to rawdb using RLP encoding.
 func (bc *Blockchain) writeBlock(block *types.Block) {
 	num := block.NumberU64()
 	hash := block.Hash()
-	// Store a placeholder — full RLP serialization is left for later.
-	rawdb.WriteHeader(bc.db, num, hash, []byte("header"))
-	rawdb.WriteBody(bc.db, num, hash, []byte("body"))
+
+	// RLP-encode the header.
+	headerData, err := block.Header().EncodeRLP()
+	if err != nil {
+		return
+	}
+	rawdb.WriteHeader(bc.db, num, hash, headerData)
+
+	// RLP-encode the body (transactions list + uncles list).
+	bodyData, err := encodeBlockBody(block.Body())
+	if err != nil {
+		return
+	}
+	rawdb.WriteBody(bc.db, num, hash, bodyData)
+}
+
+// readBlock retrieves a block from rawdb by looking up the block number
+// from the header hash, then reading and decoding header and body.
+func (bc *Blockchain) readBlock(hash types.Hash) *types.Block {
+	// Look up block number from hash.
+	num, err := rawdb.ReadHeaderNumber(bc.db, hash)
+	if err != nil {
+		return nil
+	}
+
+	// Read header.
+	headerData, err := rawdb.ReadHeader(bc.db, num, hash)
+	if err != nil || len(headerData) == 0 {
+		return nil
+	}
+	header, err := types.DecodeHeaderRLP(headerData)
+	if err != nil {
+		return nil
+	}
+
+	// Read body.
+	bodyData, err := rawdb.ReadBody(bc.db, num, hash)
+	if err != nil || len(bodyData) == 0 {
+		// Body may be empty for blocks with no transactions; create block with header only.
+		return types.NewBlock(header, nil)
+	}
+	body, err := decodeBlockBody(bodyData)
+	if err != nil {
+		// If body decode fails, return header-only block.
+		return types.NewBlock(header, nil)
+	}
+	return types.NewBlock(header, body)
+}
+
+// encodeBlockBody RLP-encodes a block body as [transactions_list, uncles_list].
+func encodeBlockBody(body *types.Body) ([]byte, error) {
+	// Encode transactions.
+	var txsPayload []byte
+	if body != nil {
+		for _, tx := range body.Transactions {
+			txEnc, err := tx.EncodeRLP()
+			if err != nil {
+				return nil, err
+			}
+			// Wrap raw tx bytes as an RLP byte string.
+			wrapped, err := rlp.EncodeToBytes(txEnc)
+			if err != nil {
+				return nil, err
+			}
+			txsPayload = append(txsPayload, wrapped...)
+		}
+	}
+
+	// Encode uncles.
+	var unclesPayload []byte
+	if body != nil {
+		for _, uncle := range body.Uncles {
+			uncleEnc, err := uncle.EncodeRLP()
+			if err != nil {
+				return nil, err
+			}
+			unclesPayload = append(unclesPayload, uncleEnc...)
+		}
+	}
+
+	var payload []byte
+	payload = append(payload, rlp.WrapList(txsPayload)...)
+	payload = append(payload, rlp.WrapList(unclesPayload)...)
+	return rlp.WrapList(payload), nil
+}
+
+// decodeBlockBody decodes an RLP-encoded block body [transactions_list, uncles_list].
+func decodeBlockBody(data []byte) (*types.Body, error) {
+	s := rlp.NewStreamFromBytes(data)
+	_, err := s.List()
+	if err != nil {
+		return nil, fmt.Errorf("opening body list: %w", err)
+	}
+
+	// Decode transactions.
+	_, err = s.List()
+	if err != nil {
+		return nil, fmt.Errorf("opening txs list: %w", err)
+	}
+	var txs []*types.Transaction
+	for !s.AtListEnd() {
+		txBytes, err := s.Bytes()
+		if err != nil {
+			return nil, fmt.Errorf("reading tx bytes: %w", err)
+		}
+		tx, err := types.DecodeTxRLP(txBytes)
+		if err != nil {
+			return nil, fmt.Errorf("decoding tx: %w", err)
+		}
+		txs = append(txs, tx)
+	}
+	if err := s.ListEnd(); err != nil {
+		return nil, fmt.Errorf("closing txs list: %w", err)
+	}
+
+	// Decode uncles.
+	_, err = s.List()
+	if err != nil {
+		return nil, fmt.Errorf("opening uncles list: %w", err)
+	}
+	var uncles []*types.Header
+	for !s.AtListEnd() {
+		uncleBytes, err := s.RawItem()
+		if err != nil {
+			return nil, fmt.Errorf("reading uncle: %w", err)
+		}
+		uncle, err := types.DecodeHeaderRLP(uncleBytes)
+		if err != nil {
+			return nil, fmt.Errorf("decoding uncle: %w", err)
+		}
+		uncles = append(uncles, uncle)
+	}
+	if err := s.ListEnd(); err != nil {
+		return nil, fmt.Errorf("closing uncles list: %w", err)
+	}
+
+	if err := s.ListEnd(); err != nil {
+		return nil, fmt.Errorf("closing body list: %w", err)
+	}
+
+	return &types.Body{
+		Transactions: txs,
+		Uncles:       uncles,
+	}, nil
 }
 
 // Reorg replaces the canonical chain from the fork point with the new chain

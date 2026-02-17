@@ -502,3 +502,168 @@ func (tx *Transaction) hashRLP() Hash {
 	copy(h[:], d.Sum(nil))
 	return h
 }
+
+// SigningHash returns the hash that was signed to produce the transaction's signature.
+// For legacy (pre-EIP-155): Keccak256(RLP([nonce, gasPrice, gas, to, value, data]))
+// For EIP-155 legacy: Keccak256(RLP([nonce, gasPrice, gas, to, value, data, chainID, 0, 0]))
+// For typed transactions: Keccak256(type || RLP([fields without v, r, s]))
+func (tx *Transaction) SigningHash() Hash {
+	switch t := tx.inner.(type) {
+	case *LegacyTx:
+		return signingHashLegacy(t)
+	case *AccessListTx:
+		return signingHashAccessList(t)
+	case *DynamicFeeTx:
+		return signingHashDynamicFee(t)
+	case *BlobTx:
+		return signingHashBlob(t)
+	case *SetCodeTx:
+		return signingHashSetCode(t)
+	default:
+		return Hash{}
+	}
+}
+
+// signingHashLegacy computes signing hash for legacy transactions.
+func signingHashLegacy(tx *LegacyTx) Hash {
+	chainID := deriveChainID(tx.V)
+	toBytes := make([]byte, 0)
+	if tx.To != nil {
+		toBytes = tx.To[:]
+	}
+
+	var items [][]byte
+	enc := func(v interface{}) {
+		b, _ := rlp.EncodeToBytes(v)
+		items = append(items, b)
+	}
+
+	enc(tx.Nonce)
+	enc(tx.GasPrice)
+	enc(tx.Gas)
+	enc(toBytes)
+	enc(tx.Value)
+	enc(tx.Data)
+
+	if chainID != nil && chainID.Sign() > 0 {
+		enc(chainID)
+		enc(uint(0))
+		enc(uint(0))
+	}
+
+	var payload []byte
+	for _, item := range items {
+		payload = append(payload, item...)
+	}
+	encoded := rlp.WrapList(payload)
+
+	d := sha3.NewLegacyKeccak256()
+	d.Write(encoded)
+	var h Hash
+	copy(h[:], d.Sum(nil))
+	return h
+}
+
+// signingHashAccessList computes signing hash for EIP-2930 transactions.
+func signingHashAccessList(tx *AccessListTx) Hash {
+	toBytes := make([]byte, 0)
+	if tx.To != nil {
+		toBytes = tx.To[:]
+	}
+	payload := encodeUnsignedFields(
+		tx.ChainID, tx.Nonce, tx.GasPrice, tx.Gas, toBytes, tx.Value, tx.Data,
+	)
+	payload = append(payload, encodeAccessListBytes(tx.AccessList)...)
+	return typedSigningHash(AccessListTxType, payload)
+}
+
+// signingHashDynamicFee computes signing hash for EIP-1559 transactions.
+func signingHashDynamicFee(tx *DynamicFeeTx) Hash {
+	toBytes := make([]byte, 0)
+	if tx.To != nil {
+		toBytes = tx.To[:]
+	}
+	payload := encodeUnsignedFields(
+		tx.ChainID, tx.Nonce, tx.GasTipCap, tx.GasFeeCap, tx.Gas, toBytes, tx.Value, tx.Data,
+	)
+	payload = append(payload, encodeAccessListBytes(tx.AccessList)...)
+	return typedSigningHash(DynamicFeeTxType, payload)
+}
+
+// signingHashBlob computes signing hash for EIP-4844 transactions.
+func signingHashBlob(tx *BlobTx) Hash {
+	payload := encodeUnsignedFields(
+		tx.ChainID, tx.Nonce, tx.GasTipCap, tx.GasFeeCap, tx.Gas, tx.To[:], tx.Value, tx.Data,
+	)
+	payload = append(payload, encodeAccessListBytes(tx.AccessList)...)
+	blobFeeCap, _ := rlp.EncodeToBytes(tx.BlobFeeCap)
+	payload = append(payload, blobFeeCap...)
+	payload = append(payload, encodeHashList(tx.BlobHashes)...)
+	return typedSigningHash(BlobTxType, payload)
+}
+
+// signingHashSetCode computes signing hash for EIP-7702 transactions.
+func signingHashSetCode(tx *SetCodeTx) Hash {
+	payload := encodeUnsignedFields(
+		tx.ChainID, tx.Nonce, tx.GasTipCap, tx.GasFeeCap, tx.Gas, tx.To[:], tx.Value, tx.Data,
+	)
+	payload = append(payload, encodeAccessListBytes(tx.AccessList)...)
+	payload = append(payload, encodeAuthListBytes(tx.AuthorizationList)...)
+	return typedSigningHash(SetCodeTxType, payload)
+}
+
+// encodeUnsignedFields RLP-encodes a sequence of values and concatenates them.
+func encodeUnsignedFields(vals ...interface{}) []byte {
+	var payload []byte
+	for _, v := range vals {
+		b, _ := rlp.EncodeToBytes(v)
+		payload = append(payload, b...)
+	}
+	return payload
+}
+
+// typedSigningHash computes Keccak256(type || RLP_list(payload)).
+func typedSigningHash(txType byte, payload []byte) Hash {
+	d := sha3.NewLegacyKeccak256()
+	d.Write([]byte{txType})
+	d.Write(rlp.WrapList(payload))
+	var h Hash
+	copy(h[:], d.Sum(nil))
+	return h
+}
+
+// encodeAccessListBytes RLP-encodes an access list as raw bytes.
+func encodeAccessListBytes(list AccessList) []byte {
+	var inner []byte
+	for _, tuple := range list {
+		keysPayload := encodeHashList(tuple.StorageKeys)
+		addrEnc, _ := rlp.EncodeToBytes(tuple.Address[:])
+		item := append(addrEnc, keysPayload...)
+		inner = append(inner, rlp.WrapList(item)...)
+	}
+	return rlp.WrapList(inner)
+}
+
+// encodeHashList RLP-encodes a list of hashes.
+func encodeHashList(hashes []Hash) []byte {
+	var inner []byte
+	for _, h := range hashes {
+		encoded, _ := rlp.EncodeToBytes(h[:])
+		inner = append(inner, encoded...)
+	}
+	return rlp.WrapList(inner)
+}
+
+// encodeAuthListBytes RLP-encodes an EIP-7702 authorization list as raw bytes.
+func encodeAuthListBytes(list []Authorization) []byte {
+	var inner []byte
+	for _, auth := range list {
+		chainEnc, _ := rlp.EncodeToBytes(auth.ChainID)
+		addrEnc, _ := rlp.EncodeToBytes(auth.Address[:])
+		nonceEnc, _ := rlp.EncodeToBytes(auth.Nonce)
+		item := append(chainEnc, addrEnc...)
+		item = append(item, nonceEnc...)
+		inner = append(inner, rlp.WrapList(item)...)
+	}
+	return rlp.WrapList(inner)
+}

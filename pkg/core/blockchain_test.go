@@ -409,3 +409,350 @@ func TestBlockchain_NilGenesis(t *testing.T) {
 		t.Errorf("expected ErrNoGenesis, got %v", err)
 	}
 }
+
+// --- Block serialization tests ---
+
+func TestBlockchain_WriteReadBlock_EmptyBlock(t *testing.T) {
+	bc, _ := testChain(t)
+	gen := bc.Genesis()
+
+	// Insert an empty block.
+	block1 := makeBlock(gen, nil)
+	if err := bc.InsertBlock(block1); err != nil {
+		t.Fatalf("InsertBlock: %v", err)
+	}
+
+	// Remove block from in-memory cache to force rawdb read.
+	hash := block1.Hash()
+	bc.mu.Lock()
+	delete(bc.blockCache, hash)
+	bc.mu.Unlock()
+
+	// GetBlock should fall back to rawdb and reconstruct the block.
+	recovered := bc.GetBlock(hash)
+	if recovered == nil {
+		t.Fatal("GetBlock after cache eviction returned nil")
+	}
+	if recovered.Hash() != hash {
+		t.Errorf("recovered block hash = %v, want %v", recovered.Hash(), hash)
+	}
+	if recovered.NumberU64() != block1.NumberU64() {
+		t.Errorf("recovered block number = %d, want %d", recovered.NumberU64(), block1.NumberU64())
+	}
+	if recovered.GasLimit() != block1.GasLimit() {
+		t.Errorf("recovered gas limit = %d, want %d", recovered.GasLimit(), block1.GasLimit())
+	}
+	if recovered.Time() != block1.Time() {
+		t.Errorf("recovered time = %d, want %d", recovered.Time(), block1.Time())
+	}
+	if recovered.ParentHash() != block1.ParentHash() {
+		t.Errorf("recovered parent hash mismatch")
+	}
+}
+
+func TestBlockchain_WriteReadBlock_WithTransactions(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+	sender := types.BytesToAddress([]byte{0x01})
+	receiver := types.BytesToAddress([]byte{0x02})
+	statedb.AddBalance(sender, big.NewInt(10_000_000))
+
+	genesis := makeGenesis(30_000_000, big.NewInt(1))
+	db := rawdb.NewMemoryDB()
+	bc, err := NewBlockchain(TestConfig, genesis, statedb, db)
+	if err != nil {
+		t.Fatalf("NewBlockchain: %v", err)
+	}
+
+	// Create a transaction.
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    0,
+		GasPrice: big.NewInt(1),
+		Gas:      21000,
+		To:       &receiver,
+		Value:    big.NewInt(100),
+	})
+	tx.SetSender(sender)
+
+	block1 := makeBlock(bc.Genesis(), []*types.Transaction{tx})
+	if err := bc.InsertBlock(block1); err != nil {
+		t.Fatalf("InsertBlock with tx: %v", err)
+	}
+
+	hash := block1.Hash()
+
+	// Remove from in-memory cache.
+	bc.mu.Lock()
+	delete(bc.blockCache, hash)
+	bc.mu.Unlock()
+
+	// Recover from rawdb.
+	recovered := bc.GetBlock(hash)
+	if recovered == nil {
+		t.Fatal("GetBlock returned nil after cache eviction")
+	}
+	if recovered.Hash() != hash {
+		t.Errorf("recovered block hash mismatch")
+	}
+
+	// Verify the recovered block has the same number of transactions.
+	if len(recovered.Transactions()) != 1 {
+		t.Fatalf("recovered block has %d txs, want 1", len(recovered.Transactions()))
+	}
+
+	// Verify the recovered transaction data matches.
+	recoveredTx := recovered.Transactions()[0]
+	originalTx := block1.Transactions()[0]
+	if recoveredTx.Nonce() != originalTx.Nonce() {
+		t.Errorf("tx nonce = %d, want %d", recoveredTx.Nonce(), originalTx.Nonce())
+	}
+	if recoveredTx.Gas() != originalTx.Gas() {
+		t.Errorf("tx gas = %d, want %d", recoveredTx.Gas(), originalTx.Gas())
+	}
+	if recoveredTx.Value().Cmp(originalTx.Value()) != 0 {
+		t.Errorf("tx value = %s, want %s", recoveredTx.Value(), originalTx.Value())
+	}
+}
+
+func TestBlockchain_WriteReadBlock_GenesisFromDB(t *testing.T) {
+	bc, _ := testChain(t)
+	gen := bc.Genesis()
+	hash := gen.Hash()
+
+	// Remove genesis from in-memory cache.
+	bc.mu.Lock()
+	delete(bc.blockCache, hash)
+	bc.mu.Unlock()
+
+	// Should still be retrievable from rawdb.
+	recovered := bc.GetBlock(hash)
+	if recovered == nil {
+		t.Fatal("genesis block not recoverable from rawdb")
+	}
+	if recovered.Hash() != hash {
+		t.Errorf("recovered genesis hash = %v, want %v", recovered.Hash(), hash)
+	}
+	if recovered.NumberU64() != 0 {
+		t.Errorf("recovered genesis number = %d, want 0", recovered.NumberU64())
+	}
+}
+
+// --- State cache tests ---
+
+func TestBlockchain_StateCachePopulated(t *testing.T) {
+	bc, _ := testChain(t)
+
+	// Insert blocks up to stateSnapshotInterval to trigger a cache snapshot.
+	// stateSnapshotInterval is 16, so block 16 should trigger caching.
+	parent := bc.Genesis()
+	for i := 0; i < int(stateSnapshotInterval); i++ {
+		b := makeBlock(parent, nil)
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("InsertBlock %d: %v", i+1, err)
+		}
+		parent = b
+	}
+
+	// Block at stateSnapshotInterval should have a cached state.
+	blockN := bc.GetBlockByNumber(stateSnapshotInterval)
+	if blockN == nil {
+		t.Fatalf("block %d not found", stateSnapshotInterval)
+	}
+
+	cached, ok := bc.sc.get(blockN.Hash())
+	if !ok {
+		t.Fatalf("state cache not populated at block %d", stateSnapshotInterval)
+	}
+	if cached == nil {
+		t.Fatal("cached state is nil")
+	}
+}
+
+func TestBlockchain_StateCacheNotPopulatedAtNonInterval(t *testing.T) {
+	bc, _ := testChain(t)
+
+	// Insert a few blocks (less than stateSnapshotInterval).
+	parent := bc.Genesis()
+	for i := 0; i < 5; i++ {
+		b := makeBlock(parent, nil)
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("InsertBlock %d: %v", i+1, err)
+		}
+		parent = b
+	}
+
+	// Blocks 1-5 should NOT have cached states (none are multiples of 16).
+	for i := uint64(1); i <= 5; i++ {
+		b := bc.GetBlockByNumber(i)
+		if b == nil {
+			t.Fatalf("block %d not found", i)
+		}
+		_, ok := bc.sc.get(b.Hash())
+		if ok {
+			t.Errorf("state cache should not be populated at block %d", i)
+		}
+	}
+}
+
+func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+	sender := types.BytesToAddress([]byte{0x01})
+	receiver := types.BytesToAddress([]byte{0x02})
+	statedb.AddBalance(sender, big.NewInt(100_000_000))
+
+	genesis := makeGenesis(30_000_000, big.NewInt(1))
+	db := rawdb.NewMemoryDB()
+	bc, err := NewBlockchain(TestConfig, genesis, statedb, db)
+	if err != nil {
+		t.Fatalf("NewBlockchain: %v", err)
+	}
+
+	// Build stateSnapshotInterval + 2 blocks with a tx in each.
+	parent := bc.Genesis()
+	for i := 0; i < int(stateSnapshotInterval)+2; i++ {
+		tx := types.NewTransaction(&types.LegacyTx{
+			Nonce:    uint64(i),
+			GasPrice: big.NewInt(1),
+			Gas:      21000,
+			To:       &receiver,
+			Value:    big.NewInt(1),
+		})
+		tx.SetSender(sender)
+		b := makeBlock(parent, []*types.Transaction{tx})
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("InsertBlock %d: %v", i+1, err)
+		}
+		parent = b
+	}
+
+	// A cached state should exist at block stateSnapshotInterval.
+	blockN := bc.GetBlockByNumber(stateSnapshotInterval)
+	_, ok := bc.sc.get(blockN.Hash())
+	if !ok {
+		t.Fatalf("expected state cache at block %d", stateSnapshotInterval)
+	}
+
+	// Now request stateAt for a block after the snapshot.
+	// This should use the cached state instead of re-executing from genesis.
+	targetBlock := bc.GetBlockByNumber(stateSnapshotInterval + 1)
+	bc.mu.RLock()
+	st, err := bc.stateAt(targetBlock)
+	bc.mu.RUnlock()
+	if err != nil {
+		t.Fatalf("stateAt(%d): %v", stateSnapshotInterval+1, err)
+	}
+	if st == nil {
+		t.Fatal("stateAt returned nil state")
+	}
+
+	// Verify the state reflects all processed transactions.
+	memSt := st.(*state.MemoryStateDB)
+	bal := memSt.GetBalance(receiver)
+	expectedBal := big.NewInt(int64(stateSnapshotInterval) + 1) // 1 per block
+	if bal.Cmp(expectedBal) != 0 {
+		t.Errorf("receiver balance = %s, want %s", bal, expectedBal)
+	}
+}
+
+func TestBlockchain_GetBlockFallbackToRawDB(t *testing.T) {
+	bc, _ := testChain(t)
+
+	// Insert 3 blocks.
+	parent := bc.Genesis()
+	blocks := make([]*types.Block, 3)
+	for i := 0; i < 3; i++ {
+		b := makeBlock(parent, nil)
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("InsertBlock %d: %v", i+1, err)
+		}
+		blocks[i] = b
+		parent = b
+	}
+
+	// Clear all blocks from in-memory cache.
+	bc.mu.Lock()
+	for _, b := range blocks {
+		delete(bc.blockCache, b.Hash())
+	}
+	bc.mu.Unlock()
+
+	// All blocks should still be retrievable via rawdb fallback.
+	for i, b := range blocks {
+		recovered := bc.GetBlock(b.Hash())
+		if recovered == nil {
+			t.Fatalf("block %d not recoverable from rawdb", i+1)
+		}
+		if recovered.Hash() != b.Hash() {
+			t.Errorf("block %d hash mismatch", i+1)
+		}
+		if recovered.NumberU64() != b.NumberU64() {
+			t.Errorf("block %d number mismatch: got %d, want %d", i+1, recovered.NumberU64(), b.NumberU64())
+		}
+	}
+
+	// Non-existent hash should still return nil.
+	if bc.GetBlock(types.Hash{0xff}) != nil {
+		t.Error("GetBlock for non-existent hash should return nil")
+	}
+}
+
+func TestBlockchain_EncodeDecodeBodyRoundTrip(t *testing.T) {
+	sender := types.BytesToAddress([]byte{0x01})
+	receiver := types.BytesToAddress([]byte{0x02})
+
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    0,
+		GasPrice: big.NewInt(42),
+		Gas:      21000,
+		To:       &receiver,
+		Value:    big.NewInt(100),
+	})
+	tx.SetSender(sender)
+
+	body := &types.Body{
+		Transactions: []*types.Transaction{tx},
+	}
+
+	encoded, err := encodeBlockBody(body)
+	if err != nil {
+		t.Fatalf("encodeBlockBody: %v", err)
+	}
+	if len(encoded) == 0 {
+		t.Fatal("encoded body is empty")
+	}
+
+	decoded, err := decodeBlockBody(encoded)
+	if err != nil {
+		t.Fatalf("decodeBlockBody: %v", err)
+	}
+	if len(decoded.Transactions) != 1 {
+		t.Fatalf("decoded body has %d txs, want 1", len(decoded.Transactions))
+	}
+	if decoded.Transactions[0].Nonce() != 0 {
+		t.Errorf("decoded tx nonce = %d, want 0", decoded.Transactions[0].Nonce())
+	}
+	if decoded.Transactions[0].Gas() != 21000 {
+		t.Errorf("decoded tx gas = %d, want 21000", decoded.Transactions[0].Gas())
+	}
+	if decoded.Transactions[0].Value().Cmp(big.NewInt(100)) != 0 {
+		t.Errorf("decoded tx value = %s, want 100", decoded.Transactions[0].Value())
+	}
+}
+
+func TestBlockchain_EncodeDecodeEmptyBody(t *testing.T) {
+	body := &types.Body{}
+	encoded, err := encodeBlockBody(body)
+	if err != nil {
+		t.Fatalf("encodeBlockBody: %v", err)
+	}
+
+	decoded, err := decodeBlockBody(encoded)
+	if err != nil {
+		t.Fatalf("decodeBlockBody: %v", err)
+	}
+	if len(decoded.Transactions) != 0 {
+		t.Errorf("decoded body has %d txs, want 0", len(decoded.Transactions))
+	}
+	if len(decoded.Uncles) != 0 {
+		t.Errorf("decoded body has %d uncles, want 0", len(decoded.Uncles))
+	}
+}

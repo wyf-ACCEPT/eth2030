@@ -10,6 +10,7 @@ import (
 	"github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/core/vm"
 	"github.com/eth2028/eth2028/engine"
 	"github.com/eth2028/eth2028/rpc"
 )
@@ -135,8 +136,59 @@ func (b *nodeBackend) GetBlockReceipts(number uint64) []*types.Receipt {
 }
 
 func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber rpc.BlockNumber) ([]byte, uint64, error) {
-	// Stub: a real implementation would create an EVM and execute the call.
-	return nil, 0, fmt.Errorf("eth_call not fully implemented")
+	bc := b.node.blockchain
+
+	// Resolve block header.
+	var header *types.Header
+	switch blockNumber {
+	case rpc.LatestBlockNumber, rpc.PendingBlockNumber:
+		blk := bc.CurrentBlock()
+		if blk != nil {
+			header = blk.Header()
+		}
+	default:
+		blk := bc.GetBlockByNumber(uint64(blockNumber))
+		if blk != nil {
+			header = blk.Header()
+		}
+	}
+	if header == nil {
+		return nil, 0, fmt.Errorf("block not found")
+	}
+
+	// Get state at this block.
+	statedb := bc.State()
+
+	// Default gas to 50M if zero.
+	if gas == 0 {
+		gas = 50_000_000
+	}
+	if value == nil {
+		value = new(big.Int)
+	}
+
+	// Build block and tx contexts.
+	blockCtx := vm.BlockContext{
+		GetHash:     bc.GetHashFn(),
+		BlockNumber: header.Number,
+		Time:        header.Time,
+		GasLimit:    header.GasLimit,
+		BaseFee:     header.BaseFee,
+	}
+	txCtx := vm.TxContext{
+		Origin:   from,
+		GasPrice: header.BaseFee,
+	}
+
+	evm := vm.NewEVMWithState(blockCtx, txCtx, vm.Config{}, statedb)
+
+	if to == nil {
+		// Contract creation call - just return empty.
+		return nil, gas, nil
+	}
+
+	ret, gasLeft, err := evm.Call(from, *to, data, gas, value)
+	return ret, gasLeft, err
 }
 
 // txPoolAdapter adapts *txpool.TxPool to core.TxPoolReader.
@@ -178,9 +230,69 @@ func (b *engineBackend) ProcessBlock(
 	expectedBlobVersionedHashes []types.Hash,
 	parentBeaconBlockRoot types.Hash,
 ) (engine.PayloadStatusV1, error) {
-	// Stub: a real implementation would convert payload to a block and insert.
+	bc := b.node.blockchain
+
+	// Convert payload to a block.
+	header := &types.Header{
+		ParentHash:  payload.ParentHash,
+		Coinbase:    payload.FeeRecipient,
+		Root:        payload.StateRoot,
+		ReceiptHash: payload.ReceiptsRoot,
+		Bloom:       payload.LogsBloom,
+		Number:      new(big.Int).SetUint64(payload.BlockNumber),
+		GasLimit:    payload.GasLimit,
+		GasUsed:     payload.GasUsed,
+		Time:        payload.Timestamp,
+		Extra:       payload.ExtraData,
+		BaseFee:     payload.BaseFeePerGas,
+		MixDigest:   payload.PrevRandao,
+	}
+
+	// Decode transactions from raw bytes.
+	var txs []*types.Transaction
+	for _, raw := range payload.Transactions {
+		tx, err := types.DecodeTxRLP(raw)
+		if err != nil {
+			latestValid := payload.ParentHash
+			return engine.PayloadStatusV1{
+				Status:          engine.StatusInvalid,
+				LatestValidHash: &latestValid,
+			}, nil
+		}
+		txs = append(txs, tx)
+	}
+
+	block := types.NewBlock(header, &types.Body{Transactions: txs})
+
+	// Verify block hash matches.
+	if block.Hash() != payload.BlockHash {
+		latestValid := payload.ParentHash
+		return engine.PayloadStatusV1{
+			Status:          engine.StatusInvalid,
+			LatestValidHash: &latestValid,
+		}, nil
+	}
+
+	// Check if parent is known.
+	if !bc.HasBlock(payload.ParentHash) {
+		return engine.PayloadStatusV1{
+			Status: engine.StatusSyncing,
+		}, nil
+	}
+
+	// Insert the block.
+	if err := bc.InsertBlock(block); err != nil {
+		latestValid := payload.ParentHash
+		return engine.PayloadStatusV1{
+			Status:          engine.StatusInvalid,
+			LatestValidHash: &latestValid,
+		}, nil
+	}
+
+	blockHash := block.Hash()
 	return engine.PayloadStatusV1{
-		Status: engine.StatusSyncing,
+		Status:          engine.StatusValid,
+		LatestValidHash: &blockHash,
 	}, nil
 }
 

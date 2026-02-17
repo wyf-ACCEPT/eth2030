@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/crypto"
 )
 
 // priceBumpPercent is the minimum gas price bump required for replace-by-fee.
@@ -480,16 +481,49 @@ func (pool *TxPool) Reset(stateReader StateReader) {
 
 // senderOf extracts the sender address from a transaction.
 // If the sender has been cached via SetSender, returns that.
-// Otherwise derives from the transaction hash (placeholder for Ecrecover).
+// Otherwise recovers the sender from the ECDSA signature via ecrecover.
 func (pool *TxPool) senderOf(tx *types.Transaction) types.Address {
 	if from := tx.Sender(); from != nil {
 		return *from
 	}
-	// Fallback: use first 20 bytes of tx hash as sender.
-	// A real implementation would use crypto.Ecrecover.
-	h := tx.Hash()
-	var addr types.Address
-	copy(addr[:], h[:20])
+	// Recover sender from signature using ecrecover.
+	sigHash := tx.SigningHash()
+	v, r, s := tx.RawSignatureValues()
+	if r == nil || s == nil {
+		return types.Address{}
+	}
+	// Build 65-byte signature [R || S || V].
+	sig := make([]byte, 65)
+	rBytes := r.Bytes()
+	sBytes := s.Bytes()
+	copy(sig[32-len(rBytes):32], rBytes)
+	copy(sig[64-len(sBytes):64], sBytes)
+	// Compute recovery ID from V.
+	if v != nil {
+		vVal := v.Uint64()
+		switch tx.Type() {
+		case types.LegacyTxType:
+			// EIP-155: V = chainID*2 + 35 + recovery_id
+			// Pre-EIP-155: V = 27 + recovery_id
+			if vVal >= 35 {
+				chainID := tx.ChainId()
+				if chainID != nil && chainID.Sign() > 0 {
+					vVal -= chainID.Uint64()*2 + 35
+				}
+			} else if vVal >= 27 {
+				vVal -= 27
+			}
+		default:
+			// Typed transactions: V is 0 or 1 directly.
+		}
+		sig[64] = byte(vVal)
+	}
+	pub, err := crypto.SigToPub(sigHash[:], sig)
+	if err != nil {
+		return types.Address{}
+	}
+	addr := crypto.PubkeyToAddress(*pub)
+	tx.SetSender(addr)
 	return addr
 }
 

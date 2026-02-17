@@ -241,6 +241,193 @@ func TestValidateSignatureRejectsInvalidInputs(t *testing.T) {
 	}
 }
 
+func TestSecp256k1CurveParams(t *testing.T) {
+	curve := S256()
+	params := curve.Params()
+
+	if params.Name != "secp256k1" {
+		t.Errorf("curve name = %s, want secp256k1", params.Name)
+	}
+	if params.BitSize != 256 {
+		t.Errorf("bit size = %d, want 256", params.BitSize)
+	}
+	// Generator must be on the curve.
+	if !curve.IsOnCurve(params.Gx, params.Gy) {
+		t.Error("generator point is not on curve")
+	}
+	// N * G should equal point at infinity.
+	x, y := curve.ScalarBaseMult(params.N.Bytes())
+	if x.Sign() != 0 || y.Sign() != 0 {
+		t.Error("N * G should be point at infinity")
+	}
+}
+
+func TestEcrecoverRoundTrip(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	hash := Keccak256([]byte("test message for ecrecover"))
+	sig, err := Sign(hash, key)
+	if err != nil {
+		t.Fatalf("Sign failed: %v", err)
+	}
+
+	recovered, err := Ecrecover(hash, sig)
+	if err != nil {
+		t.Fatalf("Ecrecover failed: %v", err)
+	}
+
+	expected := FromECDSAPub(&key.PublicKey)
+	if len(recovered) != len(expected) {
+		t.Fatalf("recovered pubkey length = %d, want %d", len(recovered), len(expected))
+	}
+	for i := range recovered {
+		if recovered[i] != expected[i] {
+			t.Fatalf("recovered pubkey mismatch at byte %d", i)
+		}
+	}
+}
+
+func TestSigToPubRoundTrip(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	hash := Keccak256([]byte("another test"))
+	sig, err := Sign(hash, key)
+	if err != nil {
+		t.Fatalf("Sign failed: %v", err)
+	}
+
+	pub, err := SigToPub(hash, sig)
+	if err != nil {
+		t.Fatalf("SigToPub failed: %v", err)
+	}
+
+	if key.PublicKey.X.Cmp(pub.X) != 0 || key.PublicKey.Y.Cmp(pub.Y) != 0 {
+		t.Error("SigToPub did not recover the correct public key")
+	}
+}
+
+func TestEcrecoverDeriveAddress(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+
+	expectedAddr := PubkeyToAddress(key.PublicKey)
+
+	hash := Keccak256([]byte("address derivation test"))
+	sig, err := Sign(hash, key)
+	if err != nil {
+		t.Fatalf("Sign failed: %v", err)
+	}
+
+	recovered, err := SigToPub(hash, sig)
+	if err != nil {
+		t.Fatalf("SigToPub failed: %v", err)
+	}
+
+	recoveredAddr := PubkeyToAddress(*recovered)
+	if expectedAddr != recoveredAddr {
+		t.Errorf("recovered address %s != expected %s", recoveredAddr, expectedAddr)
+	}
+}
+
+func TestEcrecoverMultipleMessages(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	expectedPub := FromECDSAPub(&key.PublicKey)
+
+	messages := []string{"msg1", "msg2", "msg3", "hello world", "ethereum"}
+	for _, msg := range messages {
+		hash := Keccak256([]byte(msg))
+		sig, err := Sign(hash, key)
+		if err != nil {
+			t.Fatalf("Sign(%q) failed: %v", msg, err)
+		}
+		recovered, err := Ecrecover(hash, sig)
+		if err != nil {
+			t.Fatalf("Ecrecover(%q) failed: %v", msg, err)
+		}
+		for i := range recovered {
+			if recovered[i] != expectedPub[i] {
+				t.Fatalf("Ecrecover(%q): mismatch at byte %d", msg, i)
+			}
+		}
+	}
+}
+
+func TestEcrecoverRejectsInvalidSig(t *testing.T) {
+	hash := Keccak256([]byte("test"))
+
+	// Wrong length.
+	_, err := Ecrecover(hash, make([]byte, 64))
+	if err == nil {
+		t.Error("Ecrecover should reject 64-byte sig")
+	}
+
+	// Invalid V.
+	sig := make([]byte, 65)
+	sig[64] = 4
+	_, err = Ecrecover(hash, sig)
+	if err == nil {
+		t.Error("Ecrecover should reject V > 1")
+	}
+}
+
+func TestEcrecoverRejectsWrongHash(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	hash := Keccak256([]byte("original"))
+	sig, err := Sign(hash, key)
+	if err != nil {
+		t.Fatalf("Sign failed: %v", err)
+	}
+
+	wrongHash := Keccak256([]byte("different"))
+	recovered, err := Ecrecover(wrongHash, sig)
+	if err != nil {
+		// May still succeed but recover a different key.
+		return
+	}
+	expected := FromECDSAPub(&key.PublicKey)
+	match := true
+	for i := range recovered {
+		if recovered[i] != expected[i] {
+			match = false
+			break
+		}
+	}
+	if match {
+		t.Error("Ecrecover with wrong hash should recover different pubkey")
+	}
+}
+
+func TestSignLowS(t *testing.T) {
+	key, err := GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey failed: %v", err)
+	}
+	// Sign multiple times and verify S is always in lower half.
+	for i := 0; i < 20; i++ {
+		hash := Keccak256([]byte{byte(i), byte(i >> 8)})
+		sig, err := Sign(hash, key)
+		if err != nil {
+			t.Fatalf("Sign failed: %v", err)
+		}
+		s := new(big.Int).SetBytes(sig[32:64])
+		if s.Cmp(secp256k1halfN) > 0 {
+			t.Error("Sign should produce low-S signatures (EIP-2)")
+		}
+	}
+}
+
 func TestDifferentKeysProduceDifferentAddresses(t *testing.T) {
 	key1, err := GenerateKey()
 	if err != nil {
