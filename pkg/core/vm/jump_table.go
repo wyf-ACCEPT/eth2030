@@ -94,6 +94,12 @@ func memoryStaticCall(stack *Stack) uint64 {
 	return memoryDelegateCall(stack)
 }
 
+// memoryExtcodecopy returns the required memory size for EXTCODECOPY.
+// Stack: addr, memOffset, codeOffset, length
+func memoryExtcodecopy(stack *Stack) uint64 {
+	return stack.Back(1).Uint64() + stack.Back(3).Uint64()
+}
+
 // memoryCreate returns the required memory size for CREATE.
 // Stack: value, offset, length
 func memoryCreate(stack *Stack) uint64 {
@@ -104,6 +110,31 @@ func memoryCreate(stack *Stack) uint64 {
 // Stack: value, offset, length, salt
 func memoryCreate2(stack *Stack) uint64 {
 	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+}
+
+// memoryMcopy returns the required memory size for MCOPY.
+// Stack: dest, src, size. We need max(dest+size, src+size).
+func memoryMcopy(stack *Stack) uint64 {
+	dest := stack.Back(0).Uint64()
+	src := stack.Back(1).Uint64()
+	size := stack.Back(2).Uint64()
+	if size == 0 {
+		return 0
+	}
+	destEnd := dest + size
+	srcEnd := src + size
+	if destEnd > srcEnd {
+		return destEnd
+	}
+	return srcEnd
+}
+
+// gasMcopy calculates dynamic gas for MCOPY: 3 * wordSize + memory expansion.
+func gasMcopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	size := stack.Back(2).Uint64()
+	words := (size + 31) / 32
+	copyGas := GasCopy * words
+	return copyGas + gasMemExpansion(evm, contract, stack, mem, memorySize)
 }
 
 // gasMemExpansion calculates dynamic gas for memory expansion.
@@ -170,6 +201,7 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[GASPRICE] = &operation{execute: opGasPrice, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 
 	// Block
+	tbl[BLOCKHASH] = &operation{execute: opBlockhash, constantGas: GasExtStep, minStack: 1, maxStack: 1024}
 	tbl[COINBASE] = &operation{execute: opCoinbase, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 	tbl[TIMESTAMP] = &operation{execute: opTimestamp, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 	tbl[NUMBER] = &operation{execute: opNumber, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
@@ -243,7 +275,7 @@ func NewFrontierJumpTable() JumpTable {
 
 	// Ext code
 	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
-	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasMemExpansion}
 
 	// CALL-family
 	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasMemExpansion}
@@ -252,9 +284,10 @@ func NewFrontierJumpTable() JumpTable {
 	// CREATE
 	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasMemExpansion, writes: true}
 
-	// Return / Invalid
+	// Return / Invalid / Selfdestruct
 	tbl[RETURN] = &operation{execute: opReturn, constantGas: GasReturn, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
 	tbl[INVALID] = &operation{execute: opInvalid, constantGas: 0, minStack: 0, maxStack: 1024}
+	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: GasSelfdestruct, minStack: 1, maxStack: 1024, halts: true, writes: true}
 
 	return tbl
 }
@@ -287,6 +320,7 @@ func NewByzantiumJumpTable() JumpTable {
 	tbl[REVERT] = &operation{execute: opRevert, constantGas: GasRevert, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
 	tbl[RETURNDATASIZE] = &operation{execute: opReturndataSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024}
+	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
 
@@ -297,6 +331,8 @@ func NewConstantinopleJumpTable() JumpTable {
 	tbl[SHL] = &operation{execute: opSHL, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
 	tbl[SHR] = &operation{execute: opSHR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
 	tbl[SAR] = &operation{execute: opSAR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
+	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasMemExpansion, writes: true}
 	return tbl
 }
 
@@ -312,7 +348,20 @@ func NewIstanbulJumpTable() JumpTable {
 // NewBerlinJumpTable returns the Berlin fork jump table.
 func NewBerlinJumpTable() JumpTable {
 	tbl := NewIstanbulJumpTable()
-	// Berlin introduced EIP-2929 warm/cold gas accounting.
+
+	// EIP-2929: warm/cold gas accounting. The constant gas becomes the warm
+	// cost (100), and a dynamic gas function adds the extra cold penalty
+	// when the address/slot is accessed for the first time.
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: WarmStorageReadCost, dynamicGas: gasSloadEIP2929, minStack: 1, maxStack: 1024}
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: WarmStorageReadCost, dynamicGas: gasBalanceEIP2929, minStack: 1, maxStack: 1024}
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: WarmStorageReadCost, dynamicGas: gasExtCodeSizeEIP2929, minStack: 1, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: WarmStorageReadCost, dynamicGas: gasExtCodeCopyEIP2929, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy}
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: WarmStorageReadCost, dynamicGas: gasExtCodeHashEIP2929, minStack: 1, maxStack: 1024}
+	tbl[CALL] = &operation{execute: opCall, constantGas: WarmStorageReadCost, dynamicGas: gasCallEIP2929, minStack: 7, maxStack: 1024, memorySize: memoryCall}
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: WarmStorageReadCost, dynamicGas: gasCallCodeEIP2929, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
+	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: WarmStorageReadCost, dynamicGas: gasStaticCallEIP2929, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: WarmStorageReadCost, dynamicGas: gasDelegateCallEIP2929, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
+
 	return tbl
 }
 
@@ -342,9 +391,20 @@ func NewShanghaiJumpTable() JumpTable {
 // NewCancunJumpTable returns the Cancun fork jump table.
 func NewCancunJumpTable() JumpTable {
 	tbl := NewShanghaiJumpTable()
-	// Cancun added TLOAD, TSTORE (EIP-1153), MCOPY (EIP-5656),
-	// BLOBHASH (EIP-4844), BLOBBASEFEE (EIP-7516).
-	// These are registered as stubs (no state DB yet).
+
+	// EIP-1153: transient storage
+	tbl[TLOAD] = &operation{execute: opTload, constantGas: GasTload, minStack: 1, maxStack: 1024}
+	tbl[TSTORE] = &operation{execute: opTstore, constantGas: GasTstore, minStack: 2, maxStack: 1024, writes: true}
+
+	// EIP-5656: memory copy
+	tbl[MCOPY] = &operation{execute: opMcopy, constantGas: GasMcopyBase, minStack: 3, maxStack: 1024, memorySize: memoryMcopy, dynamicGas: gasMcopy}
+
+	// EIP-4844: blob hash
+	tbl[BLOBHASH] = &operation{execute: opBlobHash, constantGas: GasBlobHash, minStack: 1, maxStack: 1024}
+
+	// EIP-7516: blob base fee
+	tbl[BLOBBASEFEE] = &operation{execute: opBlobBaseFee, constantGas: GasBlobBaseFee, minStack: 0, maxStack: 1023}
+
 	return tbl
 }
 

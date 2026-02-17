@@ -957,3 +957,124 @@ func opExtcodehash(pc *uint64, evm *EVM, contract *Contract, memory *Memory, sta
 	}
 	return nil, nil
 }
+
+// opTload implements the TLOAD opcode (EIP-1153).
+// Pops a key from the stack, pushes the transient storage value for the
+// current contract address at that key.
+func opTload(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	loc := stack.Peek()
+	if evm.StateDB != nil {
+		key := bigToHash(loc)
+		val := evm.StateDB.GetTransientState(contract.Address, key)
+		loc.SetBytes(val[:])
+	} else {
+		loc.SetUint64(0)
+	}
+	return nil, nil
+}
+
+// opTstore implements the TSTORE opcode (EIP-1153).
+// Pops a key and value from the stack, stores the value in transient storage
+// for the current contract address at that key.
+func opTstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+	loc, val := stack.Pop(), stack.Pop()
+	if evm.StateDB != nil {
+		key := bigToHash(loc)
+		value := bigToHash(val)
+		evm.StateDB.SetTransientState(contract.Address, key, value)
+	}
+	return nil, nil
+}
+
+// opMcopy implements the MCOPY opcode (EIP-5656).
+// Pops dest, src, size from the stack and copies memory[src:src+size] to
+// memory[dest:dest+size]. Handles overlapping regions correctly.
+func opMcopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	dest, src, size := stack.Pop(), stack.Pop(), stack.Pop()
+	l := size.Uint64()
+	if l == 0 {
+		return nil, nil
+	}
+	d := dest.Uint64()
+	s := src.Uint64()
+	// Get source data as a copy to handle overlapping regions safely.
+	data := memory.Get(int64(s), int64(l))
+	memory.Set(d, l, data)
+	return nil, nil
+}
+
+// opBlobHash implements the BLOBHASH opcode (EIP-4844).
+// Pops an index from the stack, pushes the versioned hash from
+// evm.TxContext.BlobHashes at that index, or zero if out of range.
+func opBlobHash(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	idx := stack.Peek()
+	if idx.IsUint64() {
+		i := idx.Uint64()
+		if i < uint64(len(evm.TxContext.BlobHashes)) {
+			hash := evm.TxContext.BlobHashes[i]
+			idx.SetBytes(hash[:])
+			return nil, nil
+		}
+	}
+	idx.SetUint64(0)
+	return nil, nil
+}
+
+// opBlobBaseFee implements the BLOBBASEFEE opcode (EIP-7516).
+// Pushes the current block's blob base fee onto the stack.
+func opBlobBaseFee(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	v := new(big.Int)
+	if evm.Context.BlobBaseFee != nil {
+		v.Set(evm.Context.BlobBaseFee)
+	}
+	stack.Push(v)
+	return nil, nil
+}
+
+// opBlockhash implements the BLOCKHASH opcode.
+// Returns the hash of one of the 256 most recent complete blocks.
+func opBlockhash(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	num := stack.Peek()
+	num64 := num.Uint64()
+
+	var upper uint64
+	if evm.Context.BlockNumber != nil {
+		upper = evm.Context.BlockNumber.Uint64()
+	}
+	var lower uint64
+	if upper > 256 {
+		lower = upper - 256
+	}
+
+	if num64 >= lower && num64 < upper && evm.Context.GetHash != nil {
+		hash := evm.Context.GetHash(num64)
+		num.SetBytes(hash[:])
+	} else {
+		num.SetUint64(0)
+	}
+	return nil, nil
+}
+
+// opSelfdestruct implements the SELFDESTRUCT opcode.
+// Sends remaining balance to the beneficiary and marks the contract for destruction.
+func opSelfdestruct(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+
+	beneficiary := bigToAddress(stack.Pop())
+
+	if evm.StateDB != nil {
+		balance := evm.StateDB.GetBalance(contract.Address)
+		if balance.Sign() > 0 {
+			evm.StateDB.AddBalance(beneficiary, balance)
+			evm.StateDB.SubBalance(contract.Address, balance)
+		}
+		evm.StateDB.SelfDestruct(contract.Address)
+	}
+
+	return nil, nil
+}

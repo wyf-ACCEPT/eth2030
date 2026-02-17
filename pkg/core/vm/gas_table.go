@@ -2,6 +2,8 @@ package vm
 
 import (
 	"math/big"
+
+	"github.com/eth2028/eth2028/core/types"
 )
 
 // Gas cost constants for EIP-2929 (cold/warm access), EIP-3529 (reduced refunds),
@@ -161,4 +163,79 @@ func isZero(val [32]byte) bool {
 		}
 	}
 	return true
+}
+
+// --- EIP-2929 dynamic gas functions ---
+
+// gasSloadEIP2929 charges warm/cold gas for SLOAD.
+// The constant gas for the opcode is WarmStorageReadCost (100).
+// If the slot is cold, this function adds the extra (ColdSloadCost - WarmStorageReadCost).
+func gasSloadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	loc := stack.Back(0)
+	slot := bigToHash(loc)
+	return gasEIP2929SlotCheck(evm, contract.Address, slot)
+}
+
+// gasBalanceEIP2929 charges warm/cold gas for BALANCE.
+// The constant gas is WarmStorageReadCost (100).
+// If the address is cold, this adds (ColdAccountAccessCost - WarmStorageReadCost).
+func gasBalanceEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(0).Bytes())
+	return gasEIP2929AccountCheck(evm, addr)
+}
+
+// gasExtCodeSizeEIP2929 charges warm/cold gas for EXTCODESIZE.
+func gasExtCodeSizeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(0).Bytes())
+	return gasEIP2929AccountCheck(evm, addr)
+}
+
+// gasExtCodeCopyEIP2929 charges warm/cold gas for EXTCODECOPY, plus memory expansion.
+func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(0).Bytes())
+	gas := gasEIP2929AccountCheck(evm, addr)
+	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	return gas
+}
+
+// gasExtCodeHashEIP2929 charges warm/cold gas for EXTCODEHASH.
+func gasExtCodeHashEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(0).Bytes())
+	return gasEIP2929AccountCheck(evm, addr)
+}
+
+// gasCallEIP2929 charges warm/cold gas for CALL, plus memory expansion.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func gasCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(1).Bytes())
+	gas := gasEIP2929AccountCheck(evm, addr)
+	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	return gas
+}
+
+// gasCallCodeEIP2929 charges warm/cold gas for CALLCODE, plus memory expansion.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func gasCallCodeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(1).Bytes())
+	gas := gasEIP2929AccountCheck(evm, addr)
+	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	return gas
+}
+
+// gasDelegateCallEIP2929 charges warm/cold gas for DELEGATECALL, plus memory expansion.
+// Stack: gas, addr, argsOffset, argsLength, retOffset, retLength
+func gasDelegateCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(1).Bytes())
+	gas := gasEIP2929AccountCheck(evm, addr)
+	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	return gas
+}
+
+// gasStaticCallEIP2929 charges warm/cold gas for STATICCALL, plus memory expansion.
+// Stack: gas, addr, argsOffset, argsLength, retOffset, retLength
+func gasStaticCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(1).Bytes())
+	gas := gasEIP2929AccountCheck(evm, addr)
+	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	return gas
 }

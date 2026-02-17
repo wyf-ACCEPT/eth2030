@@ -80,8 +80,9 @@ func ApplyTransaction(config *ChainConfig, statedb state.StateDB, header *types.
 	receipt := types.NewReceipt(receiptStatus, header.GasUsed+result.UsedGas)
 	receipt.GasUsed = result.UsedGas
 
-	// Collect logs from state
+	// Collect logs from state and compute bloom filter
 	receipt.Logs = statedb.GetLogs(tx.Hash())
+	receipt.Bloom = types.LogsBloom(receipt.Logs)
 
 	return receipt, result.UsedGas, nil
 }

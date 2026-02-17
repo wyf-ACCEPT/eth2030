@@ -21,8 +21,12 @@ var (
 	ErrReturnDataOutOfBounds = errors.New("return data out of bounds")
 )
 
+// GetHashFunc returns the hash of the block with the given number.
+type GetHashFunc func(uint64) types.Hash
+
 // BlockContext provides the EVM with block-level information.
 type BlockContext struct {
+	GetHash     GetHashFunc
 	BlockNumber *big.Int
 	Time        uint64
 	Coinbase    types.Address
@@ -58,6 +62,14 @@ type StateDB interface {
 	GetState(addr types.Address, key types.Hash) types.Hash
 	SetState(addr types.Address, key types.Hash, value types.Hash)
 
+	// Transient storage (EIP-1153)
+	GetTransientState(addr types.Address, key types.Hash) types.Hash
+	SetTransientState(addr types.Address, key types.Hash, value types.Hash)
+
+	// Self-destruct
+	SelfDestruct(addr types.Address)
+	HasSelfDestructed(addr types.Address) bool
+
 	// Account existence
 	Exist(addr types.Address) bool
 
@@ -67,6 +79,12 @@ type StateDB interface {
 
 	// Logs
 	AddLog(log *types.Log)
+
+	// Access list (EIP-2929 warm/cold tracking)
+	AddAddressToAccessList(addr types.Address)
+	AddSlotToAccessList(addr types.Address, slot types.Hash)
+	AddressInAccessList(addr types.Address) bool
+	SlotInAccessList(addr types.Address, slot types.Hash) (addressOk bool, slotOk bool)
 }
 
 // Config holds EVM configuration options.
@@ -135,29 +153,30 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 			return nil, ErrStackOverflow
 		}
 
+		// Constant gas deduction
+		if operation.constantGas > 0 {
+			if !contract.UseGas(operation.constantGas) {
+				return nil, ErrOutOfGas
+			}
+		}
+
 		// Memory expansion (if operation defines memorySize)
+		var memSize uint64
 		if operation.memorySize != nil {
-			memSize := operation.memorySize(stack)
+			memSize = operation.memorySize(stack)
 			if memSize > 0 {
-				// Round up to 32-byte words
 				words := (memSize + 31) / 32
 				newSize := words * 32
 				if uint64(mem.Len()) < newSize {
-					// Dynamic gas for memory expansion
-					if operation.dynamicGas != nil {
-						cost := operation.dynamicGas(evm, contract, stack, mem, memSize)
-						if !contract.UseGas(cost) {
-							return nil, ErrOutOfGas
-						}
-					}
 					mem.Resize(newSize)
 				}
 			}
 		}
 
-		// Constant gas deduction
-		if operation.constantGas > 0 {
-			if !contract.UseGas(operation.constantGas) {
+		// Dynamic gas (EIP-2929 warm/cold checks, memory expansion, etc.)
+		if operation.dynamicGas != nil {
+			cost := operation.dynamicGas(evm, contract, stack, mem, memSize)
+			if !contract.UseGas(cost) {
 				return nil, ErrOutOfGas
 			}
 		}
@@ -455,6 +474,55 @@ func (evm *EVM) Create2(caller types.Address, code []byte, gas uint64, endowment
 	contractAddr := create2Address(caller, salt, initCodeHash)
 
 	return evm.create(caller, code, gas, endowment, contractAddr)
+}
+
+// PreWarmAccessList pre-warms the access list with the sender, recipient, and
+// all precompile addresses (0x01-0x0a) per EIP-2929.
+func (evm *EVM) PreWarmAccessList(sender types.Address, to *types.Address) {
+	if evm.StateDB == nil {
+		return
+	}
+	// Warm the sender.
+	evm.StateDB.AddAddressToAccessList(sender)
+	// Warm the recipient (if non-nil, i.e. not a contract creation).
+	if to != nil {
+		evm.StateDB.AddAddressToAccessList(*to)
+	}
+	// Warm all precompile addresses (0x01 through 0x0a).
+	for i := 1; i <= 10; i++ {
+		evm.StateDB.AddAddressToAccessList(types.BytesToAddress([]byte{byte(i)}))
+	}
+}
+
+// gasEIP2929AccountCheck checks whether addr is warm. If cold, it warms the
+// address and returns the extra cold gas (ColdAccountAccessCost - WarmStorageReadCost).
+// If warm, it returns 0. The caller is expected to charge WarmStorageReadCost
+// as the constant gas.
+func gasEIP2929AccountCheck(evm *EVM, addr types.Address) uint64 {
+	if evm.StateDB == nil {
+		return 0
+	}
+	if evm.StateDB.AddressInAccessList(addr) {
+		return 0
+	}
+	evm.StateDB.AddAddressToAccessList(addr)
+	return ColdAccountAccessCost - WarmStorageReadCost
+}
+
+// gasEIP2929SlotCheck checks whether (addr, slot) is warm. If cold, it warms
+// the slot and returns the extra cold gas (ColdSloadCost - WarmStorageReadCost).
+// If warm, it returns 0. The caller is expected to charge WarmStorageReadCost
+// as the constant gas.
+func gasEIP2929SlotCheck(evm *EVM, addr types.Address, slot types.Hash) uint64 {
+	if evm.StateDB == nil {
+		return 0
+	}
+	_, slotWarm := evm.StateDB.SlotInAccessList(addr, slot)
+	if slotWarm {
+		return 0
+	}
+	evm.StateDB.AddSlotToAccessList(addr, slot)
+	return ColdSloadCost - WarmStorageReadCost
 }
 
 // create is the shared implementation for Create and Create2.
