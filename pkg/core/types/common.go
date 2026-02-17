@@ -38,6 +38,14 @@ func HexToHash(s string) Hash {
 	return BytesToHash(fromHex(s))
 }
 
+// IntToHash converts a big.Int to Hash (big-endian, left-padded).
+func IntToHash(v *big.Int) Hash {
+	if v == nil {
+		return Hash{}
+	}
+	return BytesToHash(v.Bytes())
+}
+
 // Bytes returns the byte representation of the hash.
 func (h Hash) Bytes() []byte { return h[:] }
 

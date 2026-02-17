@@ -22,7 +22,8 @@ type Message struct {
 }
 
 // TransactionToMessage converts a transaction into a Message for execution.
-// The From field must be set by the caller after signature recovery.
+// If the transaction has a cached sender (via SetSender), it is used.
+// Otherwise the From field must be set by the caller after signature recovery.
 func TransactionToMessage(tx *types.Transaction) Message {
 	msg := Message{
 		Nonce:      tx.Nonce(),
@@ -32,6 +33,9 @@ func TransactionToMessage(tx *types.Transaction) Message {
 		GasTipCap:  tx.GasTipCap(),
 		Data:       tx.Data(),
 		AccessList: tx.AccessList(),
+	}
+	if sender := tx.Sender(); sender != nil {
+		msg.From = *sender
 	}
 	if tx.To() != nil {
 		to := *tx.To()
