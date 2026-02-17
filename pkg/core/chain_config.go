@@ -3,14 +3,97 @@ package core
 import "math/big"
 
 // ChainConfig holds chain-level configuration for fork scheduling.
-// Post-merge, all forks are activated by timestamp.
+// Pre-merge forks are activated by block number, post-merge by timestamp.
 type ChainConfig struct {
-	ChainID       *big.Int
+	ChainID *big.Int
+
+	// Block-number based forks (pre-merge)
+	HomesteadBlock      *big.Int
+	EIP150Block         *big.Int
+	EIP155Block         *big.Int
+	EIP158Block         *big.Int
+	ByzantiumBlock      *big.Int
+	ConstantinopleBlock *big.Int
+	PetersburgBlock     *big.Int
+	IstanbulBlock       *big.Int
+	MuirGlacierBlock    *big.Int
+	BerlinBlock         *big.Int
+	LondonBlock         *big.Int
+	ArrowGlacierBlock   *big.Int
+	GrayGlacierBlock    *big.Int
+
+	// TerminalTotalDifficulty triggers the merge consensus upgrade.
+	TerminalTotalDifficulty *big.Int
+
+	// Timestamp-based forks (post-merge)
 	ShanghaiTime  *uint64
 	CancunTime    *uint64
 	PragueTime    *uint64
 	AmsterdamTime *uint64
 }
+
+// Block-number fork checks
+
+func isBlockForked(forkBlock, head *big.Int) bool {
+	if forkBlock == nil || head == nil {
+		return false
+	}
+	return forkBlock.Cmp(head) <= 0
+}
+
+// IsHomestead returns whether the given block number is at or past Homestead.
+func (c *ChainConfig) IsHomestead(num *big.Int) bool {
+	return isBlockForked(c.HomesteadBlock, num)
+}
+
+// IsEIP150 returns whether the given block number is at or past EIP-150.
+func (c *ChainConfig) IsEIP150(num *big.Int) bool {
+	return isBlockForked(c.EIP150Block, num)
+}
+
+// IsEIP155 returns whether the given block number is at or past EIP-155.
+func (c *ChainConfig) IsEIP155(num *big.Int) bool {
+	return isBlockForked(c.EIP155Block, num)
+}
+
+// IsEIP158 returns whether the given block number is at or past EIP-158.
+func (c *ChainConfig) IsEIP158(num *big.Int) bool {
+	return isBlockForked(c.EIP158Block, num)
+}
+
+// IsByzantium returns whether the given block number is at or past Byzantium.
+func (c *ChainConfig) IsByzantium(num *big.Int) bool {
+	return isBlockForked(c.ByzantiumBlock, num)
+}
+
+// IsConstantinople returns whether the given block number is at or past Constantinople.
+func (c *ChainConfig) IsConstantinople(num *big.Int) bool {
+	return isBlockForked(c.ConstantinopleBlock, num)
+}
+
+// IsPetersburg returns whether the given block number is at or past Petersburg.
+// Petersburg is a fix-fork for Constantinople; if PetersburgBlock is nil,
+// it activates at the same block as Constantinople.
+func (c *ChainConfig) IsPetersburg(num *big.Int) bool {
+	return isBlockForked(c.PetersburgBlock, num) || c.PetersburgBlock == nil && isBlockForked(c.ConstantinopleBlock, num)
+}
+
+// IsIstanbul returns whether the given block number is at or past Istanbul.
+func (c *ChainConfig) IsIstanbul(num *big.Int) bool {
+	return isBlockForked(c.IstanbulBlock, num)
+}
+
+// IsBerlin returns whether the given block number is at or past Berlin.
+func (c *ChainConfig) IsBerlin(num *big.Int) bool {
+	return isBlockForked(c.BerlinBlock, num)
+}
+
+// IsLondon returns whether the given block number is at or past London.
+func (c *ChainConfig) IsLondon(num *big.Int) bool {
+	return isBlockForked(c.LondonBlock, num)
+}
+
+// Timestamp-based fork checks
 
 func isTimestampForked(forkTime *uint64, blockTime uint64) bool {
 	if forkTime == nil {
@@ -19,42 +102,191 @@ func isTimestampForked(forkTime *uint64, blockTime uint64) bool {
 	return *forkTime <= blockTime
 }
 
-// IsShanghai returns whether the given block time is at or past the Shanghai fork.
+// IsShanghai returns whether the given block time is at or past Shanghai.
 func (c *ChainConfig) IsShanghai(time uint64) bool {
 	return isTimestampForked(c.ShanghaiTime, time)
 }
 
-// IsCancun returns whether the given block time is at or past the Cancun fork.
+// IsCancun returns whether the given block time is at or past Cancun.
 func (c *ChainConfig) IsCancun(time uint64) bool {
 	return isTimestampForked(c.CancunTime, time)
 }
 
-// IsPrague returns whether the given block time is at or past the Prague fork.
+// IsPrague returns whether the given block time is at or past Prague.
 func (c *ChainConfig) IsPrague(time uint64) bool {
 	return isTimestampForked(c.PragueTime, time)
 }
 
-// IsAmsterdam returns whether the given block time is at or past the Amsterdam fork.
+// IsAmsterdam returns whether the given block time is at or past Amsterdam.
 func (c *ChainConfig) IsAmsterdam(time uint64) bool {
 	return isTimestampForked(c.AmsterdamTime, time)
 }
 
+// Merge check
+
+// IsMerge returns whether terminal total difficulty has been set,
+// indicating the chain has transitioned to proof-of-stake.
+func (c *ChainConfig) IsMerge() bool {
+	return c.TerminalTotalDifficulty != nil
+}
+
+// EIP-specific convenience checks
+
+// IsEIP1559 returns whether EIP-1559 (base fee) is active. Activated with London.
+func (c *ChainConfig) IsEIP1559(num *big.Int) bool {
+	return c.IsLondon(num)
+}
+
+// IsEIP2929 returns whether EIP-2929 (gas cost increases for state access) is active. Activated with Berlin.
+func (c *ChainConfig) IsEIP2929(num *big.Int) bool {
+	return c.IsBerlin(num)
+}
+
+// IsEIP3529 returns whether EIP-3529 (reduction in refunds) is active. Activated with London.
+func (c *ChainConfig) IsEIP3529(num *big.Int) bool {
+	return c.IsLondon(num)
+}
+
+// IsEIP4844 returns whether EIP-4844 (blob transactions) is active. Activated with Cancun.
+func (c *ChainConfig) IsEIP4844(time uint64) bool {
+	return c.IsCancun(time)
+}
+
+// IsEIP7702 returns whether EIP-7702 (set code tx) is active. Activated with Prague.
+func (c *ChainConfig) IsEIP7702(time uint64) bool {
+	return c.IsPrague(time)
+}
+
+// Rules returns a Rules struct for the given block number and timestamp,
+// providing boolean flags for quick fork checks.
+func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules {
+	// Disallow setting merge out of order.
+	isMerge = isMerge && c.IsLondon(num)
+	return Rules{
+		ChainID:          new(big.Int).Set(c.ChainID),
+		IsHomestead:      c.IsHomestead(num),
+		IsEIP150:         c.IsEIP150(num),
+		IsEIP155:         c.IsEIP155(num),
+		IsEIP158:         c.IsEIP158(num),
+		IsByzantium:      c.IsByzantium(num),
+		IsConstantinople: c.IsConstantinople(num),
+		IsPetersburg:     c.IsPetersburg(num),
+		IsIstanbul:       c.IsIstanbul(num),
+		IsBerlin:         c.IsBerlin(num),
+		IsEIP2929:        c.IsBerlin(num),
+		IsLondon:         c.IsLondon(num),
+		IsEIP1559:        c.IsLondon(num),
+		IsEIP3529:        c.IsLondon(num),
+		IsMerge:          isMerge,
+		IsShanghai:       isMerge && c.IsShanghai(timestamp),
+		IsCancun:         isMerge && c.IsCancun(timestamp),
+		IsEIP4844:        isMerge && c.IsCancun(timestamp),
+		IsPrague:         isMerge && c.IsPrague(timestamp),
+		IsEIP7702:        isMerge && c.IsPrague(timestamp),
+		IsAmsterdam:      isMerge && c.IsAmsterdam(timestamp),
+	}
+}
+
+// Rules contains boolean flags for quick fork activation checks.
+type Rules struct {
+	ChainID                                                 *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
+	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
+	IsBerlin, IsEIP2929                                     bool
+	IsLondon, IsEIP1559, IsEIP3529                          bool
+	IsMerge                                                 bool
+	IsShanghai                                              bool
+	IsCancun, IsEIP4844                                     bool
+	IsPrague, IsEIP7702                                     bool
+	IsAmsterdam                                             bool
+}
+
 func newUint64(v uint64) *uint64 { return &v }
+
+// Mainnet TTD: 58,750,000,000,000,000,000,000
+var MainnetTerminalTotalDifficulty, _ = new(big.Int).SetString("58750000000000000000000", 10)
 
 // MainnetConfig is the chain config for Ethereum mainnet.
 var MainnetConfig = &ChainConfig{
-	ChainID:       big.NewInt(1),
-	ShanghaiTime:  newUint64(1681338455),
-	CancunTime:    newUint64(1710338135),
-	PragueTime:    nil, // not yet scheduled
-	AmsterdamTime: nil, // not yet scheduled
+	ChainID:                 big.NewInt(1),
+	HomesteadBlock:          big.NewInt(1_150_000),
+	EIP150Block:             big.NewInt(2_463_000),
+	EIP155Block:             big.NewInt(2_675_000),
+	EIP158Block:             big.NewInt(2_675_000),
+	ByzantiumBlock:          big.NewInt(4_370_000),
+	ConstantinopleBlock:     big.NewInt(7_280_000),
+	PetersburgBlock:         big.NewInt(7_280_000),
+	IstanbulBlock:           big.NewInt(9_069_000),
+	MuirGlacierBlock:        big.NewInt(9_200_000),
+	BerlinBlock:             big.NewInt(12_244_000),
+	LondonBlock:             big.NewInt(12_965_000),
+	ArrowGlacierBlock:       big.NewInt(13_773_000),
+	GrayGlacierBlock:        big.NewInt(15_050_000),
+	TerminalTotalDifficulty: MainnetTerminalTotalDifficulty,
+	ShanghaiTime:            newUint64(1681338455),
+	CancunTime:              newUint64(1710338135),
+	PragueTime:              nil, // not yet scheduled
+	AmsterdamTime:           nil, // not yet scheduled
+}
+
+// SepoliaConfig is the chain config for the Sepolia test network.
+var SepoliaConfig = &ChainConfig{
+	ChainID:                 big.NewInt(11155111),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	MuirGlacierBlock:        big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(17_000_000_000_000_000),
+	ShanghaiTime:            newUint64(1677557088),
+	CancunTime:              newUint64(1706655072),
+	PragueTime:              newUint64(1741159776),
+	AmsterdamTime:           nil,
+}
+
+// HoleskyConfig is the chain config for the Holesky test network.
+var HoleskyConfig = &ChainConfig{
+	ChainID:                 big.NewInt(17000),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(0),
+	ShanghaiTime:            newUint64(1696000704),
+	CancunTime:              newUint64(1707305664),
+	PragueTime:              newUint64(1740434112),
+	AmsterdamTime:           nil,
 }
 
 // TestConfig is a chain config with all forks active at genesis (time 0).
 var TestConfig = &ChainConfig{
-	ChainID:       big.NewInt(1337),
-	ShanghaiTime:  newUint64(0),
-	CancunTime:    newUint64(0),
-	PragueTime:    newUint64(0),
-	AmsterdamTime: newUint64(0),
+	ChainID:                 big.NewInt(1337),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	MuirGlacierBlock:        big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(0),
+	ShanghaiTime:            newUint64(0),
+	CancunTime:              newUint64(0),
+	PragueTime:              newUint64(0),
+	AmsterdamTime:           newUint64(0),
 }

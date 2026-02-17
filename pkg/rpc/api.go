@@ -39,6 +39,20 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 		return api.getStorageAt(req)
 	case "eth_gasPrice":
 		return api.gasPrice(req)
+	case "eth_getTransactionByHash":
+		return api.getTransactionByHash(req)
+	case "eth_getTransactionReceipt":
+		return api.getTransactionReceipt(req)
+	case "eth_call":
+		return api.ethCall(req)
+	case "eth_estimateGas":
+		return api.estimateGas(req)
+	case "eth_sendRawTransaction":
+		return api.sendRawTransaction(req)
+	case "eth_getLogs":
+		return api.getLogs(req)
+	case "eth_getBlockReceipts":
+		return api.getBlockReceipts(req)
 	case "web3_clientVersion":
 		return api.clientVersion(req)
 	case "net_version":

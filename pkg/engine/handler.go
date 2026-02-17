@@ -98,10 +98,16 @@ func (api *EngineAPI) dispatch(method string, params []json.RawMessage) (any, *j
 	switch method {
 	case "engine_newPayloadV3":
 		return api.handleNewPayloadV3(params)
+	case "engine_newPayloadV4":
+		return api.handleNewPayloadV4(params)
 	case "engine_forkchoiceUpdatedV3":
 		return api.handleForkchoiceUpdatedV3(params)
 	case "engine_getPayloadV3":
 		return api.handleGetPayloadV3(params)
+	case "engine_exchangeCapabilities":
+		return api.handleExchangeCapabilities(params)
+	case "engine_getClientVersionV1":
+		return api.handleGetClientVersionV1(params)
 	default:
 		return nil, &jsonrpcError{
 			Code:    methodNotFoundCode,
@@ -210,6 +216,82 @@ func (api *EngineAPI) handleGetPayloadV3(params []json.RawMessage) (any, *jsonrp
 		return nil, engineErrorToRPC(err)
 	}
 	return result, nil
+}
+
+// handleNewPayloadV4 processes an engine_newPayloadV4 request (Prague/Electra).
+func (api *EngineAPI) handleNewPayloadV4(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 4 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 4 params, got %d", len(params)),
+		}
+	}
+
+	var payload ExecutionPayloadV3
+	if err := json.Unmarshal(params[0], &payload); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload: %v", err),
+		}
+	}
+
+	var expectedBlobVersionedHashes []types.Hash
+	if err := json.Unmarshal(params[1], &expectedBlobVersionedHashes); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid expectedBlobVersionedHashes: %v", err),
+		}
+	}
+
+	var parentBeaconBlockRoot types.Hash
+	if err := json.Unmarshal(params[2], &parentBeaconBlockRoot); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid parentBeaconBlockRoot: %v", err),
+		}
+	}
+
+	var executionRequests [][]byte
+	if err := json.Unmarshal(params[3], &executionRequests); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid executionRequests: %v", err),
+		}
+	}
+
+	result, err := api.NewPayloadV4(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot, executionRequests)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleExchangeCapabilities processes an engine_exchangeCapabilities request.
+func (api *EngineAPI) handleExchangeCapabilities(params []json.RawMessage) (any, *jsonrpcError) {
+	var requested []string
+	if len(params) > 0 {
+		if err := json.Unmarshal(params[0], &requested); err != nil {
+			return nil, &jsonrpcError{
+				Code:    InvalidParamsCode,
+				Message: fmt.Sprintf("invalid capabilities list: %v", err),
+			}
+		}
+	}
+	return api.ExchangeCapabilities(requested), nil
+}
+
+// handleGetClientVersionV1 processes an engine_getClientVersionV1 request.
+func (api *EngineAPI) handleGetClientVersionV1(params []json.RawMessage) (any, *jsonrpcError) {
+	var peerVersion ClientVersionV1
+	if len(params) > 0 {
+		if err := json.Unmarshal(params[0], &peerVersion); err != nil {
+			return nil, &jsonrpcError{
+				Code:    InvalidParamsCode,
+				Message: fmt.Sprintf("invalid client version: %v", err),
+			}
+		}
+	}
+	return api.GetClientVersionV1(peerVersion), nil
 }
 
 // engineErrorToRPC maps engine errors to JSON-RPC error responses.

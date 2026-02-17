@@ -692,6 +692,143 @@ func TestForkchoiceUpdatedV3_OnlyState(t *testing.T) {
 	}
 }
 
+// --- Test NewPayloadV4 ---
+
+func TestNewPayloadV4_Valid(t *testing.T) {
+	blockHash := types.HexToHash("0xabcdef")
+	backend := &mockBackend{
+		processBlockFn: func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error) {
+			latestValid := payload.BlockHash
+			return PayloadStatusV1{
+				Status:          StatusValid,
+				LatestValidHash: &latestValid,
+			}, nil
+		},
+	}
+
+	api := NewEngineAPI(backend)
+
+	payload := makeTestPayloadV3(blockHash, 100)
+	payloadJSON, _ := json.Marshal(payload)
+	hashesJSON, _ := json.Marshal([]types.Hash{})
+	rootJSON, _ := json.Marshal(types.Hash{})
+	requestsJSON, _ := json.Marshal([][]byte{{0x00, 0x01}, {0x01, 0x02}})
+
+	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV4","params":[%s,%s,%s,%s],"id":20}`,
+		payloadJSON, hashesJSON, rootJSON, requestsJSON)
+
+	resp := api.HandleRequest([]byte(req))
+
+	var rpcResp jsonrpcResponse
+	if err := json.Unmarshal(resp, &rpcResp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if rpcResp.Error != nil {
+		t.Fatalf("unexpected error: code=%d msg=%s", rpcResp.Error.Code, rpcResp.Error.Message)
+	}
+
+	resultJSON, _ := json.Marshal(rpcResp.Result)
+	var status PayloadStatusV1
+	if err := json.Unmarshal(resultJSON, &status); err != nil {
+		t.Fatalf("failed to unmarshal result: %v", err)
+	}
+	if status.Status != StatusValid {
+		t.Errorf("expected VALID, got %s", status.Status)
+	}
+}
+
+func TestNewPayloadV4_WrongParamCount(t *testing.T) {
+	api := NewEngineAPI(&mockBackend{})
+
+	// Only 3 params instead of 4.
+	req := `{"jsonrpc":"2.0","method":"engine_newPayloadV4","params":[{},{},{}],"id":21}`
+	resp := api.HandleRequest([]byte(req))
+
+	var rpcResp jsonrpcResponse
+	if err := json.Unmarshal(resp, &rpcResp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if rpcResp.Error == nil {
+		t.Fatal("expected error for wrong param count")
+	}
+	if rpcResp.Error.Code != InvalidParamsCode {
+		t.Errorf("expected error code %d, got %d", InvalidParamsCode, rpcResp.Error.Code)
+	}
+}
+
+// --- Test ExchangeCapabilities ---
+
+func TestExchangeCapabilities(t *testing.T) {
+	api := NewEngineAPI(&mockBackend{})
+
+	requestedJSON, _ := json.Marshal([]string{"engine_newPayloadV3", "engine_newPayloadV4"})
+	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_exchangeCapabilities","params":[%s],"id":22}`, requestedJSON)
+
+	resp := api.HandleRequest([]byte(req))
+
+	var rpcResp jsonrpcResponse
+	if err := json.Unmarshal(resp, &rpcResp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if rpcResp.Error != nil {
+		t.Fatalf("unexpected error: code=%d msg=%s", rpcResp.Error.Code, rpcResp.Error.Message)
+	}
+
+	resultJSON, _ := json.Marshal(rpcResp.Result)
+	var capabilities []string
+	if err := json.Unmarshal(resultJSON, &capabilities); err != nil {
+		t.Fatalf("failed to unmarshal result: %v", err)
+	}
+	if len(capabilities) == 0 {
+		t.Fatal("expected non-empty capabilities")
+	}
+	// Check that known methods are in the list.
+	found := map[string]bool{}
+	for _, c := range capabilities {
+		found[c] = true
+	}
+	for _, want := range []string{"engine_newPayloadV3", "engine_newPayloadV4", "engine_forkchoiceUpdatedV3"} {
+		if !found[want] {
+			t.Errorf("expected capability %q in response", want)
+		}
+	}
+}
+
+// --- Test GetClientVersionV1 ---
+
+func TestGetClientVersionV1(t *testing.T) {
+	api := NewEngineAPI(&mockBackend{})
+
+	peerVersion := ClientVersionV1{Code: "GE", Name: "geth", Version: "1.14.0", Commit: "abc123"}
+	peerJSON, _ := json.Marshal(peerVersion)
+	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_getClientVersionV1","params":[%s],"id":23}`, peerJSON)
+
+	resp := api.HandleRequest([]byte(req))
+
+	var rpcResp jsonrpcResponse
+	if err := json.Unmarshal(resp, &rpcResp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if rpcResp.Error != nil {
+		t.Fatalf("unexpected error: code=%d msg=%s", rpcResp.Error.Code, rpcResp.Error.Message)
+	}
+
+	resultJSON, _ := json.Marshal(rpcResp.Result)
+	var versions []ClientVersionV1
+	if err := json.Unmarshal(resultJSON, &versions); err != nil {
+		t.Fatalf("failed to unmarshal result: %v", err)
+	}
+	if len(versions) != 1 {
+		t.Fatalf("expected 1 version, got %d", len(versions))
+	}
+	if versions[0].Code != "ET" {
+		t.Errorf("expected code ET, got %s", versions[0].Code)
+	}
+	if versions[0].Name != "eth2028" {
+		t.Errorf("expected name eth2028, got %s", versions[0].Name)
+	}
+}
+
 // --- Helpers ---
 
 func makeTestPayloadV3(blockHash types.Hash, blockNumber uint64) ExecutionPayloadV3 {

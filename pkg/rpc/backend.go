@@ -28,4 +28,12 @@ type Backend interface {
 
 	// Gas estimation
 	SuggestGasPrice() *big.Int
+
+	// Receipts and logs
+	GetReceipts(blockHash types.Hash) []*types.Receipt
+	GetLogs(blockHash types.Hash) []*types.Log
+	GetBlockReceipts(number uint64) []*types.Receipt
+
+	// EVM execution
+	EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber BlockNumber) ([]byte, uint64, error)
 }

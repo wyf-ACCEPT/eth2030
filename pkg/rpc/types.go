@@ -99,14 +99,80 @@ type RPCBlock struct {
 
 // RPCTransaction is the JSON representation of a transaction.
 type RPCTransaction struct {
-	Hash     string `json:"hash"`
-	Nonce    string `json:"nonce"`
-	From     string `json:"from"`
-	To       string `json:"to"`
-	Value    string `json:"value"`
-	Gas      string `json:"gas"`
-	GasPrice string `json:"gasPrice"`
-	Input    string `json:"input"`
+	Hash             string  `json:"hash"`
+	Nonce            string  `json:"nonce"`
+	BlockHash        *string `json:"blockHash"`
+	BlockNumber      *string `json:"blockNumber"`
+	TransactionIndex *string `json:"transactionIndex"`
+	From             string  `json:"from"`
+	To               *string `json:"to"`
+	Value            string  `json:"value"`
+	Gas              string  `json:"gas"`
+	GasPrice         string  `json:"gasPrice"`
+	Input            string  `json:"input"`
+	Type             string  `json:"type"`
+	V                string  `json:"v"`
+	R                string  `json:"r"`
+	S                string  `json:"s"`
+}
+
+// RPCReceipt is the JSON representation of a transaction receipt.
+type RPCReceipt struct {
+	TransactionHash   string   `json:"transactionHash"`
+	TransactionIndex  string   `json:"transactionIndex"`
+	BlockHash         string   `json:"blockHash"`
+	BlockNumber       string   `json:"blockNumber"`
+	From              string   `json:"from"`
+	To                *string  `json:"to"`
+	GasUsed           string   `json:"gasUsed"`
+	CumulativeGasUsed string   `json:"cumulativeGasUsed"`
+	ContractAddress   *string  `json:"contractAddress"`
+	Logs              []*RPCLog `json:"logs"`
+	Status            string   `json:"status"`
+	LogsBloom         string   `json:"logsBloom"`
+}
+
+// RPCLog is the JSON representation of a contract log event.
+type RPCLog struct {
+	Address          string   `json:"address"`
+	Topics           []string `json:"topics"`
+	Data             string   `json:"data"`
+	BlockNumber      string   `json:"blockNumber"`
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"`
+	BlockHash        string   `json:"blockHash"`
+	LogIndex         string   `json:"logIndex"`
+	Removed          bool     `json:"removed"`
+}
+
+// CallArgs represents the arguments for eth_call and eth_estimateGas.
+type CallArgs struct {
+	From     *string `json:"from"`
+	To       *string `json:"to"`
+	Gas      *string `json:"gas"`
+	GasPrice *string `json:"gasPrice"`
+	Value    *string `json:"value"`
+	Data     *string `json:"data"`
+	Input    *string `json:"input"`
+}
+
+// GetData returns the call input data, preferring "input" over "data".
+func (args *CallArgs) GetData() []byte {
+	if args.Input != nil {
+		return fromHexBytes(*args.Input)
+	}
+	if args.Data != nil {
+		return fromHexBytes(*args.Data)
+	}
+	return nil
+}
+
+// FilterCriteria contains parameters for log filtering.
+type FilterCriteria struct {
+	FromBlock *BlockNumber `json:"fromBlock"`
+	ToBlock   *BlockNumber `json:"toBlock"`
+	Addresses []string     `json:"address"`
+	Topics    [][]string   `json:"topics"`
 }
 
 // FormatHeader converts a header to JSON-RPC representation.
@@ -142,13 +208,170 @@ func encodeBigInt(n *big.Int) string {
 }
 
 func encodeHash(h types.Hash) string {
-	return "0x" + fmt.Sprintf("%064x", h)
+	return "0x" + fmt.Sprintf("%064x", h[:])
 }
 
 func encodeAddress(a types.Address) string {
-	return "0x" + fmt.Sprintf("%040x", a)
+	return "0x" + fmt.Sprintf("%040x", a[:])
 }
 
 func encodeBytes(b []byte) string {
+	if len(b) == 0 {
+		return "0x"
+	}
 	return "0x" + fmt.Sprintf("%x", b)
+}
+
+func encodeBloom(b types.Bloom) string {
+	return fmt.Sprintf("0x%0512x", b[:])
+}
+
+// fromHexBytes decodes a hex string (with optional 0x prefix) into bytes.
+func fromHexBytes(s string) []byte {
+	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		s = s[2:]
+	}
+	if len(s) == 0 {
+		return nil
+	}
+	if len(s)%2 == 1 {
+		s = "0" + s
+	}
+	b := make([]byte, len(s)/2)
+	for i := 0; i < len(b); i++ {
+		b[i] = unhex(s[2*i])<<4 | unhex(s[2*i+1])
+	}
+	return b
+}
+
+func unhex(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	}
+	return 0
+}
+
+func parseHexUint64(s string) uint64 {
+	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		s = s[2:]
+	}
+	n, _ := strconv.ParseUint(s, 16, 64)
+	return n
+}
+
+func parseHexBigInt(s string) *big.Int {
+	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		s = s[2:]
+	}
+	n := new(big.Int)
+	n.SetString(s, 16)
+	return n
+}
+
+// FormatTransaction converts a transaction to its JSON-RPC representation.
+func FormatTransaction(tx *types.Transaction, blockHash *types.Hash, blockNumber *uint64, index *uint64) *RPCTransaction {
+	rpcTx := &RPCTransaction{
+		Hash:     encodeHash(tx.Hash()),
+		Nonce:    encodeUint64(tx.Nonce()),
+		Value:    encodeBigInt(tx.Value()),
+		Gas:      encodeUint64(tx.Gas()),
+		GasPrice: encodeBigInt(tx.GasPrice()),
+		Input:    encodeBytes(tx.Data()),
+		Type:     encodeUint64(uint64(tx.Type())),
+	}
+
+	if sender := tx.Sender(); sender != nil {
+		rpcTx.From = encodeAddress(*sender)
+	}
+
+	if tx.To() != nil {
+		to := encodeAddress(*tx.To())
+		rpcTx.To = &to
+	}
+
+	if blockHash != nil {
+		bh := encodeHash(*blockHash)
+		rpcTx.BlockHash = &bh
+	}
+	if blockNumber != nil {
+		bn := encodeUint64(*blockNumber)
+		rpcTx.BlockNumber = &bn
+	}
+	if index != nil {
+		idx := encodeUint64(*index)
+		rpcTx.TransactionIndex = &idx
+	}
+
+	// V, R, S - use "0x0" as default if not available
+	rpcTx.V = "0x0"
+	rpcTx.R = "0x0"
+	rpcTx.S = "0x0"
+
+	return rpcTx
+}
+
+// FormatReceipt converts a receipt to its JSON-RPC representation.
+func FormatReceipt(receipt *types.Receipt, tx *types.Transaction) *RPCReceipt {
+	rpcReceipt := &RPCReceipt{
+		TransactionHash:   encodeHash(receipt.TxHash),
+		TransactionIndex:  encodeUint64(uint64(receipt.TransactionIndex)),
+		BlockHash:         encodeHash(receipt.BlockHash),
+		BlockNumber:       encodeBigInt(receipt.BlockNumber),
+		GasUsed:           encodeUint64(receipt.GasUsed),
+		CumulativeGasUsed: encodeUint64(receipt.CumulativeGasUsed),
+		Status:            encodeUint64(receipt.Status),
+		LogsBloom:         encodeBloom(receipt.Bloom),
+	}
+
+	// From
+	if tx != nil {
+		if sender := tx.Sender(); sender != nil {
+			rpcReceipt.From = encodeAddress(*sender)
+		}
+		if tx.To() != nil {
+			to := encodeAddress(*tx.To())
+			rpcReceipt.To = &to
+		}
+	}
+
+	// Contract address (only if contract creation)
+	if !receipt.ContractAddress.IsZero() {
+		ca := encodeAddress(receipt.ContractAddress)
+		rpcReceipt.ContractAddress = &ca
+	}
+
+	// Logs
+	rpcReceipt.Logs = make([]*RPCLog, len(receipt.Logs))
+	for i, log := range receipt.Logs {
+		rpcReceipt.Logs[i] = FormatLog(log)
+	}
+	if rpcReceipt.Logs == nil {
+		rpcReceipt.Logs = []*RPCLog{}
+	}
+
+	return rpcReceipt
+}
+
+// FormatLog converts a log to its JSON-RPC representation.
+func FormatLog(log *types.Log) *RPCLog {
+	topics := make([]string, len(log.Topics))
+	for i, topic := range log.Topics {
+		topics[i] = encodeHash(topic)
+	}
+	return &RPCLog{
+		Address:          encodeAddress(log.Address),
+		Topics:           topics,
+		Data:             encodeBytes(log.Data),
+		BlockNumber:      encodeUint64(log.BlockNumber),
+		TransactionHash:  encodeHash(log.TxHash),
+		TransactionIndex: encodeUint64(uint64(log.TxIndex)),
+		BlockHash:        encodeHash(log.BlockHash),
+		LogIndex:         encodeUint64(uint64(log.Index)),
+		Removed:          log.Removed,
+	}
 }

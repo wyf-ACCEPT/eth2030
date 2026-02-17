@@ -70,6 +70,51 @@ func (api *EngineAPI) GetPayloadV3(payloadID PayloadID) (GetPayloadResponse, err
 	return *resp, nil
 }
 
+// NewPayloadV4 validates and executes a Prague/Electra payload with execution requests.
+func (api *EngineAPI) NewPayloadV4(
+	payload ExecutionPayloadV3,
+	expectedBlobVersionedHashes []types.Hash,
+	parentBeaconBlockRoot types.Hash,
+	executionRequests [][]byte,
+) (PayloadStatusV1, error) {
+	// V4 passes execution requests alongside the V3 payload.
+	// The backend processes the V3 payload; execution requests are validated separately.
+	return api.backend.ProcessBlock(&payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+}
+
+// ExchangeCapabilities returns the list of Engine API methods this node supports.
+func (api *EngineAPI) ExchangeCapabilities(requested []string) []string {
+	supported := []string{
+		"engine_newPayloadV3",
+		"engine_newPayloadV4",
+		"engine_forkchoiceUpdatedV3",
+		"engine_getPayloadV3",
+		"engine_exchangeCapabilities",
+		"engine_getClientVersionV1",
+	}
+	return supported
+}
+
+// ClientVersionV1 represents the client version information.
+type ClientVersionV1 struct {
+	Code    string `json:"code"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Commit  string `json:"commit"`
+}
+
+// GetClientVersionV1 returns the client version information.
+func (api *EngineAPI) GetClientVersionV1(peerVersion ClientVersionV1) []ClientVersionV1 {
+	return []ClientVersionV1{
+		{
+			Code:    "ET",
+			Name:    "eth2028",
+			Version: "v0.1.0",
+			Commit:  "000000",
+		},
+	}
+}
+
 // Start starts the HTTP JSON-RPC server on the given address.
 func (api *EngineAPI) Start(addr string) error {
 	ln, err := net.Listen("tcp", addr)

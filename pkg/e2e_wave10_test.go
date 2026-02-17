@@ -280,6 +280,12 @@ func (b *blockchainBackend) GetTransaction(hash types.Hash) (*types.Transaction,
 	return nil, 0, 0
 }
 func (b *blockchainBackend) SuggestGasPrice() *big.Int { return big.NewInt(1000000000) }
+func (b *blockchainBackend) GetReceipts(blockHash types.Hash) []*types.Receipt { return nil }
+func (b *blockchainBackend) GetLogs(blockHash types.Hash) []*types.Log     { return nil }
+func (b *blockchainBackend) GetBlockReceipts(number uint64) []*types.Receipt { return nil }
+func (b *blockchainBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber rpc.BlockNumber) ([]byte, uint64, error) {
+	return nil, 0, nil
+}
 
 func TestRPCE2E_BlockchainQueries(t *testing.T) {
 	genesis, genesisState := makeGenesisBlock()
