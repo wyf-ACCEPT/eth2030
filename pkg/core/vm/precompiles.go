@@ -10,6 +10,12 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
+// EIP-4844 point evaluation precompile constants.
+var (
+	fieldElementsPerBlob = big.NewInt(4096)
+	blsModulus, _        = new(big.Int).SetString("52435875175126190479447740508185965837690552500527637822603658699938581184513", 10)
+)
+
 // PrecompiledContract is the interface for native precompiled contracts.
 type PrecompiledContract interface {
 	RequiredGas(input []byte) uint64
@@ -18,11 +24,12 @@ type PrecompiledContract interface {
 
 // PrecompiledContractsCancun contains the default set of pre-compiled contracts.
 var PrecompiledContractsCancun = map[types.Address]PrecompiledContract{
-	types.BytesToAddress([]byte{1}): &ecrecover{},
-	types.BytesToAddress([]byte{2}): &sha256hash{},
-	types.BytesToAddress([]byte{3}): &ripemd160hash{},
-	types.BytesToAddress([]byte{4}): &dataCopy{},
-	types.BytesToAddress([]byte{5}): &bigModExp{},
+	types.BytesToAddress([]byte{1}):    &ecrecover{},
+	types.BytesToAddress([]byte{2}):    &sha256hash{},
+	types.BytesToAddress([]byte{3}):    &ripemd160hash{},
+	types.BytesToAddress([]byte{4}):    &dataCopy{},
+	types.BytesToAddress([]byte{5}):    &bigModExp{},
+	types.BytesToAddress([]byte{0x0a}): &kzgPointEvaluation{},
 }
 
 // IsPrecompiledContract checks if the given address is a precompiled contract.
@@ -282,4 +289,70 @@ func maxUint64(a, b uint64) uint64 {
 		return a
 	}
 	return b
+}
+
+// --- kzgPointEvaluation (address 0x0a) - EIP-4844 ---
+
+const pointEvaluationGas = 50000
+
+type kzgPointEvaluation struct{}
+
+func (c *kzgPointEvaluation) RequiredGas(input []byte) uint64 {
+	return pointEvaluationGas
+}
+
+func (c *kzgPointEvaluation) Run(input []byte) ([]byte, error) {
+	if len(input) != 192 {
+		return nil, errors.New("kzg: invalid input length")
+	}
+
+	// Parse input: versioned_hash(32) | z(32) | y(32) | commitment(48) | proof(48)
+	versionedHash := input[:32]
+	z := new(big.Int).SetBytes(input[32:64])
+	y := new(big.Int).SetBytes(input[64:96])
+
+	// Validate that versioned_hash starts with KZG version byte.
+	if versionedHash[0] != types.VersionedHashVersionKZG {
+		return nil, errors.New("kzg: invalid versioned hash version")
+	}
+
+	// Validate that z and y are valid field elements (< BLS_MODULUS).
+	if z.Cmp(blsModulus) >= 0 {
+		return nil, errors.New("kzg: z is not a valid field element")
+	}
+	if y.Cmp(blsModulus) >= 0 {
+		return nil, errors.New("kzg: y is not a valid field element")
+	}
+
+	// Verify commitment matches versioned_hash: sha256(commitment) with version prefix.
+	commitment := input[96:144]
+	commitHash := sha256.Sum256(commitment)
+	commitHash[0] = types.VersionedHashVersionKZG
+	if !bytesEqual(versionedHash, commitHash[:]) {
+		return nil, errors.New("kzg: commitment does not match versioned hash")
+	}
+
+	// KZG proof verification is stubbed -- actual cryptographic verification
+	// requires a KZG library with a trusted setup. We validate format only.
+	// In production, verify_kzg_proof(commitment, z, y, proof) would be called here.
+
+	// Return FIELD_ELEMENTS_PER_BLOB and BLS_MODULUS as 32-byte big-endian values.
+	result := make([]byte, 64)
+	fieldBytes := fieldElementsPerBlob.Bytes()
+	copy(result[32-len(fieldBytes):32], fieldBytes)
+	modBytes := blsModulus.Bytes()
+	copy(result[64-len(modBytes):64], modBytes)
+	return result, nil
+}
+
+func bytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -203,7 +203,7 @@ func TestCalcBaseFee(t *testing.T) {
 				BaseFee:  big.NewInt(tt.baseFee),
 			}
 
-			newBaseFee := calcBaseFee(parent)
+			newBaseFee := CalcBaseFee(parent)
 
 			switch tt.expect {
 			case "increase":

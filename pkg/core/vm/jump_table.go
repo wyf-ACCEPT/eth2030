@@ -170,7 +170,7 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[SMOD] = &operation{execute: opSmod, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
 	tbl[ADDMOD] = &operation{execute: opAddmod, constantGas: GasMidStep, minStack: 3, maxStack: 1024}
 	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMidStep, minStack: 3, maxStack: 1024}
-	tbl[EXP] = &operation{execute: opExp, constantGas: GasSlowStep, minStack: 2, maxStack: 1024}
+	tbl[EXP] = &operation{execute: opExp, constantGas: GasSlowStep, dynamicGas: gasExp, minStack: 2, maxStack: 1024}
 	tbl[SIGNEXTEND] = &operation{execute: opSignExtend, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
 
 	// Comparison
@@ -195,9 +195,9 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[CALLVALUE] = &operation{execute: opCallValue, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 	tbl[CALLDATALOAD] = &operation{execute: opCalldataLoad, constantGas: GasQuickStep, minStack: 1, maxStack: 1024}
 	tbl[CALLDATASIZE] = &operation{execute: opCalldataSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CALLDATACOPY] = &operation{execute: opCalldataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCalldataCopy, dynamicGas: gasMemExpansion}
+	tbl[CALLDATACOPY] = &operation{execute: opCalldataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCalldataCopy, dynamicGas: gasCopy}
 	tbl[CODESIZE] = &operation{execute: opCodeSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CODECOPY] = &operation{execute: opCodeCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCodeCopy, dynamicGas: gasMemExpansion}
+	tbl[CODECOPY] = &operation{execute: opCodeCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCodeCopy, dynamicGas: gasCopy}
 	tbl[GASPRICE] = &operation{execute: opGasPrice, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
 
 	// Block
@@ -252,7 +252,7 @@ func NewFrontierJumpTable() JumpTable {
 	}
 
 	// Hash
-	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasMemExpansion}
+	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
 
 	// State (stubs)
 	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
@@ -269,20 +269,20 @@ func NewFrontierJumpTable() JumpTable {
 			maxStack:    1024,
 			writes:      true,
 			memorySize:  memoryLog,
-			dynamicGas:  gasMemExpansion,
+			dynamicGas:  makeGasLog(uint64(n)),
 		}
 	}
 
 	// Ext code
 	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
-	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasMemExpansion}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasExtCodeCopyCopy}
 
 	// CALL-family
 	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasMemExpansion}
 	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasMemExpansion}
 
 	// CREATE
-	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasMemExpansion, writes: true}
+	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasCreateDynamic, writes: true}
 
 	// Return / Invalid / Selfdestruct
 	tbl[RETURN] = &operation{execute: opReturn, constantGas: GasReturn, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
@@ -319,7 +319,7 @@ func NewByzantiumJumpTable() JumpTable {
 	// Byzantium added REVERT, STATICCALL, RETURNDATASIZE, RETURNDATACOPY.
 	tbl[REVERT] = &operation{execute: opRevert, constantGas: GasRevert, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
 	tbl[RETURNDATASIZE] = &operation{execute: opReturndataSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024}
+	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryReturndataCopy, dynamicGas: gasCopy}
 	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
@@ -332,7 +332,7 @@ func NewConstantinopleJumpTable() JumpTable {
 	tbl[SHR] = &operation{execute: opSHR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
 	tbl[SAR] = &operation{execute: opSAR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
 	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
-	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasMemExpansion, writes: true}
+	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasCreate2Dynamic, writes: true}
 	return tbl
 }
 
@@ -361,6 +361,8 @@ func NewBerlinJumpTable() JumpTable {
 	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: WarmStorageReadCost, dynamicGas: gasCallCodeEIP2929, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
 	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: WarmStorageReadCost, dynamicGas: gasStaticCallEIP2929, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
 	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: WarmStorageReadCost, dynamicGas: gasDelegateCallEIP2929, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
+	tbl[SSTORE] = &operation{execute: opSstore, constantGas: 0, dynamicGas: gasSstoreEIP2929, minStack: 2, maxStack: 1024, writes: true}
+	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: GasSelfdestruct, dynamicGas: gasSelfdestructEIP2929, minStack: 1, maxStack: 1024, halts: true, writes: true}
 
 	return tbl
 }

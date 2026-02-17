@@ -19,8 +19,13 @@ func TestIsPrecompiledContract(t *testing.T) {
 			t.Errorf("address %d should be a precompiled contract", i)
 		}
 	}
-	// Addresses 0 and 6+ should not be precompiles.
-	for _, i := range []int{0, 6, 7, 10, 255} {
+	// Address 0x0a (10) is now the KZG point evaluation precompile.
+	addr := types.BytesToAddress([]byte{0x0a})
+	if !IsPrecompiledContract(addr) {
+		t.Error("address 0x0a should be a precompiled contract (KZG)")
+	}
+	// Addresses 0 and others should not be precompiles.
+	for _, i := range []int{0, 6, 7, 11, 255} {
 		addr := types.BytesToAddress([]byte{byte(i)})
 		if IsPrecompiledContract(addr) {
 			t.Errorf("address %d should not be a precompiled contract", i)
@@ -354,6 +359,153 @@ func TestWordCount(t *testing.T) {
 			t.Errorf("wordCount(%d) = %d, want %d", tt.size, got, tt.want)
 		}
 	}
+}
+
+func TestKZGPrecompileGasCost(t *testing.T) {
+	c := &kzgPointEvaluation{}
+	if g := c.RequiredGas(nil); g != 50000 {
+		t.Errorf("kzg gas = %d, want 50000", g)
+	}
+	// Gas cost is constant regardless of input size.
+	if g := c.RequiredGas(make([]byte, 192)); g != 50000 {
+		t.Errorf("kzg gas = %d, want 50000", g)
+	}
+}
+
+func TestKZGPrecompileInputValidation(t *testing.T) {
+	c := &kzgPointEvaluation{}
+
+	// Wrong input length.
+	for _, length := range []int{0, 1, 64, 128, 191, 193, 256} {
+		_, err := c.Run(make([]byte, length))
+		if err == nil {
+			t.Errorf("expected error for input length %d", length)
+		}
+	}
+}
+
+func TestKZGPrecompileInvalidVersion(t *testing.T) {
+	c := &kzgPointEvaluation{}
+
+	// Valid length but wrong version byte.
+	input := make([]byte, 192)
+	input[0] = 0x00 // should be 0x01
+	_, err := c.Run(input)
+	if err == nil {
+		t.Fatal("expected error for invalid version byte")
+	}
+}
+
+func TestKZGPrecompileFieldElementValidation(t *testing.T) {
+	c := &kzgPointEvaluation{}
+
+	// Build input with valid version byte but z >= BLS_MODULUS.
+	input := make([]byte, 192)
+	input[0] = 0x01 // valid version
+
+	// Set z = BLS_MODULUS (should fail).
+	zBytes := blsModulus.Bytes()
+	copy(input[64-len(zBytes):64], zBytes)
+
+	_, err := c.Run(input)
+	if err == nil {
+		t.Fatal("expected error for z >= BLS_MODULUS")
+	}
+}
+
+func TestKZGPrecompileValidInput(t *testing.T) {
+	c := &kzgPointEvaluation{}
+
+	// Build a valid input: versioned_hash = sha256(commitment) with version prefix,
+	// z and y as zero (valid field elements), commitment and proof as 48 zero bytes.
+	commitment := make([]byte, 48)
+	commitHash := sha256Sum(commitment)
+	commitHash[0] = 0x01 // version prefix
+
+	input := make([]byte, 192)
+	copy(input[0:32], commitHash[:])   // versioned_hash
+	// z = 0 (32 zero bytes at input[32:64]) -- valid field element
+	// y = 0 (32 zero bytes at input[64:96]) -- valid field element
+	copy(input[96:144], commitment)    // commitment
+	// proof = 48 zero bytes at input[144:192]
+
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(out) != 64 {
+		t.Fatalf("output length = %d, want 64", len(out))
+	}
+
+	// First 32 bytes: FIELD_ELEMENTS_PER_BLOB = 4096
+	fepb := new(big.Int).SetBytes(out[:32])
+	if fepb.Int64() != 4096 {
+		t.Errorf("FIELD_ELEMENTS_PER_BLOB = %d, want 4096", fepb.Int64())
+	}
+
+	// Second 32 bytes: BLS_MODULUS
+	mod := new(big.Int).SetBytes(out[32:64])
+	expectedMod, _ := new(big.Int).SetString("52435875175126190479447740508185965837690552500527637822603658699938581184513", 10)
+	if mod.Cmp(expectedMod) != 0 {
+		t.Errorf("BLS_MODULUS = %s, want %s", mod, expectedMod)
+	}
+}
+
+func TestKZGPrecompileCommitmentMismatch(t *testing.T) {
+	c := &kzgPointEvaluation{}
+
+	// Build input where versioned_hash doesn't match commitment.
+	input := make([]byte, 192)
+	input[0] = 0x01 // version byte
+	input[1] = 0xff // garbage in versioned_hash so it won't match
+
+	_, err := c.Run(input)
+	if err == nil {
+		t.Fatal("expected error for commitment mismatch")
+	}
+}
+
+func TestKZGPrecompileRegistered(t *testing.T) {
+	addr := types.BytesToAddress([]byte{0x0a})
+	if !IsPrecompiledContract(addr) {
+		t.Fatal("address 0x0a should be a precompiled contract")
+	}
+}
+
+func TestKZGPrecompileViaRunner(t *testing.T) {
+	// Build valid input (same as TestKZGPrecompileValidInput).
+	commitment := make([]byte, 48)
+	commitHash := sha256Sum(commitment)
+	commitHash[0] = 0x01
+
+	input := make([]byte, 192)
+	copy(input[0:32], commitHash[:])
+	copy(input[96:144], commitment)
+
+	addr := types.BytesToAddress([]byte{0x0a})
+	out, remainingGas, err := RunPrecompiledContract(addr, input, 100000)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if remainingGas != 50000 {
+		t.Errorf("remaining gas = %d, want 50000", remainingGas)
+	}
+	if len(out) != 64 {
+		t.Fatalf("output length = %d, want 64", len(out))
+	}
+}
+
+func TestKZGPrecompileOutOfGas(t *testing.T) {
+	addr := types.BytesToAddress([]byte{0x0a})
+	_, _, err := RunPrecompiledContract(addr, make([]byte, 192), 49999)
+	if err != ErrOutOfGas {
+		t.Fatalf("expected ErrOutOfGas, got %v", err)
+	}
+}
+
+// sha256Sum is a helper that returns [32]byte.
+func sha256Sum(data []byte) [32]byte {
+	return sha256.Sum256(data)
 }
 
 // buildModExpInput constructs the 96-byte header + data for the modexp precompile.

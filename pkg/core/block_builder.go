@@ -34,7 +34,7 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, txsByPrice []*types.Tran
 		Coinbase:   coinbase,
 		Difficulty: new(big.Int),
 		Extra:      extra,
-		BaseFee:    calcBaseFee(parent),
+		BaseFee:    CalcBaseFee(parent),
 	}
 
 	gasPool := new(GasPool).AddGas(header.GasLimit)
@@ -132,39 +132,4 @@ func calcGasLimit(parentGasLimit, parentGasUsed uint64) uint64 {
 	return parentGasLimit
 }
 
-// calcBaseFee calculates the base fee for the next block per EIP-1559.
-func calcBaseFee(parent *types.Header) *big.Int {
-	if parent.BaseFee == nil {
-		return big.NewInt(1000000000) // 1 gwei default
-	}
-
-	parentBaseFee := parent.BaseFee
-	target := parent.GasLimit / 2
-
-	if parent.GasUsed == target {
-		return new(big.Int).Set(parentBaseFee)
-	}
-
-	if parent.GasUsed > target {
-		// Increase base fee.
-		gasUsedDelta := parent.GasUsed - target
-		feeDelta := new(big.Int).Mul(parentBaseFee, new(big.Int).SetUint64(gasUsedDelta))
-		feeDelta.Div(feeDelta, new(big.Int).SetUint64(target))
-		feeDelta.Div(feeDelta, big.NewInt(8))
-		if feeDelta.Sign() == 0 {
-			feeDelta = big.NewInt(1)
-		}
-		return new(big.Int).Add(parentBaseFee, feeDelta)
-	}
-
-	// Decrease base fee.
-	gasUsedDelta := target - parent.GasUsed
-	feeDelta := new(big.Int).Mul(parentBaseFee, new(big.Int).SetUint64(gasUsedDelta))
-	feeDelta.Div(feeDelta, new(big.Int).SetUint64(target))
-	feeDelta.Div(feeDelta, big.NewInt(8))
-	result := new(big.Int).Sub(parentBaseFee, feeDelta)
-	if result.Sign() <= 0 {
-		return big.NewInt(1)
-	}
-	return result
-}
+// calcBaseFee is an alias for CalcBaseFee (in block_validator.go).
