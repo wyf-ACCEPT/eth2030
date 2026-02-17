@@ -146,16 +146,16 @@ func (b *EngineBackend) ForkchoiceUpdated(
 		}
 
 		// Build an empty block (no pending transactions from txpool yet).
-		builder := core.NewBlockBuilder(b.config, b.statedb.Copy())
+		builder := core.NewBlockBuilder(b.config, nil, nil)
+		builder.SetState(b.statedb.Copy())
 		parentHeader := parentBlock.Header()
 
-		block, receipts, err := builder.BuildBlock(
-			parentHeader,
-			nil, // no pending txs
-			attrs.Timestamp,
-			attrs.SuggestedFeeRecipient,
-			nil, // no extra data
-		)
+		block, receipts, err := builder.BuildBlock(parentHeader, &core.BuildBlockAttributes{
+			Timestamp:    attrs.Timestamp,
+			FeeRecipient: attrs.SuggestedFeeRecipient,
+			Random:       attrs.PrevRandao,
+			GasLimit:     parentHeader.GasLimit,
+		})
 		if err != nil {
 			return ForkchoiceUpdatedResult{}, fmt.Errorf("payload build failed: %w", err)
 		}

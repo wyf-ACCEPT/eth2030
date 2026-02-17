@@ -6,7 +6,6 @@ import (
 
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/rlp"
 )
 
 var (
@@ -227,26 +226,4 @@ func VerifyProof(rootHash types.Hash, key []byte, proof [][]byte) ([]byte, error
 	return nil, ErrProofInvalid
 }
 
-// decodeRLPList decodes an RLP-encoded list and returns its items as raw byte slices.
-func decodeRLPList(data []byte) ([][]byte, error) {
-	s := rlp.NewStream(bytes.NewReader(data))
-	_, err := s.List()
-	if err != nil {
-		return nil, err
-	}
-
-	var items [][]byte
-	for {
-		b, err := s.Bytes()
-		if err != nil {
-			// Check if we've reached end of list.
-			listErr := s.ListEnd()
-			if listErr == nil {
-				break
-			}
-			return nil, err
-		}
-		items = append(items, b)
-	}
-	return items, nil
-}
+// decodeRLPList is defined in decoder.go; proof.go uses it via package scope.

@@ -9,18 +9,22 @@ import (
 	"github.com/eth2028/eth2028/core/types"
 )
 
+// priceBumpPercent is the minimum gas price bump required for replace-by-fee.
+const priceBumpPercent = 10
+
 // Error codes for transaction validation.
 var (
-	ErrAlreadyKnown    = errors.New("already known")
-	ErrNonceTooLow     = errors.New("nonce too low")
-	ErrNonceTooHigh    = errors.New("nonce too high")
-	ErrGasLimit        = errors.New("exceeds block gas limit")
-	ErrInsufficientFunds = errors.New("insufficient funds for gas * price + value")
-	ErrIntrinsicGas    = errors.New("intrinsic gas too low")
-	ErrTxPoolFull      = errors.New("transaction pool is full")
-	ErrNegativeValue   = errors.New("negative value")
-	ErrOversizedData   = errors.New("oversized data")
-	ErrUnderpriced     = errors.New("transaction underpriced")
+	ErrAlreadyKnown           = errors.New("already known")
+	ErrNonceTooLow            = errors.New("nonce too low")
+	ErrNonceTooHigh           = errors.New("nonce too high")
+	ErrGasLimit               = errors.New("exceeds block gas limit")
+	ErrInsufficientFunds      = errors.New("insufficient funds for gas * price + value")
+	ErrIntrinsicGas           = errors.New("intrinsic gas too low")
+	ErrTxPoolFull             = errors.New("transaction pool is full")
+	ErrNegativeValue          = errors.New("negative value")
+	ErrOversizedData          = errors.New("oversized data")
+	ErrUnderpriced            = errors.New("transaction underpriced")
+	ErrReplacementUnderpriced = errors.New("replacement transaction underpriced")
 )
 
 // Config holds TxPool configuration.
@@ -102,6 +106,16 @@ func (l *txSortedList) Remove(nonce uint64) bool {
 	return false
 }
 
+func (l *txSortedList) Get(nonce uint64) *types.Transaction {
+	idx := sort.Search(len(l.items), func(i int) bool {
+		return l.items[i].Nonce() >= nonce
+	})
+	if idx < len(l.items) && l.items[idx].Nonce() == nonce {
+		return l.items[idx]
+	}
+	return nil
+}
+
 func (l *txSortedList) Len() int {
 	return len(l.items)
 }
@@ -122,8 +136,9 @@ func (l *txSortedList) Ready(baseNonce uint64) []*types.Transaction {
 
 // TxPool implements a transaction pool for pending and queued transactions.
 type TxPool struct {
-	config Config
-	state  StateReader
+	config  Config
+	state   StateReader
+	baseFee *big.Int // current base fee, nil if unknown
 
 	mu      sync.RWMutex
 	pending map[types.Address]*txSortedList // processable transactions
@@ -163,11 +178,6 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 		return ErrAlreadyKnown
 	}
 
-	// Check pool capacity.
-	if pool.lookup.Count() >= pool.config.MaxSize {
-		return ErrTxPoolFull
-	}
-
 	// Validate the transaction.
 	if err := pool.validateTx(tx); err != nil {
 		return err
@@ -176,16 +186,29 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 	// Determine sender (simplified - would normally recover from signature).
 	from := pool.senderOf(tx)
 
-	// Add to lookup.
-	pool.lookup.Add(tx)
-
 	// Check nonce relative to state to decide pending vs queue.
 	stateNonce := pool.state.GetNonce(from)
 
 	if tx.Nonce() < stateNonce {
-		pool.lookup.Remove(hash)
 		return ErrNonceTooLow
 	}
+
+	// Check for replace-by-fee: existing tx from same sender with same nonce.
+	replaced, err := pool.checkReplacement(from, tx)
+	if err != nil {
+		return err
+	}
+
+	// If pool is full and this isn't a replacement, try eviction.
+	if !replaced && pool.lookup.Count() >= pool.config.MaxSize {
+		evicted := pool.evictLowest(pool.baseFee)
+		if evicted == 0 {
+			return ErrTxPoolFull
+		}
+	}
+
+	// Add to lookup.
+	pool.lookup.Add(tx)
 
 	if tx.Nonce() == stateNonce {
 		// This tx is immediately processable.
@@ -199,6 +222,47 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 	pool.promoteQueue(from)
 
 	return nil
+}
+
+// checkReplacement handles replace-by-fee logic. If an existing tx with the same
+// nonce from the same sender exists, the new tx must have >= 10% higher gas price.
+// Returns (true, nil) if replaced, (false, nil) if no existing tx, or
+// (false, ErrReplacementUnderpriced) if the bump is insufficient.
+func (pool *TxPool) checkReplacement(from types.Address, tx *types.Transaction) (bool, error) {
+	// Check pending list first.
+	if list, ok := pool.pending[from]; ok {
+		if old := list.Get(tx.Nonce()); old != nil {
+			if !pool.hasSufficientBump(old, tx) {
+				return false, ErrReplacementUnderpriced
+			}
+			pool.lookup.Remove(old.Hash())
+			return true, nil
+		}
+	}
+	// Check queue.
+	if list, ok := pool.queue[from]; ok {
+		if old := list.Get(tx.Nonce()); old != nil {
+			if !pool.hasSufficientBump(old, tx) {
+				return false, ErrReplacementUnderpriced
+			}
+			pool.lookup.Remove(old.Hash())
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// hasSufficientBump checks if newTx has >= priceBumpPercent higher
+// effective gas price than oldTx.
+func (pool *TxPool) hasSufficientBump(oldTx, newTx *types.Transaction) bool {
+	oldPrice := EffectiveGasPrice(oldTx, pool.baseFee)
+	newPrice := EffectiveGasPrice(newTx, pool.baseFee)
+
+	// New price must be >= old price * (100 + priceBumpPercent) / 100
+	threshold := new(big.Int).Mul(oldPrice, big.NewInt(100+priceBumpPercent))
+	threshold.Div(threshold, big.NewInt(100))
+
+	return newPrice.Cmp(threshold) >= 0
 }
 
 // validateTx performs basic validation of a transaction.
@@ -427,6 +491,167 @@ func (pool *TxPool) senderOf(tx *types.Transaction) types.Address {
 	var addr types.Address
 	copy(addr[:], h[:20])
 	return addr
+}
+
+// EffectiveGasPrice calculates the effective gas price for a transaction
+// given a base fee. For legacy transactions, this is simply GasPrice.
+// For EIP-1559 transactions: min(MaxFeePerGas, BaseFee + MaxPriorityFeePerGas).
+// If baseFee is nil, returns GasFeeCap (MaxFeePerGas) as the effective price.
+func EffectiveGasPrice(tx *types.Transaction, baseFee *big.Int) *big.Int {
+	if baseFee == nil || tx.Type() == types.LegacyTxType || tx.Type() == types.AccessListTxType {
+		gp := tx.GasPrice()
+		if gp == nil {
+			return new(big.Int)
+		}
+		return new(big.Int).Set(gp)
+	}
+	// EIP-1559 style: effective = min(feeCap, baseFee + tipCap)
+	feeCap := tx.GasFeeCap()
+	tipCap := tx.GasTipCap()
+	if feeCap == nil {
+		return new(big.Int)
+	}
+	if tipCap == nil {
+		tipCap = new(big.Int)
+	}
+	// baseFee + tipCap
+	effectiveTip := new(big.Int).Add(baseFee, tipCap)
+	// min(feeCap, baseFee + tipCap)
+	if effectiveTip.Cmp(feeCap) > 0 {
+		return new(big.Int).Set(feeCap)
+	}
+	return effectiveTip
+}
+
+// PendingSorted returns all pending transactions sorted by effective gas price
+// (descending). Higher-priced transactions come first for block building.
+func (pool *TxPool) PendingSorted() []*types.Transaction {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+
+	baseFee := pool.baseFee
+
+	var all []*types.Transaction
+	for _, list := range pool.pending {
+		all = append(all, list.items...)
+	}
+
+	sort.Slice(all, func(i, j int) bool {
+		pi := EffectiveGasPrice(all[i], baseFee)
+		pj := EffectiveGasPrice(all[j], baseFee)
+		return pi.Cmp(pj) > 0
+	})
+	return all
+}
+
+// evictLowest removes the transaction with the lowest effective gas price from
+// the pool. It protects the highest-nonce pending tx for each sender (so every
+// sender keeps at least one tx). Returns the number of evicted transactions.
+func (pool *TxPool) evictLowest(baseFee *big.Int) int {
+	// Collect all transactions with their effective prices, excluding
+	// protected txs (highest-nonce pending tx per sender).
+	type candidate struct {
+		tx    *types.Transaction
+		from  types.Address
+		price *big.Int
+		queue bool // whether the tx is in the queue (not pending)
+	}
+
+	var candidates []candidate
+
+	// Gather pending txs. Protect the highest-nonce tx per sender.
+	for addr, list := range pool.pending {
+		if list.Len() == 0 {
+			continue
+		}
+		for i, tx := range list.items {
+			// Protect the last (highest-nonce) tx if it's the only one.
+			if list.Len() == 1 {
+				continue
+			}
+			// Protect the highest-nonce pending tx.
+			if i == list.Len()-1 {
+				continue
+			}
+			candidates = append(candidates, candidate{
+				tx:    tx,
+				from:  addr,
+				price: EffectiveGasPrice(tx, baseFee),
+				queue: false,
+			})
+		}
+	}
+
+	// All queued txs are eviction candidates.
+	for addr, list := range pool.queue {
+		for _, tx := range list.items {
+			candidates = append(candidates, candidate{
+				tx:    tx,
+				from:  addr,
+				price: EffectiveGasPrice(tx, baseFee),
+				queue: true,
+			})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return 0
+	}
+
+	// Sort by price ascending so the cheapest is first.
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].price.Cmp(candidates[j].price) < 0
+	})
+
+	// Evict the cheapest.
+	c := candidates[0]
+	pool.lookup.Remove(c.tx.Hash())
+	if c.queue {
+		if list, ok := pool.queue[c.from]; ok {
+			list.Remove(c.tx.Nonce())
+			if list.Len() == 0 {
+				delete(pool.queue, c.from)
+			}
+		}
+	} else {
+		if list, ok := pool.pending[c.from]; ok {
+			list.Remove(c.tx.Nonce())
+			if list.Len() == 0 {
+				delete(pool.pending, c.from)
+			}
+		}
+	}
+	return 1
+}
+
+// SetBaseFee updates the pool's base fee and demotes pending transactions
+// that can no longer afford the new base fee to the queue.
+func (pool *TxPool) SetBaseFee(baseFee *big.Int) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+
+	pool.baseFee = new(big.Int).Set(baseFee)
+
+	// Demote pending txs whose max fee is below the new base fee.
+	for addr, list := range pool.pending {
+		var demote []*types.Transaction
+		for _, tx := range list.items {
+			feeCap := tx.GasFeeCap()
+			if feeCap == nil {
+				feeCap = tx.GasPrice()
+			}
+			if feeCap != nil && feeCap.Cmp(baseFee) < 0 {
+				demote = append(demote, tx)
+			}
+		}
+		for _, tx := range demote {
+			list.Remove(tx.Nonce())
+			pool.addQueue(addr, tx)
+		}
+		if list.Len() == 0 {
+			delete(pool.pending, addr)
+		}
+	}
 }
 
 // IntrinsicGas computes the intrinsic gas for a transaction.

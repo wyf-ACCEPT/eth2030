@@ -244,12 +244,14 @@ func TestLogs(t *testing.T) {
 	txHash1 := types.HexToHash("0xaa")
 	txHash2 := types.HexToHash("0xbb")
 
-	log1 := &types.Log{TxHash: txHash1, Data: []byte{1}}
-	log2 := &types.Log{TxHash: txHash1, Data: []byte{2}}
-	log3 := &types.Log{TxHash: txHash2, Data: []byte{3}}
+	log1 := &types.Log{Data: []byte{1}}
+	log2 := &types.Log{Data: []byte{2}}
+	log3 := &types.Log{Data: []byte{3}}
 
+	db.SetTxContext(txHash1, 0)
 	db.AddLog(log1)
 	db.AddLog(log2)
+	db.SetTxContext(txHash2, 1)
 	db.AddLog(log3)
 
 	logs1 := db.GetLogs(txHash1)
@@ -264,7 +266,8 @@ func TestLogs(t *testing.T) {
 
 	// Test revert of log.
 	snap := db.Snapshot()
-	db.AddLog(&types.Log{TxHash: txHash1, Data: []byte{4}})
+	db.SetTxContext(txHash1, 0)
+	db.AddLog(&types.Log{Data: []byte{4}})
 	if len(db.GetLogs(txHash1)) != 3 {
 		t.Fatal("expected 3 logs before revert")
 	}

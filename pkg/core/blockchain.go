@@ -20,6 +20,13 @@ var (
 	ErrStateNotFound  = errors.New("state not found for block")
 )
 
+// TxLookupEntry stores the location of a transaction within the chain.
+type TxLookupEntry struct {
+	BlockHash   types.Hash
+	BlockNumber uint64
+	TxIndex     uint64
+}
+
 // Blockchain manages the canonical chain of blocks, applying state
 // transitions and persisting data to the underlying database.
 type Blockchain struct {
@@ -35,6 +42,12 @@ type Blockchain struct {
 
 	// Canonical number -> hash for quick lookups.
 	canonCache map[uint64]types.Hash
+
+	// Receipt cache: blockHash -> receipts.
+	receiptCache map[types.Hash][]*types.Receipt
+
+	// Transaction lookup: txHash -> location in chain.
+	txLookup map[types.Hash]TxLookupEntry
 
 	// Genesis state (used as base for re-execution).
 	genesisState *state.MemoryStateDB
@@ -63,6 +76,8 @@ func NewBlockchain(config *ChainConfig, genesis *types.Block, statedb *state.Mem
 		validator:    NewBlockValidator(config),
 		blockCache:   make(map[types.Hash]*types.Block),
 		canonCache:   make(map[uint64]types.Hash),
+		receiptCache: make(map[types.Hash][]*types.Receipt),
+		txLookup:     make(map[types.Hash]TxLookupEntry),
 		genesisState: statedb,
 		currentState: statedb.Copy(),
 		genesis:      genesis,
@@ -128,7 +143,7 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 	}
 
 	// Execute transactions.
-	_, err = bc.processor.Process(block, statedb)
+	receipts, err := bc.processor.Process(block, statedb)
 	if err != nil {
 		return fmt.Errorf("process block %d: %w", block.NumberU64(), err)
 	}
@@ -136,8 +151,40 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 	// Store in block cache.
 	bc.blockCache[hash] = block
 
-	// Update canonical chain if this extends the head.
 	num := block.NumberU64()
+	txs := block.Transactions()
+
+	// Populate derived fields on receipts and store tx lookup entries.
+	for i, receipt := range receipts {
+		receipt.BlockHash = hash
+		receipt.BlockNumber = new(big.Int).SetUint64(num)
+		receipt.TransactionIndex = uint(i)
+		if i < len(txs) {
+			receipt.TxHash = txs[i].Hash()
+		}
+		// Set log context fields.
+		for j, log := range receipt.Logs {
+			log.BlockHash = hash
+			log.BlockNumber = num
+			log.TxHash = receipt.TxHash
+			log.TxIndex = uint(i)
+			log.Index = uint(j)
+		}
+	}
+
+	// Cache receipts by block hash.
+	bc.receiptCache[hash] = receipts
+
+	// Build tx lookup index.
+	for i, tx := range txs {
+		bc.txLookup[tx.Hash()] = TxLookupEntry{
+			BlockHash:   hash,
+			BlockNumber: num,
+			TxIndex:     uint64(i),
+		}
+	}
+
+	// Update canonical chain if this extends the head.
 	if num > bc.currentBlock.NumberU64() {
 		bc.canonCache[num] = hash
 		bc.currentBlock = block
@@ -145,6 +192,8 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 
 		// Persist to rawdb.
 		bc.writeBlock(block)
+		bc.writeReceipts(num, hash, receipts)
+		bc.writeTxLookups(txs, num)
 		rawdb.WriteCanonicalHash(bc.db, num, hash)
 		rawdb.WriteHeadBlockHash(bc.db, hash)
 		rawdb.WriteHeadHeaderHash(bc.db, hash)
@@ -316,11 +365,167 @@ func (bc *Blockchain) writeBlock(block *types.Block) {
 	rawdb.WriteBody(bc.db, num, hash, []byte("body"))
 }
 
+// Reorg replaces the canonical chain from the fork point with the new chain
+// ending at newHead. It finds the common ancestor between the current
+// canonical chain and the new chain, un-indexes old canonical blocks,
+// re-indexes the new canonical blocks, and updates the current block pointer.
+func (bc *Blockchain) Reorg(newHead *types.Block) error {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+	return bc.reorg(newHead)
+}
+
+// reorg is the internal reorg implementation without locking.
+func (bc *Blockchain) reorg(newHead *types.Block) error {
+	// Build the new chain's ancestry: walk from newHead to genesis.
+	// Collect blocks in reverse order (head first).
+	var newChain []*types.Block
+	current := newHead
+	for {
+		if _, ok := bc.blockCache[current.Hash()]; !ok {
+			bc.blockCache[current.Hash()] = current
+		}
+		if current.NumberU64() == 0 {
+			break
+		}
+		newChain = append(newChain, current)
+		parent, ok := bc.blockCache[current.ParentHash()]
+		if !ok {
+			return fmt.Errorf("%w: missing ancestor %v during reorg", ErrBlockNotFound, current.ParentHash())
+		}
+		current = parent
+	}
+
+	// Determine the maximum height to clean up.
+	oldHead := bc.currentBlock.NumberU64()
+	newHeight := newHead.NumberU64()
+	maxHeight := oldHead
+	if newHeight > maxHeight {
+		maxHeight = newHeight
+	}
+
+	// Un-index all canonical blocks above genesis.
+	for n := maxHeight; n >= 1; n-- {
+		if hash, ok := bc.canonCache[n]; ok {
+			delete(bc.canonCache, n)
+			rawdb.DeleteCanonicalHash(bc.db, n)
+
+			bc.hc.mu.Lock()
+			if h, ok := bc.hc.headers[n]; ok {
+				delete(bc.hc.headersByHash, h.Hash())
+				delete(bc.hc.headers, n)
+			}
+			bc.hc.mu.Unlock()
+			_ = hash
+		}
+	}
+
+	// Re-index the new chain from lowest block to highest.
+	for i := len(newChain) - 1; i >= 0; i-- {
+		blk := newChain[i]
+		hash := blk.Hash()
+		num := blk.NumberU64()
+
+		bc.blockCache[hash] = blk
+		bc.canonCache[num] = hash
+		bc.writeBlock(blk)
+		rawdb.WriteCanonicalHash(bc.db, num, hash)
+
+		h := blk.Header()
+		bc.hc.mu.Lock()
+		bc.hc.headersByHash[h.Hash()] = h
+		bc.hc.headers[num] = h
+		bc.hc.mu.Unlock()
+	}
+
+	// Update current block.
+	bc.currentBlock = newHead
+	rawdb.WriteHeadBlockHash(bc.db, newHead.Hash())
+	rawdb.WriteHeadHeaderHash(bc.db, newHead.Hash())
+
+	bc.hc.mu.Lock()
+	bc.hc.currentHeader = newHead.Header()
+	bc.hc.mu.Unlock()
+
+	// Re-derive state for the new head.
+	statedb, err := bc.stateAt(newHead)
+	if err != nil {
+		return fmt.Errorf("re-derive state after reorg at %d: %w", newHead.NumberU64(), err)
+	}
+	bc.currentState = statedb.(*state.MemoryStateDB)
+
+	return nil
+}
+
 // ChainLength returns the length of the canonical chain (genesis = 1).
 func (bc *Blockchain) ChainLength() uint64 {
 	bc.mu.RLock()
 	defer bc.mu.RUnlock()
 	return bc.currentBlock.NumberU64() + 1
+}
+
+// GetReceipts returns the receipts for a block identified by hash.
+func (bc *Blockchain) GetReceipts(blockHash types.Hash) []*types.Receipt {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+	return bc.receiptCache[blockHash]
+}
+
+// GetBlockReceipts returns the receipts for the canonical block at the given number.
+func (bc *Blockchain) GetBlockReceipts(number uint64) []*types.Receipt {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+	hash, ok := bc.canonCache[number]
+	if !ok {
+		return nil
+	}
+	return bc.receiptCache[hash]
+}
+
+// GetLogs returns all logs from receipts for the block identified by hash.
+func (bc *Blockchain) GetLogs(blockHash types.Hash) []*types.Log {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+	receipts := bc.receiptCache[blockHash]
+	var logs []*types.Log
+	for _, receipt := range receipts {
+		logs = append(logs, receipt.Logs...)
+	}
+	return logs
+}
+
+// GetTransactionLookup returns the block location for a transaction hash.
+func (bc *Blockchain) GetTransactionLookup(txHash types.Hash) (blockHash types.Hash, blockNumber uint64, txIndex uint64, found bool) {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+	entry, ok := bc.txLookup[txHash]
+	if !ok {
+		return types.Hash{}, 0, 0, false
+	}
+	return entry.BlockHash, entry.BlockNumber, entry.TxIndex, true
+}
+
+// writeReceipts encodes and persists receipts for a block.
+func (bc *Blockchain) writeReceipts(number uint64, hash types.Hash, receipts []*types.Receipt) {
+	if len(receipts) == 0 {
+		return
+	}
+	var encoded []byte
+	for _, r := range receipts {
+		data, err := r.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		encoded = append(encoded, data...)
+	}
+	rawdb.WriteReceipts(bc.db, number, hash, encoded)
+}
+
+// writeTxLookups persists transaction hash -> block number mappings.
+func (bc *Blockchain) writeTxLookups(txs []*types.Transaction, blockNumber uint64) {
+	for _, tx := range txs {
+		rawdb.WriteTxLookup(bc.db, tx.Hash(), blockNumber)
+	}
 }
 
 // makeGenesis is a helper for creating a genesis block with the given gas limit and base fee.

@@ -1,9 +1,13 @@
 package node
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"math/big"
+	"sync"
 
+	"github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/engine"
@@ -90,7 +94,18 @@ func (b *nodeBackend) SendTransaction(tx *types.Transaction) error {
 }
 
 func (b *nodeBackend) GetTransaction(hash types.Hash) (*types.Transaction, uint64, uint64) {
-	// Check txpool first.
+	// Check the blockchain's tx lookup index first.
+	blockHash, blockNum, txIndex, found := b.node.blockchain.GetTransactionLookup(hash)
+	if found {
+		block := b.node.blockchain.GetBlock(blockHash)
+		if block != nil {
+			txs := block.Transactions()
+			if int(txIndex) < len(txs) {
+				return txs[txIndex], blockNum, txIndex
+			}
+		}
+	}
+	// Fall back to txpool for pending transactions.
 	tx := b.node.txPool.Get(hash)
 	if tx != nil {
 		return tx, 0, 0
@@ -108,15 +123,15 @@ func (b *nodeBackend) SuggestGasPrice() *big.Int {
 }
 
 func (b *nodeBackend) GetReceipts(blockHash types.Hash) []*types.Receipt {
-	return nil // Receipts not stored yet
+	return b.node.blockchain.GetReceipts(blockHash)
 }
 
 func (b *nodeBackend) GetLogs(blockHash types.Hash) []*types.Log {
-	return nil // Logs not indexed yet
+	return b.node.blockchain.GetLogs(blockHash)
 }
 
 func (b *nodeBackend) GetBlockReceipts(number uint64) []*types.Receipt {
-	return nil // Receipts not stored yet
+	return b.node.blockchain.GetBlockReceipts(number)
 }
 
 func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber rpc.BlockNumber) ([]byte, uint64, error) {
@@ -124,13 +139,38 @@ func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte
 	return nil, 0, fmt.Errorf("eth_call not fully implemented")
 }
 
-// engineBackend adapts the Node to the engine.Backend interface.
-type engineBackend struct {
+// txPoolAdapter adapts *txpool.TxPool to core.TxPoolReader.
+type txPoolAdapter struct {
 	node *Node
 }
 
+func (a *txPoolAdapter) Pending() []*types.Transaction {
+	return a.node.txPool.PendingFlat()
+}
+
+// pendingPayload stores a built payload for later retrieval by getPayload.
+type pendingPayload struct {
+	block    *types.Block
+	receipts []*types.Receipt
+}
+
+// engineBackend adapts the Node to the engine.Backend interface.
+type engineBackend struct {
+	node *Node
+
+	mu       sync.Mutex
+	payloads map[engine.PayloadID]*pendingPayload
+	builder  *core.BlockBuilder
+}
+
 func newEngineBackend(n *Node) engine.Backend {
-	return &engineBackend{node: n}
+	pool := &txPoolAdapter{node: n}
+	builder := core.NewBlockBuilder(n.blockchain.Config(), n.blockchain, pool)
+	return &engineBackend{
+		node:     n,
+		payloads: make(map[engine.PayloadID]*pendingPayload),
+		builder:  builder,
+	}
 }
 
 func (b *engineBackend) ProcessBlock(
@@ -145,17 +185,171 @@ func (b *engineBackend) ProcessBlock(
 }
 
 func (b *engineBackend) ForkchoiceUpdated(
-	state engine.ForkchoiceStateV1,
+	fcState engine.ForkchoiceStateV1,
 	payloadAttributes *engine.PayloadAttributesV3,
 ) (engine.ForkchoiceUpdatedResult, error) {
-	// Stub: acknowledge forkchoice but don't build payloads yet.
-	return engine.ForkchoiceUpdatedResult{
-		PayloadStatus: engine.PayloadStatusV1{
+	bc := b.node.blockchain
+
+	// Check if we know the head block.
+	headBlock := bc.GetBlock(fcState.HeadBlockHash)
+	var payloadStatus engine.PayloadStatusV1
+	if headBlock == nil {
+		// We don't know this block yet; report syncing.
+		payloadStatus = engine.PayloadStatusV1{
 			Status: engine.StatusSyncing,
-		},
+		}
+		return engine.ForkchoiceUpdatedResult{
+			PayloadStatus: payloadStatus,
+		}, nil
+	}
+
+	// Head is known. Report valid.
+	headHash := headBlock.Hash()
+	payloadStatus = engine.PayloadStatusV1{
+		Status:          engine.StatusValid,
+		LatestValidHash: &headHash,
+	}
+
+	// If no payload attributes, just return the forkchoice acknowledgment.
+	if payloadAttributes == nil {
+		return engine.ForkchoiceUpdatedResult{
+			PayloadStatus: payloadStatus,
+		}, nil
+	}
+
+	// Payload attributes provided: build a new block.
+	parentHeader := headBlock.Header()
+
+	// Convert engine withdrawals to core types.
+	var withdrawals []*types.Withdrawal
+	for _, w := range payloadAttributes.Withdrawals {
+		withdrawals = append(withdrawals, &types.Withdrawal{
+			Index:          w.Index,
+			ValidatorIndex: w.ValidatorIndex,
+			Address:        w.Address,
+			Amount:         w.Amount,
+		})
+	}
+
+	beaconRoot := payloadAttributes.ParentBeaconBlockRoot
+	attrs := &core.BuildBlockAttributes{
+		Timestamp:    payloadAttributes.Timestamp,
+		FeeRecipient: payloadAttributes.SuggestedFeeRecipient,
+		Random:       payloadAttributes.PrevRandao,
+		Withdrawals:  withdrawals,
+		BeaconRoot:   &beaconRoot,
+		GasLimit:     parentHeader.GasLimit, // keep parent gas limit
+	}
+
+	block, receipts, err := b.builder.BuildBlock(parentHeader, attrs)
+	if err != nil {
+		return engine.ForkchoiceUpdatedResult{
+			PayloadStatus: payloadStatus,
+		}, fmt.Errorf("build block: %w", err)
+	}
+
+	// Generate a payload ID from the block parameters.
+	payloadID := generatePayloadID(parentHeader.Hash(), attrs)
+
+	// Store the built payload.
+	b.mu.Lock()
+	b.payloads[payloadID] = &pendingPayload{
+		block:    block,
+		receipts: receipts,
+	}
+	b.mu.Unlock()
+
+	return engine.ForkchoiceUpdatedResult{
+		PayloadStatus: payloadStatus,
+		PayloadID:     &payloadID,
 	}, nil
 }
 
 func (b *engineBackend) GetPayloadByID(id engine.PayloadID) (*engine.GetPayloadResponse, error) {
-	return nil, fmt.Errorf("payload %v not found", id)
+	b.mu.Lock()
+	payload, ok := b.payloads[id]
+	if ok {
+		delete(b.payloads, id)
+	}
+	b.mu.Unlock()
+
+	if !ok {
+		return nil, fmt.Errorf("payload %v not found", id)
+	}
+
+	block := payload.block
+	header := block.Header()
+
+	// Convert block to execution payload.
+	execPayload := &engine.ExecutionPayloadV4{
+		ExecutionPayloadV3: engine.ExecutionPayloadV3{
+			ExecutionPayloadV2: engine.ExecutionPayloadV2{
+				ExecutionPayloadV1: engine.ExecutionPayloadV1{
+					ParentHash:    header.ParentHash,
+					FeeRecipient:  header.Coinbase,
+					StateRoot:     header.Root,
+					ReceiptsRoot:  header.ReceiptHash,
+					LogsBloom:     header.Bloom,
+					PrevRandao:    header.MixDigest,
+					BlockNumber:   block.NumberU64(),
+					GasLimit:      header.GasLimit,
+					GasUsed:       header.GasUsed,
+					Timestamp:     header.Time,
+					ExtraData:     header.Extra,
+					BaseFeePerGas: header.BaseFee,
+					BlockHash:     block.Hash(),
+					Transactions:  nil, // Transaction encoding left for later.
+				},
+			},
+		},
+	}
+
+	// Add withdrawals if present.
+	if ws := block.Withdrawals(); ws != nil {
+		for _, w := range ws {
+			execPayload.Withdrawals = append(execPayload.Withdrawals, &engine.Withdrawal{
+				Index:          w.Index,
+				ValidatorIndex: w.ValidatorIndex,
+				Address:        w.Address,
+				Amount:         w.Amount,
+			})
+		}
+	}
+
+	// Calculate block value (sum of priority fees paid).
+	blockValue := new(big.Int)
+	for _, receipt := range payload.receipts {
+		if receipt.EffectiveGasPrice != nil && header.BaseFee != nil {
+			tip := new(big.Int).Sub(receipt.EffectiveGasPrice, header.BaseFee)
+			if tip.Sign() > 0 {
+				tipTotal := new(big.Int).Mul(tip, new(big.Int).SetUint64(receipt.GasUsed))
+				blockValue.Add(blockValue, tipTotal)
+			}
+		}
+	}
+
+	return &engine.GetPayloadResponse{
+		ExecutionPayload: execPayload,
+		BlockValue:       blockValue,
+		BlobsBundle:      &engine.BlobsBundleV1{},
+		Override:         false,
+	}, nil
+}
+
+// generatePayloadID creates a deterministic PayloadID from the parent hash
+// and build attributes.
+func generatePayloadID(parentHash types.Hash, attrs *core.BuildBlockAttributes) engine.PayloadID {
+	var id engine.PayloadID
+
+	// Mix parent hash, timestamp, and fee recipient into the ID.
+	// Use a simple approach: take bytes from parent hash + timestamp.
+	copy(id[:], parentHash[:4])
+	binary.BigEndian.PutUint32(id[4:], uint32(attrs.Timestamp))
+
+	// If the ID collides (unlikely), add some randomness.
+	if id == (engine.PayloadID{}) {
+		rand.Read(id[:])
+	}
+
+	return id
 }

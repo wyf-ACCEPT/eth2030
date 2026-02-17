@@ -208,10 +208,15 @@ func TestPoolFull(t *testing.T) {
 	state := newMockState()
 	pool := New(config, state)
 
+	// Use two different senders so each has exactly one tx (protected from eviction).
+	// Vary gas price to produce distinct tx hashes.
+	sender2 := types.BytesToAddress([]byte{0x04, 0x05, 0x06})
 	pool.AddLocal(makeTx(0, 1000, 21000))
-	pool.AddLocal(makeTx(1, 1000, 21000))
+	pool.AddLocal(makeTxFrom(sender2, 0, 1001, 21000))
 
-	err := pool.AddLocal(makeTx(2, 1000, 21000))
+	// Third tx can't be added: both existing txs are protected (only tx per sender).
+	sender3 := types.BytesToAddress([]byte{0x07, 0x08, 0x09})
+	err := pool.AddLocal(makeTxFrom(sender3, 0, 1002, 21000))
 	if err != ErrTxPoolFull {
 		t.Errorf("expected ErrTxPoolFull, got: %v", err)
 	}

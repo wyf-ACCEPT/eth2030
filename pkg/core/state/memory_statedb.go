@@ -35,6 +35,10 @@ type MemoryStateDB struct {
 	refund           uint64
 	accessList       *accessList
 	transientStorage map[types.Address]map[types.Hash]types.Hash
+
+	// Current transaction context for log attribution.
+	txHash  types.Hash
+	txIndex int
 }
 
 // NewMemoryStateDB creates a new in-memory state database.
@@ -209,13 +213,22 @@ func (s *MemoryStateDB) RevertToSnapshot(id int) {
 // --- Logs ---
 
 func (s *MemoryStateDB) AddLog(log *types.Log) {
-	txHash := log.TxHash
+	// Use the current tx context hash so logs are keyed correctly.
+	txHash := s.txHash
+	log.TxHash = txHash
+	log.TxIndex = uint(s.txIndex)
 	s.journal.append(logChange{txHash: txHash, prevLen: len(s.logs[txHash])})
 	s.logs[txHash] = append(s.logs[txHash], log)
 }
 
 func (s *MemoryStateDB) GetLogs(txHash types.Hash) []*types.Log {
 	return s.logs[txHash]
+}
+
+// SetTxContext sets the current transaction hash and index for log attribution.
+func (s *MemoryStateDB) SetTxContext(txHash types.Hash, txIndex int) {
+	s.txHash = txHash
+	s.txIndex = txIndex
 }
 
 // --- Refund counter ---

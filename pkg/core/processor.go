@@ -48,6 +48,7 @@ func (p *StateProcessor) Process(block *types.Block, statedb state.StateDB) ([]*
 	)
 
 	for i, tx := range block.Transactions() {
+		statedb.SetTxContext(tx.Hash(), i)
 		receipt, _, err := ApplyTransaction(p.config, statedb, header, tx, gasPool)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx, err)

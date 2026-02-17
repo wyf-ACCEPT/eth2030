@@ -52,8 +52,9 @@ func TestE2EFullBlockLifecycle(t *testing.T) {
 		GasUsed:  0,
 		BaseFee:  big.NewInt(1),
 	}
-	builder := core.NewBlockBuilder(core.TestConfig, statedb)
-	block, receipts, err := builder.BuildBlock(parent, pending, 1700000001, coinbase, nil)
+	builder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder.SetState(statedb)
+	block, receipts, err := builder.BuildBlockLegacy(parent, pending, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("BuildBlock: %v", err)
 	}
@@ -90,7 +91,8 @@ func TestE2EMultiBlockChain(t *testing.T) {
 
 	statedb.AddBalance(sender, big.NewInt(1_000_000_000))
 
-	builder := core.NewBlockBuilder(core.TestConfig, statedb)
+	builder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder.SetState(statedb)
 
 	parent := &types.Header{
 		Number:   big.NewInt(0),
@@ -119,7 +121,7 @@ func TestE2EMultiBlockChain(t *testing.T) {
 			nonce++
 		}
 
-		block, _, err := builder.BuildBlock(parent, txs, uint64(1700000000+blockNum), coinbase, nil)
+		block, _, err := builder.BuildBlockLegacy(parent, txs, uint64(1700000000+blockNum), coinbase, nil)
 		if err != nil {
 			t.Fatalf("BuildBlock %d: %v", blockNum, err)
 		}
@@ -162,7 +164,8 @@ func TestE2EEIP1559GasPricing(t *testing.T) {
 
 	statedb.AddBalance(sender, big.NewInt(10_000_000_000))
 
-	builder := core.NewBlockBuilder(core.TestConfig, statedb)
+	builder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder.SetState(statedb)
 
 	// Start with a known base fee.
 	parent := &types.Header{
@@ -173,7 +176,7 @@ func TestE2EEIP1559GasPricing(t *testing.T) {
 	}
 
 	// Build an empty block (0 gas used) -> base fee should decrease.
-	emptyBlock, _, err := builder.BuildBlock(parent, nil, 1700000001, coinbase, nil)
+	emptyBlock, _, err := builder.BuildBlockLegacy(parent, nil, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("empty block: %v", err)
 	}
@@ -200,7 +203,8 @@ func TestE2EEIP1559GasPricing(t *testing.T) {
 
 	statedb2 := state.NewMemoryStateDB()
 	statedb2.AddBalance(sender, big.NewInt(10_000_000_000))
-	builder2 := core.NewBlockBuilder(core.TestConfig, statedb2)
+	builder2 := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder2.SetState(statedb2)
 
 	// Use a parent with gas used at target (50%).
 	parentAtTarget := &types.Header{
@@ -210,7 +214,7 @@ func TestE2EEIP1559GasPricing(t *testing.T) {
 		BaseFee:  big.NewInt(1000),
 	}
 
-	fullBlock, _, err := builder2.BuildBlock(parentAtTarget, fullTxs, 1700000001, coinbase, nil)
+	fullBlock, _, err := builder2.BuildBlockLegacy(parentAtTarget, fullTxs, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("full block: %v", err)
 	}
@@ -229,8 +233,9 @@ func TestE2EEIP1559GasPricing(t *testing.T) {
 	}
 	statedb3 := state.NewMemoryStateDB()
 	statedb3.AddBalance(sender, big.NewInt(10_000_000_000))
-	builder3 := core.NewBlockBuilder(core.TestConfig, statedb3)
-	highBlock, _, err := builder3.BuildBlock(parentHigh, nil, 1700000001, coinbase, nil)
+	builder3 := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder3.SetState(statedb3)
+	highBlock, _, err := builder3.BuildBlockLegacy(parentHigh, nil, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("high parent block: %v", err)
 	}
@@ -277,8 +282,9 @@ func TestE2EContractDeployAndCall(t *testing.T) {
 		BaseFee:  big.NewInt(1),
 	}
 
-	builder := core.NewBlockBuilder(core.TestConfig, statedb)
-	block, receipts, err := builder.BuildBlock(parent, []*types.Transaction{createTx}, 1700000001, coinbase, nil)
+	builder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder.SetState(statedb)
+	block, receipts, err := builder.BuildBlockLegacy(parent, []*types.Transaction{createTx}, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("BuildBlock: %v", err)
 	}
@@ -341,15 +347,17 @@ func TestE2EParallelExecution(t *testing.T) {
 	}
 
 	// Sequential execution.
-	seqBuilder := core.NewBlockBuilder(core.TestConfig, seqState)
-	seqBlock, seqReceipts, err := seqBuilder.BuildBlock(parent, txs, 1700000001, coinbase, nil)
+	seqBuilder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	seqBuilder.SetState(seqState)
+	seqBlock, seqReceipts, err := seqBuilder.BuildBlockLegacy(parent, txs, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("sequential BuildBlock: %v", err)
 	}
 
 	// Parallel execution (using separate builder with same txs).
-	parBuilder := core.NewBlockBuilder(core.TestConfig, parState)
-	parBlock, parReceipts, err := parBuilder.BuildBlock(parent, txs, 1700000001, coinbase, nil)
+	parBuilder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	parBuilder.SetState(parState)
+	parBlock, parReceipts, err := parBuilder.BuildBlockLegacy(parent, txs, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("parallel BuildBlock: %v", err)
 	}
@@ -472,8 +480,9 @@ func TestE2EStateRootConsistency(t *testing.T) {
 		BaseFee:  big.NewInt(1),
 	}
 
-	builder := core.NewBlockBuilder(core.TestConfig, statedb)
-	_, _, err := builder.BuildBlock(parent, []*types.Transaction{tx}, 1700000001, coinbase, nil)
+	builder := core.NewBlockBuilder(core.TestConfig, nil, nil)
+	builder.SetState(statedb)
+	_, _, err := builder.BuildBlockLegacy(parent, []*types.Transaction{tx}, 1700000001, coinbase, nil)
 	if err != nil {
 		t.Fatalf("BuildBlock: %v", err)
 	}

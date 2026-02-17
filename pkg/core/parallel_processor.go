@@ -135,6 +135,7 @@ func (p *ParallelProcessor) processSequential(statedb state.StateDB, block *type
 	)
 
 	for i, tx := range txs {
+		statedb.SetTxContext(tx.Hash(), i)
 		receipt, _, err := ApplyTransaction(p.config, statedb, header, tx, gasPool)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx, err)
@@ -146,6 +147,7 @@ func (p *ParallelProcessor) processSequential(statedb state.StateDB, block *type
 
 // applyTransactionAt applies a transaction and sets the TransactionIndex on the receipt.
 func applyTransactionAt(config *ChainConfig, statedb state.StateDB, header *types.Header, tx *types.Transaction, gp *GasPool, txIndex int) (*types.Receipt, uint64, error) {
+	statedb.SetTxContext(tx.Hash(), txIndex)
 	receipt, gasUsed, err := ApplyTransaction(config, statedb, header, tx, gp)
 	if err != nil {
 		return nil, 0, err

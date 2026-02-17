@@ -40,6 +40,7 @@ type StateDB interface {
 	// Logs
 	AddLog(log *types.Log)
 	GetLogs(txHash types.Hash) []*types.Log
+	SetTxContext(txHash types.Hash, txIndex int)
 
 	// Refund counter
 	AddRefund(gas uint64)

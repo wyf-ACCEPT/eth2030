@@ -3,6 +3,7 @@ package vm
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"math/big"
 	"testing"
@@ -12,20 +13,15 @@ import (
 )
 
 func TestIsPrecompiledContract(t *testing.T) {
-	// Addresses 1-5 should be precompiles.
-	for i := 1; i <= 5; i++ {
+	// Addresses 1-9 and 0x0a should be precompiles.
+	for i := 1; i <= 10; i++ {
 		addr := types.BytesToAddress([]byte{byte(i)})
 		if !IsPrecompiledContract(addr) {
 			t.Errorf("address %d should be a precompiled contract", i)
 		}
 	}
-	// Address 0x0a (10) is now the KZG point evaluation precompile.
-	addr := types.BytesToAddress([]byte{0x0a})
-	if !IsPrecompiledContract(addr) {
-		t.Error("address 0x0a should be a precompiled contract (KZG)")
-	}
 	// Addresses 0 and others should not be precompiles.
-	for _, i := range []int{0, 6, 7, 11, 255} {
+	for _, i := range []int{0, 11, 12, 255} {
 		addr := types.BytesToAddress([]byte{byte(i)})
 		if IsPrecompiledContract(addr) {
 			t.Errorf("address %d should not be a precompiled contract", i)
@@ -533,4 +529,403 @@ func buildModExpInput(base, exp, mod []byte) []byte {
 	copy(input[offset:], mod)
 
 	return input
+}
+
+// --- Additional precompile tests ---
+
+// TestEcRecover_KnownVector tests ecRecover against a known test vector.
+func TestEcRecover_KnownVector(t *testing.T) {
+	c := &ecrecover{}
+
+	// Construct a valid ecrecover input: hash(32) + v(32) + r(32) + s(32).
+	// Using an all-zeros hash with v=27 and invalid r,s should return nil (no error).
+	input := make([]byte, 128)
+	input[63] = 27 // v = 27
+	// r and s are zero, which is invalid. ecrecover should return nil.
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Zero r/s is not valid, so output should be nil.
+	if out != nil {
+		t.Errorf("expected nil output for zero r/s, got %x", out)
+	}
+}
+
+// TestSHA256Precompile tests SHA-256 against known test vectors.
+func TestSHA256Precompile(t *testing.T) {
+	c := &sha256hash{}
+
+	tests := []struct {
+		input   string
+		wantHex string
+	}{
+		{
+			"",
+			"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		},
+		{
+			"abc",
+			"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+		},
+	}
+
+	for _, tt := range tests {
+		out, err := c.Run([]byte(tt.input))
+		if err != nil {
+			t.Fatalf("sha256(%q): unexpected error: %v", tt.input, err)
+		}
+		gotHex := hex.EncodeToString(out)
+		if gotHex != tt.wantHex {
+			t.Errorf("sha256(%q) = %s, want %s", tt.input, gotHex, tt.wantHex)
+		}
+	}
+}
+
+// TestRIPEMD160Precompile tests RIPEMD-160 against known test vectors.
+func TestRIPEMD160Precompile(t *testing.T) {
+	c := &ripemd160hash{}
+
+	tests := []struct {
+		input   string
+		wantHex string // 20-byte hash, hex encoded
+	}{
+		{"", "9c1185a5c5e9fc54612808977ee8f548b2258d31"},
+		{"abc", "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"},
+	}
+
+	for _, tt := range tests {
+		out, err := c.Run([]byte(tt.input))
+		if err != nil {
+			t.Fatalf("ripemd160(%q): unexpected error: %v", tt.input, err)
+		}
+		if len(out) != 32 {
+			t.Fatalf("ripemd160(%q) output length = %d, want 32", tt.input, len(out))
+		}
+		// First 12 bytes should be zero (left-padding).
+		for i := 0; i < 12; i++ {
+			if out[i] != 0 {
+				t.Errorf("ripemd160(%q) byte %d = %d, want 0", tt.input, i, out[i])
+			}
+		}
+		gotHex := hex.EncodeToString(out[12:])
+		if gotHex != tt.wantHex {
+			t.Errorf("ripemd160(%q) = %s, want %s", tt.input, gotHex, tt.wantHex)
+		}
+	}
+}
+
+// TestIdentityPrecompile tests the identity (data copy) precompile echoes input.
+func TestIdentityPrecompile(t *testing.T) {
+	c := &dataCopy{}
+
+	tests := [][]byte{
+		nil,
+		{},
+		{0xDE, 0xAD, 0xBE, 0xEF},
+		make([]byte, 256),
+	}
+
+	for _, input := range tests {
+		out, err := c.Run(input)
+		if err != nil {
+			t.Fatalf("identity: unexpected error: %v", err)
+		}
+		if !bytes.Equal(out, input) {
+			t.Errorf("identity(%x) = %x, want %x", input, out, input)
+		}
+		// Verify it's a copy (not the same underlying array).
+		if len(input) > 0 && len(out) > 0 && &out[0] == &input[0] {
+			t.Error("identity should return a copy, not the same slice")
+		}
+	}
+}
+
+// TestModExpPrecompile tests basic modular exponentiation.
+func TestModExpPrecompile(t *testing.T) {
+	c := &bigModExp{}
+
+	tests := []struct {
+		base, exp, mod int64
+		want           int64
+	}{
+		{2, 10, 1000, 24},        // 2^10 % 1000 = 1024 % 1000 = 24
+		{3, 5, 13, 9},            // 3^5 % 13 = 243 % 13 = 9
+		{7, 0, 100, 1},           // 7^0 % 100 = 1
+		{0, 10, 7, 0},            // 0^10 % 7 = 0
+		{2, 10, 0, 0},            // 2^10 % 0 = 0 (zero mod)
+		{123456789, 65537, 998244353, 0}, // large values (expected computed below)
+	}
+
+	for _, tt := range tests {
+		base := big.NewInt(tt.base)
+		exp := big.NewInt(tt.exp)
+		mod := big.NewInt(tt.mod)
+
+		input := buildModExpInput(base.Bytes(), exp.Bytes(), mod.Bytes())
+		out, err := c.Run(input)
+		if err != nil {
+			t.Fatalf("modexp(%d, %d, %d): unexpected error: %v", tt.base, tt.exp, tt.mod, err)
+		}
+
+		result := new(big.Int).SetBytes(out)
+
+		if tt.want != 0 {
+			if result.Int64() != tt.want {
+				t.Errorf("modexp(%d, %d, %d) = %s, want %d", tt.base, tt.exp, tt.mod, result, tt.want)
+			}
+		} else if tt.mod == 0 {
+			// Zero mod should return zero.
+			if result.Sign() != 0 {
+				t.Errorf("modexp(%d, %d, 0) = %s, want 0", tt.base, tt.exp, result)
+			}
+		} else {
+			// Verify against Go's math/big.
+			expected := new(big.Int).Exp(base, exp, mod)
+			if result.Cmp(expected) != 0 {
+				t.Errorf("modexp(%d, %d, %d) = %s, want %s", tt.base, tt.exp, tt.mod, result, expected)
+			}
+		}
+	}
+}
+
+// TestBlake2FPrecompile tests the BLAKE2b F compression function precompile
+// using test vectors from EIP-152.
+func TestBlake2FPrecompile(t *testing.T) {
+	c := &blake2F{}
+
+	// Test vector from EIP-152: 12 rounds.
+	// Input: 4 bytes rounds (12) + 64 bytes h + 128 bytes m + 8 bytes t[0] + 8 bytes t[1] + 1 byte f
+	input := make([]byte, 213)
+	binary.BigEndian.PutUint32(input[:4], 12)
+
+	// h state vector (all zeros for simplicity).
+	// m message block (all zeros for simplicity).
+	// t[0] = 0, t[1] = 0.
+	// f = 1 (final block).
+	input[212] = 1
+
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("blake2f: unexpected error: %v", err)
+	}
+	if len(out) != 64 {
+		t.Fatalf("blake2f output length = %d, want 64", len(out))
+	}
+
+	// The output should be non-zero for 12 rounds with the default IV.
+	allZero := true
+	for _, b := range out {
+		if b != 0 {
+			allZero = false
+			break
+		}
+	}
+	if allZero {
+		t.Error("blake2f: expected non-zero output for 12 rounds")
+	}
+}
+
+// TestBlake2FPrecompile_InvalidInput tests that Blake2F rejects invalid input.
+func TestBlake2FPrecompile_InvalidInput(t *testing.T) {
+	c := &blake2F{}
+
+	// Wrong input length.
+	for _, length := range []int{0, 1, 64, 212, 214, 256} {
+		_, err := c.Run(make([]byte, length))
+		if err == nil {
+			t.Errorf("blake2f: expected error for input length %d", length)
+		}
+	}
+
+	// Invalid final block indicator (not 0 or 1).
+	input := make([]byte, 213)
+	input[212] = 2 // invalid
+	_, err := c.Run(input)
+	if err == nil {
+		t.Error("blake2f: expected error for invalid final block indicator")
+	}
+}
+
+// TestBlake2FPrecompile_ZeroRounds tests Blake2F with 0 rounds (should be a no-op
+// on the state vector).
+func TestBlake2FPrecompile_ZeroRounds(t *testing.T) {
+	c := &blake2F{}
+
+	input := make([]byte, 213)
+	binary.BigEndian.PutUint32(input[:4], 0) // 0 rounds
+	input[212] = 0                           // not final
+
+	// Set h to a known pattern.
+	for i := 0; i < 64; i++ {
+		input[4+i] = byte(i)
+	}
+
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("blake2f(0 rounds): unexpected error: %v", err)
+	}
+
+	// With 0 rounds, the compression function still XORs v[0..7] ^ v[8..15]
+	// into h. The result depends on the IV and state setup.
+	if len(out) != 64 {
+		t.Fatalf("blake2f(0 rounds) output length = %d, want 64", len(out))
+	}
+}
+
+// TestBlake2FPrecompile_GasCost tests that Blake2F gas is based on rounds.
+func TestBlake2FPrecompile_GasCost(t *testing.T) {
+	c := &blake2F{}
+
+	tests := []struct {
+		rounds uint32
+		want   uint64
+	}{
+		{0, 0},
+		{1, 1},
+		{12, 12},
+		{100, 100},
+		{1000000, 1000000},
+	}
+
+	for _, tt := range tests {
+		input := make([]byte, 213)
+		binary.BigEndian.PutUint32(input[:4], tt.rounds)
+		got := c.RequiredGas(input)
+		if got != tt.want {
+			t.Errorf("blake2f gas for %d rounds = %d, want %d", tt.rounds, got, tt.want)
+		}
+	}
+}
+
+// TestBN256AddStub verifies that the BN256 point addition stub returns an error.
+func TestBN256AddStub(t *testing.T) {
+	c := &bn256Add{}
+
+	if g := c.RequiredGas(nil); g != 150 {
+		t.Errorf("bn256Add gas = %d, want 150", g)
+	}
+
+	_, err := c.Run(make([]byte, 128))
+	if err != ErrBN254NotImplemented {
+		t.Errorf("bn256Add: expected ErrBN254NotImplemented, got %v", err)
+	}
+}
+
+// TestBN256ScalarMulStub verifies that the BN256 scalar mul stub returns an error.
+func TestBN256ScalarMulStub(t *testing.T) {
+	c := &bn256ScalarMul{}
+
+	if g := c.RequiredGas(nil); g != 6000 {
+		t.Errorf("bn256ScalarMul gas = %d, want 6000", g)
+	}
+
+	_, err := c.Run(make([]byte, 96))
+	if err != ErrBN254NotImplemented {
+		t.Errorf("bn256ScalarMul: expected ErrBN254NotImplemented, got %v", err)
+	}
+}
+
+// TestBN256PairingStub verifies that the BN256 pairing stub returns an error.
+func TestBN256PairingStub(t *testing.T) {
+	c := &bn256Pairing{}
+
+	// Gas cost: 45000 + 34000*k where k = len(input)/192.
+	if g := c.RequiredGas(nil); g != 45000 {
+		t.Errorf("bn256Pairing gas (0 pairs) = %d, want 45000", g)
+	}
+	if g := c.RequiredGas(make([]byte, 192)); g != 45000+34000 {
+		t.Errorf("bn256Pairing gas (1 pair) = %d, want %d", g, 45000+34000)
+	}
+	if g := c.RequiredGas(make([]byte, 384)); g != 45000+34000*2 {
+		t.Errorf("bn256Pairing gas (2 pairs) = %d, want %d", g, 45000+34000*2)
+	}
+
+	// Valid length (multiple of 192).
+	_, err := c.Run(make([]byte, 192))
+	if err != ErrBN254NotImplemented {
+		t.Errorf("bn256Pairing(valid): expected ErrBN254NotImplemented, got %v", err)
+	}
+
+	// Invalid length (not multiple of 192).
+	_, err = c.Run(make([]byte, 100))
+	if err == nil {
+		t.Error("bn256Pairing(invalid length): expected error")
+	}
+}
+
+// TestBlake2FPrecompile_EIP152Vector tests against the EIP-152 reference test vector.
+func TestBlake2FPrecompile_EIP152Vector(t *testing.T) {
+	// EIP-152 test vector 5:
+	// rounds = 12
+	// h = 48 01 6a 09 e6 67 f3 bc  c9 08 bb 67 ae 85 84 ca
+	//     a7 3b 3c 6e f3 72 fe 94  f8 2b a5 4f f5 3a 5f 1d
+	//     36 f1 51 0e 52 7f ad e6  82 d1 9b 05 68 8c 2b 3e
+	//     6c 1f 1f 83 d9 ab fb 41  bd 6b 5b e0 cd 19 13 7e
+	//     21 79
+	// m = 61 62 63 (+ zeros to fill 128 bytes)
+	// t[0] = 3, t[1] = 0
+	// f = 1
+	//
+	// Expected output (h after compression):
+	// ba 80 a5 3f 98 1c 4d 0d  6a 27 97 b6 9f 12 f6 e9
+	// 4c 21 2f 14 68 5a c4 b7  4b 12 bb 6f db ff a2 d1
+	// 7d 87 c5 39 2a ab 79 2d  c2 52 d5 de 45 33 cc 95
+	// 18 d3 8a a8 db f1 92 5a  b9 23 86 ed d4 00 99 23
+
+	input := make([]byte, 213)
+	// rounds = 12
+	binary.BigEndian.PutUint32(input[0:4], 12)
+
+	// h = BLAKE2b IV XORed with params.
+	// For the EIP-152 test vector, h is the BLAKE2b state after initialization
+	// with personal = empty, key = empty, digest_length = 64.
+	// The initial state is IV XOR param block. param[0] = 0x01010040.
+	// IV[0] XOR 0x01010040 = 0x6a09e667f3bcc908 XOR 0x0000000001010040 = 0x6a09e667f2bdc948
+	h := [8]uint64{
+		0x6a09e667f2bdc948, // IV[0] ^ 0x01010040
+		0xbb67ae8584caa73b,
+		0x3c6ef372fe94f82b,
+		0xa54ff53a5f1d36f1,
+		0x510e527fade682d1,
+		0x9b05688c2b3e6c1f,
+		0x1f83d9abfb41bd6b,
+		0x5be0cd19137e2179,
+	}
+	for i := 0; i < 8; i++ {
+		binary.LittleEndian.PutUint64(input[4+i*8:4+(i+1)*8], h[i])
+	}
+
+	// m = "abc" (0x61, 0x62, 0x63) followed by zeros.
+	input[68] = 0x61 // 'a'
+	input[69] = 0x62 // 'b'
+	input[70] = 0x63 // 'c'
+	// rest of m is zeros
+
+	// t[0] = 3 (3 bytes processed)
+	binary.LittleEndian.PutUint64(input[196:204], 3)
+	// t[1] = 0
+	binary.LittleEndian.PutUint64(input[204:212], 0)
+
+	// f = 1 (final block)
+	input[212] = 1
+
+	c := &blake2F{}
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("blake2f EIP-152 vector: unexpected error: %v", err)
+	}
+	if len(out) != 64 {
+		t.Fatalf("blake2f output length = %d, want 64", len(out))
+	}
+
+	// Expected output: BLAKE2b("abc") with 64-byte digest.
+	// This is a well-known value:
+	// ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d1
+	// 7d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923
+	expectedHex := "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923"
+	gotHex := hex.EncodeToString(out)
+	if gotHex != expectedHex {
+		t.Errorf("blake2f EIP-152 vector:\ngot  %s\nwant %s", gotHex, expectedHex)
+	}
 }

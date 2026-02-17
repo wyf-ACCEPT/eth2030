@@ -617,7 +617,12 @@ func opReturndataCopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, 
 	dOff := dataOffset.Uint64()
 	end := dOff + l
 
-	// Bounds check against return data
+	// Check for uint64 overflow in dOff + l.
+	if end < dOff {
+		return nil, ErrReturnDataOutOfBounds
+	}
+
+	// Bounds check against return data.
 	if end > uint64(len(evm.returnData)) {
 		return nil, ErrReturnDataOutOfBounds
 	}
@@ -1059,7 +1064,10 @@ func opBlockhash(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack
 }
 
 // opSelfdestruct implements the SELFDESTRUCT opcode.
-// Sends remaining balance to the beneficiary and marks the contract for destruction.
+// Post-EIP-6780 (Cancun): sends remaining balance to the beneficiary but does
+// NOT destroy the account. Account destruction only occurs if the contract was
+// created in the same transaction, which is tracked externally by the state
+// processor. The opcode effectively becomes "send all balance".
 func opSelfdestruct(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	if evm.readOnly {
 		return nil, ErrWriteProtection
@@ -1073,7 +1081,9 @@ func opSelfdestruct(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 			evm.StateDB.AddBalance(beneficiary, balance)
 			evm.StateDB.SubBalance(contract.Address, balance)
 		}
-		evm.StateDB.SelfDestruct(contract.Address)
+		// Post-EIP-6780: do NOT call SelfDestruct. The account persists.
+		// The state processor may still mark it for destruction if the
+		// contract was created in the same transaction.
 	}
 
 	return nil, nil
