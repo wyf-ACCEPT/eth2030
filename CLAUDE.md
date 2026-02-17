@@ -35,18 +35,57 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 
 ## Project Structure & Module Organization
 
-- `refs/` - Reference submodules (read-only)
+- `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
+  - `core/types/` - Core types: Header, Transaction, Receipt, Block, Account
+  - `core/state/` - StateDB interface and in-memory implementation
+  - `core/vm/` - EVM interpreter, opcodes, stack, memory, gas
+  - `core/rawdb/` - Raw database access (planned)
+  - `rlp/` - RLP encoding/decoding
+  - `crypto/` - Keccak-256, secp256k1 ECDSA
+  - `engine/` - Engine API types (V1-V5), forkchoice, payload status
+  - `bal/` - Block Access Lists (EIP-7928)
+  - `witness/` - Execution witness and ZK proof types
+  - `txpool/` - Transaction pool (planned)
+  - `p2p/` - P2P networking (planned)
+- `cmd/eth2028/` - Main binary entry point (planned)
+- `internal/testutil/` - Shared test utilities
+- `refs/` - Reference submodules (read-only, do NOT modify)
   - **Ethereum core**: go-ethereum, EIPs, ERCs, consensus-specs, execution-apis, execution-spec-tests, beacon-APIs, builder-specs
   - **Utilities**: eth-utils, go-verkle, web3.py
   - **Governance**: pm (project management), eip-review-bot, iptf-pocs
   - **Devops**: benchmarkoor, benchmarkoor-tests, ethereum-package, erigone, xatu, execution-processor, consensoor
 - `tools/` - Research and data fetching tools
 - `data/` - Downloaded research data (gitignored)
+- `docs/` - Design docs, roadmap, deep-dive
 - `.claude/` - Claude Code skills and settings
 
 ## Build, Test, and Development Commands
 
-<!-- Update with actual build commands -->
+```bash
+# Build all packages
+cd pkg && go build ./...
+
+# Run all tests
+cd pkg && go test ./...
+
+# Run tests for a specific package
+cd pkg && go test ./core/types/...
+cd pkg && go test ./rlp/...
+cd pkg && go test ./crypto/...
+cd pkg && go test ./engine/...
+cd pkg && go test ./bal/...
+cd pkg && go test ./witness/...
+cd pkg && go test ./core/state/...
+cd pkg && go test ./core/vm/...
+
+# Run tests with verbose output
+cd pkg && go test -v ./...
+
+# Run fuzz tests (RLP decoder)
+cd pkg && go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
+```
+
+NOTE: The go.mod is in pkg/ (not project root) to avoid module conflicts with refs/ submodules.
 
 ## Coding Style & Naming Conventions
 
