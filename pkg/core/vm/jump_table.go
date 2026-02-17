@@ -56,6 +56,56 @@ func memoryLog(stack *Stack) uint64 {
 	return stack.Back(0).Uint64() + stack.Back(1).Uint64()
 }
 
+func memoryReturndataCopy(stack *Stack) uint64 {
+	return stack.Back(0).Uint64() + stack.Back(2).Uint64()
+}
+
+// memoryCall returns the required memory size for CALL.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func memoryCall(stack *Stack) uint64 {
+	argsEnd := stack.Back(3).Uint64() + stack.Back(4).Uint64()
+	retEnd := stack.Back(5).Uint64() + stack.Back(6).Uint64()
+	if argsEnd > retEnd {
+		return argsEnd
+	}
+	return retEnd
+}
+
+// memoryCallCode returns the required memory size for CALLCODE.
+// Same stack layout as CALL.
+func memoryCallCode(stack *Stack) uint64 {
+	return memoryCall(stack)
+}
+
+// memoryDelegateCall returns the required memory size for DELEGATECALL.
+// Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
+func memoryDelegateCall(stack *Stack) uint64 {
+	argsEnd := stack.Back(2).Uint64() + stack.Back(3).Uint64()
+	retEnd := stack.Back(4).Uint64() + stack.Back(5).Uint64()
+	if argsEnd > retEnd {
+		return argsEnd
+	}
+	return retEnd
+}
+
+// memoryStaticCall returns the required memory size for STATICCALL.
+// Same stack layout as DELEGATECALL.
+func memoryStaticCall(stack *Stack) uint64 {
+	return memoryDelegateCall(stack)
+}
+
+// memoryCreate returns the required memory size for CREATE.
+// Stack: value, offset, length
+func memoryCreate(stack *Stack) uint64 {
+	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+}
+
+// memoryCreate2 returns the required memory size for CREATE2.
+// Stack: value, offset, length, salt
+func memoryCreate2(stack *Stack) uint64 {
+	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+}
+
 // gasMemExpansion calculates dynamic gas for memory expansion.
 func gasMemExpansion(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	if memorySize == 0 {
@@ -191,6 +241,17 @@ func NewFrontierJumpTable() JumpTable {
 		}
 	}
 
+	// Ext code
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024}
+
+	// CALL-family
+	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasMemExpansion}
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasMemExpansion}
+
+	// CREATE
+	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasMemExpansion, writes: true}
+
 	// Return / Invalid
 	tbl[RETURN] = &operation{execute: opReturn, constantGas: GasReturn, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
 	tbl[INVALID] = &operation{execute: opInvalid, constantGas: 0, minStack: 0, maxStack: 1024}
@@ -201,7 +262,8 @@ func NewFrontierJumpTable() JumpTable {
 // NewHomesteadJumpTable returns the Homestead fork jump table.
 func NewHomesteadJumpTable() JumpTable {
 	tbl := NewFrontierJumpTable()
-	// Homestead added DELEGATECALL (system opcode, stub not yet registered).
+	// Homestead added DELEGATECALL.
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
 

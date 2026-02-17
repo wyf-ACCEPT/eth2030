@@ -5,18 +5,20 @@ import (
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/crypto"
 )
 
 var (
-	ErrNotImplemented       = errors.New("not implemented")
-	ErrOutOfGas             = errors.New("out of gas")
-	ErrStackOverflow        = errors.New("stack overflow")
-	ErrStackUnderflow       = errors.New("stack underflow")
-	ErrInvalidJump          = errors.New("invalid jump destination")
-	ErrWriteProtection      = errors.New("write protection")
-	ErrExecutionReverted    = errors.New("execution reverted")
-	ErrMaxCallDepthExceeded = errors.New("max call depth exceeded")
-	ErrInvalidOpCode        = errors.New("invalid opcode")
+	ErrNotImplemented        = errors.New("not implemented")
+	ErrOutOfGas              = errors.New("out of gas")
+	ErrStackOverflow         = errors.New("stack overflow")
+	ErrStackUnderflow        = errors.New("stack underflow")
+	ErrInvalidJump           = errors.New("invalid jump destination")
+	ErrWriteProtection       = errors.New("write protection")
+	ErrExecutionReverted     = errors.New("execution reverted")
+	ErrMaxCallDepthExceeded  = errors.New("max call depth exceeded")
+	ErrInvalidOpCode         = errors.New("invalid opcode")
+	ErrReturnDataOutOfBounds = errors.New("return data out of bounds")
 )
 
 // BlockContext provides the EVM with block-level information.
@@ -41,11 +43,30 @@ type TxContext struct {
 // This interface is defined in the vm package to avoid circular imports
 // with core/state. Any implementation of core/state.StateDB satisfies it.
 type StateDB interface {
+	// Account operations
+	CreateAccount(addr types.Address)
+	GetBalance(addr types.Address) *big.Int
+	AddBalance(addr types.Address, amount *big.Int)
+	SubBalance(addr types.Address, amount *big.Int)
+	GetNonce(addr types.Address) uint64
+	SetNonce(addr types.Address, nonce uint64)
+	GetCode(addr types.Address) []byte
+	SetCode(addr types.Address, code []byte)
+	GetCodeHash(addr types.Address) types.Hash
+
+	// Storage
 	GetState(addr types.Address, key types.Hash) types.Hash
 	SetState(addr types.Address, key types.Hash, value types.Hash)
-	GetBalance(addr types.Address) *big.Int
-	AddLog(log *types.Log)
+
+	// Account existence
 	Exist(addr types.Address) bool
+
+	// Snapshot and revert
+	Snapshot() int
+	RevertToSnapshot(id int)
+
+	// Logs
+	AddLog(log *types.Log)
 }
 
 // Config holds EVM configuration options.
@@ -57,14 +78,15 @@ type Config struct {
 
 // EVM is the Ethereum Virtual Machine execution environment.
 type EVM struct {
-	Context   BlockContext
-	TxContext TxContext
-	Config    Config
-	StateDB   StateDB
-	chainID   uint64
-	depth     int
-	readOnly  bool
-	jumpTable JumpTable
+	Context    BlockContext
+	TxContext  TxContext
+	Config     Config
+	StateDB    StateDB
+	chainID    uint64
+	depth      int
+	readOnly   bool
+	jumpTable  JumpTable
+	returnData []byte // return data from the last CALL/CREATE
 }
 
 // NewEVM creates a new EVM instance.
@@ -162,32 +184,326 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 	}
 }
 
-// Call executes a message call. Stub implementation.
+// Call executes a message call to the given address with the given input, gas, and value.
 func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas uint64, value *big.Int) ([]byte, uint64, error) {
-	return nil, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, gas, ErrMaxCallDepthExceeded
+	}
+
+	// Check for precompiled contract
+	if IsPrecompiledContract(addr) {
+		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+		return ret, gasLeft, err
+	}
+
+	if evm.StateDB == nil {
+		return nil, gas, errors.New("no state database")
+	}
+
+	// Snapshot state for revert on failure
+	snapshot := evm.StateDB.Snapshot()
+
+	// Create account if it doesn't exist
+	if !evm.StateDB.Exist(addr) {
+		evm.StateDB.CreateAccount(addr)
+	}
+
+	// Transfer value
+	if value != nil && value.Sign() > 0 {
+		if evm.readOnly {
+			return nil, gas, ErrWriteProtection
+		}
+		callerBalance := evm.StateDB.GetBalance(caller)
+		if callerBalance.Cmp(value) < 0 {
+			return nil, gas, errors.New("insufficient balance for transfer")
+		}
+		evm.StateDB.SubBalance(caller, value)
+		evm.StateDB.AddBalance(addr, value)
+	}
+
+	// Get the code to execute
+	code := evm.StateDB.GetCode(addr)
+	if len(code) == 0 {
+		// No code to execute, the call succeeds with no return data
+		return nil, gas, nil
+	}
+
+	// Create the contract for execution
+	contract := NewContract(caller, addr, value, gas)
+	contract.Code = code
+	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
+
+	// Execute
+	evm.depth++
+	ret, err := evm.Run(contract, input)
+	evm.depth--
+
+	gasLeft := contract.Gas
+
+	if err != nil && !errors.Is(err, ErrExecutionReverted) {
+		// On error (not revert), revert state changes and consume all gas
+		evm.StateDB.RevertToSnapshot(snapshot)
+		gasLeft = 0
+	} else if errors.Is(err, ErrExecutionReverted) {
+		// On revert, revert state changes but return remaining gas
+		evm.StateDB.RevertToSnapshot(snapshot)
+	}
+
+	return ret, gasLeft, err
 }
 
-// CallCode executes a CALLCODE operation. Stub implementation.
+// CallCode executes a CALLCODE operation. Runs the callee's code in the caller's context.
 func (evm *EVM) CallCode(caller types.Address, addr types.Address, input []byte, gas uint64, value *big.Int) ([]byte, uint64, error) {
-	return nil, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, gas, ErrMaxCallDepthExceeded
+	}
+
+	if IsPrecompiledContract(addr) {
+		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+		return ret, gasLeft, err
+	}
+
+	if evm.StateDB == nil {
+		return nil, gas, errors.New("no state database")
+	}
+
+	snapshot := evm.StateDB.Snapshot()
+
+	// Get the code to execute from the target address
+	code := evm.StateDB.GetCode(addr)
+	if len(code) == 0 {
+		return nil, gas, nil
+	}
+
+	// CALLCODE executes the callee's code but in the caller's context
+	// (caller's address is used for storage and msg.sender)
+	contract := NewContract(caller, caller, value, gas)
+	contract.Code = code
+	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
+
+	evm.depth++
+	ret, err := evm.Run(contract, input)
+	evm.depth--
+
+	gasLeft := contract.Gas
+
+	if err != nil && !errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+		gasLeft = 0
+	} else if errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+	}
+
+	return ret, gasLeft, err
 }
 
-// DelegateCall executes a DELEGATECALL operation. Stub implementation.
+// DelegateCall executes a DELEGATECALL operation.
+// Like CALLCODE but preserves the original caller and value.
 func (evm *EVM) DelegateCall(caller types.Address, addr types.Address, input []byte, gas uint64) ([]byte, uint64, error) {
-	return nil, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, gas, ErrMaxCallDepthExceeded
+	}
+
+	if IsPrecompiledContract(addr) {
+		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+		return ret, gasLeft, err
+	}
+
+	if evm.StateDB == nil {
+		return nil, gas, errors.New("no state database")
+	}
+
+	snapshot := evm.StateDB.Snapshot()
+
+	code := evm.StateDB.GetCode(addr)
+	if len(code) == 0 {
+		return nil, gas, nil
+	}
+
+	// DELEGATECALL preserves the caller (msg.sender) and value from the current context.
+	// Storage operations happen on the caller's storage, not the callee's.
+	contract := NewContract(caller, caller, nil, gas)
+	contract.Code = code
+	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
+
+	evm.depth++
+	ret, err := evm.Run(contract, input)
+	evm.depth--
+
+	gasLeft := contract.Gas
+
+	if err != nil && !errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+		gasLeft = 0
+	} else if errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+	}
+
+	return ret, gasLeft, err
 }
 
-// StaticCall executes a read-only message call.
+// StaticCall executes a read-only message call. Any state modifications will cause an error.
 func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byte, gas uint64) ([]byte, uint64, error) {
-	return nil, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, gas, ErrMaxCallDepthExceeded
+	}
+
+	if IsPrecompiledContract(addr) {
+		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+		return ret, gasLeft, err
+	}
+
+	if evm.StateDB == nil {
+		return nil, gas, errors.New("no state database")
+	}
+
+	snapshot := evm.StateDB.Snapshot()
+
+	code := evm.StateDB.GetCode(addr)
+	if len(code) == 0 {
+		return nil, gas, nil
+	}
+
+	contract := NewContract(caller, addr, new(big.Int), gas)
+	contract.Code = code
+	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
+
+	// Set readOnly mode for the duration of this call
+	prevReadOnly := evm.readOnly
+	evm.readOnly = true
+
+	evm.depth++
+	ret, err := evm.Run(contract, input)
+	evm.depth--
+
+	evm.readOnly = prevReadOnly
+
+	gasLeft := contract.Gas
+
+	if err != nil && !errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+		gasLeft = 0
+	} else if errors.Is(err, ErrExecutionReverted) {
+		evm.StateDB.RevertToSnapshot(snapshot)
+	}
+
+	return ret, gasLeft, err
 }
 
-// Create creates a new contract. Stub implementation.
+// createAddress computes the address of a contract created with CREATE.
+func createAddress(caller types.Address, nonce uint64) types.Address {
+	// CREATE address = keccak256(rlp([caller, nonce]))[12:]
+	// Simplified: we use keccak256(caller + nonce_bytes)
+	data := make([]byte, 0, 28)
+	data = append(data, caller[:]...)
+	nonceBytes := new(big.Int).SetUint64(nonce).Bytes()
+	data = append(data, nonceBytes...)
+	hash := crypto.Keccak256(data)
+	return types.BytesToAddress(hash[12:])
+}
+
+// create2Address computes the address of a contract created with CREATE2.
+func create2Address(caller types.Address, salt *big.Int, initCodeHash []byte) types.Address {
+	// CREATE2 address = keccak256(0xff + caller + salt + keccak256(initCode))[12:]
+	saltBytes := make([]byte, 32)
+	if salt != nil {
+		b := salt.Bytes()
+		copy(saltBytes[32-len(b):], b)
+	}
+	data := make([]byte, 0, 85)
+	data = append(data, 0xff)
+	data = append(data, caller[:]...)
+	data = append(data, saltBytes...)
+	data = append(data, initCodeHash...)
+	hash := crypto.Keccak256(data)
+	return types.BytesToAddress(hash[12:])
+}
+
+// Create creates a new contract with the given code.
 func (evm *EVM) Create(caller types.Address, code []byte, gas uint64, value *big.Int) ([]byte, types.Address, uint64, error) {
-	return nil, types.Address{}, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, types.Address{}, gas, ErrMaxCallDepthExceeded
+	}
+	if evm.readOnly {
+		return nil, types.Address{}, gas, ErrWriteProtection
+	}
+	if evm.StateDB == nil {
+		return nil, types.Address{}, gas, errors.New("no state database")
+	}
+
+	// Compute the new contract address
+	nonce := evm.StateDB.GetNonce(caller)
+	evm.StateDB.SetNonce(caller, nonce+1)
+	contractAddr := createAddress(caller, nonce)
+
+	return evm.create(caller, code, gas, value, contractAddr)
 }
 
-// Create2 creates a new contract using CREATE2. Stub implementation.
+// Create2 creates a new contract using CREATE2 with the given salt.
 func (evm *EVM) Create2(caller types.Address, code []byte, gas uint64, endowment *big.Int, salt *big.Int) ([]byte, types.Address, uint64, error) {
-	return nil, types.Address{}, gas, ErrNotImplemented
+	if evm.depth > evm.Config.MaxCallDepth {
+		return nil, types.Address{}, gas, ErrMaxCallDepthExceeded
+	}
+	if evm.readOnly {
+		return nil, types.Address{}, gas, ErrWriteProtection
+	}
+	if evm.StateDB == nil {
+		return nil, types.Address{}, gas, errors.New("no state database")
+	}
+
+	initCodeHash := crypto.Keccak256(code)
+	contractAddr := create2Address(caller, salt, initCodeHash)
+
+	return evm.create(caller, code, gas, endowment, contractAddr)
+}
+
+// create is the shared implementation for Create and Create2.
+func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big.Int, contractAddr types.Address) ([]byte, types.Address, uint64, error) {
+	snapshot := evm.StateDB.Snapshot()
+
+	// Create the account
+	evm.StateDB.CreateAccount(contractAddr)
+
+	// Transfer value
+	if value != nil && value.Sign() > 0 {
+		callerBalance := evm.StateDB.GetBalance(caller)
+		if callerBalance.Cmp(value) < 0 {
+			return nil, types.Address{}, gas, errors.New("insufficient balance for transfer")
+		}
+		evm.StateDB.SubBalance(caller, value)
+		evm.StateDB.AddBalance(contractAddr, value)
+	}
+
+	// Deduct CREATE gas
+	if gas < GasCreate {
+		return nil, types.Address{}, 0, ErrOutOfGas
+	}
+	gas -= GasCreate
+
+	// Create the contract for init code execution
+	contract := NewContract(caller, contractAddr, value, gas)
+	contract.Code = code
+
+	// Execute init code
+	evm.depth++
+	ret, err := evm.Run(contract, nil)
+	evm.depth--
+
+	gasLeft := contract.Gas
+
+	if err != nil {
+		// On any error, revert state and return
+		evm.StateDB.RevertToSnapshot(snapshot)
+		if !errors.Is(err, ErrExecutionReverted) {
+			gasLeft = 0
+		}
+		return ret, types.Address{}, gasLeft, err
+	}
+
+	// Store the returned bytecode as the contract's code
+	if len(ret) > 0 {
+		evm.StateDB.SetCode(contractAddr, ret)
+	}
+
+	return ret, contractAddr, gasLeft, nil
 }

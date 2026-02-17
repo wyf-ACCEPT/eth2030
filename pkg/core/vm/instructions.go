@@ -591,6 +591,9 @@ func bigToHash(b *big.Int) types.Hash {
 }
 
 func opSstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
 	loc, val := stack.Pop(), stack.Pop()
 	if evm.StateDB != nil {
 		key := bigToHash(loc)
@@ -601,16 +604,27 @@ func opSstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 }
 
 func opReturndataSize(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: track return data from sub-calls
-	stack.Push(new(big.Int))
+	stack.Push(new(big.Int).SetUint64(uint64(len(evm.returnData))))
 	return nil, nil
 }
 
 func opReturndataCopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: track return data from sub-calls
-	_ = stack.Pop() // memOffset
-	_ = stack.Pop() // dataOffset
-	_ = stack.Pop() // length
+	memOffset, dataOffset, length := stack.Pop(), stack.Pop(), stack.Pop()
+	l := length.Uint64()
+	if l == 0 {
+		return nil, nil
+	}
+	dOff := dataOffset.Uint64()
+	end := dOff + l
+
+	// Bounds check against return data
+	if end > uint64(len(evm.returnData)) {
+		return nil, ErrReturnDataOutOfBounds
+	}
+
+	data := make([]byte, l)
+	copy(data, evm.returnData[dOff:end])
+	memory.Set(memOffset.Uint64(), l, data)
 	return nil, nil
 }
 
@@ -639,6 +653,9 @@ func opBalance(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *
 // makeLog returns an executionFunc for LOG0..LOG4.
 func makeLog(n int) executionFunc {
 	return func(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+		if evm.readOnly {
+			return nil, ErrWriteProtection
+		}
 		offset, size := stack.Pop(), stack.Pop()
 		topics := make([]types.Hash, n)
 		for i := 0; i < n; i++ {
@@ -654,4 +671,289 @@ func makeLog(n int) executionFunc {
 		}
 		return nil, nil
 	}
+}
+
+// bigToAddress converts a big.Int to a types.Address (takes the lower 20 bytes).
+func bigToAddress(b *big.Int) types.Address {
+	return types.BytesToAddress(b.Bytes())
+}
+
+// opCall implements the CALL opcode.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+// Pushes 1 on success, 0 on failure.
+func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	gasVal := stack.Pop()
+	addr := bigToAddress(stack.Pop())
+	value := stack.Pop()
+	inOffset, inSize := stack.Pop(), stack.Pop()
+	retOffset, retSize := stack.Pop(), stack.Pop()
+
+	// Get input data from memory
+	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
+
+	// Use provided gas, capped at available gas
+	callGas := gasVal.Uint64()
+	if callGas > contract.Gas {
+		callGas = contract.Gas
+	}
+	contract.Gas -= callGas
+
+	ret, returnGas, err := evm.Call(contract.Address, addr, args, callGas, value)
+
+	// Return unused gas
+	contract.Gas += returnGas
+
+	// Store return data
+	evm.returnData = ret
+
+	// Copy return data to memory
+	if retSize.Uint64() > 0 && len(ret) > 0 {
+		retLen := retSize.Uint64()
+		if uint64(len(ret)) < retLen {
+			retLen = uint64(len(ret))
+		}
+		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+	}
+
+	// Push success/failure
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(big.NewInt(1))
+	}
+
+	return nil, nil
+}
+
+// opCallCode implements the CALLCODE opcode.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	gasVal := stack.Pop()
+	addr := bigToAddress(stack.Pop())
+	value := stack.Pop()
+	inOffset, inSize := stack.Pop(), stack.Pop()
+	retOffset, retSize := stack.Pop(), stack.Pop()
+
+	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
+
+	callGas := gasVal.Uint64()
+	if callGas > contract.Gas {
+		callGas = contract.Gas
+	}
+	contract.Gas -= callGas
+
+	ret, returnGas, err := evm.CallCode(contract.Address, addr, args, callGas, value)
+
+	contract.Gas += returnGas
+	evm.returnData = ret
+
+	if retSize.Uint64() > 0 && len(ret) > 0 {
+		retLen := retSize.Uint64()
+		if uint64(len(ret)) < retLen {
+			retLen = uint64(len(ret))
+		}
+		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+	}
+
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(big.NewInt(1))
+	}
+
+	return nil, nil
+}
+
+// opDelegateCall implements the DELEGATECALL opcode.
+// Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
+func opDelegateCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	gasVal := stack.Pop()
+	addr := bigToAddress(stack.Pop())
+	inOffset, inSize := stack.Pop(), stack.Pop()
+	retOffset, retSize := stack.Pop(), stack.Pop()
+
+	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
+
+	callGas := gasVal.Uint64()
+	if callGas > contract.Gas {
+		callGas = contract.Gas
+	}
+	contract.Gas -= callGas
+
+	ret, returnGas, err := evm.DelegateCall(contract.CallerAddress, addr, args, callGas)
+
+	contract.Gas += returnGas
+	evm.returnData = ret
+
+	if retSize.Uint64() > 0 && len(ret) > 0 {
+		retLen := retSize.Uint64()
+		if uint64(len(ret)) < retLen {
+			retLen = uint64(len(ret))
+		}
+		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+	}
+
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(big.NewInt(1))
+	}
+
+	return nil, nil
+}
+
+// opStaticCall implements the STATICCALL opcode.
+// Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
+func opStaticCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	gasVal := stack.Pop()
+	addr := bigToAddress(stack.Pop())
+	inOffset, inSize := stack.Pop(), stack.Pop()
+	retOffset, retSize := stack.Pop(), stack.Pop()
+
+	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
+
+	callGas := gasVal.Uint64()
+	if callGas > contract.Gas {
+		callGas = contract.Gas
+	}
+	contract.Gas -= callGas
+
+	ret, returnGas, err := evm.StaticCall(contract.Address, addr, args, callGas)
+
+	contract.Gas += returnGas
+	evm.returnData = ret
+
+	if retSize.Uint64() > 0 && len(ret) > 0 {
+		retLen := retSize.Uint64()
+		if uint64(len(ret)) < retLen {
+			retLen = uint64(len(ret))
+		}
+		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+	}
+
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(big.NewInt(1))
+	}
+
+	return nil, nil
+}
+
+// opCreate implements the CREATE opcode.
+// Stack: value, offset, length
+// Pushes the new contract address on success, 0 on failure.
+func opCreate(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+
+	value := stack.Pop()
+	offset, size := stack.Pop(), stack.Pop()
+
+	// Get init code from memory
+	initCode := memory.Get(int64(offset.Uint64()), int64(size.Uint64()))
+
+	callGas := contract.Gas
+	contract.Gas = 0
+
+	ret, addr, returnGas, err := evm.Create(contract.Address, initCode, callGas, value)
+
+	contract.Gas += returnGas
+	evm.returnData = ret
+
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(new(big.Int).SetBytes(addr[:]))
+	}
+
+	return nil, nil
+}
+
+// opCreate2 implements the CREATE2 opcode.
+// Stack: value, offset, length, salt
+func opCreate2(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+
+	value := stack.Pop()
+	offset, size := stack.Pop(), stack.Pop()
+	salt := stack.Pop()
+
+	initCode := memory.Get(int64(offset.Uint64()), int64(size.Uint64()))
+
+	callGas := contract.Gas
+	contract.Gas = 0
+
+	ret, addr, returnGas, err := evm.Create2(contract.Address, initCode, callGas, value, salt)
+
+	contract.Gas += returnGas
+	evm.returnData = ret
+
+	if err != nil {
+		stack.Push(new(big.Int))
+	} else {
+		stack.Push(new(big.Int).SetBytes(addr[:]))
+	}
+
+	return nil, nil
+}
+
+// opExtcodesize implements the EXTCODESIZE opcode.
+func opExtcodesize(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	slot := stack.Peek()
+	if evm.StateDB != nil {
+		addr := types.BytesToAddress(slot.Bytes())
+		code := evm.StateDB.GetCode(addr)
+		slot.SetUint64(uint64(len(code)))
+	} else {
+		slot.SetUint64(0)
+	}
+	return nil, nil
+}
+
+// opExtcodecopy implements the EXTCODECOPY opcode.
+func opExtcodecopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	addrVal := stack.Pop()
+	memOffset := stack.Pop()
+	codeOffset := stack.Pop()
+	length := stack.Pop()
+
+	l := length.Uint64()
+	if l == 0 {
+		return nil, nil
+	}
+
+	var code []byte
+	if evm.StateDB != nil {
+		addr := types.BytesToAddress(addrVal.Bytes())
+		code = evm.StateDB.GetCode(addr)
+	}
+
+	cOff := codeOffset.Uint64()
+	data := make([]byte, l)
+	if cOff < uint64(len(code)) {
+		copy(data, code[cOff:])
+	}
+	memory.Set(memOffset.Uint64(), l, data)
+	return nil, nil
+}
+
+// opExtcodehash implements the EXTCODEHASH opcode.
+func opExtcodehash(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	slot := stack.Peek()
+	if evm.StateDB != nil {
+		addr := types.BytesToAddress(slot.Bytes())
+		if !evm.StateDB.Exist(addr) {
+			slot.SetUint64(0)
+		} else {
+			hash := evm.StateDB.GetCodeHash(addr)
+			slot.SetBytes(hash[:])
+		}
+	} else {
+		slot.SetUint64(0)
+	}
+	return nil, nil
 }

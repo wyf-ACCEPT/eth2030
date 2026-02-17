@@ -311,66 +311,66 @@ func TestRunPush32(t *testing.T) {
 	}
 }
 
-func TestEVMCallStub(t *testing.T) {
+func TestEVMCallNoState(t *testing.T) {
 	evm := newTestEVM()
 	_, gas, err := evm.Call(types.Address{}, types.Address{}, nil, 1000, big.NewInt(0))
-	if err != ErrNotImplemented {
-		t.Errorf("Call error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("Call: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
 	}
 }
 
-func TestEVMStaticCallStub(t *testing.T) {
+func TestEVMStaticCallNoState(t *testing.T) {
 	evm := newTestEVM()
 	_, gas, err := evm.StaticCall(types.Address{}, types.Address{}, nil, 1000)
-	if err != ErrNotImplemented {
-		t.Errorf("StaticCall error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("StaticCall: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
 	}
 }
 
-func TestEVMCreateStub(t *testing.T) {
+func TestEVMCreateNoState(t *testing.T) {
 	evm := newTestEVM()
 	_, _, gas, err := evm.Create(types.Address{}, nil, 1000, big.NewInt(0))
-	if err != ErrNotImplemented {
-		t.Errorf("Create error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("Create: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
 	}
 }
 
-func TestEVMCreate2Stub(t *testing.T) {
+func TestEVMCreate2NoState(t *testing.T) {
 	evm := newTestEVM()
 	_, _, gas, err := evm.Create2(types.Address{}, nil, 1000, big.NewInt(0), big.NewInt(0))
-	if err != ErrNotImplemented {
-		t.Errorf("Create2 error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("Create2: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
 	}
 }
 
-func TestEVMCallCodeStub(t *testing.T) {
+func TestEVMCallCodeNoState(t *testing.T) {
 	evm := newTestEVM()
 	_, gas, err := evm.CallCode(types.Address{}, types.Address{}, nil, 1000, big.NewInt(0))
-	if err != ErrNotImplemented {
-		t.Errorf("CallCode error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("CallCode: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
 	}
 }
 
-func TestEVMDelegateCallStub(t *testing.T) {
+func TestEVMDelegateCallNoState(t *testing.T) {
 	evm := newTestEVM()
 	_, gas, err := evm.DelegateCall(types.Address{}, types.Address{}, nil, 1000)
-	if err != ErrNotImplemented {
-		t.Errorf("DelegateCall error = %v, want ErrNotImplemented", err)
+	if err == nil {
+		t.Error("DelegateCall: expected error with no state database")
 	}
 	if gas != 1000 {
 		t.Errorf("gas = %d, want 1000", gas)
