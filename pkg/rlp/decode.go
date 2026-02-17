@@ -52,6 +52,11 @@ func NewStream(r io.Reader) *Stream {
 	return newByteStream(data)
 }
 
+// NewStreamFromBytes creates a new RLP stream from a byte slice.
+func NewStreamFromBytes(data []byte) *Stream {
+	return newByteStream(data)
+}
+
 func newByteStream(data []byte) *Stream {
 	return &Stream{data: data, pos: 0}
 }
@@ -239,6 +244,14 @@ func (s *Stream) List() (uint64, error) {
 	return uint64(payloadEnd - payloadStart), nil
 }
 
+// AtListEnd returns true if the stream position is at the end of the current list scope.
+func (s *Stream) AtListEnd() bool {
+	if len(s.stack) == 0 {
+		return s.pos >= len(s.data)
+	}
+	return s.pos >= s.stack[len(s.stack)-1].end
+}
+
 // ListEnd verifies that all items in the current list have been read.
 func (s *Stream) ListEnd() error {
 	if len(s.stack) == 0 {
@@ -293,6 +306,63 @@ func (s *Stream) BigInt() (*big.Int, error) {
 	}
 	i := new(big.Int).SetBytes(b)
 	return i, nil
+}
+
+// RawItem reads a complete RLP item (prefix + payload) and returns the raw bytes.
+// For lists, this returns the entire list including its prefix.
+func (s *Stream) RawItem() ([]byte, error) {
+	startPos := s.pos
+	lim := s.limit()
+	if s.pos >= lim {
+		return nil, io.EOF
+	}
+	prefix := s.data[s.pos]
+
+	switch {
+	case prefix <= 0x7f:
+		s.pos++
+		return s.data[startPos:s.pos], nil
+	case prefix <= 0xb7:
+		size := int(prefix - 0x80)
+		end := s.pos + 1 + size
+		if end > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		s.pos = end
+		return s.data[startPos:end], nil
+	case prefix <= 0xbf:
+		lenOfLen := int(prefix - 0xb7)
+		if s.pos+1+lenOfLen > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		size := int(readBigEndian(s.data[s.pos+1 : s.pos+1+lenOfLen]))
+		end := s.pos + 1 + lenOfLen + size
+		if end > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		s.pos = end
+		return s.data[startPos:end], nil
+	case prefix <= 0xf7:
+		size := int(prefix - 0xc0)
+		end := s.pos + 1 + size
+		if end > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		s.pos = end
+		return s.data[startPos:end], nil
+	default:
+		lenOfLen := int(prefix - 0xf7)
+		if s.pos+1+lenOfLen > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		size := int(readBigEndian(s.data[s.pos+1 : s.pos+1+lenOfLen]))
+		end := s.pos + 1 + lenOfLen + size
+		if end > lim {
+			return nil, io.ErrUnexpectedEOF
+		}
+		s.pos = end
+		return s.data[startPos:end], nil
+	}
 }
 
 // peekItem returns the kind without consuming.

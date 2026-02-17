@@ -529,6 +529,30 @@ func TestEngineErrorToRPC(t *testing.T) {
 
 // --- Test HTTP Server ---
 
+func startTestServer(t *testing.T, api *EngineAPI) string {
+	t.Helper()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- api.Start("127.0.0.1:0")
+	}()
+
+	// Wait for the listener to be ready.
+	for i := 0; i < 50; i++ {
+		if addr := api.Addr(); addr != nil {
+			return addr.String()
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	select {
+	case err := <-errCh:
+		t.Fatalf("server failed to start: %v", err)
+	default:
+	}
+	t.Fatal("server did not bind in time")
+	return ""
+}
+
 func TestHTTPServer(t *testing.T) {
 	headHash := types.HexToHash("0x1111")
 	backend := &mockBackend{
@@ -543,26 +567,7 @@ func TestHTTPServer(t *testing.T) {
 	}
 
 	api := NewEngineAPI(backend)
-
-	// Start server on a random port.
-	go func() {
-		if err := api.Start("127.0.0.1:0"); err != nil {
-			// Server was stopped -- expected.
-		}
-	}()
-
-	// Give the server a moment to start. We need to find the actual port.
-	// Since we use port 0, the OS assigns one. We use a known port instead.
-	api.Stop()
-
-	// Use a fixed port for the test.
-	addr := "127.0.0.1:18551"
-	go func() {
-		api.Start(addr)
-	}()
-
-	// Wait for the server to start.
-	time.Sleep(100 * time.Millisecond)
+	addr := startTestServer(t, api)
 	defer api.Stop()
 
 	state := ForkchoiceStateV1{
@@ -609,12 +614,7 @@ func TestHTTPServer(t *testing.T) {
 
 func TestHTTPServer_MethodNotAllowed(t *testing.T) {
 	api := NewEngineAPI(&mockBackend{})
-
-	addr := "127.0.0.1:18552"
-	go func() {
-		api.Start(addr)
-	}()
-	time.Sleep(100 * time.Millisecond)
+	addr := startTestServer(t, api)
 	defer api.Stop()
 
 	resp, err := http.Get("http://" + addr + "/")

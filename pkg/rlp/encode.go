@@ -152,6 +152,11 @@ func encodeStruct(v reflect.Value) ([]byte, error) {
 	return wrapList(payload), nil
 }
 
+// WrapList wraps an already-encoded RLP payload in a list header.
+func WrapList(payload []byte) []byte {
+	return wrapList(payload)
+}
+
 func wrapList(payload []byte) []byte {
 	n := len(payload)
 	if n <= 55 {

@@ -362,7 +362,7 @@ func TestTransactionToMessage(t *testing.T) {
 	}
 }
 
-func TestContractCreationNotImplemented(t *testing.T) {
+func TestContractCreation(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
 
 	sender := types.HexToAddress("0x1111")
@@ -374,14 +374,24 @@ func TestContractCreationNotImplemented(t *testing.T) {
 	gasPrice := big.NewInt(1)
 	gasLimit := uint64(100000)
 
-	// Contract creation tx: To is nil, Data is contract bytecode
+	// Contract creation tx: To is nil, Data is init code.
+	// Simple init code: PUSH1 0x42, PUSH1 0x00, MSTORE, PUSH1 0x01, PUSH1 0x1f, RETURN
+	// Stores 0x42 in memory and returns 1 byte (the deployed "code" is [0x42]).
+	initCode := []byte{
+		0x60, 0x42, // PUSH1 0x42
+		0x60, 0x00, // PUSH1 0x00
+		0x52,       // MSTORE (stores 0x42 at memory[0:32])
+		0x60, 0x01, // PUSH1 0x01 (return size = 1 byte)
+		0x60, 0x1f, // PUSH1 0x1f (return offset = 31, to get last byte of the word)
+		0xf3,       // RETURN
+	}
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
 		GasPrice: gasPrice,
 		Gas:      gasLimit,
 		To:       nil, // contract creation
 		Value:    big.NewInt(0),
-		Data:     []byte{0x60, 0x80, 0x60, 0x40, 0x52}, // dummy bytecode
+		Data:     initCode,
 	})
 	msg := TransactionToMessage(tx)
 	msg.From = sender
@@ -393,17 +403,76 @@ func TestContractCreationNotImplemented(t *testing.T) {
 	if err != nil {
 		t.Fatalf("applyMessage should not return protocol error for contract creation, got: %v", err)
 	}
-	// Contract creation should return an execution error (not implemented)
-	if !result.Failed() {
-		t.Fatal("contract creation should fail with not-implemented error")
-	}
-	if result.Err != ErrContractCreation {
-		t.Fatalf("expected ErrContractCreation, got: %v", result.Err)
+	if result.Failed() {
+		t.Fatalf("contract creation should succeed, got error: %v", result.Err)
 	}
 
-	// Nonce should still be incremented
+	// Nonce should be incremented
 	if statedb.GetNonce(sender) != 1 {
-		t.Fatalf("nonce should be incremented even on failed execution, got %d", statedb.GetNonce(sender))
+		t.Fatalf("nonce should be incremented, got %d", statedb.GetNonce(sender))
+	}
+
+	// Gas should be consumed (more than base TxGas due to create overhead + execution)
+	if result.UsedGas <= TxGas {
+		t.Fatalf("contract creation should use more gas than simple transfer, got %d", result.UsedGas)
+	}
+}
+
+func TestContractCall(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+
+	sender := types.HexToAddress("0x1111")
+	contractAddr := types.HexToAddress("0x3333")
+
+	// Fund sender
+	tenETH := new(big.Int).Mul(big.NewInt(10), new(big.Int).SetUint64(1e18))
+	statedb.AddBalance(sender, tenETH)
+
+	// Deploy contract code: PUSH1 0x42, PUSH1 0x00, MSTORE, PUSH1 0x20, PUSH1 0x00, RETURN
+	// Returns 32 bytes with value 0x42
+	contractCode := []byte{
+		0x60, 0x42, // PUSH1 0x42
+		0x60, 0x00, // PUSH1 0x00
+		0x52,       // MSTORE
+		0x60, 0x20, // PUSH1 0x20 (32 bytes)
+		0x60, 0x00, // PUSH1 0x00
+		0xf3,       // RETURN
+	}
+	statedb.CreateAccount(contractAddr)
+	statedb.SetCode(contractAddr, contractCode)
+
+	gasPrice := big.NewInt(1)
+	gasLimit := uint64(100000)
+
+	// Call the contract
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    0,
+		GasPrice: gasPrice,
+		Gas:      gasLimit,
+		To:       &contractAddr,
+		Value:    big.NewInt(0),
+		Data:     []byte{}, // no calldata needed
+	})
+	msg := TransactionToMessage(tx)
+	msg.From = sender
+
+	header := newTestHeader()
+	gp := new(GasPool).AddGas(header.GasLimit)
+
+	result, err := applyMessage(TestConfig, statedb, header, &msg, gp)
+	if err != nil {
+		t.Fatalf("applyMessage failed: %v", err)
+	}
+	if result.Failed() {
+		t.Fatalf("contract call should succeed, got error: %v", result.Err)
+	}
+
+	// Return data should be 32 bytes with value 0x42
+	if len(result.ReturnData) != 32 {
+		t.Fatalf("return data length = %d, want 32", len(result.ReturnData))
+	}
+	if result.ReturnData[31] != 0x42 {
+		t.Fatalf("return data[31] = 0x%02x, want 0x42", result.ReturnData[31])
 	}
 }
 

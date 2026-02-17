@@ -13,6 +13,12 @@ import (
 const (
 	// TxGas is the base gas cost of a transaction (21000).
 	TxGas uint64 = 21000
+	// TxDataZeroGas is the gas cost per zero byte of transaction data.
+	TxDataZeroGas uint64 = 4
+	// TxDataNonZeroGas is the gas cost per non-zero byte of transaction data.
+	TxDataNonZeroGas uint64 = 16
+	// TxCreateGas is the extra gas for contract creation transactions.
+	TxCreateGas uint64 = 32000
 )
 
 var (
@@ -55,11 +61,6 @@ func (p *StateProcessor) Process(block *types.Block, statedb state.StateDB) ([]*
 func ApplyTransaction(config *ChainConfig, statedb state.StateDB, header *types.Header, tx *types.Transaction, gp *GasPool) (*types.Receipt, uint64, error) {
 	msg := TransactionToMessage(tx)
 
-	// For this simplified processor, the From address is derived from the
-	// transaction's first access list entry or uses a zero address.
-	// In a full implementation, this would come from signature recovery.
-	// The caller must set msg.From before calling this in production.
-
 	snapshot := statedb.Snapshot()
 
 	result, err := applyMessage(config, statedb, header, &msg, gp)
@@ -79,12 +80,26 @@ func ApplyTransaction(config *ChainConfig, statedb state.StateDB, header *types.
 	receipt := types.NewReceipt(receiptStatus, header.GasUsed+result.UsedGas)
 	receipt.GasUsed = result.UsedGas
 
-	if msg.To == nil {
-		// Contract creation: not supported yet, but set the field for completeness.
-		receipt.ContractAddress = types.Address{}
-	}
+	// Collect logs from state
+	receipt.Logs = statedb.GetLogs(tx.Hash())
 
 	return receipt, result.UsedGas, nil
+}
+
+// intrinsicGas computes the base gas cost of a transaction before EVM execution.
+func intrinsicGas(data []byte, isCreate bool) uint64 {
+	gas := TxGas
+	if isCreate {
+		gas += TxCreateGas
+	}
+	for _, b := range data {
+		if b == 0 {
+			gas += TxDataZeroGas
+		} else {
+			gas += TxDataNonZeroGas
+		}
+	}
+	return gas
 }
 
 // applyMessage executes a transaction message against the state.
@@ -123,55 +138,82 @@ func applyMessage(config *ChainConfig, statedb state.StateDB, header *types.Head
 	// Deduct gas cost from sender
 	statedb.SubBalance(msg.From, gasCost)
 
-	// Increment nonce
-	statedb.SetNonce(msg.From, msg.Nonce+1)
+	isCreate := msg.To == nil
+
+	// Increment nonce (for contract creation, EVM.Create handles it)
+	if !isCreate {
+		statedb.SetNonce(msg.From, msg.Nonce+1)
+	}
+
+	// Compute intrinsic gas
+	igas := intrinsicGas(msg.Data, isCreate)
+	if igas > msg.GasLimit {
+		// Intrinsic gas exceeds gas limit — consume all gas
+		gp.AddGas(0) // nothing to return
+		return &ExecutionResult{
+			UsedGas:    msg.GasLimit,
+			Err:        fmt.Errorf("intrinsic gas too low: have %d, want %d", msg.GasLimit, igas),
+			ReturnData: nil,
+		}, nil
+	}
+
+	gasLeft := msg.GasLimit - igas
+
+	// Create EVM
+	blockCtx := vm.BlockContext{
+		BlockNumber: header.Number,
+		Time:        header.Time,
+		Coinbase:    header.Coinbase,
+		GasLimit:    header.GasLimit,
+		BaseFee:     header.BaseFee,
+	}
+	txCtx := vm.TxContext{
+		Origin:   msg.From,
+		GasPrice: gasPrice,
+	}
+	evm := vm.NewEVMWithState(blockCtx, txCtx, vm.Config{}, statedb)
 
 	var (
-		gasUsed    = TxGas // base transaction gas
-		execErr    error
-		returnData []byte
+		execErr       error
+		returnData    []byte
+		gasRemaining  uint64
+		contractAddr  types.Address
 	)
 
-	if msg.To == nil {
-		// Contract creation
-		execErr = ErrContractCreation
-	} else if len(msg.Data) > 0 && statedb.GetCodeSize(*msg.To) > 0 {
-		// Contract call with code at destination
-		execErr = ErrContractCall
+	if isCreate {
+		// Contract creation: run EVM Create
+		var ret []byte
+		ret, contractAddr, gasRemaining, execErr = evm.Create(msg.From, msg.Data, gasLeft, msg.Value)
+		returnData = ret
+		_ = contractAddr // used in receipt below
+	} else if statedb.GetCodeSize(*msg.To) > 0 {
+		// Contract call: run EVM Call
+		returnData, gasRemaining, execErr = evm.Call(msg.From, *msg.To, msg.Data, gasLeft, msg.Value)
 	} else {
-		// Simple value transfer
+		// Simple value transfer (no code at destination)
+		gasRemaining = gasLeft
 		if msg.Value.Sign() > 0 {
 			statedb.SubBalance(msg.From, msg.Value)
 			statedb.AddBalance(*msg.To, msg.Value)
 		}
-
-		// Create EVM context (even though we don't execute, this validates the structure)
-		_ = vm.NewEVM(
-			vm.BlockContext{
-				BlockNumber: header.Number,
-				Time:        header.Time,
-				Coinbase:    header.Coinbase,
-				GasLimit:    header.GasLimit,
-				BaseFee:     header.BaseFee,
-			},
-			vm.TxContext{
-				Origin:   msg.From,
-				GasPrice: gasPrice,
-			},
-			vm.Config{},
-		)
 	}
 
-	// Cap gas used to gas limit
-	if gasUsed > msg.GasLimit {
-		gasUsed = msg.GasLimit
-	}
+	// Calculate gas used = intrinsic + (gasLeft - gasRemaining)
+	gasUsed := igas + (gasLeft - gasRemaining)
 
-	// Refund unused gas
+	// Apply refund (EIP-3529: max refund = gasUsed / 5)
+	refund := statedb.GetRefund()
+	maxRefund := gasUsed / 5
+	if refund > maxRefund {
+		refund = maxRefund
+	}
+	gasUsed -= refund
+
+	// Refund remaining gas to sender
 	remainingGas := msg.GasLimit - gasUsed
 	if remainingGas > 0 {
-		refund := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(remainingGas))
-		statedb.AddBalance(msg.From, refund)
+		refundAmount := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(remainingGas))
+		statedb.AddBalance(msg.From, refundAmount)
 	}
 
 	// Return unused gas to the pool

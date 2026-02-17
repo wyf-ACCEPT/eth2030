@@ -49,14 +49,11 @@ type Header struct {
 }
 
 // Hash returns the keccak256 hash of the RLP-encoded header.
-// TODO: Implement proper RLP encoding + Keccak256 hashing.
-// Currently returns a placeholder empty hash.
 func (h *Header) Hash() Hash {
 	if cached := h.hash.Load(); cached != nil {
 		return *cached
 	}
-	// Placeholder: return empty hash until RLP+Keccak is integrated.
-	var hash Hash
+	hash := computeHeaderHash(h)
 	h.hash.Store(&hash)
 	return hash
 }

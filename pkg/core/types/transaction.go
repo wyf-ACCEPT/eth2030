@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/sha256"
 	"math/big"
 	"sync/atomic"
 	"unsafe"
@@ -420,36 +419,14 @@ func (tx *Transaction) Nonce() uint64 { return tx.inner.nonce() }
 // To returns the recipient address, or nil for contract creation.
 func (tx *Transaction) To() *Address { return tx.inner.to() }
 
-// Hash returns the transaction hash, computing and caching it on first call.
+// Hash returns the transaction hash (Keccak-256 of RLP encoding), caching on first call.
 func (tx *Transaction) Hash() Hash {
 	if h := tx.hash.Load(); h != nil {
 		return *h
 	}
-	// Simplified hash: SHA-256 of type + nonce + gas + value.
-	// A full implementation would RLP-encode the transaction.
-	h := sha256.New()
-	h.Write([]byte{tx.inner.txType()})
-	nonce := tx.inner.nonce()
-	h.Write([]byte{byte(nonce >> 56), byte(nonce >> 48), byte(nonce >> 40), byte(nonce >> 32),
-		byte(nonce >> 24), byte(nonce >> 16), byte(nonce >> 8), byte(nonce)})
-	gas := tx.inner.gas()
-	h.Write([]byte{byte(gas >> 56), byte(gas >> 48), byte(gas >> 40), byte(gas >> 32),
-		byte(gas >> 24), byte(gas >> 16), byte(gas >> 8), byte(gas)})
-	if v := tx.inner.value(); v != nil {
-		h.Write(v.Bytes())
-	}
-	if to := tx.inner.to(); to != nil {
-		h.Write(to[:])
-	}
-	h.Write(tx.inner.data())
-	if p := tx.inner.gasPrice(); p != nil {
-		h.Write(p.Bytes())
-	}
-
-	var result Hash
-	copy(result[:], h.Sum(nil))
-	tx.hash.Store(&result)
-	return result
+	h := tx.hashRLP()
+	tx.hash.Store(&h)
+	return h
 }
 
 // Size returns the approximate memory footprint of the transaction.

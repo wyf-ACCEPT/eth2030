@@ -2,9 +2,12 @@ package state
 
 import (
 	"math/big"
+	"sort"
 
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2028/eth2028/trie"
 )
 
 // stateObject represents an Ethereum account with its associated state.
@@ -277,8 +280,42 @@ func (s *MemoryStateDB) SetTransientState(addr types.Address, key types.Hash, va
 
 // --- Commit ---
 
+// rlpAccount is the RLP-serializable form of an Ethereum account (Yellow Paper).
+type rlpAccount struct {
+	Nonce    uint64
+	Balance  *big.Int
+	Root     []byte // storage trie root hash (32 bytes)
+	CodeHash []byte // keccak256 of code (32 bytes)
+}
+
+// computeStorageRoot builds a storage trie from the account's committed+dirty
+// storage and returns its Merkle root hash.
+func computeStorageRoot(obj *stateObject) types.Hash {
+	// Merge dirty into committed for the snapshot.
+	merged := make(map[types.Hash]types.Hash, len(obj.committedStorage)+len(obj.dirtyStorage))
+	for k, v := range obj.committedStorage {
+		merged[k] = v
+	}
+	for k, v := range obj.dirtyStorage {
+		if v == (types.Hash{}) {
+			delete(merged, k)
+		} else {
+			merged[k] = v
+		}
+	}
+	if len(merged) == 0 {
+		return types.EmptyRootHash
+	}
+
+	storageTrie := trie.New()
+	for k, v := range merged {
+		storageTrie.Put(k[:], v[:])
+	}
+	return storageTrie.Hash()
+}
+
 func (s *MemoryStateDB) Commit() (types.Hash, error) {
-	// Flush dirty storage to committed storage and compute a state root.
+	// Flush dirty storage to committed storage.
 	for _, obj := range s.stateObjects {
 		for key, val := range obj.dirtyStorage {
 			if val == (types.Hash{}) {
@@ -290,18 +327,94 @@ func (s *MemoryStateDB) Commit() (types.Hash, error) {
 		obj.dirtyStorage = make(map[types.Hash]types.Hash)
 	}
 
-	// Compute a deterministic root from account data. For a full implementation
-	// this would be a Merkle Patricia Trie root; here we hash all account state.
-	hasher := make([]byte, 0, 256)
-	for addr, obj := range s.stateObjects {
-		hasher = append(hasher, addr[:]...)
-		hasher = append(hasher, obj.account.CodeHash...)
-		hasher = append(hasher, obj.account.Balance.Bytes()...)
-	}
-	if len(hasher) == 0 {
+	if len(s.stateObjects) == 0 {
 		return types.EmptyRootHash, nil
 	}
-	return crypto.Keccak256Hash(hasher), nil
+
+	// Build the state trie: key = keccak(address), value = rlp(account)
+	stateTrie := trie.New()
+
+	// Sort addresses for deterministic ordering (trie is deterministic
+	// regardless, but this makes debugging easier).
+	addrs := make([]types.Address, 0, len(s.stateObjects))
+	for addr := range s.stateObjects {
+		addrs = append(addrs, addr)
+	}
+	sort.Slice(addrs, func(i, j int) bool {
+		return addrs[i].Hex() < addrs[j].Hex()
+	})
+
+	for _, addr := range addrs {
+		obj := s.stateObjects[addr]
+		if obj.selfDestructed {
+			continue
+		}
+
+		// Compute storage root for this account.
+		storageRoot := computeStorageRoot(obj)
+		obj.account.Root = storageRoot
+
+		// Ensure CodeHash is set.
+		codeHash := obj.account.CodeHash
+		if len(codeHash) == 0 {
+			codeHash = types.EmptyCodeHash.Bytes()
+		}
+
+		// RLP-encode the account.
+		acc := rlpAccount{
+			Nonce:    obj.account.Nonce,
+			Balance:  obj.account.Balance,
+			Root:     storageRoot[:],
+			CodeHash: codeHash,
+		}
+		encoded, err := rlp.EncodeToBytes(acc)
+		if err != nil {
+			return types.Hash{}, err
+		}
+
+		// Key is the Keccak-256 hash of the address.
+		hashedAddr := crypto.Keccak256(addr[:])
+		stateTrie.Put(hashedAddr, encoded)
+	}
+
+	return stateTrie.Hash(), nil
+}
+
+// GetRoot returns the current state root without flushing dirty storage.
+// Useful for computing the root mid-block.
+func (s *MemoryStateDB) GetRoot() types.Hash {
+	if len(s.stateObjects) == 0 {
+		return types.EmptyRootHash
+	}
+
+	stateTrie := trie.New()
+	for addr, obj := range s.stateObjects {
+		if obj.selfDestructed {
+			continue
+		}
+
+		storageRoot := computeStorageRoot(obj)
+		codeHash := obj.account.CodeHash
+		if len(codeHash) == 0 {
+			codeHash = types.EmptyCodeHash.Bytes()
+		}
+
+		acc := rlpAccount{
+			Nonce:    obj.account.Nonce,
+			Balance:  obj.account.Balance,
+			Root:     storageRoot[:],
+			CodeHash: codeHash,
+		}
+		encoded, err := rlp.EncodeToBytes(acc)
+		if err != nil {
+			continue
+		}
+
+		hashedAddr := crypto.Keccak256(addr[:])
+		stateTrie.Put(hashedAddr, encoded)
+	}
+
+	return stateTrie.Hash()
 }
 
 // Copy returns a deep copy of the MemoryStateDB. The copy shares no mutable

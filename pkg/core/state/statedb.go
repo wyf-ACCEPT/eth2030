@@ -56,6 +56,9 @@ type StateDB interface {
 	GetTransientState(addr types.Address, key types.Hash) types.Hash
 	SetTransientState(addr types.Address, key types.Hash, value types.Hash)
 
+	// Root computation
+	GetRoot() types.Hash
+
 	// Commit
 	Commit() (types.Hash, error)
 }

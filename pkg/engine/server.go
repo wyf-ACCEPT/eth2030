@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"sync"
 
@@ -30,9 +31,10 @@ type Backend interface {
 
 // EngineAPI implements the Engine API JSON-RPC methods.
 type EngineAPI struct {
-	backend Backend
-	server  *http.Server
-	mu      sync.Mutex
+	backend  Backend
+	server   *http.Server
+	listener net.Listener
+	mu       sync.Mutex
 }
 
 // NewEngineAPI creates a new Engine API instance with the given backend.
@@ -70,21 +72,34 @@ func (api *EngineAPI) GetPayloadV3(payloadID PayloadID) (GetPayloadResponse, err
 
 // Start starts the HTTP JSON-RPC server on the given address.
 func (api *EngineAPI) Start(addr string) error {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("listen: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", api.httpHandler)
 
 	api.mu.Lock()
-	api.server = &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
+	api.listener = ln
+	api.server = &http.Server{Handler: mux}
 	api.mu.Unlock()
 
-	log.Printf("Engine API server starting on %s", addr)
-	if err := api.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	log.Printf("Engine API server starting on %s", ln.Addr())
+	if err := api.server.Serve(ln); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("engine API server error: %w", err)
 	}
 	return nil
+}
+
+// Addr returns the listener address, useful when started on port 0.
+func (api *EngineAPI) Addr() net.Addr {
+	api.mu.Lock()
+	defer api.mu.Unlock()
+	if api.listener == nil {
+		return nil
+	}
+	return api.listener.Addr()
 }
 
 // Stop gracefully shuts down the HTTP server.
