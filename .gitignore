@@ -1,0 +1,6 @@
+# Downloaded research data (large, regenerable)
+data/
+
+# Python
+__pycache__/
+*.pyc

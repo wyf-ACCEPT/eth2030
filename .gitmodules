@@ -1,0 +1,63 @@
+[submodule "refs/go-ethereum"]
+	path = refs/go-ethereum
+	url = https://github.com/ethereum/go-ethereum
+[submodule "refs/EIPs"]
+	path = refs/EIPs
+	url = https://github.com/ethereum/EIPs
+[submodule "refs/pm"]
+	path = refs/pm
+	url = https://github.com/ethereum/pm
+[submodule "refs/eth-utils"]
+	path = refs/eth-utils
+	url = https://github.com/ethereum/eth-utils
+[submodule "refs/go-verkle"]
+	path = refs/go-verkle
+	url = https://github.com/ethereum/go-verkle
+[submodule "refs/web3.py"]
+	path = refs/web3.py
+	url = https://github.com/ethereum/web3.py
+[submodule "refs/builder-specs"]
+	path = refs/builder-specs
+	url = https://github.com/ethereum/builder-specs
+[submodule "refs/execution-apis"]
+	path = refs/execution-apis
+	url = https://github.com/ethereum/execution-apis
+[submodule "refs/ERCs"]
+	path = refs/ERCs
+	url = https://github.com/ethereum/ERCs
+[submodule "refs/consensus-specs"]
+	path = refs/consensus-specs
+	url = https://github.com/ethereum/consensus-specs
+[submodule "refs/eip-review-bot"]
+	path = refs/eip-review-bot
+	url = https://github.com/ethereum/eip-review-bot
+[submodule "refs/iptf-pocs"]
+	path = refs/iptf-pocs
+	url = https://github.com/ethereum/iptf-pocs
+[submodule "refs/beacon-APIs"]
+	path = refs/beacon-APIs
+	url = https://github.com/ethereum/beacon-APIs
+[submodule "refs/benchmarkoor"]
+	path = refs/benchmarkoor
+	url = https://github.com/ethpandaops/benchmarkoor
+[submodule "refs/benchmarkoor-tests"]
+	path = refs/benchmarkoor-tests
+	url = https://github.com/ethpandaops/benchmarkoor-tests
+[submodule "refs/ethereum-package"]
+	path = refs/ethereum-package
+	url = https://github.com/ethpandaops/ethereum-package
+[submodule "refs/erigone"]
+	path = refs/erigone
+	url = https://github.com/ethpandaops/erigone
+[submodule "refs/xatu"]
+	path = refs/xatu
+	url = https://github.com/ethpandaops/xatu
+[submodule "refs/execution-processor"]
+	path = refs/execution-processor
+	url = https://github.com/ethpandaops/execution-processor
+[submodule "refs/consensoor"]
+	path = refs/consensoor
+	url = https://github.com/ethpandaops/consensoor
+[submodule "refs/execution-spec-tests"]
+	path = refs/execution-spec-tests
+	url = https://github.com/ethereum/execution-spec-tests
