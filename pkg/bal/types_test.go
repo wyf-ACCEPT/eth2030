@@ -83,8 +83,8 @@ func TestAccessEntryWithAllFields(t *testing.T) {
 			NewValue: 1,
 		},
 		CodeChange: &CodeChange{
-			OldCodeHash: types.EmptyCodeHash,
-			NewCodeHash: types.HexToHash("0xdeadbeef"),
+			OldCode: nil,
+			NewCode: []byte{0x60, 0x80, 0x60, 0x40},
 		},
 	}
 
@@ -104,8 +104,11 @@ func TestAccessEntryWithAllFields(t *testing.T) {
 	if got.NonceChange == nil || got.NonceChange.OldValue != 0 || got.NonceChange.NewValue != 1 {
 		t.Fatalf("unexpected nonce change: %+v", got.NonceChange)
 	}
-	if got.CodeChange == nil || got.CodeChange.OldCodeHash != types.EmptyCodeHash {
+	if got.CodeChange == nil || got.CodeChange.OldCode != nil {
 		t.Fatalf("unexpected code change: %+v", got.CodeChange)
+	}
+	if len(got.CodeChange.NewCode) != 4 {
+		t.Fatalf("expected 4-byte new code, got %d", len(got.CodeChange.NewCode))
 	}
 }
 

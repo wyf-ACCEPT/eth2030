@@ -1,0 +1,34 @@
+package core
+
+// ExecutionResult holds the outcome of a transaction execution.
+type ExecutionResult struct {
+	UsedGas    uint64
+	Err        error
+	ReturnData []byte
+}
+
+// Unwrap returns the execution error, if any.
+func (r *ExecutionResult) Unwrap() error {
+	return r.Err
+}
+
+// Failed returns whether the execution resulted in an error.
+func (r *ExecutionResult) Failed() bool {
+	return r.Err != nil
+}
+
+// Return returns the return data from a successful execution.
+func (r *ExecutionResult) Return() []byte {
+	if r.Failed() {
+		return nil
+	}
+	return r.ReturnData
+}
+
+// Revert returns the return data from a reverted execution (revert reason).
+func (r *ExecutionResult) Revert() []byte {
+	if r.Failed() {
+		return r.ReturnData
+	}
+	return nil
+}

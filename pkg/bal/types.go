@@ -53,8 +53,8 @@ type NonceChange struct {
 
 // CodeChange records a code modification.
 type CodeChange struct {
-	OldCodeHash types.Hash
-	NewCodeHash types.Hash
+	OldCode []byte
+	NewCode []byte
 }
 
 // NewBlockAccessList creates a new empty BlockAccessList.

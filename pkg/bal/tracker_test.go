@@ -99,18 +99,37 @@ func TestRecordNonceChange(t *testing.T) {
 func TestRecordCodeChange(t *testing.T) {
 	tr := NewTracker()
 	addr := types.HexToAddress("0x5555")
-	oldHash := types.EmptyCodeHash
-	newHash := types.HexToHash("0xdeadbeef")
+	oldCode := []byte(nil)
+	newCode := []byte{0x60, 0x80, 0x60, 0x40}
 
-	tr.RecordCodeChange(addr, oldHash, newHash)
+	tr.RecordCodeChange(addr, oldCode, newCode)
 
 	bal := tr.Build(1)
 	cc := bal.Entries[0].CodeChange
 	if cc == nil {
 		t.Fatal("expected code change, got nil")
 	}
-	if cc.OldCodeHash != oldHash || cc.NewCodeHash != newHash {
+	if cc.OldCode != nil {
+		t.Fatal("expected nil old code")
+	}
+	if len(cc.NewCode) != 4 || cc.NewCode[0] != 0x60 {
 		t.Fatal("code change mismatch")
+	}
+}
+
+func TestRecordCodeChangeCopiesValues(t *testing.T) {
+	tr := NewTracker()
+	addr := types.HexToAddress("0x5555")
+	code := []byte{0x60, 0x80}
+
+	tr.RecordCodeChange(addr, nil, code)
+
+	// Mutate original.
+	code[0] = 0xff
+
+	bal := tr.Build(1)
+	if bal.Entries[0].CodeChange.NewCode[0] != 0x60 {
+		t.Fatal("code change was mutated via original slice")
 	}
 }
 

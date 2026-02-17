@@ -69,8 +69,17 @@ func (t *AccessTracker) RecordNonceChange(addr types.Address, oldNonce, newNonce
 }
 
 // RecordCodeChange records a code modification.
-func (t *AccessTracker) RecordCodeChange(addr types.Address, oldHash, newHash types.Hash) {
-	t.codeChanges[addr] = &CodeChange{OldCodeHash: oldHash, NewCodeHash: newHash}
+func (t *AccessTracker) RecordCodeChange(addr types.Address, oldCode, newCode []byte) {
+	cc := &CodeChange{}
+	if oldCode != nil {
+		cc.OldCode = make([]byte, len(oldCode))
+		copy(cc.OldCode, oldCode)
+	}
+	if newCode != nil {
+		cc.NewCode = make([]byte, len(newCode))
+		copy(cc.NewCode, newCode)
+	}
+	t.codeChanges[addr] = cc
 	t.touchedAddrs[addr] = struct{}{}
 }
 
