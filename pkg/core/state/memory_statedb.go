@@ -304,5 +304,79 @@ func (s *MemoryStateDB) Commit() (types.Hash, error) {
 	return crypto.Keccak256Hash(hasher), nil
 }
 
+// Copy returns a deep copy of the MemoryStateDB. The copy shares no mutable
+// state with the original, making it safe to use in parallel goroutines.
+func (s *MemoryStateDB) Copy() *MemoryStateDB {
+	cp := &MemoryStateDB{
+		stateObjects:     make(map[types.Address]*stateObject, len(s.stateObjects)),
+		journal:          newJournal(),
+		logs:             make(map[types.Hash][]*types.Log, len(s.logs)),
+		refund:           s.refund,
+		accessList:       s.accessList.Copy(),
+		transientStorage: make(map[types.Address]map[types.Hash]types.Hash, len(s.transientStorage)),
+	}
+
+	for addr, obj := range s.stateObjects {
+		newObj := &stateObject{
+			account: types.Account{
+				Nonce:    obj.account.Nonce,
+				Balance:  new(big.Int).Set(obj.account.Balance),
+				Root:     obj.account.Root,
+				CodeHash: make([]byte, len(obj.account.CodeHash)),
+			},
+			code:             make([]byte, len(obj.code)),
+			dirtyStorage:     make(map[types.Hash]types.Hash, len(obj.dirtyStorage)),
+			committedStorage: make(map[types.Hash]types.Hash, len(obj.committedStorage)),
+			selfDestructed:   obj.selfDestructed,
+		}
+		copy(newObj.account.CodeHash, obj.account.CodeHash)
+		copy(newObj.code, obj.code)
+		for k, v := range obj.dirtyStorage {
+			newObj.dirtyStorage[k] = v
+		}
+		for k, v := range obj.committedStorage {
+			newObj.committedStorage[k] = v
+		}
+		cp.stateObjects[addr] = newObj
+	}
+
+	for txHash, logs := range s.logs {
+		cpLogs := make([]*types.Log, len(logs))
+		for i, log := range logs {
+			cpLog := *log
+			cpLogs[i] = &cpLog
+		}
+		cp.logs[txHash] = cpLogs
+	}
+
+	for addr, slots := range s.transientStorage {
+		cpSlots := make(map[types.Hash]types.Hash, len(slots))
+		for k, v := range slots {
+			cpSlots[k] = v
+		}
+		cp.transientStorage[addr] = cpSlots
+	}
+
+	return cp
+}
+
+// Merge applies all state changes from src into this MemoryStateDB.
+// This is used to merge results from parallel execution back into the main state.
+func (s *MemoryStateDB) Merge(src *MemoryStateDB) {
+	for addr, srcObj := range src.stateObjects {
+		dstObj := s.getOrNewStateObject(addr)
+		dstObj.account.Balance = new(big.Int).Set(srcObj.account.Balance)
+		dstObj.account.Nonce = srcObj.account.Nonce
+		dstObj.account.CodeHash = make([]byte, len(srcObj.account.CodeHash))
+		copy(dstObj.account.CodeHash, srcObj.account.CodeHash)
+		dstObj.code = make([]byte, len(srcObj.code))
+		copy(dstObj.code, srcObj.code)
+		dstObj.selfDestructed = srcObj.selfDestructed
+		for k, v := range srcObj.dirtyStorage {
+			dstObj.dirtyStorage[k] = v
+		}
+	}
+}
+
 // Verify interface compliance at compile time.
 var _ StateDB = (*MemoryStateDB)(nil)

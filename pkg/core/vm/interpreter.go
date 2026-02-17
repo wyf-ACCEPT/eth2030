@@ -37,6 +37,17 @@ type TxContext struct {
 	BlobHashes []types.Hash
 }
 
+// StateDB provides the EVM with access to Ethereum world state.
+// This interface is defined in the vm package to avoid circular imports
+// with core/state. Any implementation of core/state.StateDB satisfies it.
+type StateDB interface {
+	GetState(addr types.Address, key types.Hash) types.Hash
+	SetState(addr types.Address, key types.Hash, value types.Hash)
+	GetBalance(addr types.Address) *big.Int
+	AddLog(log *types.Log)
+	Exist(addr types.Address) bool
+}
+
 // Config holds EVM configuration options.
 type Config struct {
 	Debug        bool
@@ -49,6 +60,7 @@ type EVM struct {
 	Context   BlockContext
 	TxContext TxContext
 	Config    Config
+	StateDB   StateDB
 	chainID   uint64
 	depth     int
 	readOnly  bool
@@ -66,6 +78,13 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, config Config) *EVM {
 		Config:    config,
 		jumpTable: NewCancunJumpTable(),
 	}
+}
+
+// NewEVMWithState creates a new EVM instance with state access.
+func NewEVMWithState(blockCtx BlockContext, txCtx TxContext, config Config, stateDB StateDB) *EVM {
+	evm := NewEVM(blockCtx, txCtx, config)
+	evm.StateDB = stateDB
+	return evm
 }
 
 // Run executes the contract bytecode using the interpreter loop.

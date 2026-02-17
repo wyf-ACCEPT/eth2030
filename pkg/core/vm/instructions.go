@@ -3,6 +3,7 @@ package vm
 import (
 	"math/big"
 
+	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/crypto"
 )
 
@@ -573,17 +574,29 @@ func opKeccak256(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack
 }
 
 func opSload(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: implement state access
 	loc := stack.Peek()
-	_ = loc
-	loc.SetUint64(0)
+	if evm.StateDB != nil {
+		key := bigToHash(loc)
+		val := evm.StateDB.GetState(contract.Address, key)
+		loc.SetBytes(val[:])
+	} else {
+		loc.SetUint64(0)
+	}
 	return nil, nil
 }
 
+// bigToHash converts a big.Int to a types.Hash (big-endian, zero-padded).
+func bigToHash(b *big.Int) types.Hash {
+	return types.BytesToHash(b.Bytes())
+}
+
 func opSstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: implement state access
-	_ = stack.Pop() // location
-	_ = stack.Pop() // value
+	loc, val := stack.Pop(), stack.Pop()
+	if evm.StateDB != nil {
+		key := bigToHash(loc)
+		value := bigToHash(val)
+		evm.StateDB.SetState(contract.Address, key, value)
+	}
 	return nil, nil
 }
 
@@ -602,27 +615,42 @@ func opReturndataCopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, 
 }
 
 func opSelfBalance(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: implement state access for balance
-	stack.Push(new(big.Int))
+	if evm.StateDB != nil {
+		balance := evm.StateDB.GetBalance(contract.Address)
+		stack.Push(new(big.Int).Set(balance))
+	} else {
+		stack.Push(new(big.Int))
+	}
 	return nil, nil
 }
 
 func opBalance(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	// TODO: implement state access for balance
-	addr := stack.Peek()
-	_ = addr
-	addr.SetUint64(0)
+	slot := stack.Peek()
+	if evm.StateDB != nil {
+		addr := types.BytesToAddress(slot.Bytes())
+		balance := evm.StateDB.GetBalance(addr)
+		slot.Set(balance)
+	} else {
+		slot.SetUint64(0)
+	}
 	return nil, nil
 }
 
 // makeLog returns an executionFunc for LOG0..LOG4.
 func makeLog(n int) executionFunc {
 	return func(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-		// TODO: implement log emission
-		_ = stack.Pop() // offset
-		_ = stack.Pop() // size
+		offset, size := stack.Pop(), stack.Pop()
+		topics := make([]types.Hash, n)
 		for i := 0; i < n; i++ {
-			_ = stack.Pop() // topic
+			topics[i] = bigToHash(stack.Pop())
+		}
+		data := memory.Get(int64(offset.Uint64()), int64(size.Uint64()))
+		if evm.StateDB != nil {
+			evm.StateDB.AddLog(&types.Log{
+				Address: contract.Address,
+				Topics:  topics,
+				Data:    data,
+			})
 		}
 		return nil, nil
 	}

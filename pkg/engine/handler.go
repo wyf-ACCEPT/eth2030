@@ -1,0 +1,233 @@
+package engine
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/eth2028/eth2028/core/types"
+)
+
+// jsonrpcRequest represents a JSON-RPC 2.0 request.
+type jsonrpcRequest struct {
+	JSONRPC string            `json:"jsonrpc"`
+	Method  string            `json:"method"`
+	Params  []json.RawMessage `json:"params"`
+	ID      json.RawMessage   `json:"id"`
+}
+
+// jsonrpcResponse represents a JSON-RPC 2.0 response.
+type jsonrpcResponse struct {
+	JSONRPC string          `json:"jsonrpc"`
+	Result  any             `json:"result,omitempty"`
+	Error   *jsonrpcError   `json:"error,omitempty"`
+	ID      json.RawMessage `json:"id"`
+}
+
+// jsonrpcError represents a JSON-RPC 2.0 error object.
+type jsonrpcError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// methodNotFoundCode is the standard JSON-RPC error code for method not found.
+const methodNotFoundCode = -32601
+
+// parseErrorCode is the standard JSON-RPC error code for parse errors.
+const parseErrorCode = -32700
+
+// internalErrorCode is the standard JSON-RPC error code for internal errors.
+const internalErrorCode = -32603
+
+// HandleRequest processes a raw JSON-RPC request and returns the raw JSON response.
+func (api *EngineAPI) HandleRequest(data []byte) []byte {
+	var req jsonrpcRequest
+	if err := json.Unmarshal(data, &req); err != nil {
+		resp := jsonrpcResponse{
+			JSONRPC: "2.0",
+			Error: &jsonrpcError{
+				Code:    parseErrorCode,
+				Message: "parse error",
+			},
+			ID: nil,
+		}
+		out, _ := json.Marshal(resp)
+		return out
+	}
+
+	if req.JSONRPC != "2.0" {
+		resp := jsonrpcResponse{
+			JSONRPC: "2.0",
+			Error: &jsonrpcError{
+				Code:    InvalidParamsCode,
+				Message: "invalid jsonrpc version",
+			},
+			ID: req.ID,
+		}
+		out, _ := json.Marshal(resp)
+		return out
+	}
+
+	result, rpcErr := api.dispatch(req.Method, req.Params)
+	resp := jsonrpcResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+	}
+	if rpcErr != nil {
+		resp.Error = rpcErr
+	} else {
+		resp.Result = result
+	}
+
+	out, err := json.Marshal(resp)
+	if err != nil {
+		errResp := jsonrpcResponse{
+			JSONRPC: "2.0",
+			Error: &jsonrpcError{
+				Code:    internalErrorCode,
+				Message: fmt.Sprintf("failed to marshal response: %v", err),
+			},
+			ID: req.ID,
+		}
+		out, _ = json.Marshal(errResp)
+	}
+	return out
+}
+
+// dispatch routes the JSON-RPC method to the appropriate handler.
+func (api *EngineAPI) dispatch(method string, params []json.RawMessage) (any, *jsonrpcError) {
+	switch method {
+	case "engine_newPayloadV3":
+		return api.handleNewPayloadV3(params)
+	case "engine_forkchoiceUpdatedV3":
+		return api.handleForkchoiceUpdatedV3(params)
+	case "engine_getPayloadV3":
+		return api.handleGetPayloadV3(params)
+	default:
+		return nil, &jsonrpcError{
+			Code:    methodNotFoundCode,
+			Message: fmt.Sprintf("method %q not found", method),
+		}
+	}
+}
+
+// handleNewPayloadV3 processes an engine_newPayloadV3 request.
+func (api *EngineAPI) handleNewPayloadV3(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 3 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 3 params, got %d", len(params)),
+		}
+	}
+
+	var payload ExecutionPayloadV3
+	if err := json.Unmarshal(params[0], &payload); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload: %v", err),
+		}
+	}
+
+	var expectedBlobVersionedHashes []types.Hash
+	if err := json.Unmarshal(params[1], &expectedBlobVersionedHashes); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid expectedBlobVersionedHashes: %v", err),
+		}
+	}
+
+	var parentBeaconBlockRoot types.Hash
+	if err := json.Unmarshal(params[2], &parentBeaconBlockRoot); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid parentBeaconBlockRoot: %v", err),
+		}
+	}
+
+	result, err := api.NewPayloadV3(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleForkchoiceUpdatedV3 processes an engine_forkchoiceUpdatedV3 request.
+func (api *EngineAPI) handleForkchoiceUpdatedV3(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) < 1 || len(params) > 2 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 1-2 params, got %d", len(params)),
+		}
+	}
+
+	var state ForkchoiceStateV1
+	if err := json.Unmarshal(params[0], &state); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid forkchoice state: %v", err),
+		}
+	}
+
+	var payloadAttributes *PayloadAttributesV3
+	if len(params) == 2 {
+		// Check if the second param is null.
+		if string(params[1]) != "null" {
+			payloadAttributes = new(PayloadAttributesV3)
+			if err := json.Unmarshal(params[1], payloadAttributes); err != nil {
+				return nil, &jsonrpcError{
+					Code:    InvalidParamsCode,
+					Message: fmt.Sprintf("invalid payload attributes: %v", err),
+				}
+			}
+		}
+	}
+
+	result, err := api.ForkchoiceUpdatedV3(state, payloadAttributes)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleGetPayloadV3 processes an engine_getPayloadV3 request.
+func (api *EngineAPI) handleGetPayloadV3(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 1 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 1 param, got %d", len(params)),
+		}
+	}
+
+	var payloadID PayloadID
+	if err := json.Unmarshal(params[0], &payloadID); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload ID: %v", err),
+		}
+	}
+
+	result, err := api.GetPayloadV3(payloadID)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// engineErrorToRPC maps engine errors to JSON-RPC error responses.
+func engineErrorToRPC(err error) *jsonrpcError {
+	switch err {
+	case ErrUnknownPayload:
+		return &jsonrpcError{Code: UnknownPayloadCode, Message: err.Error()}
+	case ErrInvalidForkchoiceState:
+		return &jsonrpcError{Code: InvalidForkchoiceStateCode, Message: err.Error()}
+	case ErrInvalidPayloadAttributes:
+		return &jsonrpcError{Code: InvalidPayloadAttributeCode, Message: err.Error()}
+	case ErrInvalidParams:
+		return &jsonrpcError{Code: InvalidParamsCode, Message: err.Error()}
+	case ErrTooLargeRequest:
+		return &jsonrpcError{Code: TooLargeRequestCode, Message: err.Error()}
+	case ErrUnsupportedFork:
+		return &jsonrpcError{Code: UnsupportedForkCode, Message: err.Error()}
+	default:
+		return &jsonrpcError{Code: internalErrorCode, Message: err.Error()}
+	}
+}
