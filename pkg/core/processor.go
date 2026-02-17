@@ -167,6 +167,7 @@ func applyMessage(config *ChainConfig, statedb state.StateDB, header *types.Head
 		Coinbase:    header.Coinbase,
 		GasLimit:    header.GasLimit,
 		BaseFee:     header.BaseFee,
+		PrevRandao:  header.MixDigest,
 	}
 	txCtx := vm.TxContext{
 		Origin:   msg.From,
