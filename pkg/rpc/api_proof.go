@@ -401,6 +401,18 @@ func (api *EthAPI) getUncleCountByBlockNumber(req *Request) *Response {
 	return successResponse(req.ID, "0x0")
 }
 
+// getUncleByBlockHashAndIndex implements eth_getUncleByBlockHashAndIndex.
+// Post-merge: always returns null (no uncles in PoS).
+func (api *EthAPI) getUncleByBlockHashAndIndex(req *Request) *Response {
+	return successResponse(req.ID, nil)
+}
+
+// getUncleByBlockNumberAndIndex implements eth_getUncleByBlockNumberAndIndex.
+// Post-merge: always returns null (no uncles in PoS).
+func (api *EthAPI) getUncleByBlockNumberAndIndex(req *Request) *Response {
+	return successResponse(req.ID, nil)
+}
+
 // getBlobBaseFee implements eth_blobBaseFee (EIP-7516).
 func (api *EthAPI) getBlobBaseFee(req *Request) *Response {
 	header := api.backend.CurrentHeader()

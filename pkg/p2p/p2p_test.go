@@ -337,12 +337,13 @@ func TestSend(t *testing.T) {
 	}
 }
 
-// --- Server tests ---
+// --- Server tests (legacy mode, handshake disabled) ---
 
 func TestServer_StartStop(t *testing.T) {
 	srv := NewServer(Config{
-		ListenAddr: "127.0.0.1:0",
-		MaxPeers:   5,
+		ListenAddr:       "127.0.0.1:0",
+		MaxPeers:         5,
+		DisableHandshake: true,
 	})
 
 	if err := srv.Start(); err != nil {
@@ -397,14 +398,16 @@ func TestServer_PeerConnect(t *testing.T) {
 	}
 
 	srv1 := NewServer(Config{
-		ListenAddr: "127.0.0.1:0",
-		MaxPeers:   5,
-		Protocols:  []Protocol{proto},
+		ListenAddr:       "127.0.0.1:0",
+		MaxPeers:         5,
+		Protocols:        []Protocol{proto},
+		DisableHandshake: true,
 	})
 	srv2 := NewServer(Config{
-		ListenAddr: "127.0.0.1:0",
-		MaxPeers:   5,
-		Protocols:  []Protocol{proto},
+		ListenAddr:       "127.0.0.1:0",
+		MaxPeers:         5,
+		Protocols:        []Protocol{proto},
+		DisableHandshake: true,
 	})
 
 	if err := srv1.Start(); err != nil {
@@ -454,9 +457,10 @@ func TestServer_PeerCount(t *testing.T) {
 	}
 
 	srv := NewServer(Config{
-		ListenAddr: "127.0.0.1:0",
-		MaxPeers:   5,
-		Protocols:  []Protocol{proto},
+		ListenAddr:       "127.0.0.1:0",
+		MaxPeers:         5,
+		Protocols:        []Protocol{proto},
+		DisableHandshake: true,
 	})
 	if err := srv.Start(); err != nil {
 		t.Fatalf("Start: %v", err)

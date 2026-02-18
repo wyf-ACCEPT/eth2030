@@ -26,6 +26,30 @@ type Config struct {
 
 	// EnableRLPx enables the RLPx encrypted transport (default: plaintext framing).
 	EnableRLPx bool
+
+	// Name is the client identity string sent in the hello handshake.
+	// Defaults to "eth2028" if empty.
+	Name string
+
+	// NodeID is the local node identifier sent during handshake.
+	// If empty, a random ID is generated at start.
+	NodeID string
+
+	// ListenPort is the advertised TCP listening port (0 = auto-detect).
+	ListenPort uint64
+
+	// Dialer is the interface used for outbound connections.
+	// If nil, a TCPDialer is used.
+	Dialer Dialer
+
+	// Listener is the interface for accepting inbound connections.
+	// If nil, a TCPListener is created from ListenAddr.
+	Listener Listener
+
+	// DisableHandshake disables the devp2p hello handshake, for backward
+	// compatibility with tests that connect raw TCP clients without
+	// performing a handshake exchange.
+	DisableHandshake bool
 }
 
 // Protocol represents a sub-protocol that runs on top of the devp2p connection.
@@ -42,10 +66,12 @@ type Protocol struct {
 // Server manages TCP connections and peer lifecycle.
 type Server struct {
 	config   Config
-	listener net.Listener
+	listener Listener
+	dialer   Dialer
 	peers    *ManagedPeerSet
 	nodes    *NodeTable
 	scores   *ScoreMap
+	localID  string // Node ID used in handshake.
 
 	mu      sync.Mutex
 	running bool
@@ -99,12 +125,21 @@ func NewServer(cfg Config) *Server {
 	if cfg.MaxPeers <= 0 {
 		cfg.MaxPeers = 25
 	}
+	if cfg.Name == "" {
+		cfg.Name = "eth2028"
+	}
+	localID := cfg.NodeID
+	if localID == "" {
+		localID = randomID()
+	}
 	return &Server{
-		config: cfg,
-		peers:  NewManagedPeerSet(cfg.MaxPeers),
-		nodes:  NewNodeTable(),
-		scores: NewScoreMap(),
-		quit:   make(chan struct{}),
+		config:  cfg,
+		dialer:  cfg.Dialer,
+		peers:   NewManagedPeerSet(cfg.MaxPeers),
+		nodes:   NewNodeTable(),
+		scores:  NewScoreMap(),
+		localID: localID,
+		quit:    make(chan struct{}),
 	}
 }
 
@@ -117,11 +152,22 @@ func (srv *Server) Start() error {
 		return errors.New("p2p: server already running")
 	}
 
-	ln, err := net.Listen("tcp", srv.config.ListenAddr)
-	if err != nil {
-		return fmt.Errorf("p2p: listen error: %w", err)
+	// Set up the dialer.
+	if srv.dialer == nil {
+		srv.dialer = &TCPDialer{}
 	}
-	srv.listener = ln
+
+	// Set up the listener.
+	if srv.config.Listener != nil {
+		srv.listener = srv.config.Listener
+	} else {
+		ln, err := net.Listen("tcp", srv.config.ListenAddr)
+		if err != nil {
+			return fmt.Errorf("p2p: listen error: %w", err)
+		}
+		srv.listener = NewTCPListener(ln)
+	}
+
 	srv.running = true
 
 	// Load static nodes into the node table.
@@ -164,15 +210,15 @@ func (srv *Server) ListenAddr() net.Addr {
 
 // AddPeer dials the given address and adds the connection as a peer.
 func (srv *Server) AddPeer(addr string) error {
-	conn, err := net.Dial("tcp", addr)
+	ct, err := srv.dialer.Dial(addr)
 	if err != nil {
-		return fmt.Errorf("p2p: dial error: %w", err)
+		return err
 	}
 
 	srv.wg.Add(1)
 	go func() {
 		defer srv.wg.Done()
-		srv.setupConn(conn, true)
+		srv.setupConn(ct, true)
 	}()
 	return nil
 }
@@ -202,11 +248,18 @@ func (srv *Server) PeerScore(id string) *PeerScore {
 	return srv.scores.Get(id)
 }
 
+// Running returns whether the server is currently running.
+func (srv *Server) Running() bool {
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	return srv.running
+}
+
 func (srv *Server) listenLoop() {
 	defer srv.wg.Done()
 
 	for {
-		conn, err := srv.listener.Accept()
+		ct, err := srv.listener.Accept()
 		if err != nil {
 			select {
 			case <-srv.quit:
@@ -220,36 +273,68 @@ func (srv *Server) listenLoop() {
 		srv.wg.Add(1)
 		go func() {
 			defer srv.wg.Done()
-			srv.setupConn(conn, false)
+			srv.setupConn(ct, false)
 		}()
 	}
 }
 
-// setupConn handles a new connection: creates a peer, sets up transport,
-// and runs all matching protocols via the multiplexer.
-func (srv *Server) setupConn(conn net.Conn, dialed bool) {
-	var tr Transport
+// localHello builds the local hello packet from the server's configuration.
+func (srv *Server) localHello() *HelloPacket {
+	caps := make([]Cap, len(srv.config.Protocols))
+	for i, p := range srv.config.Protocols {
+		caps[i] = Cap{Name: p.Name, Version: p.Version}
+	}
+	return &HelloPacket{
+		Version:    baseProtocolVersion,
+		Name:       srv.config.Name,
+		Caps:       caps,
+		ListenPort: srv.config.ListenPort,
+		ID:         srv.localID,
+	}
+}
 
+// setupConn handles a new connection: performs handshake, creates a peer,
+// and runs all matching protocols via the multiplexer.
+func (srv *Server) setupConn(ct ConnTransport, dialed bool) {
+	var tr Transport = ct
+
+	// Optionally wrap with RLPx encryption.
 	if srv.config.EnableRLPx {
-		rlpx := NewRLPxTransport(conn)
+		rlpx := NewRLPxTransport(ct.(*FrameConnTransport).FrameTransport.conn)
 		if err := rlpx.Handshake(dialed); err != nil {
-			conn.Close()
+			ct.Close()
 			return
 		}
 		tr = rlpx
-	} else {
-		tr = NewFrameTransport(conn)
 	}
 
-	// Generate a random peer ID for now (no ECIES handshake).
-	id := randomID()
-	peer := NewPeer(id, conn.RemoteAddr().String(), nil)
-	score := srv.scores.Get(id)
+	// Perform devp2p hello handshake (unless disabled).
+	var peerID string
+	var peerCaps []Cap
+
+	if !srv.config.DisableHandshake {
+		remoteHello, err := PerformHandshake(tr, srv.localHello())
+		if err != nil {
+			tr.Close()
+			return
+		}
+		peerID = remoteHello.ID
+		peerCaps = remoteHello.Caps
+	} else {
+		// Legacy mode: generate a random peer ID with no handshake.
+		peerID = randomID()
+	}
+
+	peer := NewPeer(peerID, ct.RemoteAddr(), peerCaps)
+	score := srv.scores.Get(peerID)
 
 	if err := srv.peers.Add(peer); err != nil {
 		tr.Close()
 		return
 	}
+
+	// Record successful handshake.
+	score.HandshakeOK()
 
 	defer func() {
 		srv.peers.Remove(peer.ID())
@@ -272,7 +357,7 @@ func (srv *Server) setupConn(conn net.Conn, dialed bool) {
 			if err != nil {
 				score.BadResponse()
 			} else {
-				score.HandshakeOK()
+				score.GoodResponse()
 			}
 		}
 		return

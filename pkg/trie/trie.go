@@ -271,6 +271,39 @@ func (t *Trie) Hash() types.Hash {
 	}
 }
 
+// Len returns the number of key-value pairs stored in the trie.
+// This traverses the entire trie, so it is O(n).
+func (t *Trie) Len() int {
+	return countValues(t.root)
+}
+
+// Empty returns true if the trie has no entries.
+func (t *Trie) Empty() bool {
+	return t.root == nil
+}
+
+// countValues recursively counts the number of value nodes in the trie.
+func countValues(n node) int {
+	switch n := n.(type) {
+	case nil:
+		return 0
+	case valueNode:
+		return 1
+	case *shortNode:
+		return countValues(n.Val)
+	case *fullNode:
+		count := 0
+		for i := 0; i < 17; i++ {
+			count += countValues(n.Children[i])
+		}
+		return count
+	case hashNode:
+		return 0 // cannot count through unresolved hash nodes
+	default:
+		return 0
+	}
+}
+
 // keysEqual returns true if two byte slices are equal.
 func keysEqual(a, b []byte) bool {
 	if len(a) != len(b) {

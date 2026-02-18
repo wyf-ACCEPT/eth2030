@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
+	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
 )
@@ -85,4 +86,62 @@ func (api *EthAPI) traceBlock(req *Request, block *types.Block) *Response {
 	}
 
 	return successResponse(req.ID, results)
+}
+
+// debugTraceCall implements debug_traceCall.
+// Simulates a call and returns an execution trace without creating a transaction.
+func (api *EthAPI) debugTraceCall(req *Request) *Response {
+	if len(req.Params) < 1 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "missing call arguments")
+	}
+
+	var args CallArgs
+	if err := json.Unmarshal(req.Params[0], &args); err != nil {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "invalid call arguments: "+err.Error())
+	}
+
+	bn := LatestBlockNumber
+	if len(req.Params) > 1 {
+		if err := json.Unmarshal(req.Params[1], &bn); err != nil {
+			return errorResponse(req.ID, ErrCodeInvalidParams, "invalid block number: "+err.Error())
+		}
+	}
+
+	// Parse optional tracer config (third param); accepted but not fully used yet.
+	// A full implementation would support "callTracer", "prestateTracer", etc.
+
+	from := types.Address{}
+	if args.From != nil {
+		from = types.HexToAddress(*args.From)
+	}
+	var to *types.Address
+	if args.To != nil {
+		addr := types.HexToAddress(*args.To)
+		to = &addr
+	}
+	gas := uint64(50_000_000)
+	if args.Gas != nil {
+		gas = parseHexUint64(*args.Gas)
+	}
+	value := new(big.Int)
+	if args.Value != nil {
+		value = parseHexBigInt(*args.Value)
+	}
+	data := args.GetData()
+
+	result, gasUsed, err := api.backend.EVMCall(from, to, data, gas, value, bn)
+	if err != nil {
+		return errorResponse(req.ID, ErrCodeInternal, "execution error: "+err.Error())
+	}
+
+	// For a full implementation, we would capture step-by-step EVM logs.
+	// Currently returns a minimal trace with the gas used and return value.
+	trace := &TraceResult{
+		Gas:         gasUsed,
+		Failed:      false,
+		ReturnValue: encodeBytes(result),
+		StructLogs:  []StructLog{},
+	}
+
+	return successResponse(req.ID, trace)
 }

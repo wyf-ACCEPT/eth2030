@@ -24,6 +24,91 @@ type Transport interface {
 	Close() error
 }
 
+// ConnTransport extends Transport with remote address information.
+// Implementations wrap a net.Conn and provide framed message I/O.
+type ConnTransport interface {
+	Transport
+	// RemoteAddr returns the remote network address of the underlying connection.
+	RemoteAddr() string
+}
+
+// Dialer is the interface for establishing outbound connections to peers.
+type Dialer interface {
+	// Dial connects to the given address and returns a ConnTransport.
+	Dial(addr string) (ConnTransport, error)
+}
+
+// Listener is the interface for accepting inbound connections from peers.
+type Listener interface {
+	// Accept blocks until an inbound connection arrives and returns a ConnTransport.
+	Accept() (ConnTransport, error)
+	// Close stops the listener.
+	Close() error
+	// Addr returns the listener's network address.
+	Addr() net.Addr
+}
+
+// TCPDialer dials TCP connections and wraps them in a FrameTransport.
+type TCPDialer struct{}
+
+// Dial connects to addr via TCP and returns a plaintext FrameTransport.
+func (d *TCPDialer) Dial(addr string) (ConnTransport, error) {
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("p2p: dial error: %w", err)
+	}
+	return NewFrameConnTransport(conn), nil
+}
+
+// TCPListener wraps a net.Listener to accept connections as ConnTransports.
+type TCPListener struct {
+	ln net.Listener
+}
+
+// NewTCPListener creates a TCPListener from a net.Listener.
+func NewTCPListener(ln net.Listener) *TCPListener {
+	return &TCPListener{ln: ln}
+}
+
+// Accept blocks until an inbound TCP connection arrives.
+func (l *TCPListener) Accept() (ConnTransport, error) {
+	conn, err := l.ln.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return NewFrameConnTransport(conn), nil
+}
+
+// Close stops the listener.
+func (l *TCPListener) Close() error {
+	return l.ln.Close()
+}
+
+// Addr returns the listener's network address.
+func (l *TCPListener) Addr() net.Addr {
+	return l.ln.Addr()
+}
+
+// FrameConnTransport wraps a FrameTransport with ConnTransport capabilities,
+// providing remote address information alongside framed message I/O.
+type FrameConnTransport struct {
+	*FrameTransport
+	remoteAddr string
+}
+
+// NewFrameConnTransport wraps a net.Conn as a ConnTransport with plaintext framing.
+func NewFrameConnTransport(conn net.Conn) *FrameConnTransport {
+	return &FrameConnTransport{
+		FrameTransport: NewFrameTransport(conn),
+		remoteAddr:     conn.RemoteAddr().String(),
+	}
+}
+
+// RemoteAddr returns the remote network address.
+func (t *FrameConnTransport) RemoteAddr() string {
+	return t.remoteAddr
+}
+
 // FrameTransport implements Transport using length-prefixed plaintext framing.
 // Wire format per message: [4-byte big-endian length][1-byte msg code][payload]
 // where length = 1 + len(payload).

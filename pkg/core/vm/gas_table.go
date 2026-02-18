@@ -350,6 +350,52 @@ func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 	return gas
 }
 
+// --- Pre-Berlin dynamic gas functions for CALL-family opcodes ---
+
+// gasCallFrontier calculates dynamic gas for CALL in pre-Berlin forks.
+// Charges memory expansion + value transfer gas (9000) when value > 0,
+// plus new account gas (25000) when sending value to a non-existent account.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func gasCallFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	var gas uint64
+	transfersValue := stack.Back(2).Sign() != 0
+	if transfersValue {
+		gas = safeAdd(gas, CallValueTransferGas)
+		// Sending value to a non-existent account costs extra.
+		addr := types.BytesToAddress(stack.Back(1).Bytes())
+		if evm.StateDB != nil && !evm.StateDB.Exist(addr) {
+			gas = safeAdd(gas, CallNewAccountGas)
+		}
+	}
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	return gas
+}
+
+// gasCallCodeFrontier calculates dynamic gas for CALLCODE in pre-Berlin forks.
+// Charges memory expansion + value transfer gas (9000) when value > 0.
+// CALLCODE does NOT charge new account gas since it runs in the caller's context.
+// Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
+func gasCallCodeFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	var gas uint64
+	if stack.Back(2).Sign() != 0 {
+		gas = safeAdd(gas, CallValueTransferGas)
+	}
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	return gas
+}
+
+// gasSelfdestructFrontier calculates dynamic gas for SELFDESTRUCT in pre-Berlin forks.
+// Charges CreateBySelfdestructGas (25000) when sending balance to a non-existent account.
+func gasSelfdestructFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	addr := types.BytesToAddress(stack.Back(0).Bytes())
+	if evm.StateDB != nil {
+		if !evm.StateDB.Exist(addr) && evm.StateDB.GetBalance(contract.Address).Sign() != 0 {
+			return CreateBySelfdestructGas
+		}
+	}
+	return 0
+}
+
 // --- EIP-2929 dynamic gas functions ---
 
 // gasSloadEIP2929 charges warm/cold gas for SLOAD.

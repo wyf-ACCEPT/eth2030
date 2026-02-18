@@ -113,10 +113,16 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 		return api.getUncleCountByBlockHash(req)
 	case "eth_getUncleCountByBlockNumber":
 		return api.getUncleCountByBlockNumber(req)
+	case "eth_getUncleByBlockHashAndIndex":
+		return api.getUncleByBlockHashAndIndex(req)
+	case "eth_getUncleByBlockNumberAndIndex":
+		return api.getUncleByBlockNumberAndIndex(req)
 	case "eth_blobBaseFee":
 		return api.getBlobBaseFee(req)
 	case "debug_traceTransaction":
 		return api.debugTraceTransaction(req)
+	case "debug_traceCall":
+		return api.debugTraceCall(req)
 	case "debug_traceBlockByNumber":
 		return api.debugTraceBlockByNumber(req)
 	case "debug_traceBlockByHash":

@@ -64,7 +64,7 @@ func newMockBackend() *mockBackend {
 }
 
 func (b *mockBackend) HeaderByNumber(number BlockNumber) *types.Header {
-	if number == LatestBlockNumber {
+	if number == LatestBlockNumber || number == SafeBlockNumber || number == FinalizedBlockNumber {
 		return b.headers[42]
 	}
 	return b.headers[uint64(number)]
@@ -80,7 +80,7 @@ func (b *mockBackend) HeaderByHash(hash types.Hash) *types.Header {
 }
 
 func (b *mockBackend) BlockByNumber(number BlockNumber) *types.Block {
-	if number == LatestBlockNumber {
+	if number == LatestBlockNumber || number == SafeBlockNumber || number == FinalizedBlockNumber {
 		// Find the latest block number from headers.
 		if h := b.headers[42]; h != nil {
 			return b.blocks[42]

@@ -15,9 +15,11 @@ import (
 type BlockNumber int64
 
 const (
-	LatestBlockNumber   BlockNumber = -1
-	PendingBlockNumber  BlockNumber = -2
-	EarliestBlockNumber BlockNumber = 0
+	LatestBlockNumber    BlockNumber = -1
+	PendingBlockNumber   BlockNumber = -2
+	EarliestBlockNumber  BlockNumber = 0
+	SafeBlockNumber      BlockNumber = -3
+	FinalizedBlockNumber BlockNumber = -4
 )
 
 // UnmarshalJSON implements json.Unmarshaler for block number.
@@ -39,6 +41,10 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 		*bn = PendingBlockNumber
 	case "earliest":
 		*bn = EarliestBlockNumber
+	case "safe":
+		*bn = SafeBlockNumber
+	case "finalized":
+		*bn = FinalizedBlockNumber
 	default:
 		// Parse hex string.
 		n, err := strconv.ParseInt(s, 0, 64)

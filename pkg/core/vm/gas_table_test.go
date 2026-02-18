@@ -2025,3 +2025,344 @@ func TestExpGas_MaxByteLengthExponent(t *testing.T) {
 		t.Errorf("ExpGas(256) = %d, want 110", gas256)
 	}
 }
+
+// --- Pre-Berlin (Frontier) CALL/CALLCODE/SELFDESTRUCT dynamic gas tests ---
+
+func TestGasCallFrontier_NoValue(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xaa})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	db.exists[addr] = true
+
+	// CALL stack: gas, addr, value, argsOff, argsLen, retOff, retLen
+	// No value transfer: only memory expansion gas.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasCallFrontier no value, no mem = %d, want 0", gas)
+	}
+}
+
+func TestGasCallFrontier_WithValue_ExistingAccount(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xbb})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	db.exists[addr] = true
+
+	// CALL with value=1 to existing account: CallValueTransferGas only.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallFrontier(evm, contract, stack, mem, 0)
+	if gas != CallValueTransferGas {
+		t.Errorf("gasCallFrontier value+existing = %d, want %d", gas, CallValueTransferGas)
+	}
+}
+
+func TestGasCallFrontier_WithValue_NonExistentAccount(t *testing.T) {
+	evm, _ := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xcc})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	// addr does NOT exist
+
+	// CALL with value=1 to non-existent account: CallValueTransferGas + CallNewAccountGas.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallFrontier(evm, contract, stack, mem, 0)
+	expected := CallValueTransferGas + CallNewAccountGas
+	if gas != expected {
+		t.Errorf("gasCallFrontier value+new = %d, want %d", gas, expected)
+	}
+}
+
+func TestGasCallFrontier_WithMemoryExpansion(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xdd})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	db.exists[addr] = true
+
+	// CALL with value=1, memory expansion to 64 bytes.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(64), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallFrontier(evm, contract, stack, mem, 64)
+	memGas := gasMemExpansion(evm, contract, stack, mem, 64)
+	expected := CallValueTransferGas + memGas
+	if gas != expected {
+		t.Errorf("gasCallFrontier value+mem = %d, want %d (value=%d mem=%d)",
+			gas, expected, CallValueTransferGas, memGas)
+	}
+}
+
+func TestGasCallFrontier_NoValue_NonExistentAccount(t *testing.T) {
+	evm, _ := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xee})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	// addr does NOT exist, but no value transfer
+
+	// CALL with value=0 to non-existent account: no extra gas (new account gas
+	// is only charged when value > 0).
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasCallFrontier no value+new acct = %d, want 0", gas)
+	}
+}
+
+func TestGasCallCodeFrontier_NoValue(t *testing.T) {
+	evm := &EVM{}
+	contract := &Contract{}
+	mem := NewMemory()
+
+	// CALLCODE with value=0: no extra gas.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(0), big.NewInt(0), big.NewInt(1000),
+	)
+	gas := gasCallCodeFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasCallCodeFrontier no value = %d, want 0", gas)
+	}
+}
+
+func TestGasCallCodeFrontier_WithValue(t *testing.T) {
+	evm := &EVM{}
+	contract := &Contract{}
+	mem := NewMemory()
+
+	// CALLCODE with value=1: CallValueTransferGas only (no new account gas).
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), big.NewInt(0), big.NewInt(1000),
+	)
+	gas := gasCallCodeFrontier(evm, contract, stack, mem, 0)
+	if gas != CallValueTransferGas {
+		t.Errorf("gasCallCodeFrontier value = %d, want %d", gas, CallValueTransferGas)
+	}
+}
+
+func TestGasCallCodeFrontier_NeverChargesNewAccountGas(t *testing.T) {
+	evm, _ := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	// CALLCODE to non-existent address with value: should NOT charge CallNewAccountGas.
+	addr := types.BytesToAddress([]byte{0xff})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	// addr does NOT exist
+
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gas := gasCallCodeFrontier(evm, contract, stack, mem, 0)
+	if gas != CallValueTransferGas {
+		t.Errorf("gasCallCodeFrontier value+nonexistent = %d, want %d (should NOT charge new account gas)",
+			gas, CallValueTransferGas)
+	}
+}
+
+func TestGasSelfdestructFrontier_NoBalance(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{
+		Address: types.BytesToAddress([]byte{0x42}),
+	}
+	mem := NewMemory()
+
+	db.exists[contract.Address] = true
+	// Contract has zero balance.
+
+	beneficiary := types.BytesToAddress([]byte{0x99})
+	beneficiaryInt := new(big.Int).SetBytes(beneficiary[:])
+	// beneficiary does NOT exist, but contract has no balance
+
+	stack := testStack(new(big.Int).Set(beneficiaryInt))
+	gas := gasSelfdestructFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasSelfdestructFrontier no balance = %d, want 0", gas)
+	}
+}
+
+func TestGasSelfdestructFrontier_BalanceToExisting(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{
+		Address: types.BytesToAddress([]byte{0x42}),
+	}
+	mem := NewMemory()
+
+	db.exists[contract.Address] = true
+	db.balances[contract.Address] = big.NewInt(1000)
+
+	beneficiary := types.BytesToAddress([]byte{0x99})
+	beneficiaryInt := new(big.Int).SetBytes(beneficiary[:])
+	db.exists[beneficiary] = true // beneficiary exists
+
+	stack := testStack(new(big.Int).Set(beneficiaryInt))
+	gas := gasSelfdestructFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasSelfdestructFrontier balance+existing = %d, want 0", gas)
+	}
+}
+
+func TestGasSelfdestructFrontier_BalanceToNewAccount(t *testing.T) {
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{
+		Address: types.BytesToAddress([]byte{0x42}),
+	}
+	mem := NewMemory()
+
+	db.exists[contract.Address] = true
+	db.balances[contract.Address] = big.NewInt(1000)
+
+	beneficiary := types.BytesToAddress([]byte{0xab})
+	beneficiaryInt := new(big.Int).SetBytes(beneficiary[:])
+	// beneficiary does NOT exist
+
+	stack := testStack(new(big.Int).Set(beneficiaryInt))
+	gas := gasSelfdestructFrontier(evm, contract, stack, mem, 0)
+	if gas != CreateBySelfdestructGas {
+		t.Errorf("gasSelfdestructFrontier balance+new = %d, want %d", gas, CreateBySelfdestructGas)
+	}
+}
+
+func TestGasSelfdestructFrontier_NilStateDB(t *testing.T) {
+	evm := &EVM{} // no StateDB
+	contract := &Contract{
+		Address: types.BytesToAddress([]byte{0x42}),
+	}
+	mem := NewMemory()
+
+	stack := testStack(big.NewInt(0x99))
+	gas := gasSelfdestructFrontier(evm, contract, stack, mem, 0)
+	if gas != 0 {
+		t.Errorf("gasSelfdestructFrontier nil StateDB = %d, want 0", gas)
+	}
+}
+
+func TestFrontierJumpTable_CallWiring(t *testing.T) {
+	tbl := NewFrontierJumpTable()
+
+	// CALL should have gasCallFrontier, not plain gasMemExpansion.
+	callOp := tbl[CALL]
+	if callOp == nil {
+		t.Fatal("CALL: operation is nil in Frontier table")
+	}
+	if callOp.dynamicGas == nil {
+		t.Fatal("CALL: dynamicGas is nil in Frontier table")
+	}
+	if callOp.constantGas != GasCallCold {
+		t.Errorf("CALL: constantGas = %d, want %d", callOp.constantGas, GasCallCold)
+	}
+
+	// CALLCODE should have gasCallCodeFrontier.
+	callcodeOp := tbl[CALLCODE]
+	if callcodeOp == nil {
+		t.Fatal("CALLCODE: operation is nil in Frontier table")
+	}
+	if callcodeOp.dynamicGas == nil {
+		t.Fatal("CALLCODE: dynamicGas is nil in Frontier table")
+	}
+
+	// SELFDESTRUCT should have gasSelfdestructFrontier.
+	sdOp := tbl[SELFDESTRUCT]
+	if sdOp == nil {
+		t.Fatal("SELFDESTRUCT: operation is nil in Frontier table")
+	}
+	if sdOp.dynamicGas == nil {
+		t.Fatal("SELFDESTRUCT: dynamicGas is nil in Frontier table")
+	}
+	if sdOp.constantGas != GasSelfdestruct {
+		t.Errorf("SELFDESTRUCT: constantGas = %d, want %d", sdOp.constantGas, GasSelfdestruct)
+	}
+}
+
+func TestFrontierCall_ChargesValueTransfer(t *testing.T) {
+	// Verify through the jump table that Frontier CALL correctly charges value transfer gas.
+	tbl := NewFrontierJumpTable()
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	addr := types.BytesToAddress([]byte{0xaa})
+	addrInt := new(big.Int).SetBytes(addr[:])
+	db.exists[addr] = true
+
+	// CALL with value=0.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gasNoValue := tbl[CALL].dynamicGas(evm, contract, stack, mem, 0)
+
+	// CALL with value=1.
+	stack = testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
+	)
+	gasWithValue := tbl[CALL].dynamicGas(evm, contract, stack, mem, 0)
+
+	diff := gasWithValue - gasNoValue
+	if diff != CallValueTransferGas {
+		t.Errorf("Frontier CALL value transfer gas diff = %d, want %d", diff, CallValueTransferGas)
+	}
+}
+
+func TestFrontierCall_ChargesNewAccountGas(t *testing.T) {
+	// Verify that Frontier CALL charges new account gas for value transfer to non-existent account.
+	tbl := NewFrontierJumpTable()
+	evm, db := newEIP2929TestEVM()
+	contract := &Contract{}
+	mem := NewMemory()
+
+	existingAddr := types.BytesToAddress([]byte{0xaa})
+	existingAddrInt := new(big.Int).SetBytes(existingAddr[:])
+	db.exists[existingAddr] = true
+
+	newAddr := types.BytesToAddress([]byte{0xbb})
+	newAddrInt := new(big.Int).SetBytes(newAddr[:])
+	// newAddr does NOT exist
+
+	// CALL with value=1 to existing account.
+	stack := testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(existingAddrInt), big.NewInt(1000),
+	)
+	gasExisting := tbl[CALL].dynamicGas(evm, contract, stack, mem, 0)
+
+	// CALL with value=1 to non-existent account.
+	stack = testStack(
+		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
+		big.NewInt(1), new(big.Int).Set(newAddrInt), big.NewInt(1000),
+	)
+	gasNew := tbl[CALL].dynamicGas(evm, contract, stack, mem, 0)
+
+	diff := gasNew - gasExisting
+	if diff != CallNewAccountGas {
+		t.Errorf("Frontier CALL new account gas diff = %d, want %d", diff, CallNewAccountGas)
+	}
+}

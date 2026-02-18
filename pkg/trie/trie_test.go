@@ -479,3 +479,194 @@ func TestTransactionTrieRoot(t *testing.T) {
 		}
 	}
 }
+
+// -- Edge cases --
+
+func TestEmptyTrieRoot_MatchesYellowPaper(t *testing.T) {
+	// Per the Yellow Paper, the empty trie root is keccak256(RLP("")).
+	// RLP("") = 0x80, so emptyRoot = keccak256([0x80]).
+	// Expected: 56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
+	tr := New()
+	got := tr.Hash()
+	exp := types.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	if got != exp {
+		t.Fatalf("empty root = %s, want %s", got.Hex(), exp.Hex())
+	}
+}
+
+func TestSingleNodeTrie_SmallRootForceHashed(t *testing.T) {
+	// Even if the root node's RLP is < 32 bytes, Hash() should still
+	// return a proper 32-byte hash (force=true for root).
+	tr := New()
+	tr.Put([]byte{0x01}, []byte{0x02})
+
+	root := tr.Hash()
+	if root == emptyRoot {
+		t.Fatal("single-entry trie root should not be emptyRoot")
+	}
+	if root == (types.Hash{}) {
+		t.Fatal("root should not be zero hash")
+	}
+	// Verify the hash is 32 bytes and deterministic.
+	if root != tr.Hash() {
+		t.Fatal("hash not deterministic")
+	}
+}
+
+func TestExtensionNodeCompaction_AfterDelete(t *testing.T) {
+	// After deleting a key that causes a branch node to collapse, the
+	// resulting extension node should be properly compacted (merged
+	// with its child short node).
+	tr := New()
+	tr.Put([]byte("abc"), []byte("1"))
+	tr.Put([]byte("abd"), []byte("2"))
+	tr.Put([]byte("xyz"), []byte("3"))
+
+	// Deleting "xyz" should leave a branch that may collapse.
+	tr.Delete([]byte("xyz"))
+
+	// Both remaining keys should be accessible.
+	got, err := tr.Get([]byte("abc"))
+	if err != nil || string(got) != "1" {
+		t.Fatalf("Get(abc) = %q, %v", got, err)
+	}
+	got, err = tr.Get([]byte("abd"))
+	if err != nil || string(got) != "2" {
+		t.Fatalf("Get(abd) = %q, %v", got, err)
+	}
+
+	// Build same final state from scratch and compare hashes.
+	tr2 := New()
+	tr2.Put([]byte("abc"), []byte("1"))
+	tr2.Put([]byte("abd"), []byte("2"))
+	if tr.Hash() != tr2.Hash() {
+		t.Fatalf("hash after delete differs from fresh build: %s vs %s",
+			tr.Hash().Hex(), tr2.Hash().Hex())
+	}
+}
+
+func TestExtensionNodeCompaction_DeepMerge(t *testing.T) {
+	// Create a deep trie and delete entries to trigger deep merging.
+	tr := New()
+	tr.Put([]byte("abcdef"), []byte("1"))
+	tr.Put([]byte("abcdeg"), []byte("2"))
+	tr.Put([]byte("abcdeh"), []byte("3"))
+
+	// Delete two of three, leaving a single leaf. The branch at "abcde"
+	// should collapse into a merged extension+leaf.
+	tr.Delete([]byte("abcdeg"))
+	tr.Delete([]byte("abcdeh"))
+
+	got, err := tr.Get([]byte("abcdef"))
+	if err != nil || string(got) != "1" {
+		t.Fatalf("Get(abcdef) = %q, %v", got, err)
+	}
+
+	// Hash should match a trie with just this one entry.
+	tr2 := New()
+	tr2.Put([]byte("abcdef"), []byte("1"))
+	if tr.Hash() != tr2.Hash() {
+		t.Fatalf("hash mismatch after deep compaction")
+	}
+}
+
+func TestBranchNodeValueSlot(t *testing.T) {
+	// Test that a value at a branch node (Children[16]) works correctly
+	// when combined with child entries. Keys that share a common prefix
+	// but one is a prefix of another trigger this case.
+	tr := New()
+	tr.Put([]byte("a"), []byte("val_a"))
+	tr.Put([]byte("ab"), []byte("val_ab"))
+	tr.Put([]byte("abc"), []byte("val_abc"))
+	tr.Put([]byte("b"), []byte("val_b"))
+
+	for _, tc := range []struct{ k, v string }{
+		{"a", "val_a"},
+		{"ab", "val_ab"},
+		{"abc", "val_abc"},
+		{"b", "val_b"},
+	} {
+		got, err := tr.Get([]byte(tc.k))
+		if err != nil {
+			t.Fatalf("Get(%q) error: %v", tc.k, err)
+		}
+		if string(got) != tc.v {
+			t.Fatalf("Get(%q) = %q, want %q", tc.k, got, tc.v)
+		}
+	}
+
+	// Delete the prefix key and verify others still work.
+	tr.Delete([]byte("a"))
+	_, err := tr.Get([]byte("a"))
+	if err != ErrNotFound {
+		t.Fatalf("Get(a) after delete: err = %v, want ErrNotFound", err)
+	}
+	got, err := tr.Get([]byte("ab"))
+	if err != nil || string(got) != "val_ab" {
+		t.Fatalf("Get(ab) = %q, %v", got, err)
+	}
+
+	// Delete middle key.
+	tr.Delete([]byte("ab"))
+	got, err = tr.Get([]byte("abc"))
+	if err != nil || string(got) != "val_abc" {
+		t.Fatalf("Get(abc) = %q, %v", got, err)
+	}
+}
+
+func TestLen(t *testing.T) {
+	tr := New()
+	if tr.Len() != 0 {
+		t.Fatal("empty trie Len should be 0")
+	}
+
+	tr.Put([]byte("a"), []byte("1"))
+	tr.Put([]byte("b"), []byte("2"))
+	tr.Put([]byte("c"), []byte("3"))
+	if tr.Len() != 3 {
+		t.Fatalf("Len = %d, want 3", tr.Len())
+	}
+
+	tr.Delete([]byte("b"))
+	if tr.Len() != 2 {
+		t.Fatalf("Len = %d, want 2 after delete", tr.Len())
+	}
+
+	tr.Delete([]byte("a"))
+	tr.Delete([]byte("c"))
+	if tr.Len() != 0 {
+		t.Fatalf("Len = %d, want 0 after all deletes", tr.Len())
+	}
+}
+
+func TestEmptyKeyInTrie(t *testing.T) {
+	// An empty key ([]byte{}) should work. keybytesToHex([]) produces
+	// just the terminator [16].
+	tr := New()
+	tr.Put([]byte{}, []byte("empty_key_value"))
+	tr.Put([]byte("a"), []byte("a_value"))
+
+	got, err := tr.Get([]byte{})
+	if err != nil {
+		t.Fatalf("Get(empty) error: %v", err)
+	}
+	if string(got) != "empty_key_value" {
+		t.Fatalf("Get(empty) = %q, want %q", got, "empty_key_value")
+	}
+
+	got, err = tr.Get([]byte("a"))
+	if err != nil || string(got) != "a_value" {
+		t.Fatalf("Get(a) = %q, %v", got, err)
+	}
+
+	// Delete the empty key.
+	tr.Delete([]byte{})
+	_, err = tr.Get([]byte{})
+	if err != ErrNotFound {
+		t.Fatalf("Get(empty) after delete: err = %v, want ErrNotFound", err)
+	}
+	got, err = tr.Get([]byte("a"))
+	if err != nil || string(got) != "a_value" {
+		t.Fatalf("Get(a) after empty delete = %q, %v", got, err)
+	}
+}

@@ -306,7 +306,7 @@ func (t *ResolvableTrie) resolveHash(hash hashNode) (node, error) {
 // Put inserts a key-value pair, resolving hash nodes as needed.
 func (t *ResolvableTrie) Put(key, value []byte) error {
 	if len(value) == 0 {
-		return t.Trie.Delete(key)
+		return t.Delete(key)
 	}
 	k := keybytesToHex(key)
 	n, err := t.resolveInsert(t.root, nil, k, valueNode(value))
@@ -328,9 +328,231 @@ func (t *ResolvableTrie) resolveInsert(n node, prefix, key []byte, value node) (
 	return t.Trie.insert(n, prefix, key, value)
 }
 
+// Delete removes a key from the trie, resolving hash nodes as needed.
+func (t *ResolvableTrie) Delete(key []byte) error {
+	k := keybytesToHex(key)
+	n, err := t.resolveDelete(t.root, nil, k)
+	if err != nil {
+		return err
+	}
+	t.root = n
+	return nil
+}
+
+func (t *ResolvableTrie) resolveDelete(n node, prefix, key []byte) (node, error) {
+	if hn, ok := n.(hashNode); ok {
+		resolved, err := t.resolveHash(hn)
+		if err != nil {
+			return nil, err
+		}
+		return t.resolveDelete(resolved, prefix, key)
+	}
+
+	switch n := n.(type) {
+	case nil:
+		return nil, nil
+
+	case *shortNode:
+		matchLen := prefixLen(key, n.Key)
+		if matchLen < len(n.Key) {
+			return n, nil
+		}
+		if matchLen == len(key) {
+			return nil, nil
+		}
+		child, err := t.resolveDelete(n.Val, append(prefix, key[:len(n.Key)]...), key[len(n.Key):])
+		if err != nil {
+			return nil, err
+		}
+		switch child := child.(type) {
+		case nil:
+			return nil, nil
+		case *shortNode:
+			mergedKey := concat(n.Key, child.Key)
+			return &shortNode{Key: mergedKey, Val: child.Val, flags: nodeFlag{dirty: true}}, nil
+		default:
+			return &shortNode{Key: n.Key, Val: child, flags: nodeFlag{dirty: true}}, nil
+		}
+
+	case *fullNode:
+		nn := n.copy()
+		nn.flags = nodeFlag{dirty: true}
+		child, err := t.resolveDelete(n.Children[key[0]], append(prefix, key[0]), key[1:])
+		if err != nil {
+			return nil, err
+		}
+		nn.Children[key[0]] = child
+
+		remaining := -1
+		for i := 0; i < 17; i++ {
+			if nn.Children[i] != nil {
+				if remaining >= 0 {
+					return nn, nil
+				}
+				remaining = i
+			}
+		}
+		if remaining < 0 {
+			return nil, nil
+		}
+		if remaining == 16 {
+			return &shortNode{
+				Key:   []byte{terminatorByte},
+				Val:   nn.Children[16],
+				flags: nodeFlag{dirty: true},
+			}, nil
+		}
+		child = nn.Children[remaining]
+		if cnode, ok := child.(*shortNode); ok {
+			mergedKey := concat([]byte{byte(remaining)}, cnode.Key)
+			return &shortNode{Key: mergedKey, Val: cnode.Val, flags: nodeFlag{dirty: true}}, nil
+		}
+		return &shortNode{
+			Key:   []byte{byte(remaining)},
+			Val:   child,
+			flags: nodeFlag{dirty: true},
+		}, nil
+
+	case valueNode:
+		if len(key) == 0 {
+			return nil, nil
+		}
+		return n, nil
+
+	default:
+		return nil, errors.New("trie: unknown node type")
+	}
+}
+
 // Hash computes the root hash.
 func (t *ResolvableTrie) Hash() types.Hash {
 	return t.Trie.Hash()
+}
+
+// Prove generates a Merkle proof for the given key, resolving hash nodes
+// from the database as needed.
+func (t *ResolvableTrie) Prove(key []byte) ([][]byte, error) {
+	if t.root == nil {
+		return nil, ErrNotFound
+	}
+	t.Hash()
+
+	hexKey := keybytesToHex(key)
+	var proof [][]byte
+	found := t.resolveProve(t.root, hexKey, 0, &proof)
+	if !found {
+		return nil, ErrNotFound
+	}
+	return proof, nil
+}
+
+func (t *ResolvableTrie) resolveProve(n node, key []byte, pos int, proof *[][]byte) bool {
+	switch n := n.(type) {
+	case nil:
+		return false
+	case *shortNode:
+		collapsed := n.copy()
+		collapsed.Key = hexToCompact(n.Key)
+		collapsed.Val = collapseForProof(n.Val)
+		enc, err := encodeShortNode(collapsed)
+		if err != nil {
+			return false
+		}
+		*proof = append(*proof, enc)
+
+		if len(key)-pos < len(n.Key) || !keysEqual(n.Key, key[pos:pos+len(n.Key)]) {
+			return false
+		}
+		return t.resolveProve(n.Val, key, pos+len(n.Key), proof)
+
+	case *fullNode:
+		collapsed := collapseFullNodeForProof(n)
+		enc, err := encodeFullNode(collapsed)
+		if err != nil {
+			return false
+		}
+		*proof = append(*proof, enc)
+
+		if pos >= len(key) {
+			return n.Children[16] != nil
+		}
+		return t.resolveProve(n.Children[key[pos]], key, pos+1, proof)
+
+	case valueNode:
+		return true
+
+	case hashNode:
+		resolved, err := t.resolveHash(n)
+		if err != nil {
+			return false
+		}
+		return t.resolveProve(resolved, key, pos, proof)
+
+	default:
+		return false
+	}
+}
+
+// ProveAbsence generates a Merkle proof of non-existence for the given key,
+// resolving hash nodes from the database as needed.
+func (t *ResolvableTrie) ProveAbsence(key []byte) ([][]byte, error) {
+	if t.root == nil {
+		return nil, nil
+	}
+	t.Hash()
+
+	hexKey := keybytesToHex(key)
+	var proof [][]byte
+	t.resolveProveAbsence(t.root, hexKey, 0, &proof)
+	return proof, nil
+}
+
+func (t *ResolvableTrie) resolveProveAbsence(n node, key []byte, pos int, proof *[][]byte) {
+	switch n := n.(type) {
+	case nil:
+		return
+	case *shortNode:
+		collapsed := n.copy()
+		collapsed.Key = hexToCompact(n.Key)
+		collapsed.Val = collapseForProof(n.Val)
+		enc, err := encodeShortNode(collapsed)
+		if err != nil {
+			return
+		}
+		*proof = append(*proof, enc)
+
+		if len(key)-pos < len(n.Key) || !keysEqual(n.Key, key[pos:pos+len(n.Key)]) {
+			return
+		}
+		t.resolveProveAbsence(n.Val, key, pos+len(n.Key), proof)
+
+	case *fullNode:
+		collapsed := collapseFullNodeForProof(n)
+		enc, err := encodeFullNode(collapsed)
+		if err != nil {
+			return
+		}
+		*proof = append(*proof, enc)
+
+		if pos >= len(key) {
+			return
+		}
+		child := n.Children[key[pos]]
+		if child == nil {
+			return
+		}
+		t.resolveProveAbsence(child, key, pos+1, proof)
+
+	case valueNode:
+		return
+
+	case hashNode:
+		resolved, err := t.resolveHash(n)
+		if err != nil {
+			return
+		}
+		t.resolveProveAbsence(resolved, key, pos, proof)
+	}
 }
 
 // Commit stores all dirty nodes to the database and returns the root hash.
