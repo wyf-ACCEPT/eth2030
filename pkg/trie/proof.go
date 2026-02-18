@@ -124,22 +124,35 @@ func collapseFullNodeForProof(n *fullNode) *fullNode {
 
 // VerifyProof verifies a Merkle proof for a given key against a root hash.
 // It returns the value if the proof is valid, or an error otherwise.
+//
+// The proof is a list of RLP-encoded nodes from root to leaf. Each node is
+// linked to the next by either a 32-byte Keccak hash reference or by inline
+// embedding (when the child's RLP is < 32 bytes).
 func VerifyProof(rootHash types.Hash, key []byte, proof [][]byte) ([]byte, error) {
 	if len(proof) == 0 {
 		return nil, ErrProofInvalid
 	}
 
 	hexKey := keybytesToHex(key)
-	// Verify that the first proof node hashes to the root hash.
+	// wantHash tracks the expected hash for the current proof node.
+	// For the root, it must match rootHash.
 	wantHash := rootHash[:]
+	// wantInline tracks an expected inline encoding (when child is < 32 bytes).
+	// Only one of wantHash or wantInline should be active at a time.
+	var wantInline []byte
+
 	pos := 0
 	for i, encoded := range proof {
-		// Verify this node matches the expected hash.
-		nodeHash := crypto.Keccak256(encoded)
-		if !bytes.Equal(nodeHash, wantHash) {
-			// For inline nodes (encoded < 32 bytes), the node might be embedded
-			// rather than hashed. But the root must always match.
-			if i == 0 {
+		// Verify this node matches the expected reference.
+		if wantInline != nil {
+			// The parent referenced this node via inline embedding.
+			if !bytes.Equal(encoded, wantInline) {
+				return nil, ErrProofInvalid
+			}
+			wantInline = nil
+		} else {
+			nodeHash := crypto.Keccak256(encoded)
+			if !bytes.Equal(nodeHash, wantHash) {
 				return nil, ErrProofInvalid
 			}
 		}
@@ -172,15 +185,18 @@ func VerifyProof(rootHash types.Hash, key []byte, proof [][]byte) ([]byte, error
 				return nil, ErrProofInvalid
 			}
 
-			// Extension node: items[1] is either a hash or inline node.
+			// Extension node: items[1] is a child reference.
 			if i == len(proof)-1 {
 				return nil, ErrProofInvalid
 			}
-			if len(items[1]) == 32 {
-				wantHash = items[1]
+			childRef := items[1]
+			if len(childRef) == 32 {
+				wantHash = childRef
+				wantInline = nil
 			} else {
-				// Inline node: the next proof element should be the inline encoding.
-				wantHash = crypto.Keccak256(proof[i+1])
+				// Inline child: next proof node must be this exact encoding.
+				wantInline = childRef
+				wantHash = nil
 			}
 
 		case 17:
@@ -206,16 +222,16 @@ func VerifyProof(rootHash types.Hash, key []byte, proof [][]byte) ([]byte, error
 			}
 
 			if i == len(proof)-1 {
-				// This is the last proof node. If the child is a value, return it.
-				// Otherwise, proof is incomplete.
 				return nil, ErrProofInvalid
 			}
 
 			if len(childRef) == 32 {
 				wantHash = childRef
+				wantInline = nil
 			} else {
-				// Inline reference.
-				wantHash = crypto.Keccak256(proof[i+1])
+				// Inline child: next proof node must match this reference.
+				wantInline = childRef
+				wantHash = nil
 			}
 
 		default:
