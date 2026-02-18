@@ -11,6 +11,8 @@ import (
 
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2028/eth2028/trie"
 )
 
 var errCallFailed = errors.New("execution reverted")
@@ -143,6 +145,18 @@ func (b *mockBackend) GetBlockReceipts(number uint64) []*types.Receipt {
 
 func (b *mockBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber BlockNumber) ([]byte, uint64, error) {
 	return b.callResult, b.callGasUsed, b.callErr
+}
+
+func (b *mockBackend) GetProof(addr types.Address, storageKeys []types.Hash, blockNumber BlockNumber) (*trie.AccountProof, error) {
+	// Build a real state trie from the mock state and generate real proofs.
+	stateTrie := b.statedb.BuildStateTrie()
+	storageTrie := b.statedb.BuildStorageTrie(addr)
+	return trie.ProveAccountWithStorage(stateTrie, addr, storageTrie, storageKeys)
+}
+
+func (b *mockBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error) {
+	// Return an empty tracer for mock purposes.
+	return vm.NewStructLogTracer(), nil
 }
 
 func callRPC(t *testing.T, api *EthAPI, method string, params ...interface{}) *Response {

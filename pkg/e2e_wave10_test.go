@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,7 @@ import (
 	"github.com/eth2028/eth2028/core/vm"
 	"github.com/eth2028/eth2028/rpc"
 	ssync "github.com/eth2028/eth2028/sync"
+	"github.com/eth2028/eth2028/trie"
 )
 
 // --- Blockchain Integration Tests ---
@@ -318,6 +320,17 @@ func (b *blockchainBackend) GetLogs(blockHash types.Hash) []*types.Log     { ret
 func (b *blockchainBackend) GetBlockReceipts(number uint64) []*types.Receipt { return nil }
 func (b *blockchainBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber rpc.BlockNumber) ([]byte, uint64, error) {
 	return nil, 0, nil
+}
+
+func (b *blockchainBackend) GetProof(addr types.Address, storageKeys []types.Hash, blockNumber rpc.BlockNumber) (*trie.AccountProof, error) {
+	memState := b.bc.State()
+	stateTrie := memState.BuildStateTrie()
+	storageTrie := memState.BuildStorageTrie(addr)
+	return trie.ProveAccountWithStorage(stateTrie, addr, storageTrie, storageKeys)
+}
+
+func (b *blockchainBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func TestRPCE2E_BlockchainQueries(t *testing.T) {

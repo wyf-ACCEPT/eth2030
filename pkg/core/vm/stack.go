@@ -64,3 +64,8 @@ func (st *Stack) Dup(n int) {
 func (st *Stack) Len() int {
 	return len(st.data)
 }
+
+// Data returns the underlying stack slice (bottom to top).
+func (st *Stack) Data() []*big.Int {
+	return st.data
+}

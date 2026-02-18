@@ -482,6 +482,62 @@ func (s *MemoryStateDB) GetRoot() types.Hash {
 	return stateTrie.Hash()
 }
 
+// BuildStateTrie constructs a Merkle Patricia Trie containing all accounts in
+// the state. This is used for generating Merkle proofs (e.g., eth_getProof).
+// Each account is keyed by keccak256(address) and the value is the RLP-encoded
+// account [nonce, balance, storageRoot, codeHash].
+func (s *MemoryStateDB) BuildStateTrie() *trie.Trie {
+	stateTrie := trie.New()
+	for addr, obj := range s.stateObjects {
+		if obj.selfDestructed {
+			continue
+		}
+		storageRoot := computeStorageRoot(obj)
+		codeHash := obj.account.CodeHash
+		if len(codeHash) == 0 {
+			codeHash = types.EmptyCodeHash.Bytes()
+		}
+		acc := rlpAccount{
+			Nonce:    obj.account.Nonce,
+			Balance:  obj.account.Balance,
+			Root:     storageRoot[:],
+			CodeHash: codeHash,
+		}
+		encoded, err := rlp.EncodeToBytes(acc)
+		if err != nil {
+			continue
+		}
+		hashedAddr := crypto.Keccak256(addr[:])
+		stateTrie.Put(hashedAddr, encoded)
+	}
+	return stateTrie
+}
+
+// BuildStorageTrie constructs a Merkle Patricia Trie for the given account's
+// storage. Returns nil if the account does not exist or has no storage. Each
+// storage slot is keyed by keccak256(slot) and the value is RLP-encoded.
+func (s *MemoryStateDB) BuildStorageTrie(addr types.Address) *trie.Trie {
+	obj := s.getStateObject(addr)
+	if obj == nil {
+		return nil
+	}
+	merged := mergeStorage(obj)
+	if len(merged) == 0 {
+		return nil
+	}
+	storageTrie := trie.New()
+	for slot, val := range merged {
+		hashedSlot := crypto.Keccak256(slot[:])
+		trimmed := trimLeadingZeros(val[:])
+		encoded, err := rlp.EncodeToBytes(trimmed)
+		if err != nil {
+			continue
+		}
+		storageTrie.Put(hashedSlot, encoded)
+	}
+	return storageTrie
+}
+
 // Copy returns a deep copy of the MemoryStateDB. The copy shares no mutable
 // state with the original, making it safe to use in parallel goroutines.
 func (s *MemoryStateDB) Copy() *MemoryStateDB {

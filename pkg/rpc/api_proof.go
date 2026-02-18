@@ -7,7 +7,6 @@ import (
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
 	"github.com/eth2028/eth2028/rlp"
 )
 
@@ -41,8 +40,8 @@ func (api *EthAPI) getProof(req *Request) *Response {
 		return errorResponse(req.ID, ErrCodeInvalidParams, "invalid address: "+err.Error())
 	}
 
-	var storageKeys []string
-	if err := json.Unmarshal(req.Params[1], &storageKeys); err != nil {
+	var storageKeysHex []string
+	if err := json.Unmarshal(req.Params[1], &storageKeysHex); err != nil {
 		return errorResponse(req.ID, ErrCodeInvalidParams, "invalid storageKeys: "+err.Error())
 	}
 
@@ -51,71 +50,38 @@ func (api *EthAPI) getProof(req *Request) *Response {
 		return errorResponse(req.ID, ErrCodeInvalidParams, "invalid block number: "+err.Error())
 	}
 
-	header := api.backend.HeaderByNumber(bn)
-	if header == nil {
-		return errorResponse(req.ID, ErrCodeInternal, "block not found")
+	addr := types.HexToAddress(addrHex)
+
+	// Convert storage key hex strings to types.Hash.
+	storageKeys := make([]types.Hash, len(storageKeysHex))
+	for i, keyHex := range storageKeysHex {
+		storageKeys[i] = types.HexToHash(keyHex)
 	}
 
-	statedb, err := api.backend.StateAt(header.Root)
+	// Generate real MPT proofs via the backend.
+	proof, err := api.backend.GetProof(addr, storageKeys, bn)
 	if err != nil {
 		return errorResponse(req.ID, ErrCodeInternal, err.Error())
 	}
 
-	addr := types.HexToAddress(addrHex)
-
-	// Get account data.
-	balance := statedb.GetBalance(addr)
-	nonce := statedb.GetNonce(addr)
-	codeHash := statedb.GetCodeHash(addr)
-
-	// If account doesn't exist, return empty code hash.
-	if codeHash == (types.Hash{}) {
-		codeHash = types.EmptyCodeHash
-	}
-
-	// Compute storage hash from the account's storage trie root.
-	// For a full implementation, this requires the actual storage trie root.
-	// Use EmptyRootHash if the account has no storage.
-	storageHash := types.EmptyRootHash
-
-	// Build account proof (Merkle proof for the account in the state trie).
-	// The key in the state trie is keccak256(address).
-	accountKey := crypto.Keccak256(addr[:])
-	_ = accountKey
-
-	// Build the account RLP for the proof.
-	// Account = RLP(nonce, balance, storageRoot, codeHash)
-	acctRLP := encodeAccountRLP(nonce, balance, storageHash, codeHash)
-	_ = acctRLP
-
-	// For now, return an empty proof path. A full implementation would
-	// walk the MPT and collect the proof nodes.
-	accountProofHex := []string{}
-
-	// Build storage proofs.
-	storageProofs := make([]StorageProof, len(storageKeys))
-	for i, keyHex := range storageKeys {
-		key := types.HexToHash(keyHex)
-		val := statedb.GetState(addr, key)
-
-		// Convert to big.Int for proper hex encoding (strip leading zeros).
-		valInt := new(big.Int).SetBytes(val[:])
-
-		storageProofs[i] = StorageProof{
-			Key:   keyHex,
-			Value: encodeBigInt(valInt),
-			Proof: []string{}, // Empty proof for now.
+	// Convert trie.StorageProof to rpc.StorageProof with hex encoding.
+	rpcStorageProofs := make([]StorageProof, len(proof.StorageProof))
+	for i, sp := range proof.StorageProof {
+		rpcStorageProofs[i] = StorageProof{
+			Key:   storageKeysHex[i],
+			Value: encodeBigInt(sp.Value),
+			Proof: encodeProofNodes(sp.Proof),
 		}
 	}
 
 	result := &AccountProof{
-		Address:      encodeAddress(addr),
-		AccountProof: accountProofHex,
-		Balance:      encodeBigInt(balance),
-		CodeHash:     encodeHash(codeHash),
-		Nonce:        encodeUint64(nonce),
-		StorageHash:  encodeHash(storageHash),
-		StorageProof: storageProofs,
+		Address:      encodeAddress(proof.Address),
+		AccountProof: encodeProofNodes(proof.AccountProof),
+		Balance:      encodeBigInt(proof.Balance),
+		CodeHash:     encodeHash(proof.CodeHash),
+		Nonce:        encodeUint64(proof.Nonce),
+		StorageHash:  encodeHash(proof.StorageHash),
+		StorageProof: rpcStorageProofs,
 	}
 
 	return successResponse(req.ID, result)
@@ -176,7 +142,8 @@ type TraceResult struct {
 }
 
 // debugTraceTransaction implements debug_traceTransaction.
-// Returns a detailed execution trace for a given transaction hash.
+// Re-executes the transaction with a tracing EVM and returns a detailed
+// step-by-step execution trace including opcode, gas, stack per step.
 func (api *EthAPI) debugTraceTransaction(req *Request) *Response {
 	if len(req.Params) < 1 {
 		return errorResponse(req.ID, ErrCodeInvalidParams, "missing transaction hash")
@@ -189,27 +156,41 @@ func (api *EthAPI) debugTraceTransaction(req *Request) *Response {
 
 	txHash := types.HexToHash(txHashHex)
 
-	// Look up the transaction.
-	tx, blockNum, txIndex := api.backend.GetTransaction(txHash)
-	if tx == nil {
-		return errorResponse(req.ID, ErrCodeInternal, "transaction not found")
+	// Delegate tracing to the backend, which has access to the blockchain
+	// and state processor needed to re-execute the transaction.
+	tracer, err := api.backend.TraceTransaction(txHash)
+	if err != nil {
+		return errorResponse(req.ID, ErrCodeInternal, err.Error())
 	}
 
-	_ = blockNum
-	_ = txIndex
+	// Convert StructLogTracer entries to the RPC response format.
+	structLogs := make([]StructLog, len(tracer.Logs))
+	for i, entry := range tracer.Logs {
+		stackHex := make([]string, len(entry.Stack))
+		for j, val := range entry.Stack {
+			stackHex[j] = "0x" + val.Text(16)
+		}
+		structLogs[i] = StructLog{
+			PC:      entry.Pc,
+			Op:      entry.Op.String(),
+			Gas:     entry.Gas,
+			GasCost: entry.GasCost,
+			Depth:   entry.Depth,
+			Stack:   stackHex,
+		}
+	}
 
-	// For a full implementation, we would:
-	// 1. Get the block containing the transaction.
-	// 2. Re-execute all transactions before this one to build up state.
-	// 3. Execute this transaction with a tracing EVM that logs each step.
-	// 4. Return the trace.
+	failed := tracer.Error() != nil
+	retVal := ""
+	if out := tracer.Output(); len(out) > 0 {
+		retVal = encodeBytes(out)
+	}
 
-	// For now, return a minimal trace result.
 	result := &TraceResult{
-		Gas:         tx.Gas(),
-		Failed:      false,
-		ReturnValue: "",
-		StructLogs:  []StructLog{},
+		Gas:         tracer.GasUsed(),
+		Failed:      failed,
+		ReturnValue: retVal,
+		StructLogs:  structLogs,
 	}
 
 	return successResponse(req.ID, result)

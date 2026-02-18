@@ -13,6 +13,7 @@ import (
 	"github.com/eth2028/eth2028/core/vm"
 	"github.com/eth2028/eth2028/engine"
 	"github.com/eth2028/eth2028/rpc"
+	"github.com/eth2028/eth2028/trie"
 )
 
 // nodeBackend adapts the Node to the rpc.Backend interface.
@@ -88,6 +89,33 @@ func (b *nodeBackend) StateAt(root types.Hash) (state.StateDB, error) {
 	// For now, return the current state regardless of root.
 	// A proper implementation would look up state by trie root.
 	return b.node.blockchain.State(), nil
+}
+
+func (b *nodeBackend) GetProof(addr types.Address, storageKeys []types.Hash, blockNumber rpc.BlockNumber) (*trie.AccountProof, error) {
+	header := b.HeaderByNumber(blockNumber)
+	if header == nil {
+		return nil, fmt.Errorf("block not found")
+	}
+
+	statedb, err := b.StateAt(header.Root)
+	if err != nil {
+		return nil, err
+	}
+
+	// Type-assert to MemoryStateDB to access trie-building methods.
+	memState, ok := statedb.(*state.MemoryStateDB)
+	if !ok {
+		return nil, fmt.Errorf("state does not support proof generation")
+	}
+
+	// Build the full state trie from all accounts.
+	stateTrie := memState.BuildStateTrie()
+
+	// Build the storage trie for the requested account.
+	storageTrie := memState.BuildStorageTrie(addr)
+
+	// Generate account proof with storage proofs.
+	return trie.ProveAccountWithStorage(stateTrie, addr, storageTrie, storageKeys)
 }
 
 func (b *nodeBackend) SendTransaction(tx *types.Transaction) error {
@@ -189,6 +217,88 @@ func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte
 
 	ret, gasLeft, err := evm.Call(from, *to, data, gas, value)
 	return ret, gasLeft, err
+}
+
+// TraceTransaction re-executes a transaction with a StructLogTracer attached.
+// It looks up the block containing the transaction, re-processes all prior
+// transactions to build up state, then executes the target tx with tracing.
+func (b *nodeBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error) {
+	bc := b.node.blockchain
+
+	// Look up the transaction in the chain index.
+	blockHash, _, txIndex, found := bc.GetTransactionLookup(txHash)
+	if !found {
+		return nil, fmt.Errorf("transaction %v not found", txHash)
+	}
+
+	block := bc.GetBlock(blockHash)
+	if block == nil {
+		return nil, fmt.Errorf("block %v not found", blockHash)
+	}
+
+	txs := block.Transactions()
+	if int(txIndex) >= len(txs) {
+		return nil, fmt.Errorf("transaction index %d out of range", txIndex)
+	}
+
+	// Get state at the parent block.
+	statedb := bc.State()
+	header := block.Header()
+
+	blockCtx := vm.BlockContext{
+		GetHash:     bc.GetHashFn(),
+		BlockNumber: header.Number,
+		Time:        header.Time,
+		GasLimit:    header.GasLimit,
+		BaseFee:     header.BaseFee,
+	}
+
+	// Re-execute all transactions before the target to build up state.
+	for i := uint64(0); i < txIndex; i++ {
+		tx := txs[i]
+		from := types.Address{}
+		if sender := tx.Sender(); sender != nil {
+			from = *sender
+		}
+		txCtx := vm.TxContext{
+			Origin:   from,
+			GasPrice: tx.GasPrice(),
+		}
+		evm := vm.NewEVMWithState(blockCtx, txCtx, vm.Config{}, statedb)
+		to := tx.To()
+		if to != nil {
+			evm.Call(from, *to, tx.Data(), tx.Gas(), tx.Value())
+		}
+		// Update nonce after replaying the transaction.
+		statedb.SetNonce(from, statedb.GetNonce(from)+1)
+	}
+
+	// Now execute the target transaction with tracing enabled.
+	targetTx := txs[txIndex]
+	from := types.Address{}
+	if sender := targetTx.Sender(); sender != nil {
+		from = *sender
+	}
+	txCtx := vm.TxContext{
+		Origin:   from,
+		GasPrice: targetTx.GasPrice(),
+	}
+
+	tracer := vm.NewStructLogTracer()
+	tracingCfg := vm.Config{
+		Debug:  true,
+		Tracer: tracer,
+	}
+	evm := vm.NewEVMWithState(blockCtx, txCtx, tracingCfg, statedb)
+
+	to := targetTx.To()
+	if to != nil {
+		ret, gasLeft, err := evm.Call(from, *to, targetTx.Data(), targetTx.Gas(), targetTx.Value())
+		gasUsed := targetTx.Gas() - gasLeft
+		tracer.CaptureEnd(ret, gasUsed, err)
+	}
+
+	return tracer, nil
 }
 
 // txPoolAdapter adapts *txpool.TxPool to core.TxPoolReader.

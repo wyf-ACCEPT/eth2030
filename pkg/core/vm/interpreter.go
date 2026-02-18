@@ -100,7 +100,7 @@ type StateDB interface {
 // Config holds EVM configuration options.
 type Config struct {
 	Debug        bool
-	Tracer       interface{}
+	Tracer       EVMLogger
 	MaxCallDepth int
 }
 
@@ -234,6 +234,7 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 		pc    uint64
 		stack = NewStack()
 		mem   = NewMemory()
+		debug = evm.Config.Debug && evm.Config.Tracer != nil
 	)
 
 	for {
@@ -251,6 +252,10 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 		if sLen > operation.maxStack {
 			return nil, ErrStackOverflow
 		}
+
+		// Calculate total gas cost for this step (for tracing).
+		var stepCost uint64
+		gasBefore := contract.Gas
 
 		// Constant gas deduction
 		if operation.constantGas > 0 {
@@ -292,6 +297,14 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 			}
 		}
 
+		// Compute the total cost for this step (difference before/after gas charging).
+		stepCost = gasBefore - contract.Gas
+
+		// Trace: capture state before executing the opcode.
+		if debug {
+			evm.Config.Tracer.CaptureState(pc, op, gasBefore, stepCost, stack, mem, evm.depth, nil)
+		}
+
 		// Execute the opcode
 		ret, err := operation.execute(&pc, evm, contract, mem, stack)
 
@@ -320,9 +333,19 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 		return nil, gas, ErrMaxCallDepthExceeded
 	}
 
+	debug := evm.Config.Debug && evm.Config.Tracer != nil
+
+	// Notify tracer at the top-level call (depth 0).
+	if debug && evm.depth == 0 {
+		evm.Config.Tracer.CaptureStart(caller, addr, false, input, gas, value)
+	}
+
 	// Check for precompiled contract
 	if p, ok := evm.precompile(addr); ok {
 		ret, gasLeft, err := runPrecompile(p, input, gas)
+		if debug && evm.depth == 0 {
+			evm.Config.Tracer.CaptureEnd(ret, gas-gasLeft, err)
+		}
 		return ret, gasLeft, err
 	}
 
@@ -355,6 +378,9 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 	code := evm.StateDB.GetCode(addr)
 	if len(code) == 0 {
 		// No code to execute, the call succeeds with no return data
+		if debug && evm.depth == 0 {
+			evm.Config.Tracer.CaptureEnd(nil, 0, nil)
+		}
 		return nil, gas, nil
 	}
 
@@ -377,6 +403,10 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 	} else if errors.Is(err, ErrExecutionReverted) {
 		// On revert, revert state changes but return remaining gas
 		evm.StateDB.RevertToSnapshot(snapshot)
+	}
+
+	if debug && evm.depth == 0 {
+		evm.Config.Tracer.CaptureEnd(ret, gas-gasLeft, err)
 	}
 
 	return ret, gasLeft, err
