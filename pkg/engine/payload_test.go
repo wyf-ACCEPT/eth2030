@@ -148,7 +148,8 @@ func TestNewPayloadV5_ValidBAL(t *testing.T) {
 
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 	requestsJSON, _ := json.Marshal([][]byte{})
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV5","params":[%s,%s,%s,%s],"id":3}`,
@@ -203,7 +204,8 @@ func TestNewPayloadV5_InvalidBAL(t *testing.T) {
 
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 	requestsJSON, _ := json.Marshal([][]byte{})
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV5","params":[%s,%s,%s,%s],"id":4}`,
@@ -252,7 +254,8 @@ func TestNewPayloadV5_MissingBAL(t *testing.T) {
 
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 	requestsJSON, _ := json.Marshal([][]byte{})
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV5","params":[%s,%s,%s,%s],"id":5}`,
@@ -292,7 +295,8 @@ func TestNewPayloadV5_UnsupportedFork(t *testing.T) {
 
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 	requestsJSON, _ := json.Marshal([][]byte{})
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV5","params":[%s,%s,%s,%s],"id":6}`,

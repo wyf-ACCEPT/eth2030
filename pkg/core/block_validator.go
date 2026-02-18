@@ -114,15 +114,43 @@ func (v *BlockValidator) ValidateHeader(header, parent *types.Header) error {
 		}
 	}
 
+	// EIP-4844: verify blob gas fields for Cancun+ blocks.
+	if v.config != nil && v.config.IsCancun(header.Time) {
+		if err := ValidateBlockBlobGas(header, parent); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // ValidateBody checks the block body (transactions, uncles, withdrawals) against the header.
 func (v *BlockValidator) ValidateBody(block *types.Block) error {
+	header := block.Header()
+
 	// Post-merge: no uncles allowed.
 	if len(block.Uncles()) > 0 {
 		return ErrInvalidUncleHash
 	}
+
+	// EIP-4844: validate blob gas used matches the sum of blob gas from transactions.
+	if v.config != nil && v.config.IsCancun(header.Time) {
+		var totalBlobGas uint64
+		for _, tx := range block.Transactions() {
+			totalBlobGas += CountBlobGas(tx)
+		}
+		if header.BlobGasUsed != nil && *header.BlobGasUsed != totalBlobGas {
+			return fmt.Errorf("blob gas used mismatch: header %d, computed %d", *header.BlobGasUsed, totalBlobGas)
+		}
+	}
+
+	// Validate withdrawals for post-Shanghai blocks.
+	if v.config != nil && v.config.IsShanghai(header.Time) {
+		if block.Withdrawals() == nil {
+			return errors.New("post-Shanghai block missing withdrawals")
+		}
+	}
+
 	return nil
 }
 

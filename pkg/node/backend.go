@@ -377,6 +377,15 @@ func (b *engineBackend) ForkchoiceUpdated(
 	}, nil
 }
 
+func (b *engineBackend) ProcessBlockV4(
+	payload *engine.ExecutionPayloadV3,
+	expectedBlobVersionedHashes []types.Hash,
+	parentBeaconBlockRoot types.Hash,
+	executionRequests [][]byte,
+) (engine.PayloadStatusV1, error) {
+	return b.ProcessBlock(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+}
+
 func (b *engineBackend) ProcessBlockV5(
 	payload *engine.ExecutionPayloadV5,
 	expectedBlobVersionedHashes []types.Hash,
@@ -425,6 +434,18 @@ func (b *engineBackend) GetPayloadV6ByID(id engine.PayloadID) (*engine.GetPayloa
 		BlobsBundle:       resp.BlobsBundle,
 		ExecutionRequests: [][]byte{},
 	}, nil
+}
+
+func (b *engineBackend) GetHeadTimestamp() uint64 {
+	head := b.node.blockchain.CurrentBlock()
+	if head != nil {
+		return head.Time()
+	}
+	return 0
+}
+
+func (b *engineBackend) IsCancun(timestamp uint64) bool {
+	return b.node.blockchain.Config().IsCancun(timestamp)
 }
 
 func (b *engineBackend) IsPrague(timestamp uint64) bool {

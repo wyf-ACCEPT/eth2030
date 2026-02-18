@@ -8,25 +8,44 @@ import (
 )
 
 func genesisHeader() *types.Header {
+	blobGasUsed := uint64(0)
+	excessBlobGas := uint64(0)
+	emptyWHash := types.EmptyRootHash
 	return &types.Header{
-		Number:     big.NewInt(0),
-		GasLimit:   30000000,
-		GasUsed:    0,
-		Time:       0,
-		Difficulty: new(big.Int),
-		BaseFee:    big.NewInt(1000000000),
+		Number:          big.NewInt(0),
+		GasLimit:        30000000,
+		GasUsed:         0,
+		Time:            0,
+		Difficulty:      new(big.Int),
+		BaseFee:         big.NewInt(1000000000),
+		WithdrawalsHash: &emptyWHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 }
 
 func nextHeader(parent *types.Header) *types.Header {
+	blobGasUsed := uint64(0)
+	var parentExcess, parentUsed uint64
+	if parent.ExcessBlobGas != nil {
+		parentExcess = *parent.ExcessBlobGas
+	}
+	if parent.BlobGasUsed != nil {
+		parentUsed = *parent.BlobGasUsed
+	}
+	excessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
+	emptyWHash := types.EmptyRootHash
 	return &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     new(big.Int).Add(parent.Number, big.NewInt(1)),
-		GasLimit:   parent.GasLimit,
-		GasUsed:    parent.GasLimit / 2, // exactly at target
-		Time:       parent.Time + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(parent),
+		ParentHash:      parent.Hash(),
+		Number:          new(big.Int).Add(parent.Number, big.NewInt(1)),
+		GasLimit:        parent.GasLimit,
+		GasUsed:         parent.GasLimit / 2, // exactly at target
+		Time:            parent.Time + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(parent),
+		WithdrawalsHash: &emptyWHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 }
 
@@ -146,13 +165,19 @@ func TestHeaderChain_InvalidHeader(t *testing.T) {
 	genesis := genesisHeader()
 	hc := NewHeaderChain(TestConfig, genesis)
 
+	badBlobGas := uint64(0)
+	badExcess := uint64(0)
+	badWHash := types.EmptyRootHash
 	bad := &types.Header{
-		ParentHash: genesis.Hash(),
-		Number:     big.NewInt(999), // wrong number
-		GasLimit:   genesis.GasLimit,
-		Time:       genesis.Time + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(genesis),
+		ParentHash:      genesis.Hash(),
+		Number:          big.NewInt(999), // wrong number
+		GasLimit:        genesis.GasLimit,
+		Time:            genesis.Time + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(genesis),
+		WithdrawalsHash: &badWHash,
+		BlobGasUsed:     &badBlobGas,
+		ExcessBlobGas:   &badExcess,
 	}
 
 	_, err := hc.InsertHeaders([]*types.Header{bad})
@@ -165,12 +190,18 @@ func TestHeaderChain_UnknownParent(t *testing.T) {
 	genesis := genesisHeader()
 	hc := NewHeaderChain(TestConfig, genesis)
 
+	orphanBlobGas := uint64(0)
+	orphanExcess := uint64(0)
+	orphanWHash := types.EmptyRootHash
 	orphan := &types.Header{
-		ParentHash: types.Hash{0xff}, // unknown parent
-		Number:     big.NewInt(1),
-		GasLimit:   genesis.GasLimit,
-		Time:       genesis.Time + 12,
-		Difficulty: new(big.Int),
+		ParentHash:      types.Hash{0xff}, // unknown parent
+		Number:          big.NewInt(1),
+		GasLimit:        genesis.GasLimit,
+		Time:            genesis.Time + 12,
+		Difficulty:      new(big.Int),
+		WithdrawalsHash: &orphanWHash,
+		BlobGasUsed:     &orphanBlobGas,
+		ExcessBlobGas:   &orphanExcess,
 	}
 
 	_, err := hc.InsertHeaders([]*types.Header{orphan})

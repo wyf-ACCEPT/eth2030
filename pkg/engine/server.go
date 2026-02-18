@@ -20,6 +20,9 @@ type Backend interface {
 	// or the node is syncing.
 	ProcessBlock(payload *ExecutionPayloadV3, expectedBlobVersionedHashes []types.Hash, parentBeaconBlockRoot types.Hash) (PayloadStatusV1, error)
 
+	// ProcessBlockV4 validates and executes a Prague payload with execution requests.
+	ProcessBlockV4(payload *ExecutionPayloadV3, expectedBlobVersionedHashes []types.Hash, parentBeaconBlockRoot types.Hash, executionRequests [][]byte) (PayloadStatusV1, error)
+
 	// ProcessBlockV5 validates and executes a new Amsterdam payload with BAL.
 	ProcessBlockV5(payload *ExecutionPayloadV5, expectedBlobVersionedHashes []types.Hash, parentBeaconBlockRoot types.Hash, executionRequests [][]byte) (PayloadStatusV1, error)
 
@@ -39,6 +42,13 @@ type Backend interface {
 
 	// GetPayloadV6ByID retrieves a previously built payload for getPayloadV6 (Amsterdam).
 	GetPayloadV6ByID(id PayloadID) (*GetPayloadV6Response, error)
+
+	// GetHeadTimestamp returns the timestamp of the current head block.
+	// Used to validate timestamp progression in payload attributes.
+	GetHeadTimestamp() uint64
+
+	// IsCancun returns true if the given timestamp falls within the Cancun fork.
+	IsCancun(timestamp uint64) bool
 
 	// IsPrague returns true if the given timestamp falls within the Prague fork.
 	IsPrague(timestamp uint64) bool
@@ -63,45 +73,114 @@ func NewEngineAPI(backend Backend) *EngineAPI {
 }
 
 // NewPayloadV3 validates and executes a new Cancun/Deneb payload.
+// Per EIP-4844: blob versioned hashes must match commitments in transactions.
+// Per EIP-4788: parentBeaconBlockRoot must be provided (non-zero).
 func (api *EngineAPI) NewPayloadV3(
 	payload ExecutionPayloadV3,
 	expectedBlobVersionedHashes []types.Hash,
 	parentBeaconBlockRoot types.Hash,
 ) (PayloadStatusV1, error) {
+	// Validate that the payload timestamp falls within the Cancun fork.
+	if !api.backend.IsCancun(payload.Timestamp) {
+		return PayloadStatusV1{}, ErrUnsupportedFork
+	}
+
+	// EIP-4788: parentBeaconBlockRoot must be provided.
+	if parentBeaconBlockRoot == (types.Hash{}) {
+		return PayloadStatusV1{}, ErrInvalidParams
+	}
+
+	// EIP-4844: validate blob versioned hashes match transaction contents.
+	if err := validateBlobHashes(&payload, expectedBlobVersionedHashes); err != nil {
+		errMsg := err.Error()
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
 	return api.backend.ProcessBlock(&payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
 }
 
 // ForkchoiceUpdatedV3 processes a forkchoice update with optional V3 payload attributes.
+// Validates withdrawals and parentBeaconBlockRoot in payload attributes.
+// Validates timestamp progression when attributes are provided.
 func (api *EngineAPI) ForkchoiceUpdatedV3(
 	state ForkchoiceStateV1,
 	payloadAttributes *PayloadAttributesV3,
 ) (ForkchoiceUpdatedResult, error) {
+	if payloadAttributes != nil {
+		// Validate timestamp is non-zero.
+		if payloadAttributes.Timestamp == 0 {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+		// Validate parentBeaconBlockRoot is provided (V3 requires it).
+		if payloadAttributes.ParentBeaconBlockRoot == (types.Hash{}) {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+		// Validate timestamp progression: must be greater than head block timestamp.
+		headTimestamp := api.backend.GetHeadTimestamp()
+		if headTimestamp > 0 && payloadAttributes.Timestamp <= headTimestamp {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+	}
 	return api.backend.ForkchoiceUpdated(state, payloadAttributes)
 }
 
 // GetPayloadV3 retrieves a previously built payload by ID.
-func (api *EngineAPI) GetPayloadV3(payloadID PayloadID) (GetPayloadResponse, error) {
+// Returns ExecutionPayloadV3 + blockValue + blobsBundle (no executionRequests).
+func (api *EngineAPI) GetPayloadV3(payloadID PayloadID) (*GetPayloadV3Response, error) {
 	resp, err := api.backend.GetPayloadByID(payloadID)
 	if err != nil {
-		return GetPayloadResponse{}, err
+		return nil, err
 	}
-	return *resp, nil
+	// Build the V3 response (no executionRequests in V3).
+	v3Resp := &GetPayloadV3Response{
+		ExecutionPayload: &resp.ExecutionPayload.ExecutionPayloadV3,
+		BlockValue:       resp.BlockValue,
+		BlobsBundle:      resp.BlobsBundle,
+		Override:         resp.Override,
+	}
+	return v3Resp, nil
 }
 
 // NewPayloadV4 validates and executes a Prague/Electra payload with execution requests.
+// Per EIP-7685: executionRequests must be provided.
 func (api *EngineAPI) NewPayloadV4(
 	payload ExecutionPayloadV3,
 	expectedBlobVersionedHashes []types.Hash,
 	parentBeaconBlockRoot types.Hash,
 	executionRequests [][]byte,
 ) (PayloadStatusV1, error) {
-	// V4 passes execution requests alongside the V3 payload.
-	// The backend processes the V3 payload; execution requests are validated separately.
-	return api.backend.ProcessBlock(&payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+	// Validate that the payload timestamp falls within the Prague fork.
+	if !api.backend.IsPrague(payload.Timestamp) {
+		return PayloadStatusV1{}, ErrUnsupportedFork
+	}
+
+	// EIP-4788: parentBeaconBlockRoot must be provided.
+	if parentBeaconBlockRoot == (types.Hash{}) {
+		return PayloadStatusV1{}, ErrInvalidParams
+	}
+
+	// EIP-7685: executionRequests must be provided (can be empty list, not nil).
+	if executionRequests == nil {
+		return PayloadStatusV1{}, ErrInvalidParams
+	}
+
+	// EIP-4844: validate blob versioned hashes match transaction contents.
+	if err := validateBlobHashes(&payload, expectedBlobVersionedHashes); err != nil {
+		errMsg := err.Error()
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
+	return api.backend.ProcessBlockV4(&payload, expectedBlobVersionedHashes, parentBeaconBlockRoot, executionRequests)
 }
 
 // GetPayloadV4 retrieves a previously built payload for Prague.
-// Returns ExecutionPayloadV3 + executionRequests.
+// Returns ExecutionPayloadV3 + blockValue + blobsBundle + executionRequests.
 func (api *EngineAPI) GetPayloadV4(payloadID PayloadID) (*GetPayloadV4Response, error) {
 	resp, err := api.backend.GetPayloadV4ByID(payloadID)
 	if err != nil {
@@ -125,10 +204,31 @@ func (api *EngineAPI) NewPayloadV5(
 	if !api.backend.IsAmsterdam(payload.Timestamp) {
 		return PayloadStatusV1{}, ErrUnsupportedFork
 	}
+
+	// EIP-4788: parentBeaconBlockRoot must be provided.
+	if parentBeaconBlockRoot == (types.Hash{}) {
+		return PayloadStatusV1{}, ErrInvalidParams
+	}
+
+	// EIP-7685: executionRequests must be provided.
+	if executionRequests == nil {
+		return PayloadStatusV1{}, ErrInvalidParams
+	}
+
 	// The blockAccessList field must be present.
 	if payload.BlockAccessList == nil {
 		return PayloadStatusV1{}, ErrInvalidParams
 	}
+
+	// EIP-4844: validate blob versioned hashes match transaction contents.
+	if err := validateBlobHashes(&payload.ExecutionPayloadV3, expectedBlobVersionedHashes); err != nil {
+		errMsg := err.Error()
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
 	return api.backend.ProcessBlockV5(&payload, expectedBlobVersionedHashes, parentBeaconBlockRoot, executionRequests)
 }
 
@@ -263,4 +363,36 @@ func (api *EngineAPI) httpHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
+}
+
+// validateBlobHashes checks that the blob versioned hashes from the CL
+// match the versioned hashes found in blob transactions within the payload.
+// Per EIP-4844, each blob transaction carries versioned hashes that must
+// appear in the same order in the expectedBlobVersionedHashes list.
+func validateBlobHashes(payload *ExecutionPayloadV3, expected []types.Hash) error {
+	// Collect all blob versioned hashes from transactions in the payload.
+	var actual []types.Hash
+	for _, txBytes := range payload.Transactions {
+		tx, err := types.DecodeTxRLP(txBytes)
+		if err != nil {
+			// Invalid transaction encoding will be caught later during block processing.
+			continue
+		}
+		hashes := tx.BlobHashes()
+		if len(hashes) > 0 {
+			actual = append(actual, hashes...)
+		}
+	}
+
+	// The expected list must match the actual list exactly (same length, same order).
+	if len(expected) != len(actual) {
+		return fmt.Errorf("%w: expected %d blob hashes, got %d from transactions",
+			ErrInvalidBlobHashes, len(expected), len(actual))
+	}
+	for i := range expected {
+		if expected[i] != actual[i] {
+			return fmt.Errorf("%w: hash mismatch at index %d", ErrInvalidBlobHashes, i)
+		}
+	}
+	return nil
 }

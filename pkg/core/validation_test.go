@@ -267,6 +267,16 @@ func TestInsertBlock_BloomMismatchRejected(t *testing.T) {
 	// Build a block with a modified bloom (wrong bloom).
 	parent := bc.Genesis()
 	emptyBALHash := bal.NewBlockAccessList().Hash()
+	blobGasUsed := uint64(0)
+	parentHeader := parent.Header()
+	var pExcess, pUsed uint64
+	if parentHeader.ExcessBlobGas != nil {
+		pExcess = *parentHeader.ExcessBlobGas
+	}
+	if parentHeader.BlobGasUsed != nil {
+		pUsed = *parentHeader.BlobGasUsed
+	}
+	excessBlobGas := CalcExcessBlobGas(pExcess, pUsed)
 	header := &types.Header{
 		ParentHash:           parent.Hash(),
 		Number:               big.NewInt(1),
@@ -278,8 +288,10 @@ func TestInsertBlock_BloomMismatchRejected(t *testing.T) {
 		UncleHash:            EmptyUncleHash,
 		Bloom:                types.Bloom{0xff}, // intentionally wrong bloom
 		BlockAccessListHash:  &emptyBALHash,
+		BlobGasUsed:          &blobGasUsed,
+		ExcessBlobGas:        &excessBlobGas,
 	}
-	block := types.NewBlock(header, nil)
+	block := types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}})
 
 	err := bc.InsertBlock(block)
 	if err == nil {
@@ -293,6 +305,16 @@ func TestInsertBlock_CorrectBloomAccepted(t *testing.T) {
 	// Build a valid empty block (bloom should be all zeros).
 	parent := bc.Genesis()
 	emptyBALHash := bal.NewBlockAccessList().Hash()
+	blobGasUsed2 := uint64(0)
+	parentHeader2 := parent.Header()
+	var pExcess2, pUsed2 uint64
+	if parentHeader2.ExcessBlobGas != nil {
+		pExcess2 = *parentHeader2.ExcessBlobGas
+	}
+	if parentHeader2.BlobGasUsed != nil {
+		pUsed2 = *parentHeader2.BlobGasUsed
+	}
+	excessBlobGas2 := CalcExcessBlobGas(pExcess2, pUsed2)
 	header := &types.Header{
 		ParentHash:           parent.Hash(),
 		Number:               big.NewInt(1),
@@ -303,9 +325,11 @@ func TestInsertBlock_CorrectBloomAccepted(t *testing.T) {
 		BaseFee:              CalcBaseFee(parent.Header()),
 		UncleHash:            EmptyUncleHash,
 		BlockAccessListHash:  &emptyBALHash,
+		BlobGasUsed:          &blobGasUsed2,
+		ExcessBlobGas:        &excessBlobGas2,
 		// Bloom is zero by default (correct for empty block)
 	}
-	block := types.NewBlock(header, nil)
+	block := types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}})
 
 	if err := bc.InsertBlock(block); err != nil {
 		t.Fatalf("valid block rejected: %v", err)

@@ -133,8 +133,8 @@ func memoryMcopy(stack *Stack) uint64 {
 func gasMcopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	size := stack.Back(2).Uint64()
 	words := (size + 31) / 32
-	copyGas := GasCopy * words
-	return copyGas + gasMemExpansion(evm, contract, stack, mem, memorySize)
+	copyGas := safeMul(GasCopy, words)
+	return safeAdd(copyGas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 }
 
 // gasMemExpansion calculates dynamic gas for memory expansion.

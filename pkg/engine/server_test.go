@@ -16,12 +16,15 @@ import (
 // mockBackend is a test implementation of the Backend interface.
 type mockBackend struct {
 	processBlockFn      func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error)
+	processBlockV4Fn    func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
 	processBlockV5Fn    func(payload *ExecutionPayloadV5, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
 	forkchoiceUpdFn     func(state ForkchoiceStateV1, attrs *PayloadAttributesV3) (ForkchoiceUpdatedResult, error)
 	forkchoiceUpdV4Fn   func(state ForkchoiceStateV1, attrs *PayloadAttributesV4) (ForkchoiceUpdatedResult, error)
 	getPayloadByIDFn    func(id PayloadID) (*GetPayloadResponse, error)
 	getPayloadV4ByIDFn  func(id PayloadID) (*GetPayloadV4Response, error)
 	getPayloadV6ByIDFn  func(id PayloadID) (*GetPayloadV6Response, error)
+	headTimestamp       uint64
+	isCancunFn          func(timestamp uint64) bool
 	isPragueFn          func(timestamp uint64) bool
 	isAmsterdamFn       func(timestamp uint64) bool
 }
@@ -29,6 +32,13 @@ type mockBackend struct {
 func (m *mockBackend) ProcessBlock(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error) {
 	if m.processBlockFn != nil {
 		return m.processBlockFn(payload, hashes, root)
+	}
+	return PayloadStatusV1{Status: StatusValid}, nil
+}
+
+func (m *mockBackend) ProcessBlockV4(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error) {
+	if m.processBlockV4Fn != nil {
+		return m.processBlockV4Fn(payload, hashes, root, requests)
 	}
 	return PayloadStatusV1{Status: StatusValid}, nil
 }
@@ -79,6 +89,17 @@ func (m *mockBackend) GetPayloadV6ByID(id PayloadID) (*GetPayloadV6Response, err
 	return nil, ErrUnknownPayload
 }
 
+func (m *mockBackend) GetHeadTimestamp() uint64 {
+	return m.headTimestamp
+}
+
+func (m *mockBackend) IsCancun(timestamp uint64) bool {
+	if m.isCancunFn != nil {
+		return m.isCancunFn(timestamp)
+	}
+	return true
+}
+
 func (m *mockBackend) IsPrague(timestamp uint64) bool {
 	if m.isPragueFn != nil {
 		return m.isPragueFn(timestamp)
@@ -118,7 +139,8 @@ func TestNewPayloadV3_Valid(t *testing.T) {
 	payload := makeTestPayloadV3(blockHash, 100)
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV3","params":[%s,%s,%s],"id":1}`,
 		payloadJSON, hashesJSON, rootJSON)
@@ -162,7 +184,8 @@ func TestNewPayloadV3_InvalidPayload(t *testing.T) {
 	payload := makeTestPayloadV3(types.Hash{}, 200)
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV3","params":[%s,%s,%s],"id":2}`,
 		payloadJSON, hashesJSON, rootJSON)
@@ -202,7 +225,8 @@ func TestNewPayloadV3_BackendError(t *testing.T) {
 	payload := makeTestPayloadV3(types.Hash{}, 1)
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV3","params":[%s,%s,%s],"id":3}`,
 		payloadJSON, hashesJSON, rootJSON)
@@ -412,7 +436,8 @@ func TestGetPayloadV3_Valid(t *testing.T) {
 						},
 					},
 				},
-				BlockValue: big.NewInt(1000000),
+				BlockValue:  big.NewInt(1000000),
+				BlobsBundle: &BlobsBundleV1{},
 			}, nil
 		},
 	}
@@ -433,7 +458,7 @@ func TestGetPayloadV3_Valid(t *testing.T) {
 	}
 
 	resultJSON, _ := json.Marshal(rpcResp.Result)
-	var result GetPayloadResponse
+	var result GetPayloadV3Response
 	if err := json.Unmarshal(resultJSON, &result); err != nil {
 		t.Fatalf("failed to unmarshal result: %v", err)
 	}
@@ -442,6 +467,9 @@ func TestGetPayloadV3_Valid(t *testing.T) {
 	}
 	if result.ExecutionPayload.BlockNumber != 100 {
 		t.Errorf("expected block number 100, got %d", result.ExecutionPayload.BlockNumber)
+	}
+	if result.BlobsBundle == nil {
+		t.Error("expected non-nil blobsBundle in V3 response")
 	}
 }
 
@@ -747,7 +775,7 @@ func TestForkchoiceUpdatedV3_OnlyState(t *testing.T) {
 func TestNewPayloadV4_Valid(t *testing.T) {
 	blockHash := types.HexToHash("0xabcdef")
 	backend := &mockBackend{
-		processBlockFn: func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error) {
+		processBlockV4Fn: func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error) {
 			latestValid := payload.BlockHash
 			return PayloadStatusV1{
 				Status:          StatusValid,
@@ -761,7 +789,8 @@ func TestNewPayloadV4_Valid(t *testing.T) {
 	payload := makeTestPayloadV3(blockHash, 100)
 	payloadJSON, _ := json.Marshal(payload)
 	hashesJSON, _ := json.Marshal([]types.Hash{})
-	rootJSON, _ := json.Marshal(types.Hash{})
+	beaconRoot := types.HexToHash("0xbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeaconbeac")
+	rootJSON, _ := json.Marshal(beaconRoot)
 	requestsJSON, _ := json.Marshal([][]byte{{0x00, 0x01}, {0x01, 0x02}})
 
 	req := fmt.Sprintf(`{"jsonrpc":"2.0","method":"engine_newPayloadV4","params":[%s,%s,%s,%s],"id":20}`,

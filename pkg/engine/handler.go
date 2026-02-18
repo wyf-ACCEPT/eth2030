@@ -29,14 +29,12 @@ type jsonrpcError struct {
 	Message string `json:"message"`
 }
 
-// methodNotFoundCode is the standard JSON-RPC error code for method not found.
-const methodNotFoundCode = -32601
-
-// parseErrorCode is the standard JSON-RPC error code for parse errors.
-const parseErrorCode = -32700
-
-// internalErrorCode is the standard JSON-RPC error code for internal errors.
-const internalErrorCode = -32603
+// Aliases for backward compat within handler (reference the canonical constants in errors.go).
+var (
+	methodNotFoundCode = MethodNotFoundCode
+	parseErrorCode     = ParseErrorCode
+	internalErrorCode  = InternalErrorCode
+)
 
 // HandleRequest processes a raw JSON-RPC request and returns the raw JSON response.
 func (api *EngineAPI) HandleRequest(data []byte) []byte {
@@ -219,11 +217,11 @@ func (api *EngineAPI) handleGetPayloadV3(params []json.RawMessage) (any, *jsonrp
 		}
 	}
 
-	result, err := api.GetPayloadV3(payloadID)
+	resp, err := api.GetPayloadV3(payloadID)
 	if err != nil {
 		return nil, engineErrorToRPC(err)
 	}
-	return result, nil
+	return resp, nil
 }
 
 // handleNewPayloadV4 processes an engine_newPayloadV4 request (Prague/Electra).

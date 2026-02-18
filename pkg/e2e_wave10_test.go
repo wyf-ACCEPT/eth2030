@@ -20,33 +20,52 @@ import (
 // --- Blockchain Integration Tests ---
 
 func makeGenesisBlock() (*types.Block, *state.MemoryStateDB) {
+	blobGasUsed := uint64(0)
+	excessBlobGas := uint64(0)
+	emptyWHash := types.EmptyRootHash
 	header := &types.Header{
-		Number:     big.NewInt(0),
-		GasLimit:   30000000,
-		GasUsed:    0,
-		Time:       0,
-		Difficulty: new(big.Int),
-		BaseFee:    big.NewInt(1000000000),
-		UncleHash:  core.EmptyUncleHash,
+		Number:          big.NewInt(0),
+		GasLimit:        30000000,
+		GasUsed:         0,
+		Time:            0,
+		Difficulty:      new(big.Int),
+		BaseFee:         big.NewInt(1000000000),
+		UncleHash:       core.EmptyUncleHash,
+		WithdrawalsHash: &emptyWHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 	statedb := state.NewMemoryStateDB()
 	// Fund a sender for transactions.
 	sender := types.HexToAddress("0x1111")
 	statedb.AddBalance(sender, new(big.Int).Mul(big.NewInt(100), new(big.Int).SetUint64(1e18)))
-	return types.NewBlock(header, nil), statedb
+	return types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}}), statedb
 }
 
 func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB, txs []*types.Transaction) *types.Block {
 	t.Helper()
 	parentHeader := parent.Header()
+	blobGasUsed := uint64(0)
+	var parentExcess, parentUsed uint64
+	if parentHeader.ExcessBlobGas != nil {
+		parentExcess = *parentHeader.ExcessBlobGas
+	}
+	if parentHeader.BlobGasUsed != nil {
+		parentUsed = *parentHeader.BlobGasUsed
+	}
+	excessBlobGas := core.CalcExcessBlobGas(parentExcess, parentUsed)
+	emptyWHash := types.EmptyRootHash
 	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:   parentHeader.GasLimit,
-		Time:       parentHeader.Time + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    core.CalcBaseFee(parentHeader),
-		UncleHash:  core.EmptyUncleHash,
+		ParentHash:      parent.Hash(),
+		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:        parentHeader.GasLimit,
+		Time:            parentHeader.Time + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         core.CalcBaseFee(parentHeader),
+		UncleHash:       core.EmptyUncleHash,
+		WithdrawalsHash: &emptyWHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 
 	// Process transactions.
@@ -72,7 +91,7 @@ func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB,
 		header.BlockAccessListHash = &emptyBALHash
 	}
 
-	return types.NewBlock(header, &types.Body{Transactions: txs})
+	return types.NewBlock(header, &types.Body{Transactions: txs, Withdrawals: []*types.Withdrawal{}})
 }
 
 func TestBlockchainE2E_FullLifecycle(t *testing.T) {
@@ -220,14 +239,20 @@ func TestBlockchainE2E_InvalidBlock(t *testing.T) {
 	}
 
 	// Try to insert a block with wrong parent.
+	badBlobGasUsed := uint64(0)
+	badExcessBlobGas := uint64(0)
+	badWHash := types.EmptyRootHash
 	badBlock := types.NewBlock(&types.Header{
-		ParentHash: types.Hash{0xff},
-		Number:     big.NewInt(1),
-		GasLimit:   30000000,
-		Time:       12,
-		Difficulty: new(big.Int),
-		BaseFee:    big.NewInt(1000000000),
-	}, nil)
+		ParentHash:      types.Hash{0xff},
+		Number:          big.NewInt(1),
+		GasLimit:        30000000,
+		Time:            12,
+		Difficulty:      new(big.Int),
+		BaseFee:         big.NewInt(1000000000),
+		WithdrawalsHash: &badWHash,
+		BlobGasUsed:     &badBlobGasUsed,
+		ExcessBlobGas:   &badExcessBlobGas,
+	}, &types.Body{Withdrawals: []*types.Withdrawal{}})
 
 	err = bc.InsertBlock(badBlock)
 	if err == nil {

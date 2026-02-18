@@ -75,6 +75,18 @@ func (b *EngineBackend) ProcessBlock(
 		}, nil
 	}
 
+	// Validate block hash: the hash computed from the header fields must match
+	// the blockHash provided in the payload.
+	computedHash := block.Hash()
+	if payload.BlockHash != (types.Hash{}) && computedHash != payload.BlockHash {
+		errMsg := fmt.Sprintf("block hash mismatch: computed %s, payload %s", computedHash, payload.BlockHash)
+		return PayloadStatusV1{
+			Status:          StatusInvalidBlockHash,
+			LatestValidHash: &computedHash,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -82,6 +94,17 @@ func (b *EngineBackend) ProcessBlock(
 	parentHash := block.ParentHash()
 	if _, ok := b.blocks[parentHash]; !ok {
 		return PayloadStatusV1{Status: StatusSyncing}, nil
+	}
+
+	// Validate timestamp progression: block timestamp must be > parent timestamp.
+	parentBlock := b.blocks[parentHash]
+	if parentBlock != nil && payload.Timestamp <= parentBlock.Header().Time {
+		errMsg := fmt.Sprintf("invalid timestamp: block %d <= parent %d", payload.Timestamp, parentBlock.Header().Time)
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			LatestValidHash: &parentHash,
+			ValidationError: &errMsg,
+		}, nil
 	}
 
 	// Run through the state processor.
@@ -104,6 +127,34 @@ func (b *EngineBackend) ProcessBlock(
 		Status:          StatusValid,
 		LatestValidHash: &blockHash,
 	}, nil
+}
+
+// ProcessBlockV4 validates and executes a Prague payload with execution requests.
+func (b *EngineBackend) ProcessBlockV4(
+	payload *ExecutionPayloadV3,
+	expectedBlobVersionedHashes []types.Hash,
+	parentBeaconBlockRoot types.Hash,
+	executionRequests [][]byte,
+) (PayloadStatusV1, error) {
+	// Delegate to ProcessBlock for core validation; execution requests are
+	// stored alongside the block but validated at a higher level.
+	return b.ProcessBlock(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+}
+
+// GetHeadTimestamp returns the timestamp of the current head block.
+func (b *EngineBackend) GetHeadTimestamp() uint64 {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	if headBlock, ok := b.blocks[b.headHash]; ok {
+		return headBlock.Header().Time
+	}
+	return 0
+}
+
+// IsCancun returns true if the given timestamp falls within the Cancun fork.
+func (b *EngineBackend) IsCancun(timestamp uint64) bool {
+	return b.config.IsCancun(timestamp)
 }
 
 // ForkchoiceUpdated processes a forkchoice state update from the CL.
@@ -141,12 +192,17 @@ func (b *EngineBackend) ForkchoiceUpdated(
 			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
 		}
 
-		id := b.generatePayloadID(fcState.HeadBlockHash, attrs.Timestamp)
-
 		parentBlock := b.blocks[fcState.HeadBlockHash]
 		if parentBlock == nil {
 			return ForkchoiceUpdatedResult{}, ErrInvalidForkchoiceState
 		}
+
+		// Validate timestamp progression: must be greater than parent block.
+		if attrs.Timestamp <= parentBlock.Header().Time {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+
+		id := b.generatePayloadID(fcState.HeadBlockHash, attrs.Timestamp)
 
 		// Build an empty block (no pending transactions from txpool yet).
 		builder := core.NewBlockBuilder(b.config, nil, nil)
@@ -158,6 +214,7 @@ func (b *EngineBackend) ForkchoiceUpdated(
 			FeeRecipient: attrs.SuggestedFeeRecipient,
 			Random:       attrs.PrevRandao,
 			GasLimit:     parentHeader.GasLimit,
+			Withdrawals:  WithdrawalsToCore(attrs.Withdrawals),
 		})
 		if err != nil {
 			return ForkchoiceUpdatedResult{}, fmt.Errorf("payload build failed: %w", err)

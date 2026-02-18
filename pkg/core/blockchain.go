@@ -466,7 +466,8 @@ func (bc *Blockchain) readBlock(hash types.Hash) *types.Block {
 	return types.NewBlock(header, body)
 }
 
-// encodeBlockBody RLP-encodes a block body as [transactions_list, uncles_list].
+// encodeBlockBody RLP-encodes a block body as [transactions_list, uncles_list, withdrawals_list].
+// The withdrawals list is included only when body.Withdrawals is non-nil (post-Shanghai).
 func encodeBlockBody(body *types.Body) ([]byte, error) {
 	// Encode transactions.
 	var txsPayload []byte
@@ -500,10 +501,25 @@ func encodeBlockBody(body *types.Body) ([]byte, error) {
 	var payload []byte
 	payload = append(payload, rlp.WrapList(txsPayload)...)
 	payload = append(payload, rlp.WrapList(unclesPayload)...)
+
+	// Encode withdrawals (post-Shanghai).
+	if body != nil && body.Withdrawals != nil {
+		var wsPayload []byte
+		for _, w := range body.Withdrawals {
+			wEnc, err := rlp.EncodeToBytes([]interface{}{w.Index, w.ValidatorIndex, w.Address, w.Amount})
+			if err != nil {
+				return nil, err
+			}
+			wsPayload = append(wsPayload, wEnc...)
+		}
+		payload = append(payload, rlp.WrapList(wsPayload)...)
+	}
+
 	return rlp.WrapList(payload), nil
 }
 
-// decodeBlockBody decodes an RLP-encoded block body [transactions_list, uncles_list].
+// decodeBlockBody decodes an RLP-encoded block body [transactions_list, uncles_list, withdrawals_list?].
+// The withdrawals list is optional (post-Shanghai).
 func decodeBlockBody(data []byte) (*types.Body, error) {
 	s := rlp.NewStreamFromBytes(data)
 	_, err := s.List()
@@ -553,14 +569,74 @@ func decodeBlockBody(data []byte) (*types.Body, error) {
 		return nil, fmt.Errorf("closing uncles list: %w", err)
 	}
 
+	body := &types.Body{
+		Transactions: txs,
+		Uncles:       uncles,
+	}
+
+	// Decode optional withdrawals (post-Shanghai).
+	if !s.AtListEnd() {
+		_, err = s.List()
+		if err != nil {
+			return nil, fmt.Errorf("opening withdrawals list: %w", err)
+		}
+		var withdrawals []*types.Withdrawal
+		for !s.AtListEnd() {
+			wBytes, err := s.RawItem()
+			if err != nil {
+				return nil, fmt.Errorf("reading withdrawal: %w", err)
+			}
+			w, err := decodeWithdrawal(wBytes)
+			if err != nil {
+				return nil, fmt.Errorf("decoding withdrawal: %w", err)
+			}
+			withdrawals = append(withdrawals, w)
+		}
+		if err := s.ListEnd(); err != nil {
+			return nil, fmt.Errorf("closing withdrawals list: %w", err)
+		}
+		if withdrawals == nil {
+			withdrawals = []*types.Withdrawal{} // empty but non-nil
+		}
+		body.Withdrawals = withdrawals
+	}
+
 	if err := s.ListEnd(); err != nil {
 		return nil, fmt.Errorf("closing body list: %w", err)
 	}
 
-	return &types.Body{
-		Transactions: txs,
-		Uncles:       uncles,
-	}, nil
+	return body, nil
+}
+
+// decodeWithdrawal decodes an RLP-encoded withdrawal [index, validatorIndex, address, amount].
+func decodeWithdrawal(data []byte) (*types.Withdrawal, error) {
+	s := rlp.NewStreamFromBytes(data)
+	_, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+	w := &types.Withdrawal{}
+	w.Index, err = s.Uint64()
+	if err != nil {
+		return nil, err
+	}
+	w.ValidatorIndex, err = s.Uint64()
+	if err != nil {
+		return nil, err
+	}
+	addrBytes, err := s.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	copy(w.Address[types.AddressLength-len(addrBytes):], addrBytes)
+	w.Amount, err = s.Uint64()
+	if err != nil {
+		return nil, err
+	}
+	if err := s.ListEnd(); err != nil {
+		return nil, err
+	}
+	return w, nil
 }
 
 // Reorg replaces the canonical chain from the fork point with the new chain
@@ -728,14 +804,20 @@ func (bc *Blockchain) writeTxLookups(txs []*types.Transaction, blockNumber uint6
 
 // makeGenesis is a helper for creating a genesis block with the given gas limit and base fee.
 func makeGenesis(gasLimit uint64, baseFee *big.Int) *types.Block {
+	blobGasUsed := uint64(0)
+	excessBlobGas := uint64(0)
+	emptyWithdrawalsHash := types.EmptyRootHash
 	header := &types.Header{
-		Number:     big.NewInt(0),
-		GasLimit:   gasLimit,
-		GasUsed:    0,
-		Time:       0,
-		Difficulty: new(big.Int),
-		BaseFee:    baseFee,
-		UncleHash:  EmptyUncleHash,
+		Number:          big.NewInt(0),
+		GasLimit:        gasLimit,
+		GasUsed:         0,
+		Time:            0,
+		Difficulty:      new(big.Int),
+		BaseFee:         baseFee,
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &emptyWithdrawalsHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
-	return types.NewBlock(header, nil)
+	return types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}})
 }

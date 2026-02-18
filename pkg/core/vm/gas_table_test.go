@@ -1,11 +1,15 @@
 package vm
 
 import (
+	"math"
 	"math/big"
 	"testing"
 
 	"github.com/eth2028/eth2028/core/types"
 )
+
+// Use math.MaxUint64 in test assertions to prevent removal by linter.
+var _ uint64 = math.MaxUint64
 
 func TestMemoryGasCost(t *testing.T) {
 	tests := []struct {
@@ -997,11 +1001,11 @@ func TestGasSstoreEIP2929_ColdSlot(t *testing.T) {
 
 	// Stack: slot, value (slot on top for Back(0))
 	// Writing 1 to slot 1 (currently zero).
-	// gasSstoreEIP2929: cold penalty (2000) + SstoreGas(zero, zero, one, false) = 20000.
-	// Total dynamic = 22000.
+	// Per EIP-2929: cold penalty = ColdSloadCost (2100) + SstoreSet (20000) = 22100.
+	// SSTORE has constantGas=0 so all gas is dynamic.
 	stack := testStack(big.NewInt(1), big.NewInt(1)) // value=1, slot=1
 	gas := gasSstoreEIP2929(evm, contract, stack, mem, 0)
-	expectedGas := GasSstoreSet + (ColdSloadCost - WarmStorageReadCost)
+	expectedGas := GasSstoreSet + ColdSloadCost // 20000 + 2100 = 22100
 	if gas != expectedGas {
 		t.Errorf("SSTORE cold 0->1 gas = %d, want %d", gas, expectedGas)
 	}
@@ -1656,5 +1660,368 @@ func TestGasConstants_YellowPaper(t *testing.T) {
 	}
 	if GasCopy != 3 {
 		t.Errorf("GasCopy = %d, want 3", GasCopy)
+	}
+}
+
+// --- Safe arithmetic tests ---
+
+func TestSafeAdd(t *testing.T) {
+	tests := []struct {
+		a, b uint64
+		want uint64
+	}{
+		{0, 0, 0},
+		{1, 2, 3},
+		{100, 200, 300},
+		{math.MaxUint64, 0, math.MaxUint64},
+		{0, math.MaxUint64, math.MaxUint64},
+		{math.MaxUint64, 1, math.MaxUint64},         // overflow
+		{math.MaxUint64, math.MaxUint64, math.MaxUint64}, // overflow
+		{math.MaxUint64 - 1, 1, math.MaxUint64},     // exactly max
+		{math.MaxUint64 - 1, 2, math.MaxUint64},     // overflow by 1
+	}
+	for _, tt := range tests {
+		got := safeAdd(tt.a, tt.b)
+		if got != tt.want {
+			t.Errorf("safeAdd(%d, %d) = %d, want %d", tt.a, tt.b, got, tt.want)
+		}
+	}
+}
+
+func TestSafeMul(t *testing.T) {
+	tests := []struct {
+		a, b uint64
+		want uint64
+	}{
+		{0, 0, 0},
+		{0, 100, 0},
+		{100, 0, 0},
+		{1, math.MaxUint64, math.MaxUint64},
+		{math.MaxUint64, 1, math.MaxUint64},
+		{2, math.MaxUint64, math.MaxUint64},          // overflow
+		{math.MaxUint64, 2, math.MaxUint64},          // overflow
+		{3, 5, 15},
+		{1 << 32, 1 << 31, 1 << 63},                  // large but no overflow
+	}
+	for _, tt := range tests {
+		got := safeMul(tt.a, tt.b)
+		if got != tt.want {
+			t.Errorf("safeMul(%d, %d) = %d, want %d", tt.a, tt.b, got, tt.want)
+		}
+	}
+	// Special case: 1<<32 * 1<<32 overflows uint64 (result would be 2^64).
+	// safeMul should return MaxUint64.
+	got := safeMul(1<<32, 1<<32)
+	if got != math.MaxUint64 {
+		t.Errorf("safeMul(1<<32, 1<<32) = %d, want MaxUint64", got)
+	}
+}
+
+func TestMemoryGasCost_Overflow(t *testing.T) {
+	// Words > 181,000 should return MaxUint64 to signal overflow.
+	// 181,000 words is ~5.8 MB of memory; above that the quadratic term overflows.
+	got := MemoryGasCost(181001 * 32) // 181001 words
+	if got != math.MaxUint64 {
+		t.Errorf("MemoryGasCost(181001 words) = %d, want MaxUint64", got)
+	}
+
+	// 181,000 words should NOT overflow.
+	got2 := MemoryGasCost(181000 * 32)
+	if got2 == math.MaxUint64 {
+		t.Error("MemoryGasCost(181000 words) should not overflow")
+	}
+}
+
+// --- SSTORE EIP-2929 total gas verification ---
+
+func TestGasSstoreEIP2929_TotalGasVerification(t *testing.T) {
+	zero := [32]byte{}
+	nonZero := [32]byte{0: 1}
+	nonZero2 := [32]byte{0: 2}
+
+	tests := []struct {
+		name     string
+		original [32]byte
+		current  [32]byte
+		newVal   [32]byte
+		cold     bool
+		wantGas  uint64
+	}{
+		{
+			name:     "cold create slot (0->1)",
+			original: zero, current: zero, newVal: nonZero,
+			cold: true, wantGas: GasSstoreSet + ColdSloadCost, // 20000 + 2100 = 22100
+		},
+		{
+			name:     "warm create slot (0->1)",
+			original: zero, current: zero, newVal: nonZero,
+			cold: false, wantGas: GasSstoreSet, // 20000
+		},
+		{
+			name:     "cold update slot (1->2)",
+			original: nonZero, current: nonZero, newVal: nonZero2,
+			cold: true, wantGas: GasSstoreReset + ColdSloadCost, // 2900 + 2100 = 5000
+		},
+		{
+			name:     "warm noop (1->1)",
+			original: nonZero, current: nonZero, newVal: nonZero,
+			cold: false, wantGas: WarmStorageReadCost, // 100
+		},
+		{
+			name:     "cold noop (1->1)",
+			original: nonZero, current: nonZero, newVal: nonZero,
+			cold: true, wantGas: WarmStorageReadCost + ColdSloadCost, // 100 + 2100 = 2200
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gas, _ := SstoreGas(tt.original, tt.current, tt.newVal, tt.cold)
+			if gas != tt.wantGas {
+				t.Errorf("SstoreGas() gas = %d, want %d", gas, tt.wantGas)
+			}
+		})
+	}
+}
+
+// --- SSTORE dirty slot refund tests ---
+
+func TestSstoreGas_DirtySlotRefunds(t *testing.T) {
+	zero := [32]byte{}
+	val1 := [32]byte{0: 1}
+	val2 := [32]byte{0: 2}
+
+	tests := []struct {
+		name       string
+		original   [32]byte
+		current    [32]byte
+		newVal     [32]byte
+		wantGas    uint64
+		wantRefund int64
+	}{
+		{
+			name:       "dirty: undo clear (orig=1, cur=0, new=2)",
+			original:   val1, current: zero, newVal: val2,
+			wantGas:    WarmStorageReadCost,                    // 100
+			wantRefund: -int64(SstoreClearsScheduleRefund),     // -4800
+		},
+		{
+			name:       "dirty: clear non-zero (orig=1, cur=2, new=0)",
+			original:   val1, current: val2, newVal: zero,
+			wantGas:    WarmStorageReadCost,                // 100
+			wantRefund: int64(SstoreClearsScheduleRefund),  // +4800
+		},
+		{
+			name:       "dirty: restore original nonzero (orig=1, cur=2, new=1)",
+			original:   val1, current: val2, newVal: val1,
+			wantGas:    WarmStorageReadCost,                                           // 100
+			wantRefund: int64(GasSstoreReset) - int64(WarmStorageReadCost),            // 2900 - 100 = 2800
+		},
+		{
+			name:       "dirty: restore original zero (orig=0, cur=1, new=0)",
+			original:   zero, current: val1, newVal: zero,
+			wantGas:    WarmStorageReadCost,                                           // 100
+			wantRefund: int64(GasSstoreSet) - int64(WarmStorageReadCost),              // 20000 - 100 = 19900
+		},
+		{
+			name:       "dirty: change dirty value (orig=1, cur=2, new=3)",
+			original:   val1, current: val2, newVal: [32]byte{0: 3},
+			wantGas:    WarmStorageReadCost, // 100
+			wantRefund: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gas, refund := SstoreGas(tt.original, tt.current, tt.newVal, false)
+			if gas != tt.wantGas {
+				t.Errorf("gas = %d, want %d", gas, tt.wantGas)
+			}
+			if refund != tt.wantRefund {
+				t.Errorf("refund = %d, want %d", refund, tt.wantRefund)
+			}
+		})
+	}
+}
+
+// --- SSTORE cold flag in SstoreGas ---
+
+func TestSstoreGas_ColdFlag(t *testing.T) {
+	zero := [32]byte{}
+	val1 := [32]byte{0: 1}
+
+	// With cold=true, the gas should include ColdSloadCost on top.
+	gasWarm, _ := SstoreGas(zero, zero, val1, false) // 20000
+	gasCold, _ := SstoreGas(zero, zero, val1, true)  // 20000 + 2100 = 22100
+
+	if gasCold != gasWarm+ColdSloadCost {
+		t.Errorf("cold SstoreGas = %d, want warm(%d) + ColdSloadCost(%d) = %d",
+			gasCold, gasWarm, ColdSloadCost, gasWarm+ColdSloadCost)
+	}
+}
+
+// --- SSTORE second access is warm ---
+
+func TestGasSstoreEIP2929_SecondAccessIsWarm(t *testing.T) {
+	stateDB := newAccessListStateDB()
+	evm := &EVM{StateDB: stateDB}
+	addr := types.BytesToAddress([]byte{0x42})
+	contract := &Contract{Address: addr, Gas: 100000}
+	stack := NewStack()
+
+	slotNum := big.NewInt(7)
+	stack.Push(new(big.Int))                // value (doesn't matter for gas)
+	stack.Push(new(big.Int).Set(slotNum))   // slot
+
+	// First access: cold
+	gas1 := gasSstoreEIP2929(evm, contract, stack, nil, 0)
+
+	// Re-push for second access
+	stack.Push(new(big.Int))                // value
+	stack.Push(new(big.Int).Set(slotNum))   // same slot
+
+	// Second access: warm (slot was warmed by first call)
+	gas2 := gasSstoreEIP2929(evm, contract, stack, nil, 0)
+
+	// Cold should be ColdSloadCost more than warm.
+	if gas1 != gas2+ColdSloadCost {
+		t.Errorf("first access gas = %d, second access gas = %d, difference = %d, want ColdSloadCost = %d",
+			gas1, gas2, gas1-gas2, ColdSloadCost)
+	}
+}
+
+// --- SELFDESTRUCT edge cases ---
+
+func TestGasSelfdestructEIP2929_WarmNoBalance(t *testing.T) {
+	stateDB := newAccessListStateDB()
+	evm := &EVM{StateDB: stateDB}
+	addr := types.BytesToAddress([]byte{0x01})
+	beneficiary := types.BytesToAddress([]byte{0x02})
+	contract := &Contract{Address: addr, Gas: 100000}
+
+	// Pre-warm beneficiary address.
+	stateDB.AddAddressToAccessList(beneficiary)
+
+	stack := NewStack()
+	stack.Push(new(big.Int).SetBytes(beneficiary[:]))
+
+	gas := gasSelfdestructEIP2929(evm, contract, stack, nil, 0)
+	// Warm address, no balance: dynamic gas should be 0.
+	if gas != 0 {
+		t.Errorf("selfdestruct warm no balance: gas = %d, want 0", gas)
+	}
+}
+
+func TestGasSelfdestructEIP2929_ColdExistingNoBalance(t *testing.T) {
+	stateDB := newAccessListStateDB()
+	evm := &EVM{StateDB: stateDB}
+	addr := types.BytesToAddress([]byte{0x01})
+	beneficiary := types.BytesToAddress([]byte{0x02})
+	contract := &Contract{Address: addr, Gas: 100000}
+
+	// Mark beneficiary as existing but don't add to access list.
+	stateDB.exists[beneficiary] = true
+
+	stack := NewStack()
+	stack.Push(new(big.Int).SetBytes(beneficiary[:]))
+
+	gas := gasSelfdestructEIP2929(evm, contract, stack, nil, 0)
+	// Cold address, existing: ColdAccountAccessCost - WarmStorageReadCost = 2500
+	wantGas := ColdAccountAccessCost - WarmStorageReadCost
+	if gas != wantGas {
+		t.Errorf("selfdestruct cold existing: gas = %d, want %d", gas, wantGas)
+	}
+}
+
+func TestGasSelfdestructEIP2929_ColdNonExistentWithBalance(t *testing.T) {
+	stateDB := newAccessListStateDB()
+	evm := &EVM{StateDB: stateDB}
+	addr := types.BytesToAddress([]byte{0x01})
+	beneficiary := types.BytesToAddress([]byte{0x02})
+	contract := &Contract{Address: addr, Gas: 100000}
+
+	// Give the contract balance so it triggers new-account gas.
+	stateDB.balances[addr] = big.NewInt(1000)
+	// beneficiary does not exist (not in stateDB.exists)
+
+	stack := NewStack()
+	stack.Push(new(big.Int).SetBytes(beneficiary[:]))
+
+	gas := gasSelfdestructEIP2929(evm, contract, stack, nil, 0)
+	// Cold + non-existent beneficiary with contract having balance:
+	// (ColdAccountAccessCost - WarmStorageReadCost) + CreateBySelfdestructGas
+	// = 2500 + 25000 = 27500
+	wantGas := (ColdAccountAccessCost - WarmStorageReadCost) + CreateBySelfdestructGas
+	if gas != wantGas {
+		t.Errorf("selfdestruct cold nonexistent with balance: gas = %d, want %d", gas, wantGas)
+	}
+}
+
+// --- Overflow tests for helper functions ---
+
+func TestSha3Gas_LargeSize(t *testing.T) {
+	// Extremely large size should not panic due to overflow.
+	// The result should be astronomically large (will trigger out-of-gas in practice).
+	gas := Sha3Gas(math.MaxUint64)
+	if gas < 1<<60 {
+		t.Errorf("Sha3Gas(MaxUint64) = %d, expected very large value (>= 2^60)", gas)
+	}
+	// Verify no wraparound to a small value (the original bug where toWordSize returned 0).
+	if gas <= GasKeccak256 {
+		t.Errorf("Sha3Gas(MaxUint64) = %d, must be greater than base cost %d (overflow bug)", gas, GasKeccak256)
+	}
+}
+
+func TestLogGas_LargeDataSize(t *testing.T) {
+	// MaxUint64 data size: safeMul(MaxUint64, 8) should saturate to MaxUint64.
+	gas := LogGas(4, math.MaxUint64)
+	if gas != math.MaxUint64 {
+		t.Errorf("LogGas(4, MaxUint64) = %d, want MaxUint64", gas)
+	}
+}
+
+func TestCopyGas_LargeSize(t *testing.T) {
+	// Extremely large size should not panic due to overflow.
+	gas := CopyGas(math.MaxUint64)
+	if gas < 1<<60 {
+		t.Errorf("CopyGas(MaxUint64) = %d, expected very large value (>= 2^60)", gas)
+	}
+	// Verify no wraparound to 0 (the original bug where toWordSize overflowed).
+	if gas == 0 {
+		t.Error("CopyGas(MaxUint64) = 0, overflow bug in toWordSize")
+	}
+}
+
+func TestExpGas_MaxByteLengthExponent(t *testing.T) {
+	// A 256-bit exponent (32 bytes): gas = 10 + 50*32 = 1610
+	exp := new(big.Int).Lsh(big.NewInt(1), 255) // 2^255, which is 32 bytes
+	gas := ExpGas(exp)
+	want := uint64(10 + 50*32)
+	if gas != want {
+		t.Errorf("ExpGas(2^255) = %d, want %d", gas, want)
+	}
+
+	// Zero exponent: gas = GasSlowStep = 10
+	gas0 := ExpGas(big.NewInt(0))
+	if gas0 != GasSlowStep {
+		t.Errorf("ExpGas(0) = %d, want %d", gas0, GasSlowStep)
+	}
+
+	// 1-byte exponent (value=1): gas = 10 + 50*1 = 60
+	gas1 := ExpGas(big.NewInt(1))
+	if gas1 != 60 {
+		t.Errorf("ExpGas(1) = %d, want 60", gas1)
+	}
+
+	// 1-byte exponent (value=255): gas = 10 + 50*1 = 60
+	gas255 := ExpGas(big.NewInt(255))
+	if gas255 != 60 {
+		t.Errorf("ExpGas(255) = %d, want 60", gas255)
+	}
+
+	// 2-byte exponent (value=256): gas = 10 + 50*2 = 110
+	gas256 := ExpGas(big.NewInt(256))
+	if gas256 != 110 {
+		t.Errorf("ExpGas(256) = %d, want 110", gas256)
 	}
 }

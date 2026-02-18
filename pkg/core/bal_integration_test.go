@@ -108,7 +108,7 @@ func TestProcessWithBAL_PreAmsterdam(t *testing.T) {
 	// Remove BAL hash from the header since Amsterdam is not active.
 	header := block.Header()
 	header.BlockAccessListHash = nil
-	block = types.NewBlock(header, nil)
+	block = types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}})
 
 	result, err := proc.ProcessWithBAL(block, statedb)
 	if err != nil {
@@ -465,7 +465,7 @@ func TestBlockchain_RejectsWrongBALHash(t *testing.T) {
 	header := block.Header()
 	wrongHash := types.HexToHash("0xdeadbeefdeadbeef")
 	header.BlockAccessListHash = &wrongHash
-	tamperedBlock := types.NewBlock(header, &types.Body{Transactions: block.Transactions()})
+	tamperedBlock := types.NewBlock(header, &types.Body{Transactions: block.Transactions(), Withdrawals: []*types.Withdrawal{}})
 
 	// Insert should fail.
 	err = bc.InsertBlock(tamperedBlock)

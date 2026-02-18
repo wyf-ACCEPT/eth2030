@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"math"
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
@@ -44,11 +45,19 @@ const (
 
 // MemoryGasCost calculates the gas cost for memory expansion.
 // Gas for memory = 3 * numWords + numWords^2 / 512
+// Returns math.MaxUint64 on overflow to signal out-of-gas.
 func MemoryGasCost(memSize uint64) uint64 {
 	if memSize == 0 {
 		return 0
 	}
 	words := toWordSize(memSize)
+	// Overflow check: words * words could overflow for large memory sizes.
+	// sqrt(MaxUint64) ~ 4.29e9, so if words > ~4.29 billion, words*words overflows.
+	if words > 181_000 {
+		// At 181_000 words (5.8 MB), gas cost is ~64 billion, well beyond any block
+		// gas limit. Return MaxUint64 to signal out-of-gas.
+		return math.MaxUint64
+	}
 	linear := words * MemoryGasCostPerWord
 	quadratic := words * words / 512
 	return linear + quadratic
@@ -66,6 +75,10 @@ func MemoryExpansionGas(oldSize, newSize uint64) uint64 {
 func toWordSize(size uint64) uint64 {
 	if size == 0 {
 		return 0
+	}
+	// Guard against overflow: if size > MaxUint64-31, size+31 wraps around.
+	if size > math.MaxUint64-31 {
+		return math.MaxUint64/32 + 1 // ceiling division result
 	}
 	return (size + 31) / 32
 }
@@ -140,29 +153,33 @@ func SstoreGas(original, current, newVal [32]byte, cold bool) (gas uint64, refun
 }
 
 // LogGas computes the gas cost for a LOG operation.
+// Returns: GasLog + numTopics*GasLogTopic + dataSize*GasLogData.
 func LogGas(numTopics uint64, dataSize uint64) uint64 {
-	return GasLog + numTopics*GasLogTopic + dataSize*GasLogData
+	gas := safeAdd(GasLog, safeMul(numTopics, GasLogTopic))
+	return safeAdd(gas, safeMul(dataSize, GasLogData))
 }
 
 // Sha3Gas computes the gas cost for a SHA3/KECCAK256 operation.
+// Returns: GasKeccak256 + ceil(dataSize/32)*GasKeccak256Word.
 func Sha3Gas(dataSize uint64) uint64 {
 	words := toWordSize(dataSize)
-	return GasKeccak256 + words*GasKeccak256Word
+	return safeAdd(GasKeccak256, safeMul(words, GasKeccak256Word))
 }
 
 // ExpGas computes the gas cost for the EXP operation.
-// 10 gas + 50 gas per byte of the exponent.
+// Returns: GasSlowStep(10) + 50 * byte_length(exponent).
 func ExpGas(exponent *big.Int) uint64 {
 	if exponent.Sign() == 0 {
 		return GasSlowStep
 	}
 	byteLen := uint64((exponent.BitLen() + 7) / 8)
-	return GasSlowStep + 50*byteLen
+	return safeAdd(GasSlowStep, safeMul(50, byteLen))
 }
 
 // CopyGas computes the gas cost for a copy operation (CALLDATACOPY, CODECOPY, etc.).
+// Returns: GasCopy * ceil(size/32).
 func CopyGas(size uint64) uint64 {
-	return GasCopy * toWordSize(size)
+	return safeMul(GasCopy, toWordSize(size))
 }
 
 // isZero returns true if all bytes are zero.
@@ -175,14 +192,33 @@ func isZero(val [32]byte) bool {
 	return true
 }
 
+// safeAdd returns a+b, capping at math.MaxUint64 on overflow.
+func safeAdd(a, b uint64) uint64 {
+	if a > math.MaxUint64-b {
+		return math.MaxUint64
+	}
+	return a + b
+}
+
+// safeMul returns a*b, capping at math.MaxUint64 on overflow.
+func safeMul(a, b uint64) uint64 {
+	if a == 0 || b == 0 {
+		return 0
+	}
+	if a > math.MaxUint64/b {
+		return math.MaxUint64
+	}
+	return a * b
+}
+
 // --- Dynamic gas functions for opcodes ---
 
-// gasSha3 calculates dynamic gas for SHA3/KECCAK256: memory expansion + 6 per word.
+// gasSha3 calculates dynamic gas for SHA3/KECCAK256: 6 per word + memory expansion.
 func gasSha3(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	size := stack.Back(1).Uint64()
 	words := toWordSize(size)
-	gas := words * GasKeccak256Word
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas := safeMul(words, GasKeccak256Word)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -203,8 +239,8 @@ func gasExp(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize 
 func gasCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
-	gas := GasCopy * words
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas := safeMul(GasCopy, words)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -213,8 +249,8 @@ func gasCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 func gasExtCodeCopyCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	size := stack.Back(3).Uint64()
 	words := toWordSize(size)
-	gas := GasCopy * words
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas := safeMul(GasCopy, words)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -224,9 +260,9 @@ func gasExtCodeCopyCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 func makeGasLog(n uint64) dynamicGasFunc {
 	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 		dataSize := stack.Back(1).Uint64()
-		gas := n * GasLogTopic
-		gas += dataSize * GasLogData
-		gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+		gas := safeMul(n, GasLogTopic)
+		gas = safeAdd(gas, safeMul(dataSize, GasLogData))
+		gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 		return gas
 	}
 }
@@ -237,8 +273,8 @@ func gasCreateDynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	// Stack: value, offset, length
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
-	gas := InitCodeWordGas * words
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas := safeMul(InitCodeWordGas, words)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -249,20 +285,33 @@ func gasCreate2Dynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, 
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
 	// CREATE2 hashes the init code, so pay for keccak words + initcode words.
-	gas := (InitCodeWordGas + GasKeccak256Word) * words
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas := safeMul(InitCodeWordGas+GasKeccak256Word, words)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
 // gasSstoreEIP2929 charges warm/cold gas for SSTORE.
 // The constant gas is 0 for SSTORE when using this dynamic gas function;
 // all gas is computed dynamically based on the slot's current/original values.
+//
+// Per EIP-2929: if the slot is cold, charge ColdSloadCost (2100) and warm it.
+// Then proceed with EIP-2200 gas calculation. Unlike SLOAD (where the constant
+// gas covers WarmStorageReadCost), SSTORE's constant gas is 0, so the full
+// ColdSloadCost is charged here as the cold penalty.
 func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	loc := stack.Back(0)
 	slot := bigToHash(loc)
 
-	// Check cold/warm and get the cold surcharge.
-	coldGas := gasEIP2929SlotCheck(evm, contract.Address, slot)
+	// Check cold/warm. For SSTORE, the cold penalty is the full ColdSloadCost
+	// because SSTORE has constantGas=0 (unlike SLOAD which has constantGas=WarmStorageReadCost).
+	var coldGas uint64
+	if evm.StateDB != nil {
+		_, slotWarm := evm.StateDB.SlotInAccessList(contract.Address, slot)
+		if !slotWarm {
+			evm.StateDB.AddSlotToAccessList(contract.Address, slot)
+			coldGas = ColdSloadCost
+		}
+	}
 
 	if evm.StateDB == nil {
 		return WarmStorageReadCost + coldGas
@@ -279,22 +328,22 @@ func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	copy(newBytes[:], val[:])
 
 	gas, _ := SstoreGas(originalBytes, currentBytes, newBytes, false)
-	// Add the cold surcharge: SstoreGas doesn't know about EIP-2929 cold.
 	return gas + coldGas
 }
 
 // gasSelfdestructEIP2929 charges gas for SELFDESTRUCT with EIP-2929 cold access.
+// Post-London (EIP-3529): no refund is given for SELFDESTRUCT.
 func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	var gas uint64
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 
 	// Cold access cost for the beneficiary address.
-	gas += gasEIP2929AccountCheck(evm, addr)
+	gas = safeAdd(gas, gasEIP2929AccountCheck(evm, addr))
 
 	// If beneficiary doesn't exist and contract has balance, charge new account gas.
 	if evm.StateDB != nil {
 		if !evm.StateDB.Exist(addr) && evm.StateDB.GetBalance(contract.Address).Sign() != 0 {
-			gas += CreateBySelfdestructGas
+			gas = safeAdd(gas, CreateBySelfdestructGas)
 		}
 	}
 
@@ -332,8 +381,8 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	gas := gasEIP2929AccountCheck(evm, addr)
 	// Copy gas: 3 per word. Size is at stack position 3.
 	size := stack.Back(3).Uint64()
-	gas += GasCopy * toWordSize(size)
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas = safeAdd(gas, safeMul(GasCopy, toWordSize(size)))
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -351,13 +400,13 @@ func gasCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 	// Value transfer gas.
 	transfersValue := stack.Back(2).Sign() != 0
 	if transfersValue {
-		gas += CallValueTransferGas
+		gas = safeAdd(gas, CallValueTransferGas)
 		// Sending value to a non-existent account costs extra.
 		if evm.StateDB != nil && !evm.StateDB.Exist(addr) {
-			gas += CallNewAccountGas
+			gas = safeAdd(gas, CallNewAccountGas)
 		}
 	}
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -368,9 +417,9 @@ func gasCallCodeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	gas := gasEIP2929AccountCheck(evm, addr)
 	// Value transfer gas (CALLCODE doesn't create new accounts).
 	if stack.Back(2).Sign() != 0 {
-		gas += CallValueTransferGas
+		gas = safeAdd(gas, CallValueTransferGas)
 	}
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -379,7 +428,7 @@ func gasCallCodeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 func gasDelegateCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }
 
@@ -388,6 +437,6 @@ func gasDelegateCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 func gasStaticCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
-	gas += gasMemExpansion(evm, contract, stack, mem, memorySize)
+	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
 	return gas
 }

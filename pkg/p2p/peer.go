@@ -32,6 +32,11 @@ type Peer struct {
 	head       types.Hash // Hash of the peer's best known block.
 	td         *big.Int   // Total difficulty of the peer's best known block.
 	version    uint32     // Negotiated eth protocol version.
+	headNumber uint64     // Best known block number.
+
+	// Handler state: last responses and delivered request-correlated responses.
+	lastResponses      map[uint64]interface{}
+	deliveredResponses map[uint64]interface{}
 
 	mu sync.RWMutex
 }

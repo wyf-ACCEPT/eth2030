@@ -21,11 +21,31 @@ var (
 
 	// ErrUnsupportedFork is returned when the requested fork is not supported.
 	ErrUnsupportedFork = errors.New("unsupported fork")
+
+	// ErrInvalidBlockHash is returned when the block hash in the payload
+	// does not match the computed block hash.
+	ErrInvalidBlockHash = errors.New("invalid block hash")
+
+	// ErrInvalidBlobHashes is returned when the blob versioned hashes
+	// in the payload do not match the expected hashes from the CL.
+	ErrInvalidBlobHashes = errors.New("invalid blob versioned hashes")
+
+	// ErrMissingBeaconRoot is returned when the parent beacon block root
+	// is missing (zero) in a V3+ newPayload call.
+	ErrMissingBeaconRoot = errors.New("missing parent beacon block root")
 )
 
-// JSON-RPC error codes for Engine API.
+// Standard JSON-RPC 2.0 error codes.
 const (
-	InvalidParamsCode           = -32602
+	ParseErrorCode     = -32700
+	InvalidRequestCode = -32600
+	MethodNotFoundCode = -32601
+	InvalidParamsCode  = -32602
+	InternalErrorCode  = -32603
+)
+
+// Engine API specific error codes (per execution-apis spec).
+const (
 	UnknownPayloadCode          = -38001
 	InvalidForkchoiceStateCode  = -38002
 	InvalidPayloadAttributeCode = -38003

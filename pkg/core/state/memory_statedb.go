@@ -314,10 +314,9 @@ type rlpAccount struct {
 	CodeHash []byte // keccak256 of code (32 bytes)
 }
 
-// computeStorageRoot builds a storage trie from the account's committed+dirty
-// storage and returns its Merkle root hash.
-func computeStorageRoot(obj *stateObject) types.Hash {
-	// Merge dirty into committed for the snapshot.
+// mergeStorage builds a merged view of committed+dirty storage for an account,
+// deleting any zero-valued entries (which represent slot deletions).
+func mergeStorage(obj *stateObject) map[types.Hash]types.Hash {
 	merged := make(map[types.Hash]types.Hash, len(obj.committedStorage)+len(obj.dirtyStorage))
 	for k, v := range obj.committedStorage {
 		merged[k] = v
@@ -329,15 +328,45 @@ func computeStorageRoot(obj *stateObject) types.Hash {
 			merged[k] = v
 		}
 	}
+	return merged
+}
+
+// computeStorageRoot builds a storage trie from the account's committed+dirty
+// storage and returns its Merkle root hash, using proper Ethereum encoding:
+//
+//	key   = Keccak256(slot)
+//	value = RLP(trimmedValue)
+func computeStorageRoot(obj *stateObject) types.Hash {
+	merged := mergeStorage(obj)
 	if len(merged) == 0 {
 		return types.EmptyRootHash
 	}
 
 	storageTrie := trie.New()
-	for k, v := range merged {
-		storageTrie.Put(k[:], v[:])
+	for slot, val := range merged {
+		// Key is the Keccak-256 hash of the storage slot.
+		hashedSlot := crypto.Keccak256(slot[:])
+
+		// Value is RLP-encoded with leading zeros stripped.
+		trimmed := trimLeadingZeros(val[:])
+		encoded, err := rlp.EncodeToBytes(trimmed)
+		if err != nil {
+			continue
+		}
+		storageTrie.Put(hashedSlot, encoded)
 	}
 	return storageTrie.Hash()
+}
+
+// trimLeadingZeros removes leading zero bytes from a byte slice.
+// Returns an empty slice if the input is all zeros.
+func trimLeadingZeros(b []byte) []byte {
+	for i, v := range b {
+		if v != 0 {
+			return b[i:]
+		}
+	}
+	return []byte{}
 }
 
 func (s *MemoryStateDB) Commit() (types.Hash, error) {
@@ -525,6 +554,36 @@ func (s *MemoryStateDB) Merge(src *MemoryStateDB) {
 			dstObj.dirtyStorage[k] = v
 		}
 	}
+}
+
+// Prefetch pre-loads state for the given addresses into the state cache.
+// This is a no-op for addresses already loaded. For MemoryStateDB (which
+// keeps everything in memory), this simply ensures the state objects exist,
+// making subsequent reads faster by avoiding nil checks. In a disk-backed
+// implementation, this would trigger async reads from the database.
+func (s *MemoryStateDB) Prefetch(addrs []types.Address) {
+	for _, addr := range addrs {
+		// Trigger creation of the state object if it doesn't exist.
+		// This pre-warms the cache so parallel transaction processing
+		// can avoid contention on lazy initialization.
+		if s.stateObjects[addr] == nil {
+			// For prefetch, we only ensure the entry exists in the map
+			// without creating a journal entry (this is a read-side hint).
+			s.stateObjects[addr] = newStateObject()
+		}
+	}
+}
+
+// PrefetchStorage pre-loads storage slots for the given address into cache.
+// For MemoryStateDB this is a no-op since all storage is already in memory,
+// but it establishes the interface contract for disk-backed implementations.
+func (s *MemoryStateDB) PrefetchStorage(addr types.Address, keys []types.Hash) {
+	// Ensure the state object exists.
+	if s.stateObjects[addr] == nil {
+		s.stateObjects[addr] = newStateObject()
+	}
+	// In a disk-backed implementation, this would trigger async reads
+	// of the specified storage keys from the backing store.
 }
 
 // Verify interface compliance at compile time.

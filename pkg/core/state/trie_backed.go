@@ -139,52 +139,11 @@ func isEmptyAccount(obj *stateObject) bool {
 //	value = RLP(value)  -- with leading zeros trimmed from the uint256
 //
 // Returns EmptyRootHash if the account has no storage.
+//
+// Note: This delegates to computeStorageRoot (defined in memory_statedb.go)
+// which now uses the same proper Ethereum encoding.
 func computeTrieStorageRoot(obj *stateObject) types.Hash {
-	// Merge dirty into committed for the snapshot.
-	merged := make(map[types.Hash]types.Hash, len(obj.committedStorage)+len(obj.dirtyStorage))
-	for k, v := range obj.committedStorage {
-		merged[k] = v
-	}
-	for k, v := range obj.dirtyStorage {
-		if v == (types.Hash{}) {
-			delete(merged, k)
-		} else {
-			merged[k] = v
-		}
-	}
-	if len(merged) == 0 {
-		return types.EmptyRootHash
-	}
-
-	storageTrie := trie.New()
-	for slot, val := range merged {
-		// Key is Keccak256(slot).
-		hashedSlot := crypto.Keccak256(slot[:])
-
-		// Value is RLP-encoded with leading zeros stripped.
-		trimmed := trimLeadingZeros(val[:])
-		encoded, err := rlp.EncodeToBytes(trimmed)
-		if err != nil {
-			continue
-		}
-		storageTrie.Put(hashedSlot, encoded)
-	}
-
-	return storageTrie.Hash()
-}
-
-// trimLeadingZeros removes leading zero bytes from a byte slice.
-// Returns a single zero byte if the input is all zeros (should not
-// happen since zero-value slots are deleted from the trie).
-func trimLeadingZeros(b []byte) []byte {
-	for i, v := range b {
-		if v != 0 {
-			return b[i:]
-		}
-	}
-	// All zeros -- return empty slice (this path is guarded by the
-	// zero-hash check in computeTrieStorageRoot, but handle gracefully).
-	return []byte{}
+	return computeStorageRoot(obj)
 }
 
 // StorageRoot overrides MemoryStateDB.StorageRoot to use the proper Ethereum

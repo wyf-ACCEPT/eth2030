@@ -100,11 +100,19 @@ type PayloadAttributesV4 struct {
 	SlotNumber uint64 `json:"slotNumber"`
 }
 
+// GetPayloadV3Response is the response for engine_getPayloadV3 (Cancun).
+type GetPayloadV3Response struct {
+	ExecutionPayload *ExecutionPayloadV3 `json:"executionPayload"`
+	BlockValue       *big.Int            `json:"blockValue"`
+	BlobsBundle      *BlobsBundleV1      `json:"blobsBundle"`
+	Override         bool                `json:"shouldOverrideBuilder"`
+}
+
 // GetPayloadV4Response is the response for engine_getPayloadV4 (Prague).
 type GetPayloadV4Response struct {
 	ExecutionPayload  *ExecutionPayloadV3 `json:"executionPayload"`
 	BlockValue        *big.Int            `json:"blockValue"`
-	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle,omitempty"`
+	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle"`
 	Override          bool                `json:"shouldOverrideBuilder"`
 	ExecutionRequests [][]byte            `json:"executionRequests"`
 }
@@ -113,17 +121,18 @@ type GetPayloadV4Response struct {
 type GetPayloadV6Response struct {
 	ExecutionPayload  *ExecutionPayloadV5 `json:"executionPayload"`
 	BlockValue        *big.Int            `json:"blockValue"`
-	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle,omitempty"`
+	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle"`
 	Override          bool                `json:"shouldOverrideBuilder"`
 	ExecutionRequests [][]byte            `json:"executionRequests"`
 }
 
 // PayloadStatus values.
 const (
-	StatusValid   = "VALID"
-	StatusInvalid = "INVALID"
-	StatusSyncing = "SYNCING"
-	StatusAccepted = "ACCEPTED"
+	StatusValid            = "VALID"
+	StatusInvalid          = "INVALID"
+	StatusSyncing          = "SYNCING"
+	StatusAccepted         = "ACCEPTED"
+	StatusInvalidBlockHash = "INVALID_BLOCK_HASH"
 )
 
 // PayloadStatusV1 is the response to engine_newPayload.

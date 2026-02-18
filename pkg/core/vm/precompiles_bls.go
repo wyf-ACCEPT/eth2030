@@ -3,9 +3,11 @@ package vm
 import (
 	"errors"
 	"math/big"
+
+	"github.com/eth2028/eth2028/crypto"
 )
 
-// EIP-2537 BLS12-381 precompile addresses (0x0b - 0x12).
+// EIP-2537 BLS12-381 precompile addresses (0x0b - 0x13).
 // These precompiles provide native support for BLS12-381 curve operations,
 // enabling efficient BLS signature verification and other pairing-based
 // cryptographic schemes on-chain.
@@ -43,11 +45,11 @@ const (
 
 // Point sizes for BLS12-381 (uncompressed, zero-padded to 64/128 bytes).
 const (
-	bls12G1PointSize = 128  // 2 * 64 bytes (Fp padded to 64)
-	bls12G2PointSize = 256  // 2 * 128 bytes (Fp2 elements padded to 128)
-	bls12ScalarSize  = 32   // Fr scalar
-	bls12FpSize      = 64   // field element padded to 64 bytes
-	bls12Fp2Size     = 128  // Fp2 element (2 * 64 bytes)
+	bls12G1PointSize = 128 // 2 * 64 bytes (Fp padded to 64)
+	bls12G2PointSize = 256 // 2 * 128 bytes (Fp2 elements padded to 128)
+	bls12ScalarSize  = 32  // Fr scalar
+	bls12FpSize      = 64  // field element padded to 64 bytes
+	bls12Fp2Size     = 128 // Fp2 element (2 * 64 bytes)
 )
 
 // --- bls12G1Add (address 0x0b) ---
@@ -60,40 +62,10 @@ func (c *bls12G1Add) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bls12G1Add) Run(input []byte) ([]byte, error) {
-	// Input: two G1 points (128 bytes each) = 256 bytes total.
 	if len(input) != 2*bls12G1PointSize {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	// Validate that coordinates are valid field elements (< p).
-	for i := 0; i < 4; i++ {
-		coord := new(big.Int).SetBytes(input[i*bls12FpSize : (i+1)*bls12FpSize])
-		if coord.Cmp(bls12Modulus) >= 0 {
-			return nil, ErrBLS12InvalidPoint
-		}
-	}
-
-	// Check if either point is the point at infinity (all zeros).
-	p1Zero := isZeroBytes(input[:bls12G1PointSize])
-	p2Zero := isZeroBytes(input[bls12G1PointSize:])
-
-	if p1Zero && p2Zero {
-		return make([]byte, bls12G1PointSize), nil
-	}
-	if p1Zero {
-		result := make([]byte, bls12G1PointSize)
-		copy(result, input[bls12G1PointSize:])
-		return result, nil
-	}
-	if p2Zero {
-		result := make([]byte, bls12G1PointSize)
-		copy(result, input[:bls12G1PointSize])
-		return result, nil
-	}
-
-	// Full BLS12-381 G1 addition requires a dedicated library.
-	// Return a format-valid stub that passes input validation.
-	return nil, errors.New("bls12-381: G1 addition cryptographic operation not yet implemented")
+	return crypto.BLS12G1Add(input)
 }
 
 // --- bls12G1Mul (address 0x0c) ---
@@ -106,26 +78,10 @@ func (c *bls12G1Mul) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bls12G1Mul) Run(input []byte) ([]byte, error) {
-	// Input: G1 point (128 bytes) + scalar (32 bytes) = 160 bytes.
 	if len(input) != bls12G1PointSize+bls12ScalarSize {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	// Validate point coordinates.
-	for i := 0; i < 2; i++ {
-		coord := new(big.Int).SetBytes(input[i*bls12FpSize : (i+1)*bls12FpSize])
-		if coord.Cmp(bls12Modulus) >= 0 {
-			return nil, ErrBLS12InvalidPoint
-		}
-	}
-
-	// Scalar 0 or point at infinity => return infinity.
-	scalar := new(big.Int).SetBytes(input[bls12G1PointSize:])
-	if scalar.Sign() == 0 || isZeroBytes(input[:bls12G1PointSize]) {
-		return make([]byte, bls12G1PointSize), nil
-	}
-
-	return nil, errors.New("bls12-381: G1 scalar multiplication not yet implemented")
+	return crypto.BLS12G1Mul(input)
 }
 
 // --- bls12G1MSM (address 0x0d) ---
@@ -139,7 +95,6 @@ func (c *bls12G1MSM) RequiredGas(input []byte) uint64 {
 	if k == 0 {
 		return 0
 	}
-	// Discount table per EIP-2537.
 	discount := msmDiscount(k)
 	return (bls12G1MSMBaseGas * k * discount) / 1000
 }
@@ -149,24 +104,7 @@ func (c *bls12G1MSM) Run(input []byte) ([]byte, error) {
 	if len(input) == 0 || len(input)%pairSize != 0 {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	k := len(input) / pairSize
-	if k == 0 {
-		return make([]byte, bls12G1PointSize), nil
-	}
-
-	// Validate all points.
-	for i := 0; i < k; i++ {
-		offset := i * pairSize
-		for j := 0; j < 2; j++ {
-			coord := new(big.Int).SetBytes(input[offset+j*bls12FpSize : offset+(j+1)*bls12FpSize])
-			if coord.Cmp(bls12Modulus) >= 0 {
-				return nil, ErrBLS12InvalidPoint
-			}
-		}
-	}
-
-	return nil, errors.New("bls12-381: G1 MSM not yet implemented")
+	return crypto.BLS12G1MSM(input)
 }
 
 // --- bls12G2Add (address 0x0e) ---
@@ -179,37 +117,10 @@ func (c *bls12G2Add) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bls12G2Add) Run(input []byte) ([]byte, error) {
-	// Input: two G2 points (256 bytes each) = 512 bytes total.
 	if len(input) != 2*bls12G2PointSize {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	// Validate coordinates are valid field elements.
-	for i := 0; i < 8; i++ {
-		coord := new(big.Int).SetBytes(input[i*bls12FpSize : (i+1)*bls12FpSize])
-		if coord.Cmp(bls12Modulus) >= 0 {
-			return nil, ErrBLS12InvalidPoint
-		}
-	}
-
-	p1Zero := isZeroBytes(input[:bls12G2PointSize])
-	p2Zero := isZeroBytes(input[bls12G2PointSize:])
-
-	if p1Zero && p2Zero {
-		return make([]byte, bls12G2PointSize), nil
-	}
-	if p1Zero {
-		result := make([]byte, bls12G2PointSize)
-		copy(result, input[bls12G2PointSize:])
-		return result, nil
-	}
-	if p2Zero {
-		result := make([]byte, bls12G2PointSize)
-		copy(result, input[:bls12G2PointSize])
-		return result, nil
-	}
-
-	return nil, errors.New("bls12-381: G2 addition not yet implemented")
+	return crypto.BLS12G2Add(input)
 }
 
 // --- bls12G2Mul (address 0x0f) ---
@@ -222,24 +133,10 @@ func (c *bls12G2Mul) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bls12G2Mul) Run(input []byte) ([]byte, error) {
-	// Input: G2 point (256 bytes) + scalar (32 bytes) = 288 bytes.
 	if len(input) != bls12G2PointSize+bls12ScalarSize {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	for i := 0; i < 4; i++ {
-		coord := new(big.Int).SetBytes(input[i*bls12FpSize : (i+1)*bls12FpSize])
-		if coord.Cmp(bls12Modulus) >= 0 {
-			return nil, ErrBLS12InvalidPoint
-		}
-	}
-
-	scalar := new(big.Int).SetBytes(input[bls12G2PointSize:])
-	if scalar.Sign() == 0 || isZeroBytes(input[:bls12G2PointSize]) {
-		return make([]byte, bls12G2PointSize), nil
-	}
-
-	return nil, errors.New("bls12-381: G2 scalar multiplication not yet implemented")
+	return crypto.BLS12G2Mul(input)
 }
 
 // --- bls12G2MSM (address 0x10) ---
@@ -262,8 +159,7 @@ func (c *bls12G2MSM) Run(input []byte) ([]byte, error) {
 	if len(input) == 0 || len(input)%pairSize != 0 {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	return nil, errors.New("bls12-381: G2 MSM not yet implemented")
+	return crypto.BLS12G2MSM(input)
 }
 
 // --- bls12Pairing (address 0x11) ---
@@ -282,46 +178,7 @@ func (c *bls12Pairing) Run(input []byte) ([]byte, error) {
 	if len(input) == 0 || len(input)%pairSize != 0 {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	k := len(input) / pairSize
-
-	// Validate all points.
-	for i := 0; i < k; i++ {
-		offset := i * pairSize
-		// G1 point coordinates.
-		for j := 0; j < 2; j++ {
-			coord := new(big.Int).SetBytes(input[offset+j*bls12FpSize : offset+(j+1)*bls12FpSize])
-			if coord.Cmp(bls12Modulus) >= 0 {
-				return nil, ErrBLS12InvalidPoint
-			}
-		}
-		// G2 point coordinates.
-		g2Offset := offset + bls12G1PointSize
-		for j := 0; j < 4; j++ {
-			coord := new(big.Int).SetBytes(input[g2Offset+j*bls12FpSize : g2Offset+(j+1)*bls12FpSize])
-			if coord.Cmp(bls12Modulus) >= 0 {
-				return nil, ErrBLS12InvalidPoint
-			}
-		}
-	}
-
-	// Check for all-zero inputs (trivial pairing check succeeds).
-	allZero := true
-	for i := 0; i < k; i++ {
-		offset := i * pairSize
-		if !isZeroBytes(input[offset:offset+bls12G1PointSize]) ||
-			!isZeroBytes(input[offset+bls12G1PointSize:offset+pairSize]) {
-			allZero = false
-			break
-		}
-	}
-	if allZero {
-		result := make([]byte, 32)
-		result[31] = 1
-		return result, nil
-	}
-
-	return nil, errors.New("bls12-381: pairing check not yet implemented")
+	return crypto.BLS12Pairing(input)
 }
 
 // --- bls12MapFpToG1 (address 0x12) ---
@@ -337,14 +194,7 @@ func (c *bls12MapFpToG1) Run(input []byte) ([]byte, error) {
 	if len(input) != bls12FpSize {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	// Validate field element.
-	fe := new(big.Int).SetBytes(input)
-	if fe.Cmp(bls12Modulus) >= 0 {
-		return nil, ErrBLS12InvalidPoint
-	}
-
-	return nil, errors.New("bls12-381: map-to-G1 not yet implemented")
+	return crypto.BLS12MapFpToG1(input)
 }
 
 // --- bls12MapFp2ToG2 (address 0x13) ---
@@ -360,15 +210,7 @@ func (c *bls12MapFp2ToG2) Run(input []byte) ([]byte, error) {
 	if len(input) != bls12Fp2Size {
 		return nil, ErrBLS12InvalidInput
 	}
-
-	// Validate Fp2 components.
-	c0 := new(big.Int).SetBytes(input[:bls12FpSize])
-	c1 := new(big.Int).SetBytes(input[bls12FpSize:])
-	if c0.Cmp(bls12Modulus) >= 0 || c1.Cmp(bls12Modulus) >= 0 {
-		return nil, ErrBLS12InvalidPoint
-	}
-
-	return nil, errors.New("bls12-381: map-to-G2 not yet implemented")
+	return crypto.BLS12MapFp2ToG2(input)
 }
 
 // --- helpers ---

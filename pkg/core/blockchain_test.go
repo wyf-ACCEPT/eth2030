@@ -27,15 +27,28 @@ func testChain(t *testing.T) (*Blockchain, *state.MemoryStateDB) {
 // It sets the BlockAccessListHash for Amsterdam-compatible blocks (TestConfig).
 func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
 	parentHeader := parent.Header()
+	blobGasUsed := uint64(0)
+	var parentExcess, parentUsed uint64
+	if parentHeader.ExcessBlobGas != nil {
+		parentExcess = *parentHeader.ExcessBlobGas
+	}
+	if parentHeader.BlobGasUsed != nil {
+		parentUsed = *parentHeader.BlobGasUsed
+	}
+	excessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
+	emptyWithdrawalsHash := types.EmptyRootHash
 	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:   parentHeader.GasLimit,
-		GasUsed:    uint64(len(txs)) * TxGas,
-		Time:       parentHeader.Time + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(parentHeader),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:      parent.Hash(),
+		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:        parentHeader.GasLimit,
+		GasUsed:         uint64(len(txs)) * TxGas,
+		Time:            parentHeader.Time + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(parentHeader),
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &emptyWithdrawalsHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 
 	// Compute BAL hash for Amsterdam blocks. For test blocks built with
@@ -52,9 +65,9 @@ func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
 		header.BlockAccessListHash = &h
 	}
 
-	var body *types.Body
-	if len(txs) > 0 {
-		body = &types.Body{Transactions: txs}
+	body := &types.Body{
+		Transactions: txs,
+		Withdrawals:  []*types.Withdrawal{}, // Shanghai+ requires withdrawals
 	}
 	return types.NewBlock(header, body)
 }
@@ -64,19 +77,32 @@ func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
 // blocks that contain transactions when Amsterdam fork is active.
 func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *state.MemoryStateDB) *types.Block {
 	parentHeader := parent.Header()
+	blobGasUsed := uint64(0)
+	var pExcess, pUsed uint64
+	if parentHeader.ExcessBlobGas != nil {
+		pExcess = *parentHeader.ExcessBlobGas
+	}
+	if parentHeader.BlobGasUsed != nil {
+		pUsed = *parentHeader.BlobGasUsed
+	}
+	excessBlobGas := CalcExcessBlobGas(pExcess, pUsed)
+	emptyWHash := types.EmptyRootHash
 	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:   parentHeader.GasLimit,
-		Time:       parentHeader.Time + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(parentHeader),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:      parent.Hash(),
+		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:        parentHeader.GasLimit,
+		Time:            parentHeader.Time + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(parentHeader),
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &emptyWHash,
+		BlobGasUsed:     &blobGasUsed,
+		ExcessBlobGas:   &excessBlobGas,
 	}
 
-	var body *types.Body
-	if len(txs) > 0 {
-		body = &types.Body{Transactions: txs}
+	body := &types.Body{
+		Transactions: txs,
+		Withdrawals:  []*types.Withdrawal{}, // Shanghai+ requires withdrawals (may be empty)
 	}
 
 	block := types.NewBlock(header, body)
@@ -321,48 +347,66 @@ func TestBlockchain_InvalidBlock(t *testing.T) {
 	gen := bc.Genesis()
 
 	// Block with wrong parent hash.
+	badBlobGas1 := uint64(0)
+	badExcess1 := uint64(0)
+	badWHash1 := types.EmptyRootHash
 	badParent := &types.Header{
-		ParentHash: types.Hash{0xff},
-		Number:     big.NewInt(1),
-		GasLimit:   gen.GasLimit(),
-		Time:       gen.Time() + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(gen.Header()),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:      types.Hash{0xff},
+		Number:          big.NewInt(1),
+		GasLimit:        gen.GasLimit(),
+		Time:            gen.Time() + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(gen.Header()),
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &badWHash1,
+		BlobGasUsed:     &badBlobGas1,
+		ExcessBlobGas:   &badExcess1,
 	}
-	badBlock := types.NewBlock(badParent, nil)
+	badBlock := types.NewBlock(badParent, &types.Body{Withdrawals: []*types.Withdrawal{}})
 	err := bc.InsertBlock(badBlock)
 	if err == nil {
 		t.Fatal("expected error for block with unknown parent")
 	}
 
 	// Block with wrong number (skips a block).
+	badBlobGas2 := uint64(0)
+	badExcess2 := uint64(0)
+	badWHash2 := types.EmptyRootHash
 	badNumber := &types.Header{
-		ParentHash: gen.Hash(),
-		Number:     big.NewInt(5), // should be 1
-		GasLimit:   gen.GasLimit(),
-		Time:       gen.Time() + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(gen.Header()),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:      gen.Hash(),
+		Number:          big.NewInt(5), // should be 1
+		GasLimit:        gen.GasLimit(),
+		Time:            gen.Time() + 12,
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(gen.Header()),
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &badWHash2,
+		BlobGasUsed:     &badBlobGas2,
+		ExcessBlobGas:   &badExcess2,
 	}
-	badBlock = types.NewBlock(badNumber, nil)
+	badBlock = types.NewBlock(badNumber, &types.Body{Withdrawals: []*types.Withdrawal{}})
 	err = bc.InsertBlock(badBlock)
 	if err == nil {
 		t.Fatal("expected error for block with wrong number")
 	}
 
 	// Block with timestamp not greater than parent.
+	badBlobGas3 := uint64(0)
+	badExcess3 := uint64(0)
+	badWHash3 := types.EmptyRootHash
 	badTime := &types.Header{
-		ParentHash: gen.Hash(),
-		Number:     big.NewInt(1),
-		GasLimit:   gen.GasLimit(),
-		Time:       0, // same as genesis
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(gen.Header()),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:      gen.Hash(),
+		Number:          big.NewInt(1),
+		GasLimit:        gen.GasLimit(),
+		Time:            0, // same as genesis
+		Difficulty:      new(big.Int),
+		BaseFee:         CalcBaseFee(gen.Header()),
+		UncleHash:       EmptyUncleHash,
+		WithdrawalsHash: &badWHash3,
+		BlobGasUsed:     &badBlobGas3,
+		ExcessBlobGas:   &badExcess3,
 	}
-	badBlock = types.NewBlock(badTime, nil)
+	badBlock = types.NewBlock(badTime, &types.Body{Withdrawals: []*types.Withdrawal{}})
 	err = bc.InsertBlock(badBlock)
 	if err == nil {
 		t.Fatal("expected error for block with invalid timestamp")
