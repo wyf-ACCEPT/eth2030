@@ -515,3 +515,248 @@ func TestForkJumpTables(t *testing.T) {
 		t.Error("Shanghai should have PUSH0")
 	}
 }
+
+// --- Memory expansion gas tests ---
+
+// TestMemoryExpansionGasCharged verifies that the interpreter charges gas
+// for memory expansion when executing MSTORE (which expands memory).
+func TestMemoryExpansionGasCharged(t *testing.T) {
+	evm := newTestEVM()
+	// Gas budget: enough for opcodes but we'll verify gas consumed includes
+	// memory expansion cost.
+	initialGas := uint64(100000)
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// PUSH1 0x42, PUSH1 0x00, MSTORE, STOP
+	// MSTORE at offset 0 expands memory from 0 to 32 bytes.
+	contract.Code = []byte{
+		byte(PUSH1), 0x42,
+		byte(PUSH1), 0x00,
+		byte(MSTORE),
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// Gas consumed:
+	// PUSH1: 3, PUSH1: 3, MSTORE: 3 (constant) + 3 (memory: 1 word = 3 gas), STOP: 0
+	// Total: 3 + 3 + 3 + 3 = 12
+	gasUsed := initialGas - contract.Gas
+	expectedGas := uint64(3 + 3 + 3 + 3) // 2*PUSH1 + MSTORE_constant + mem_expansion(0->32)
+	if gasUsed != expectedGas {
+		t.Errorf("gas used = %d, want %d (memory expansion gas should be charged)", gasUsed, expectedGas)
+	}
+}
+
+// TestMemoryExpansionGasDelta verifies that expanding already-expanded memory
+// charges only the delta cost.
+func TestMemoryExpansionGasDelta(t *testing.T) {
+	evm := newTestEVM()
+	initialGas := uint64(100000)
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// First MSTORE at offset 0 (expands to 32 bytes),
+	// then MSTORE at offset 32 (expands to 64 bytes).
+	contract.Code = []byte{
+		byte(PUSH1), 0x01,  // value
+		byte(PUSH1), 0x00,  // offset 0
+		byte(MSTORE),       // mem: 0 -> 32 bytes
+		byte(PUSH1), 0x02,  // value
+		byte(PUSH1), 0x20,  // offset 32
+		byte(MSTORE),       // mem: 32 -> 64 bytes
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// Gas consumed:
+	// PUSH1: 3, PUSH1: 3, MSTORE: 3 + mem(0->32)=3  => 12
+	// PUSH1: 3, PUSH1: 3, MSTORE: 3 + mem(32->64)=3  => 12
+	// STOP: 0
+	// Total: 24
+	// mem(0->32) = 1 word: 1*3 + 1/512 = 3
+	// mem(32->64) = delta: cost(2 words) - cost(1 word) = 6 - 3 = 3
+	gasUsed := initialGas - contract.Gas
+	expectedGas := uint64(3 + 3 + 3 + 3 + 3 + 3 + 3 + 3)
+	if gasUsed != expectedGas {
+		t.Errorf("gas used = %d, want %d", gasUsed, expectedGas)
+	}
+}
+
+// TestMemoryExpansionNoDoubleCharge verifies that when an opcode has both
+// memory expansion and dynamic gas, the memory expansion gas is not
+// double-charged. The Run loop charges memory expansion, and dynamic gas
+// functions should not re-charge for memory.
+func TestMemoryExpansionNoDoubleCharge(t *testing.T) {
+	evm := newTestEVM()
+	initialGas := uint64(100000)
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// MSTORE at offset 0: has both memorySize and dynamicGas (gasMemExpansion).
+	// Memory expansion should only be charged once.
+	contract.Code = []byte{
+		byte(PUSH1), 0x42,
+		byte(PUSH1), 0x00,
+		byte(MSTORE),
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// If memory expansion were double-charged:
+	//   2*PUSH1(3) + MSTORE_constant(3) + mem_expansion(3) + dynamic_gas_mem(3) = 15
+	// Correct (single charge):
+	//   2*PUSH1(3) + MSTORE_constant(3) + mem_expansion(3) + dynamic_gas_mem(0) = 12
+	// The dynamic gas function returns 0 because mem is already resized.
+	gasUsed := initialGas - contract.Gas
+	expectedGas := uint64(12) // 3 + 3 + 3 + 3, not 15
+	if gasUsed != expectedGas {
+		t.Errorf("gas used = %d, want %d (memory gas should not be double-charged)", gasUsed, expectedGas)
+	}
+}
+
+// TestMemoryExpansionOOG verifies that running out of gas during memory
+// expansion returns ErrOutOfGas.
+func TestMemoryExpansionOOG(t *testing.T) {
+	evm := newTestEVM()
+	// Give just enough gas for the two PUSH1 ops + MSTORE constant gas,
+	// but NOT enough for the memory expansion.
+	// 2*PUSH1(3) + MSTORE_constant(3) = 9. Memory expansion costs 3 more.
+	// With 11 gas, we can afford PUSH1+PUSH1+MSTORE_constant but not all of expansion.
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 11)
+	contract.Code = []byte{
+		byte(PUSH1), 0x42,
+		byte(PUSH1), 0x00,
+		byte(MSTORE),
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != ErrOutOfGas {
+		t.Errorf("expected ErrOutOfGas, got %v", err)
+	}
+}
+
+// TestMemoryExpansionLargeOffset verifies gas for expanding memory to a large
+// offset. The quadratic term makes this expensive.
+func TestMemoryExpansionLargeOffset(t *testing.T) {
+	evm := newTestEVM()
+	initialGas := uint64(10000000) // 10M gas
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// MSTORE at offset 0x1000 (4096). This expands memory to 4096+32 = 4128 bytes.
+	// Rounded to words: ceil(4128/32) = 129 words. newSize = 129*32 = 4128.
+	// Cost = 129*3 + 129^2/512 = 387 + 32 = 419
+	contract.Code = []byte{
+		byte(PUSH1), 0x00,      // value
+		byte(PUSH2), 0x10, 0x00, // offset = 4096
+		byte(MSTORE),
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	gasUsed := initialGas - contract.Gas
+	// PUSH1(3) + PUSH2(3) + MSTORE_constant(3) + mem_expansion(419) + STOP(0) = 428
+	expectedMemCost, ok := MemoryCost(0, 4128)
+	if !ok {
+		t.Fatal("MemoryCost(0, 4128) returned ok=false")
+	}
+	expectedGas := uint64(3 + 3 + 3) + expectedMemCost
+	if gasUsed != expectedGas {
+		t.Errorf("gas used = %d, want %d (large memory expansion)", gasUsed, expectedGas)
+	}
+}
+
+// TestMemoryExpansionExceedsMaxSize verifies that attempting to expand memory
+// beyond MaxMemorySize returns ErrOutOfGas.
+func TestMemoryExpansionExceedsMaxSize(t *testing.T) {
+	evm := newTestEVM()
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 100000000)
+	// MSTORE at a very large offset that would exceed MaxMemorySize.
+	// We use PUSH32 to push a large offset value.
+	code := make([]byte, 0, 70)
+	code = append(code, byte(PUSH1), 0x00) // value
+	// Push a 32-byte offset representing MaxMemorySize (33554432 = 0x2000000).
+	// This will try to expand to MaxMemorySize + 32, which exceeds the limit.
+	code = append(code, byte(PUSH32))
+	offset := make([]byte, 32)
+	// Set offset to MaxMemorySize (32 MiB). MSTORE at that offset would need
+	// MaxMemorySize + 32 bytes = exceeds limit.
+	offsetVal := new(big.Int).SetUint64(MaxMemorySize)
+	offsetBytes := offsetVal.Bytes()
+	copy(offset[32-len(offsetBytes):], offsetBytes)
+	code = append(code, offset...)
+	code = append(code, byte(MSTORE))
+	code = append(code, byte(STOP))
+	contract.Code = code
+
+	_, err := evm.Run(contract, nil)
+	if err != ErrOutOfGas {
+		t.Errorf("expected ErrOutOfGas for memory exceeding MaxMemorySize, got %v", err)
+	}
+}
+
+// TestMemoryExpansionMstore8 verifies that MSTORE8 also charges memory gas.
+func TestMemoryExpansionMstore8(t *testing.T) {
+	evm := newTestEVM()
+	initialGas := uint64(100000)
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// MSTORE8 at offset 0 expands memory from 0 to 32 bytes (1 word).
+	contract.Code = []byte{
+		byte(PUSH1), 0xAB,
+		byte(PUSH1), 0x00,
+		byte(MSTORE8),
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// PUSH1(3) + PUSH1(3) + MSTORE8_constant(3) + mem(0->32)(3) = 12
+	gasUsed := initialGas - contract.Gas
+	if gasUsed != 12 {
+		t.Errorf("gas used = %d, want 12", gasUsed)
+	}
+}
+
+// TestMemoryExpansionRepeatedSameSize verifies that expanding to the same size
+// a second time costs nothing (no re-expansion).
+func TestMemoryExpansionRepeatedSameSize(t *testing.T) {
+	evm := newTestEVM()
+	initialGas := uint64(100000)
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
+	// Two MSTORE at offset 0: second one should not re-charge memory gas.
+	contract.Code = []byte{
+		byte(PUSH1), 0x01,
+		byte(PUSH1), 0x00,
+		byte(MSTORE),       // first: expand to 32
+		byte(PUSH1), 0x02,
+		byte(PUSH1), 0x00,
+		byte(MSTORE),       // second: no expansion needed
+		byte(STOP),
+	}
+
+	_, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// First MSTORE: PUSH1(3) + PUSH1(3) + MSTORE(3) + mem(3) = 12
+	// Second MSTORE: PUSH1(3) + PUSH1(3) + MSTORE(3) + mem(0) = 9
+	// Total: 21
+	gasUsed := initialGas - contract.Gas
+	if gasUsed != 21 {
+		t.Errorf("gas used = %d, want 21 (second MSTORE should not re-charge memory gas)", gasUsed)
+	}
+}

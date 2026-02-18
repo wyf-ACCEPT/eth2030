@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bytes"
+	"math"
 	"math/big"
 	"testing"
 )
@@ -91,5 +92,132 @@ func TestMemoryData(t *testing.T) {
 	d := mem.Data()
 	if len(d) != 32 {
 		t.Errorf("Data() len = %d, want 32", len(d))
+	}
+}
+
+// --- MemoryCost tests ---
+
+func TestMemoryCostNoExpansion(t *testing.T) {
+	// newSize <= currentSize should return 0.
+	cost, ok := MemoryCost(64, 32)
+	if !ok {
+		t.Fatal("MemoryCost(64, 32) returned ok=false")
+	}
+	if cost != 0 {
+		t.Errorf("MemoryCost(64, 32) = %d, want 0", cost)
+	}
+
+	// Same size.
+	cost, ok = MemoryCost(64, 64)
+	if !ok {
+		t.Fatal("MemoryCost(64, 64) returned ok=false")
+	}
+	if cost != 0 {
+		t.Errorf("MemoryCost(64, 64) = %d, want 0", cost)
+	}
+}
+
+func TestMemoryCostFromZero(t *testing.T) {
+	tests := []struct {
+		newSize uint64
+		want    uint64
+	}{
+		// 1 word: 1*3 + 1/512 = 3
+		{32, 3},
+		// 2 words: 2*3 + 4/512 = 6
+		{64, 6},
+		// 32 words: 32*3 + 1024/512 = 96 + 2 = 98
+		{1024, 98},
+		// 1024 words: 1024*3 + 1048576/512 = 3072 + 2048 = 5120
+		{32768, 5120},
+	}
+	for _, tt := range tests {
+		cost, ok := MemoryCost(0, tt.newSize)
+		if !ok {
+			t.Fatalf("MemoryCost(0, %d) returned ok=false", tt.newSize)
+		}
+		if cost != tt.want {
+			t.Errorf("MemoryCost(0, %d) = %d, want %d", tt.newSize, cost, tt.want)
+		}
+	}
+}
+
+func TestMemoryCostDelta(t *testing.T) {
+	// Expanding from 32 to 64 bytes (1 word to 2 words).
+	// cost(2 words) - cost(1 word) = 6 - 3 = 3
+	cost, ok := MemoryCost(32, 64)
+	if !ok {
+		t.Fatal("MemoryCost(32, 64) returned ok=false")
+	}
+	if cost != 3 {
+		t.Errorf("MemoryCost(32, 64) = %d, want 3", cost)
+	}
+
+	// Expanding from 64 to 1024 bytes (2 words to 32 words).
+	// cost(32 words) - cost(2 words) = 98 - 6 = 92
+	cost, ok = MemoryCost(64, 1024)
+	if !ok {
+		t.Fatal("MemoryCost(64, 1024) returned ok=false")
+	}
+	if cost != 92 {
+		t.Errorf("MemoryCost(64, 1024) = %d, want 92", cost)
+	}
+}
+
+func TestMemoryCostQuadraticGrowth(t *testing.T) {
+	// Verify quadratic growth: expanding to 2x memory costs more than 2x gas.
+	smallCost, ok := MemoryCost(0, 1024)
+	if !ok {
+		t.Fatal("MemoryCost(0, 1024) returned ok=false")
+	}
+	largeCost, ok := MemoryCost(0, 32768)
+	if !ok {
+		t.Fatal("MemoryCost(0, 32768) returned ok=false")
+	}
+	// 32768 is 32x larger than 1024, but cost should be much more than 32x
+	// because of the quadratic term.
+	ratio := float64(largeCost) / float64(smallCost)
+	if ratio <= 32.0 {
+		t.Errorf("large/small cost ratio = %f, expected > 32 (quadratic growth)", ratio)
+	}
+}
+
+func TestMemoryCostOverflow(t *testing.T) {
+	// Near-max uint64 should fail.
+	_, ok := MemoryCost(0, math.MaxUint64)
+	if ok {
+		t.Error("MemoryCost(0, MaxUint64) should return ok=false")
+	}
+
+	// Just above MaxMemorySize should fail.
+	_, ok = MemoryCost(0, MaxMemorySize+1)
+	if ok {
+		t.Error("MemoryCost(0, MaxMemorySize+1) should return ok=false")
+	}
+}
+
+func TestMemoryCostAtMaxMemorySize(t *testing.T) {
+	// MaxMemorySize should succeed.
+	cost, ok := MemoryCost(0, MaxMemorySize)
+	if !ok {
+		t.Fatal("MemoryCost(0, MaxMemorySize) should succeed")
+	}
+	if cost == 0 {
+		t.Error("MemoryCost(0, MaxMemorySize) should be > 0")
+	}
+}
+
+func TestMemoryCostNonWordAligned(t *testing.T) {
+	// 33 bytes = 2 words (rounded up). Same cost as 64 bytes.
+	cost33, ok := MemoryCost(0, 33)
+	if !ok {
+		t.Fatal("MemoryCost(0, 33) returned ok=false")
+	}
+	cost64, ok := MemoryCost(0, 64)
+	if !ok {
+		t.Fatal("MemoryCost(0, 64) returned ok=false")
+	}
+	if cost33 != cost64 {
+		t.Errorf("MemoryCost(0, 33) = %d, MemoryCost(0, 64) = %d, want equal (both 2 words)", cost33, cost64)
 	}
 }

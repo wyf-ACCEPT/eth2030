@@ -224,9 +224,21 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 		if operation.memorySize != nil {
 			memSize = operation.memorySize(stack)
 			if memSize > 0 {
+				// Check for overflow in word rounding.
+				if memSize > (^uint64(0))-31 {
+					return nil, ErrOutOfGas
+				}
 				words := (memSize + 31) / 32
 				newSize := words * 32
 				if uint64(mem.Len()) < newSize {
+					// Charge memory expansion gas before resizing.
+					expansionCost, ok := MemoryCost(uint64(mem.Len()), newSize)
+					if !ok {
+						return nil, ErrOutOfGas
+					}
+					if !contract.UseGas(expansionCost) {
+						return nil, ErrOutOfGas
+					}
 					mem.Resize(newSize)
 				}
 			}
@@ -469,15 +481,71 @@ func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byt
 }
 
 // createAddress computes the address of a contract created with CREATE.
+// Per the Yellow Paper: addr = keccak256(rlp([sender, nonce]))[12:]
 func createAddress(caller types.Address, nonce uint64) types.Address {
-	// CREATE address = keccak256(rlp([caller, nonce]))[12:]
-	// Simplified: we use keccak256(caller + nonce_bytes)
-	data := make([]byte, 0, 28)
-	data = append(data, caller[:]...)
-	nonceBytes := new(big.Int).SetUint64(nonce).Bytes()
-	data = append(data, nonceBytes...)
+	// RLP-encode the list [sender_address, nonce].
+	// sender_address is a 20-byte string, nonce is an integer.
+	addrEnc := encodeRLPBytes(caller[:])
+	nonceEnc := encodeRLPUint(nonce)
+
+	// Wrap both items in an RLP list.
+	payload := append(addrEnc, nonceEnc...)
+	data := wrapRLPList(payload)
+
 	hash := crypto.Keccak256(data)
 	return types.BytesToAddress(hash[12:])
+}
+
+// encodeRLPBytes encodes a byte slice as an RLP string.
+func encodeRLPBytes(b []byte) []byte {
+	if len(b) == 1 && b[0] < 0x80 {
+		return b
+	}
+	if len(b) < 56 {
+		return append([]byte{byte(0x80 + len(b))}, b...)
+	}
+	lenBytes := uintToMinBytes(uint64(len(b)))
+	header := append([]byte{byte(0xb7 + len(lenBytes))}, lenBytes...)
+	return append(header, b...)
+}
+
+// encodeRLPUint encodes a uint64 as an RLP integer.
+func encodeRLPUint(v uint64) []byte {
+	if v == 0 {
+		return []byte{0x80}
+	}
+	if v < 128 {
+		return []byte{byte(v)}
+	}
+	b := uintToMinBytes(v)
+	return append([]byte{byte(0x80 + len(b))}, b...)
+}
+
+// wrapRLPList wraps payload bytes in an RLP list header.
+func wrapRLPList(payload []byte) []byte {
+	if len(payload) < 56 {
+		return append([]byte{byte(0xc0 + len(payload))}, payload...)
+	}
+	lenBytes := uintToMinBytes(uint64(len(payload)))
+	header := append([]byte{byte(0xf7 + len(lenBytes))}, lenBytes...)
+	return append(header, payload...)
+}
+
+// uintToMinBytes encodes a uint64 as big-endian bytes with no leading zeros.
+func uintToMinBytes(v uint64) []byte {
+	if v == 0 {
+		return nil
+	}
+	var buf [8]byte
+	n := 0
+	for i := 7; i >= 0; i-- {
+		buf[i] = byte(v)
+		v >>= 8
+		if buf[i] != 0 || n > 0 {
+			n = 8 - i
+		}
+	}
+	return buf[8-n:]
 }
 
 // create2Address computes the address of a contract created with CREATE2.

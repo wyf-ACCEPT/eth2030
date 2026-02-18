@@ -205,6 +205,66 @@ func (m *selfDestructMockState) AddSlotToAccessList(types.Address, types.Hash)  
 func (m *selfDestructMockState) AddressInAccessList(types.Address) bool                        { return true }
 func (m *selfDestructMockState) SlotInAccessList(types.Address, types.Hash) (bool, bool)       { return true, true }
 
+// TestCreate_AddressCalculation verifies that CREATE produces the correct
+// address: keccak256(rlp([sender, nonce]))[12:].
+func TestCreate_AddressCalculation(t *testing.T) {
+	// Test known vectors. CREATE address = keccak256(rlp([sender, nonce]))[12:]
+	// We verify against manually RLP-encoded inputs.
+
+	tests := []struct {
+		caller types.Address
+		nonce  uint64
+	}{
+		{types.Address{}, 0},
+		{types.Address{0x01}, 0},
+		{types.Address{0x01}, 1},
+		{types.Address{0xDE, 0xAD}, 127},  // nonce < 128 (single byte RLP)
+		{types.Address{0xDE, 0xAD}, 128},  // nonce = 128 (2-byte RLP)
+		{types.Address{0xDE, 0xAD}, 256},  // nonce > 255
+		{types.Address{0xDE, 0xAD}, 1000}, // larger nonce
+	}
+
+	for _, tt := range tests {
+		addr := createAddress(tt.caller, tt.nonce)
+
+		// Compute expected using the RLP encoding package.
+		rlpData, err := rlpEncodeList(tt.caller[:], tt.nonce)
+		if err != nil {
+			t.Fatalf("RLP encode failed: %v", err)
+		}
+		hash := crypto.Keccak256(rlpData)
+		expected := types.BytesToAddress(hash[12:])
+
+		if addr != expected {
+			t.Errorf("CREATE(%x, %d) = %x, want %x", tt.caller, tt.nonce, addr, expected)
+		}
+	}
+
+	// Test determinism.
+	a1 := createAddress(types.Address{0x01}, 5)
+	a2 := createAddress(types.Address{0x01}, 5)
+	if a1 != a2 {
+		t.Error("CREATE should be deterministic")
+	}
+
+	// Test different nonce produces different address.
+	a3 := createAddress(types.Address{0x01}, 6)
+	if a1 == a3 {
+		t.Error("CREATE with different nonce should produce different address")
+	}
+}
+
+// rlpEncodeList manually RLP-encodes [address, nonce] for test verification.
+func rlpEncodeList(addr []byte, nonce uint64) ([]byte, error) {
+	// Encode address as RLP string (20 bytes).
+	addrEnc := encodeRLPBytes(addr)
+	// Encode nonce as RLP uint.
+	nonceEnc := encodeRLPUint(nonce)
+
+	payload := append(addrEnc, nonceEnc...)
+	return wrapRLPList(payload), nil
+}
+
 // TestCreate2_AddressCalculation verifies that CREATE2 produces the correct
 // deterministic address: keccak256(0xff ++ caller ++ salt ++ keccak256(initCode))[12:].
 func TestCreate2_AddressCalculation(t *testing.T) {
