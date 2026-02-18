@@ -188,39 +188,26 @@ func lineFunctionAdd(r *twistPointJ, px, py *fp2, qx, qy *big.Int, r2 *fp2) (a, 
 // This is a specialized Fp12 multiplication that exploits sparsity.
 //
 // In our tower: Fp12 = c0 + c1*w, Fp6 = c0 + c1*v + c2*v^2.
-// The line element has c0 = (c, 0, 0) and c1 = (0, a, b) in Fp6.
+// The line element has c0 = (c, 0, 0) and c1 = (0, a, b) in Fp6,
+// where (c0, c1, c2) means c0 + c1*v + c2*v^2.
+//
+// Reference mapping from cloudflare/bn256 gfP6{x,y,z} = x*tau^2 + y*tau + z:
+//   ref.x = our c2, ref.y = our c1, ref.z = our c0
+// So ref's a2 = {x:0, y:a, z:b} = our fp6{c0:b, c1:a, c2:0}.
 func mulLine(ret *fp12, a, b, c *fp2) *fp12 {
-	// Let ret = (X, Y) where X = ret.c1, Y = ret.c0 (in Fp6).
-	// Line = (c, 0, 0) + (0, a, b)*w.
-	//
-	// ret * line = (X*w + Y) * ((0,a,b)*w + (c,0,0))
-	//           = X*(0,a,b)*w^2 + X*(c,0,0)*w + Y*(0,a,b)*w + Y*(c,0,0)
-	//           = X*(0,a,b)*v + Y*(c,0,0) + (X*(c,0,0) + Y*(0,a,b))*w
-	//
-	// new_c0 = X*(0,a,b)*v + Y*(c,0,0) = MulByV(X*(0,a,b)) + Y*c
-	// new_c1 = X*(c,0,0) + Y*(0,a,b)
-	//
-	// But computing each product is expensive. Use Karatsuba:
-	// X*(0,a,b) call it a2
-	// Y*c call it t3
-	// new_c0 = MulByV(a2) + t3
-	// new_c1 = (X+Y)*(0,a,b+c) - a2 - t3
-	//        where (0,a,b+c) absorbs c into the b slot... wait, that's not right.
-	//
-	// Actually the line's c0 = (c,0,0) = c as Fp2 scalar in Fp6.
-	// Let's use the Karatsuba approach from the reference:
+	// The line's Fp6 representation for the w-coefficient:
+	// ref: a2 = {x:0, y:a, z:b} meaning 0*tau^2 + a*tau + b
+	// ours: (c0=b, c1=a, c2=0) meaning b + a*v + 0*v^2
+	lineC1 := &fp6{c0: b, c1: a, c2: fp2Zero()}
 
-	lineC1 := &fp6{c0: fp2Zero(), c1: a, c2: b}
+	a2 := fp6Mul(lineC1, ret.c1) // lineC1 * ret.c1
+	t3 := fp6MulByFp2(ret.c0, c) // ret.c0 * c (scalar mult of Fp6 by Fp2)
 
-	a2 := fp6Mul(lineC1, ret.c1)   // (0,a,b) * ret.c1
-	t3 := fp6MulByFp2(ret.c0, c)   // ret.c0 * c (scalar mult of Fp6 by Fp2)
-
-	// For Karatsuba: (ret.c1 + ret.c0) * ((0,a,b) + (c,0,0))
-	// = (ret.c1 + ret.c0) * (c, a, b)
-	t := fp2Add(b, c) // b+c
-	lineSum := &fp6{c0: c, c1: a, c2: t}
-	// Wait, that's wrong. The line c0 is (c,0,0) as Fp6, and c1 is (0,a,b).
-	// Their sum is (c, a, b) in Fp6.
+	// Karatsuba: new_c1 = (ret.c1 + ret.c0) * lineSum - a2 - t3
+	// where lineSum = lineC0 + lineC1 = (c,0,0) + (b,a,0) = (b+c, a, 0)
+	// ref: t2 = {x:0, y:a, z:b+c}
+	t := fp2Add(b, c)
+	lineSum := &fp6{c0: t, c1: a, c2: fp2Zero()}
 
 	retXplusY := fp6Add(ret.c1, ret.c0)
 
@@ -228,61 +215,9 @@ func mulLine(ret *fp12, a, b, c *fp2) *fp12 {
 	newC1 = fp6Sub(newC1, a2)
 	newC1 = fp6Sub(newC1, t3)
 
-	// Wait, t3 is ret.c0*c but the "sum product" includes ret.c0 * line.c1 and ret.c1 * line.c0.
-	// Actually I need to be more careful. Let me just use:
-	// new_c0_fp6 = fp6MulByV(a2) + t3    [since w^2 = v, X*lineC1*w^2 = X*lineC1*v]
-	// Actually the formula is: a2 = lineC1 * ret.c1
-	// And the w^2 = v factor means we multiply a2 by v.
-	// fp6MulByV shifts: (c0, c1, c2) -> (c2*xi, c0, c1)
-	// But wait... is the "tau" in the reference the same as "v" in our tower?
-
-	// In the reference: gfP12 = x*omega + y, where omega^2 = tau.
-	// ret.x corresponds to our ret.c1 (the w coefficient)
-	// ret.y corresponds to our ret.c0 (the constant)
-	// omega = w, tau = v.
-	// So MulTau in the reference = multiply by v = our fp6MulByV.
-
-	// new_c0 = MulTau(a2) + t3 = fp6MulByV(a2) + t3
+	// new_c0 = MulByV(a2) + t3
+	// (since w^2 = v, the cross term a2*w^2 = a2*v)
 	newC0 := fp6Add(fp6MulByV(a2), t3)
-
-	// But wait, the Karatsuba approach: I computed newC1 using a sum that includes
-	// lineSum = (c, a, b) but the correct sum of (c,0,0) + (0,a,b) = (c,a,b). OK that's right.
-	// Then (retX + retY) * (c,a,b) - a2 - t3 should give new_c1.
-	// But actually t3 = retY * (c,0,0) which in Fp6 is ret.c0 scaled by c.
-	// And a2 = (0,a,b) * retX.
-	// The sum (retX+retY)*(c,a,b) = retX*(c,a,b) + retY*(c,a,b)
-	//   = retX*(c,0,0) + retX*(0,a,b) + retY*(c,0,0) + retY*(0,a,b)
-	//   = retX*c + a2 + t3 + retY*(0,a,b)
-	// So (retX+retY)*(c,a,b) - a2 - t3 = retX*c + retY*(0,a,b)
-	// which is ret.c1*c + ret.c0*(0,a,b) = new_c1. Correct!
-
-	// Hmm, but wait. The Karatsuba for t3: t3 uses MulScalar (Fp6 * Fp2), not Fp6 * Fp6.
-	// The full product uses Fp6 * Fp6 for the sum. So the t3 used in subtraction should
-	// also be the Fp6*Fp6 version of ret.c0 * (c,0,0).
-	// MulScalar(ret.c0, c) should give the same result as Mul(ret.c0, fp6{c0:c, c1:zero, c2:zero}).
-	// Let me verify: fp6MulByFp2 is defined as scaling each coefficient by c.
-	// But Mul((c0,c1,c2), (c,0,0)):
-	//   Using the Fp6 multiplication formula with (d0,d1,d2) = (c,0,0):
-	//   result.c0 = c0*c (since d1=d2=0, no cross terms with xi)
-	//   result.c1 = c1*c
-	//   result.c2 = c2*c
-	// Yes, this is the same as MulScalar. Good.
-
-	// Hmm, but actually, there's a problem with my Karatsuba decomposition.
-	// The sum product uses Fp6*Fp6 with (c,a,b) which is NOT the same as
-	// (c,0,0) + (0,a,b) in the multiplication sense. But in terms of addition
-	// of Fp6 elements, (c,0,0) + (0,a,b) = (c,a,b), so the Karatsuba is fine.
-
-	// Actually, let me re-derive. I need:
-	// new_c1 = ret.c1 * line.c0 + ret.c0 * line.c1
-	// where line.c0 = (c,0,0) and line.c1 = (0,a,b)
-	//
-	// Using Karatsuba:
-	// (ret.c1 + ret.c0) * (line.c0 + line.c1) - ret.c1*line.c1 - ret.c0*line.c0
-	// = (ret.c1 + ret.c0) * (c,a,b) - a2 - t3
-	//
-	// But a2 = line.c1 * ret.c1 = (0,a,b)*ret.c1 and t3 = ret.c0*line.c0 = ret.c0*(c,0,0).
-	// So the formula gives ret.c1*line.c0 + ret.c0*line.c1 = new_c1. Yes!
 
 	return &fp12{c0: newC0, c1: newC1}
 }
@@ -420,13 +355,3 @@ func fp12FrobSq(f *fp12) *fp12 { return fp12FrobeniusSqEfficient(f) }
 // fp12Frob3 computes f^(p^3) using precomputed constants.
 func fp12Frob3(f *fp12) *fp12 { return fp12FrobeniusCubeEfficient(f) }
 
-// fp6MulByV multiplies an fp6 element by v.
-// This is also known as MulTau in the cloudflare/bn256 implementation.
-// In F_p^6 = F_p^2[v]/(v^3-xi): v*(c0 + c1*v + c2*v^2) = c2*xi + c0*v + c1*v^2
-func fp6MulByVPairing(a *fp6) *fp6 {
-	return &fp6{
-		c0: fp2MulByNonResidue(a.c2), // c2 * xi
-		c1: newFp2(a.c0.a0, a.c0.a1), // c0
-		c2: newFp2(a.c1.a0, a.c1.a1), // c1
-	}
-}

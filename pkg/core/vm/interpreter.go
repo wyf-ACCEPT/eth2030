@@ -655,8 +655,11 @@ func (evm *EVM) PreWarmAccessList(sender types.Address, to *types.Address) {
 	if to != nil {
 		evm.StateDB.AddAddressToAccessList(*to)
 	}
-	// Warm all precompile addresses (0x01 through 0x0a).
-	for i := 1; i <= 10; i++ {
+	// Warm all precompile addresses (0x01 through 0x13).
+	// Includes: ecrecover(1), sha256(2), ripemd160(3), identity(4),
+	// modexp(5), bn254add(6), bn254mul(7), bn254pairing(8),
+	// blake2f(9), kzg(10), and EIP-2537 BLS12-381 (11-19).
+	for i := 1; i <= 0x13; i++ {
 		evm.StateDB.AddAddressToAccessList(types.BytesToAddress([]byte{byte(i)}))
 	}
 }

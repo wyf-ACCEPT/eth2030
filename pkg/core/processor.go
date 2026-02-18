@@ -136,6 +136,12 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 		}
 	}
 
+	// EIP-4895: process beacon chain withdrawals after all transactions.
+	// Withdrawals are applied post-Shanghai (activated with the merge).
+	if p.config != nil && p.config.IsShanghai(header.Time) {
+		ProcessWithdrawals(statedb, block.Withdrawals())
+	}
+
 	return &ProcessResult{
 		Receipts:        receipts,
 		BlockAccessList: blockBAL,
@@ -187,6 +193,31 @@ type ProcessResult struct {
 	Receipts        []*types.Receipt
 	Requests        types.Requests
 	BlockAccessList *bal.BlockAccessList
+}
+
+// ProcessWithdrawals applies EIP-4895 beacon chain withdrawals to the state.
+// Each withdrawal credits the specified address with the withdrawal amount.
+// The amount field is denominated in Gwei and is converted to Wei (1 Gwei = 1e9 Wei).
+// Withdrawals do not consume gas and are applied after all transactions.
+// A nil or empty withdrawals slice is a no-op.
+func ProcessWithdrawals(statedb state.StateDB, withdrawals []*types.Withdrawal) {
+	for _, w := range withdrawals {
+		if w == nil {
+			continue
+		}
+		// Convert Gwei to Wei: amount_wei = amount_gwei * 1e9.
+		amount := new(big.Int).SetUint64(w.Amount)
+		amount.Mul(amount, big.NewInt(1_000_000_000))
+		statedb.AddBalance(w.Address, amount)
+	}
+}
+
+// CalcWithdrawalsHash computes the withdrawals root hash from a slice of
+// withdrawals. Each withdrawal is RLP-encoded as [index, validatorIndex,
+// address, amount] and inserted into a Merkle Patricia Trie keyed by its
+// position index. Returns EmptyRootHash for nil or empty withdrawals.
+func CalcWithdrawalsHash(withdrawals []*types.Withdrawal) types.Hash {
+	return deriveWithdrawalsRoot(withdrawals)
 }
 
 // ProcessWithRequests executes all transactions in a block and then collects

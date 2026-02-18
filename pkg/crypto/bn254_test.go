@@ -325,7 +325,6 @@ func TestBN254PairingWithIdentityG2(t *testing.T) {
 // i.e., e(2G, Q) = e(G, Q)^2, which means e(2G, Q) * e(G, -Q)^2 = 1.
 // Simpler: e(G, Q) * e(-G, Q) = 1.
 func TestBN254PairingBasicBilinearity(t *testing.T) {
-	t.Skip("known failing: pairing rewrite in progress")
 	// e(G, Q) * e(-G, Q) should equal 1.
 	// This is because e(G, Q) * e(-G, Q) = e(G + (-G), Q) = e(0, Q) = 1.
 	input := make([]byte, 384) // 2 pairs
@@ -738,22 +737,8 @@ func TestBN254Pairing_EthTestVectors(t *testing.T) {
 		},
 	}
 
-	// These test vectors expose G2 subgroup/multi-pair edge cases that
-	// our pure-Go pairing implementation doesn't handle correctly yet.
-	knownFailing := map[string]bool{
-		"jeff1":             true,
-		"jeff2":             true,
-		"jeff3":             true,
-		"two_point_match_2": true,
-		"two_point_match_3": true,
-		"two_point_match_4": true,
-	}
-
 	for _, tc := range vectors {
 		t.Run(tc.Name, func(t *testing.T) {
-			if knownFailing[tc.Name] {
-				t.Skip("known failing: G2 subgroup edge case")
-			}
 			input := decodeHexInput(tc.Input)
 			expected, _ := hex.DecodeString(tc.Expected)
 
