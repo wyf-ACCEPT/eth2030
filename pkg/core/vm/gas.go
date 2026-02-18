@@ -1,13 +1,23 @@
 package vm
 
 // Gas cost constants following the Cancun hard fork specification.
+// Gas tiers per Yellow Paper Appendix G:
+//   Gzero=0, Gbase=2, Gverylow=3, Glow=5, Gmid=8, Ghigh=10, Gext=20
 const (
-	GasQuickStep   uint64 = 2     // ADD, SUB, etc.
-	GasFastestStep uint64 = 3     // MUL, etc.
-	GasFastStep    uint64 = 5     // DIV, SDIV, MOD, SMOD, etc.
-	GasMidStep     uint64 = 8     // ADDMOD, MULMOD, etc.
-	GasSlowStep    uint64 = 10    // EXP base cost
-	GasExtStep     uint64 = 20    // BLOCKHASH
+	GasBase    uint64 = 2  // Gbase: ADDRESS, ORIGIN, CALLER, CALLVALUE, CALLDATASIZE, CODESIZE, GASPRICE, COINBASE, TIMESTAMP, NUMBER, PREVRANDAO, GASLIMIT, POP, PC, MSIZE, GAS, CHAINID, BASEFEE, RETURNDATASIZE, BLOBBASEFEE, PUSH0
+	GasVerylow uint64 = 3  // Gverylow: ADD, SUB, NOT, LT, GT, SLT, SGT, EQ, ISZERO, AND, OR, XOR, BYTE, SHL, SHR, SAR, CALLDATALOAD, MLOAD, MSTORE, MSTORE8, PUSH*, DUP*, SWAP*, CALLDATACOPY, CODECOPY, RETURNDATACOPY
+	GasLow     uint64 = 5  // Glow: DIV, SDIV, MOD, SMOD, SIGNEXTEND
+	GasMid     uint64 = 8  // Gmid: ADDMOD, MULMOD, JUMP
+	GasHigh    uint64 = 10 // Ghigh: JUMPI, EXP base cost
+	GasExt     uint64 = 20 // Gext: BLOCKHASH
+
+	// Legacy aliases for backward compatibility. Prefer the named tiers above.
+	GasQuickStep   = GasBase
+	GasFastestStep = GasVerylow
+	GasFastStep    = GasLow
+	GasMidStep     = GasMid
+	GasSlowStep    = GasHigh
+	GasExtStep     = GasExt
 
 	GasBalanceCold uint64 = 2600  // BALANCE cold access
 	GasBalanceWarm uint64 = 100   // BALANCE warm access

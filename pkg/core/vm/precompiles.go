@@ -38,6 +38,16 @@ var PrecompiledContractsCancun = map[types.Address]PrecompiledContract{
 	types.BytesToAddress([]byte{8}):    &bn256Pairing{},
 	types.BytesToAddress([]byte{9}):    &blake2F{},
 	types.BytesToAddress([]byte{0x0a}): &kzgPointEvaluation{},
+	// EIP-2537: BLS12-381 precompiles (0x0b - 0x13).
+	types.BytesToAddress([]byte{0x0b}): &bls12G1Add{},
+	types.BytesToAddress([]byte{0x0c}): &bls12G1Mul{},
+	types.BytesToAddress([]byte{0x0d}): &bls12G1MSM{},
+	types.BytesToAddress([]byte{0x0e}): &bls12G2Add{},
+	types.BytesToAddress([]byte{0x0f}): &bls12G2Mul{},
+	types.BytesToAddress([]byte{0x10}): &bls12G2MSM{},
+	types.BytesToAddress([]byte{0x11}): &bls12Pairing{},
+	types.BytesToAddress([]byte{0x12}): &bls12MapFpToG1{},
+	types.BytesToAddress([]byte{0x13}): &bls12MapFp2ToG2{},
 }
 
 // IsPrecompiledContract checks if the given address is a precompiled contract.
@@ -582,4 +592,14 @@ var PrecompiledContractsGlamsterdan = map[types.Address]PrecompiledContract{
 	types.BytesToAddress([]byte{8}):    &bn256PairingGlamsterdan{},
 	types.BytesToAddress([]byte{9}):    &blake2FGlamsterdan{},
 	types.BytesToAddress([]byte{0x0a}): &kzgPointEvaluationGlamsterdan{},
+	// EIP-2537: BLS12-381 precompiles.
+	types.BytesToAddress([]byte{0x0b}): &bls12G1Add{},
+	types.BytesToAddress([]byte{0x0c}): &bls12G1Mul{},
+	types.BytesToAddress([]byte{0x0d}): &bls12G1MSM{},
+	types.BytesToAddress([]byte{0x0e}): &bls12G2Add{},
+	types.BytesToAddress([]byte{0x0f}): &bls12G2Mul{},
+	types.BytesToAddress([]byte{0x10}): &bls12G2MSM{},
+	types.BytesToAddress([]byte{0x11}): &bls12Pairing{},
+	types.BytesToAddress([]byte{0x12}): &bls12MapFpToG1{},
+	types.BytesToAddress([]byte{0x13}): &bls12MapFp2ToG2{},
 }

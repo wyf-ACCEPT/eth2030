@@ -187,6 +187,17 @@ func trimLeadingZeros(b []byte) []byte {
 	return []byte{}
 }
 
+// StorageRoot overrides MemoryStateDB.StorageRoot to use the proper Ethereum
+// storage trie encoding: key = Keccak256(slot), value = RLP(trimmedValue).
+// Returns EmptyRootHash if the account does not exist or has no storage.
+func (s *TrieBackedStateDB) StorageRoot(addr types.Address) types.Hash {
+	obj := s.stateObjects[addr]
+	if obj == nil {
+		return types.EmptyRootHash
+	}
+	return computeTrieStorageRoot(obj)
+}
+
 // GetRoot overrides MemoryStateDB.GetRoot to use the trie-backed
 // computation (equivalent to IntermediateRoot(false)).
 func (s *TrieBackedStateDB) GetRoot() types.Hash {

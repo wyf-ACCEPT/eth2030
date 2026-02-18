@@ -59,6 +59,7 @@ type StateDB interface {
 
 	// Root computation
 	GetRoot() types.Hash
+	StorageRoot(addr types.Address) types.Hash
 
 	// Commit
 	Commit() (types.Hash, error)

@@ -1,12 +1,14 @@
 package rpc
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2028/eth2028/rlp"
 )
 
 // AccountProof is the response for eth_getProof.
@@ -119,16 +121,38 @@ func (api *EthAPI) getProof(req *Request) *Response {
 	return successResponse(req.ID, result)
 }
 
-// encodeAccountRLP is a placeholder for encoding an account as RLP.
-// A full implementation would use rlp.EncodeToBytes with the account struct.
+// rlpAccount is the RLP-serializable account struct matching the Yellow Paper
+// definition: [nonce, balance, storageRoot, codeHash].
+type rlpAccountForProof struct {
+	Nonce    uint64
+	Balance  *big.Int
+	Root     []byte
+	CodeHash []byte
+}
+
+// encodeAccountRLP encodes an account as RLP per the Yellow Paper:
+// RLP([nonce, balance, storageRoot, codeHash]).
 func encodeAccountRLP(nonce uint64, balance *big.Int, storageRoot, codeHash types.Hash) []byte {
-	// Simplified: use the account struct from core/types.
-	// In production, this would encode [nonce, balance, storageRoot, codeHash].
-	_ = nonce
-	_ = balance
-	_ = storageRoot
-	_ = codeHash
-	return nil
+	acc := rlpAccountForProof{
+		Nonce:    nonce,
+		Balance:  balance,
+		Root:     storageRoot[:],
+		CodeHash: codeHash[:],
+	}
+	encoded, err := rlp.EncodeToBytes(acc)
+	if err != nil {
+		return nil
+	}
+	return encoded
+}
+
+// encodeProofNodes converts raw proof node bytes to 0x-prefixed hex strings.
+func encodeProofNodes(nodes [][]byte) []string {
+	result := make([]string, len(nodes))
+	for i, node := range nodes {
+		result[i] = "0x" + hex.EncodeToString(node)
+	}
+	return result
 }
 
 // StructLog is a single step in an EVM execution trace.

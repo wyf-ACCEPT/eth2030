@@ -13,18 +13,18 @@ import (
 )
 
 func TestIsPrecompiledContract(t *testing.T) {
-	// Addresses 1-9 and 0x0a should be precompiles.
-	for i := 1; i <= 10; i++ {
+	// Addresses 0x01-0x0a (Cancun) + 0x0b-0x13 (EIP-2537 BLS12-381).
+	for i := 1; i <= 0x13; i++ {
 		addr := types.BytesToAddress([]byte{byte(i)})
 		if !IsPrecompiledContract(addr) {
-			t.Errorf("address %d should be a precompiled contract", i)
+			t.Errorf("address 0x%02x should be a precompiled contract", i)
 		}
 	}
-	// Addresses 0 and others should not be precompiles.
-	for _, i := range []int{0, 11, 12, 255} {
+	// Addresses 0 and beyond 0x13 should not be precompiles.
+	for _, i := range []int{0, 0x14, 0x15, 255} {
 		addr := types.BytesToAddress([]byte{byte(i)})
 		if IsPrecompiledContract(addr) {
-			t.Errorf("address %d should not be a precompiled contract", i)
+			t.Errorf("address 0x%02x should not be a precompiled contract", i)
 		}
 	}
 }

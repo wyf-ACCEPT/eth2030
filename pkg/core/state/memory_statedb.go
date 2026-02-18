@@ -400,6 +400,16 @@ func (s *MemoryStateDB) Commit() (types.Hash, error) {
 	return stateTrie.Hash(), nil
 }
 
+// StorageRoot computes and returns the storage trie root for the given address.
+// Returns EmptyRootHash if the account does not exist or has no storage.
+func (s *MemoryStateDB) StorageRoot(addr types.Address) types.Hash {
+	obj := s.getStateObject(addr)
+	if obj == nil {
+		return types.EmptyRootHash
+	}
+	return computeStorageRoot(obj)
+}
+
 // GetRoot returns the current state root without flushing dirty storage.
 // Useful for computing the root mid-block.
 func (s *MemoryStateDB) GetRoot() types.Hash {

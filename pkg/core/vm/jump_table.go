@@ -159,54 +159,54 @@ func gasMemExpansion(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 func NewFrontierJumpTable() JumpTable {
 	var tbl JumpTable
 
-	// Arithmetic
+	// Arithmetic (Gverylow=3 for ADD, SUB, MUL; Glow=5 for DIV, SDIV, MOD, SMOD, SIGNEXTEND; Gmid=8 for ADDMOD, MULMOD)
 	tbl[STOP] = &operation{execute: opStop, constantGas: GasStop, minStack: 0, maxStack: 1024, halts: true}
-	tbl[ADD] = &operation{execute: opAdd, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[MUL] = &operation{execute: opMul, constantGas: GasFastestStep, minStack: 2, maxStack: 1024}
-	tbl[SUB] = &operation{execute: opSub, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[DIV] = &operation{execute: opDiv, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
-	tbl[SDIV] = &operation{execute: opSdiv, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
-	tbl[MOD] = &operation{execute: opMod, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
-	tbl[SMOD] = &operation{execute: opSmod, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
-	tbl[ADDMOD] = &operation{execute: opAddmod, constantGas: GasMidStep, minStack: 3, maxStack: 1024}
-	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMidStep, minStack: 3, maxStack: 1024}
-	tbl[EXP] = &operation{execute: opExp, constantGas: GasSlowStep, dynamicGas: gasExp, minStack: 2, maxStack: 1024}
-	tbl[SIGNEXTEND] = &operation{execute: opSignExtend, constantGas: GasFastStep, minStack: 2, maxStack: 1024}
+	tbl[ADD] = &operation{execute: opAdd, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[MUL] = &operation{execute: opMul, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[SUB] = &operation{execute: opSub, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[DIV] = &operation{execute: opDiv, constantGas: GasLow, minStack: 2, maxStack: 1024}
+	tbl[SDIV] = &operation{execute: opSdiv, constantGas: GasLow, minStack: 2, maxStack: 1024}
+	tbl[MOD] = &operation{execute: opMod, constantGas: GasLow, minStack: 2, maxStack: 1024}
+	tbl[SMOD] = &operation{execute: opSmod, constantGas: GasLow, minStack: 2, maxStack: 1024}
+	tbl[ADDMOD] = &operation{execute: opAddmod, constantGas: GasMid, minStack: 3, maxStack: 1024}
+	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMid, minStack: 3, maxStack: 1024}
+	tbl[EXP] = &operation{execute: opExp, constantGas: GasHigh, dynamicGas: gasExp, minStack: 2, maxStack: 1024}
+	tbl[SIGNEXTEND] = &operation{execute: opSignExtend, constantGas: GasLow, minStack: 2, maxStack: 1024}
 
-	// Comparison
-	tbl[LT] = &operation{execute: opLt, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[GT] = &operation{execute: opGt, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[SLT] = &operation{execute: opSlt, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[SGT] = &operation{execute: opSgt, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[EQ] = &operation{execute: opEq, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[ISZERO] = &operation{execute: opIsZero, constantGas: GasQuickStep, minStack: 1, maxStack: 1024}
+	// Comparison (Gverylow=3)
+	tbl[LT] = &operation{execute: opLt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[GT] = &operation{execute: opGt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[SLT] = &operation{execute: opSlt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[SGT] = &operation{execute: opSgt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[EQ] = &operation{execute: opEq, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[ISZERO] = &operation{execute: opIsZero, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
 
-	// Bitwise
-	tbl[AND] = &operation{execute: opAnd, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[OR] = &operation{execute: opOr, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[XOR] = &operation{execute: opXor, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[NOT] = &operation{execute: opNot, constantGas: GasQuickStep, minStack: 1, maxStack: 1024}
-	tbl[BYTE] = &operation{execute: opByte, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
+	// Bitwise (Gverylow=3)
+	tbl[AND] = &operation{execute: opAnd, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[OR] = &operation{execute: opOr, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[XOR] = &operation{execute: opXor, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[NOT] = &operation{execute: opNot, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
+	tbl[BYTE] = &operation{execute: opByte, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 
-	// Environment
-	tbl[ADDRESS] = &operation{execute: opAddress, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[ORIGIN] = &operation{execute: opOrigin, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CALLER] = &operation{execute: opCaller, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CALLVALUE] = &operation{execute: opCallValue, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CALLDATALOAD] = &operation{execute: opCalldataLoad, constantGas: GasQuickStep, minStack: 1, maxStack: 1024}
-	tbl[CALLDATASIZE] = &operation{execute: opCalldataSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CALLDATACOPY] = &operation{execute: opCalldataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCalldataCopy, dynamicGas: gasCopy}
-	tbl[CODESIZE] = &operation{execute: opCodeSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[CODECOPY] = &operation{execute: opCodeCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryCodeCopy, dynamicGas: gasCopy}
-	tbl[GASPRICE] = &operation{execute: opGasPrice, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
+	// Environment (Gbase=2 for info opcodes, Gverylow=3 for data access)
+	tbl[ADDRESS] = &operation{execute: opAddress, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[ORIGIN] = &operation{execute: opOrigin, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[CALLER] = &operation{execute: opCaller, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[CALLVALUE] = &operation{execute: opCallValue, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[CALLDATALOAD] = &operation{execute: opCalldataLoad, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
+	tbl[CALLDATASIZE] = &operation{execute: opCalldataSize, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[CALLDATACOPY] = &operation{execute: opCalldataCopy, constantGas: GasVerylow, minStack: 3, maxStack: 1024, memorySize: memoryCalldataCopy, dynamicGas: gasCopy}
+	tbl[CODESIZE] = &operation{execute: opCodeSize, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[CODECOPY] = &operation{execute: opCodeCopy, constantGas: GasVerylow, minStack: 3, maxStack: 1024, memorySize: memoryCodeCopy, dynamicGas: gasCopy}
+	tbl[GASPRICE] = &operation{execute: opGasPrice, constantGas: GasBase, minStack: 0, maxStack: 1023}
 
-	// Block
-	tbl[BLOCKHASH] = &operation{execute: opBlockhash, constantGas: GasExtStep, minStack: 1, maxStack: 1024}
-	tbl[COINBASE] = &operation{execute: opCoinbase, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[TIMESTAMP] = &operation{execute: opTimestamp, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[NUMBER] = &operation{execute: opNumber, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[PREVRANDAO] = &operation{execute: opPrevRandao, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[GASLIMIT] = &operation{execute: opGasLimit, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
+	// Block (Gbase=2 for info opcodes, Gext=20 for BLOCKHASH)
+	tbl[BLOCKHASH] = &operation{execute: opBlockhash, constantGas: GasExt, minStack: 1, maxStack: 1024}
+	tbl[COINBASE] = &operation{execute: opCoinbase, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[TIMESTAMP] = &operation{execute: opTimestamp, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[NUMBER] = &operation{execute: opNumber, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[PREVRANDAO] = &operation{execute: opPrevRandao, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[GASLIMIT] = &operation{execute: opGasLimit, constantGas: GasBase, minStack: 0, maxStack: 1023}
 
 	// Stack, memory, flow
 	tbl[POP] = &operation{execute: opPop, constantGas: GasPop, minStack: 1, maxStack: 1024}
@@ -318,8 +318,8 @@ func NewByzantiumJumpTable() JumpTable {
 	tbl := NewSpuriousDragonJumpTable()
 	// Byzantium added REVERT, STATICCALL, RETURNDATASIZE, RETURNDATACOPY.
 	tbl[REVERT] = &operation{execute: opRevert, constantGas: GasRevert, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
-	tbl[RETURNDATASIZE] = &operation{execute: opReturndataSize, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasQuickStep, minStack: 3, maxStack: 1024, memorySize: memoryReturndataCopy, dynamicGas: gasCopy}
+	tbl[RETURNDATASIZE] = &operation{execute: opReturndataSize, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasVerylow, minStack: 3, maxStack: 1024, memorySize: memoryReturndataCopy, dynamicGas: gasCopy}
 	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
@@ -328,9 +328,9 @@ func NewByzantiumJumpTable() JumpTable {
 func NewConstantinopleJumpTable() JumpTable {
 	tbl := NewByzantiumJumpTable()
 	// Constantinople added SHL, SHR, SAR, EXTCODEHASH, CREATE2.
-	tbl[SHL] = &operation{execute: opSHL, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[SHR] = &operation{execute: opSHR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
-	tbl[SAR] = &operation{execute: opSAR, constantGas: GasQuickStep, minStack: 2, maxStack: 1024}
+	tbl[SHL] = &operation{execute: opSHL, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[SHR] = &operation{execute: opSHR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[SAR] = &operation{execute: opSAR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
 	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasCreate2Dynamic, writes: true}
 	return tbl
@@ -340,8 +340,8 @@ func NewConstantinopleJumpTable() JumpTable {
 func NewIstanbulJumpTable() JumpTable {
 	tbl := NewConstantinopleJumpTable()
 	// Istanbul added CHAINID and SELFBALANCE.
-	tbl[CHAINID] = &operation{execute: opChainID, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
-	tbl[SELFBALANCE] = &operation{execute: opSelfBalance, constantGas: GasFastStep, minStack: 0, maxStack: 1023}
+	tbl[CHAINID] = &operation{execute: opChainID, constantGas: GasBase, minStack: 0, maxStack: 1023}
+	tbl[SELFBALANCE] = &operation{execute: opSelfBalance, constantGas: GasLow, minStack: 0, maxStack: 1023}
 	return tbl
 }
 
@@ -371,7 +371,7 @@ func NewBerlinJumpTable() JumpTable {
 func NewLondonJumpTable() JumpTable {
 	tbl := NewBerlinJumpTable()
 	// London added BASEFEE.
-	tbl[BASEFEE] = &operation{execute: opBaseFee, constantGas: GasQuickStep, minStack: 0, maxStack: 1023}
+	tbl[BASEFEE] = &operation{execute: opBaseFee, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	return tbl
 }
 

@@ -278,7 +278,7 @@ func TestRunGasDeduction(t *testing.T) {
 	evm := newTestEVM()
 	gas := uint64(100)
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), gas)
-	// PUSH1 (3 gas) + PUSH1 (3 gas) + ADD (2 gas) + STOP (0 gas) = 8 gas
+	// PUSH1 (3 gas) + PUSH1 (3 gas) + ADD (3 gas) + STOP (0 gas) = 9 gas
 	contract.Code = []byte{
 		byte(PUSH1), 1,
 		byte(PUSH1), 2,
@@ -290,7 +290,7 @@ func TestRunGasDeduction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run error: %v", err)
 	}
-	expected := gas - 3 - 3 - 2
+	expected := gas - GasPush - GasPush - GasVerylow
 	if contract.Gas != expected {
 		t.Errorf("remaining gas = %d, want %d", contract.Gas, expected)
 	}

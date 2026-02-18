@@ -1307,3 +1307,353 @@ func TestPreWarmAccessList_NilTo(t *testing.T) {
 		t.Error("sender should be in access list after pre-warm")
 	}
 }
+
+// --- Yellow Paper Gas Tier Verification ---
+
+// TestYellowPaperGasTiers verifies that all opcodes are assigned the correct
+// gas tier per the Ethereum Yellow Paper Appendix G.
+func TestYellowPaperGasTiers(t *testing.T) {
+	tbl := NewCancunJumpTable()
+
+	// Gbase = 2: environment and block info opcodes.
+	gbaseOps := []struct {
+		op   OpCode
+		name string
+	}{
+		{ADDRESS, "ADDRESS"},
+		{ORIGIN, "ORIGIN"},
+		{CALLER, "CALLER"},
+		{CALLVALUE, "CALLVALUE"},
+		{CALLDATASIZE, "CALLDATASIZE"},
+		{CODESIZE, "CODESIZE"},
+		{GASPRICE, "GASPRICE"},
+		{COINBASE, "COINBASE"},
+		{TIMESTAMP, "TIMESTAMP"},
+		{NUMBER, "NUMBER"},
+		{PREVRANDAO, "PREVRANDAO"},
+		{GASLIMIT, "GASLIMIT"},
+		{POP, "POP"},
+		{PC, "PC"},
+		{MSIZE, "MSIZE"},
+		{GAS, "GAS"},
+		{CHAINID, "CHAINID"},
+		{BASEFEE, "BASEFEE"},
+		{RETURNDATASIZE, "RETURNDATASIZE"},
+		{BLOBBASEFEE, "BLOBBASEFEE"},
+		{PUSH0, "PUSH0"},
+	}
+	for _, c := range gbaseOps {
+		op := tbl[c.op]
+		if op == nil {
+			t.Errorf("%s: nil in Cancun table", c.name)
+			continue
+		}
+		if op.constantGas != GasBase {
+			t.Errorf("%s: constantGas = %d, want %d (Gbase)", c.name, op.constantGas, GasBase)
+		}
+	}
+
+	// Gverylow = 3: arithmetic, comparison, bitwise, data access opcodes.
+	gverylowOps := []struct {
+		op   OpCode
+		name string
+	}{
+		{ADD, "ADD"},
+		{SUB, "SUB"},
+		{MUL, "MUL"},
+		{LT, "LT"},
+		{GT, "GT"},
+		{SLT, "SLT"},
+		{SGT, "SGT"},
+		{EQ, "EQ"},
+		{ISZERO, "ISZERO"},
+		{AND, "AND"},
+		{OR, "OR"},
+		{XOR, "XOR"},
+		{NOT, "NOT"},
+		{BYTE, "BYTE"},
+		{SHL, "SHL"},
+		{SHR, "SHR"},
+		{SAR, "SAR"},
+		{CALLDATALOAD, "CALLDATALOAD"},
+		{PUSH1, "PUSH1"},
+	}
+	for _, c := range gverylowOps {
+		op := tbl[c.op]
+		if op == nil {
+			t.Errorf("%s: nil in Cancun table", c.name)
+			continue
+		}
+		if op.constantGas != GasVerylow {
+			t.Errorf("%s: constantGas = %d, want %d (Gverylow)", c.name, op.constantGas, GasVerylow)
+		}
+	}
+
+	// Glow = 5: division, modulo, sign extension.
+	glowOps := []struct {
+		op   OpCode
+		name string
+	}{
+		{DIV, "DIV"},
+		{SDIV, "SDIV"},
+		{MOD, "MOD"},
+		{SMOD, "SMOD"},
+		{SIGNEXTEND, "SIGNEXTEND"},
+		{SELFBALANCE, "SELFBALANCE"},
+	}
+	for _, c := range glowOps {
+		op := tbl[c.op]
+		if op == nil {
+			t.Errorf("%s: nil in Cancun table", c.name)
+			continue
+		}
+		if op.constantGas != GasLow {
+			t.Errorf("%s: constantGas = %d, want %d (Glow)", c.name, op.constantGas, GasLow)
+		}
+	}
+
+	// Gmid = 8: ADDMOD, MULMOD.
+	gmidOps := []struct {
+		op   OpCode
+		name string
+	}{
+		{ADDMOD, "ADDMOD"},
+		{MULMOD, "MULMOD"},
+	}
+	for _, c := range gmidOps {
+		op := tbl[c.op]
+		if op == nil {
+			t.Errorf("%s: nil in Cancun table", c.name)
+			continue
+		}
+		if op.constantGas != GasMid {
+			t.Errorf("%s: constantGas = %d, want %d (Gmid)", c.name, op.constantGas, GasMid)
+		}
+	}
+
+	// Verify JUMP = 8 and JUMPI = 10.
+	if tbl[JUMP].constantGas != 8 {
+		t.Errorf("JUMP: constantGas = %d, want 8", tbl[JUMP].constantGas)
+	}
+	if tbl[JUMPI].constantGas != 10 {
+		t.Errorf("JUMPI: constantGas = %d, want 10", tbl[JUMPI].constantGas)
+	}
+
+	// Verify EXP base = 10 (Ghigh).
+	if tbl[EXP].constantGas != GasHigh {
+		t.Errorf("EXP: constantGas = %d, want %d (Ghigh)", tbl[EXP].constantGas, GasHigh)
+	}
+
+	// Verify BLOCKHASH = 20 (Gext).
+	if tbl[BLOCKHASH].constantGas != GasExt {
+		t.Errorf("BLOCKHASH: constantGas = %d, want %d (Gext)", tbl[BLOCKHASH].constantGas, GasExt)
+	}
+}
+
+// TestYellowPaperCopyBaseGas verifies that CALLDATACOPY, CODECOPY, and
+// RETURNDATACOPY use Gverylow (3) as their base cost, not Gbase (2).
+func TestYellowPaperCopyBaseGas(t *testing.T) {
+	tbl := NewCancunJumpTable()
+
+	copyOps := []struct {
+		op   OpCode
+		name string
+	}{
+		{CALLDATACOPY, "CALLDATACOPY"},
+		{CODECOPY, "CODECOPY"},
+		{RETURNDATACOPY, "RETURNDATACOPY"},
+	}
+	for _, c := range copyOps {
+		op := tbl[c.op]
+		if op == nil {
+			t.Errorf("%s: nil in Cancun table", c.name)
+			continue
+		}
+		if op.constantGas != GasVerylow {
+			t.Errorf("%s: constantGas = %d, want %d (Gverylow)", c.name, op.constantGas, GasVerylow)
+		}
+		if op.dynamicGas == nil {
+			t.Errorf("%s: dynamicGas is nil (should have gasCopy)", c.name)
+		}
+	}
+}
+
+// TestYellowPaperMemoryExpansionFormula verifies the quadratic memory cost
+// formula: memory_cost = memory_size_word^2 / 512 + 3 * memory_size_word
+func TestYellowPaperMemoryExpansionFormula(t *testing.T) {
+	tests := []struct {
+		name    string
+		size    uint64
+		want    uint64
+	}{
+		{"0 bytes", 0, 0},
+		{"1 word (32 bytes)", 32, 3},         // 1^2/512 + 3*1 = 0 + 3
+		{"2 words (64 bytes)", 64, 6},         // 4/512 + 6 = 0 + 6
+		{"10 words (320 bytes)", 320, 30},     // 100/512 + 30 = 0 + 30
+		{"22 words (704 bytes)", 704, 66},     // 484/512 + 66 = 0 + 66
+		{"23 words (736 bytes)", 736, 70},     // 529/512 + 69 = 1 + 69
+		{"32 words (1024 bytes)", 1024, 98},   // 1024/512 + 96 = 2 + 96
+		{"100 words (3200 bytes)", 3200, 319}, // 10000/512 + 300 = 19 + 300
+		{"1024 words (32768 bytes)", 32768, 5120}, // 1048576/512 + 3072 = 2048 + 3072
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := MemoryGasCost(tt.size)
+			if got != tt.want {
+				t.Errorf("MemoryGasCost(%d) = %d, want %d", tt.size, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestLogGas_AllTopicCounts verifies LOG0-LOG4 gas: 375 + 375*topics + 8*size.
+func TestLogGas_AllTopicCounts(t *testing.T) {
+	for topics := uint64(0); topics <= 4; topics++ {
+		for _, size := range []uint64{0, 1, 32, 100, 256} {
+			expected := GasLog + topics*GasLogTopic + size*GasLogData
+			got := LogGas(topics, size)
+			if got != expected {
+				t.Errorf("LogGas(%d topics, %d bytes) = %d, want %d", topics, size, got, expected)
+			}
+		}
+	}
+}
+
+// TestExpGas_ByteLengths verifies EXP gas: 10 + 50 * byte_size_of_exponent.
+func TestExpGas_ByteLengths(t *testing.T) {
+	tests := []struct {
+		name     string
+		exp      *big.Int
+		wantGas  uint64
+	}{
+		{"zero", big.NewInt(0), GasHigh},                     // 10 + 0
+		{"1 (1 byte)", big.NewInt(1), GasHigh + 50},          // 10 + 50
+		{"255 (1 byte)", big.NewInt(255), GasHigh + 50},      // 10 + 50
+		{"256 (2 bytes)", big.NewInt(256), GasHigh + 100},     // 10 + 100
+		{"65535 (2 bytes)", big.NewInt(65535), GasHigh + 100}, // 10 + 100
+		{"65536 (3 bytes)", big.NewInt(65536), GasHigh + 150}, // 10 + 150
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ExpGas(tt.exp)
+			if got != tt.wantGas {
+				t.Errorf("ExpGas(%s) = %d, want %d", tt.exp.String(), got, tt.wantGas)
+			}
+		})
+	}
+}
+
+// TestSha3Gas_WordSizes verifies SHA3/KECCAK256 gas: 30 + 6 * ceil(size/32).
+func TestSha3Gas_WordSizes(t *testing.T) {
+	tests := []struct {
+		size    uint64
+		wantGas uint64
+	}{
+		{0, 30},    // 30 + 6*0
+		{1, 36},    // 30 + 6*1
+		{31, 36},   // 30 + 6*1
+		{32, 36},   // 30 + 6*1
+		{33, 42},   // 30 + 6*2
+		{64, 42},   // 30 + 6*2
+		{65, 48},   // 30 + 6*3
+		{256, 78},  // 30 + 6*8
+	}
+
+	for _, tt := range tests {
+		got := Sha3Gas(tt.size)
+		if got != tt.wantGas {
+			t.Errorf("Sha3Gas(%d) = %d, want %d", tt.size, got, tt.wantGas)
+		}
+	}
+}
+
+// TestGasConstants_YellowPaper verifies all gas constants match their expected values.
+func TestGasConstants_YellowPaper(t *testing.T) {
+	// Gas tiers
+	if GasBase != 2 {
+		t.Errorf("GasBase = %d, want 2", GasBase)
+	}
+	if GasVerylow != 3 {
+		t.Errorf("GasVerylow = %d, want 3", GasVerylow)
+	}
+	if GasLow != 5 {
+		t.Errorf("GasLow = %d, want 5", GasLow)
+	}
+	if GasMid != 8 {
+		t.Errorf("GasMid = %d, want 8", GasMid)
+	}
+	if GasHigh != 10 {
+		t.Errorf("GasHigh = %d, want 10", GasHigh)
+	}
+	if GasExt != 20 {
+		t.Errorf("GasExt = %d, want 20", GasExt)
+	}
+
+	// Verify legacy aliases match the named tiers.
+	if GasQuickStep != GasBase {
+		t.Errorf("GasQuickStep = %d, want GasBase (%d)", GasQuickStep, GasBase)
+	}
+	if GasFastestStep != GasVerylow {
+		t.Errorf("GasFastestStep = %d, want GasVerylow (%d)", GasFastestStep, GasVerylow)
+	}
+	if GasFastStep != GasLow {
+		t.Errorf("GasFastStep = %d, want GasLow (%d)", GasFastStep, GasLow)
+	}
+	if GasMidStep != GasMid {
+		t.Errorf("GasMidStep = %d, want GasMid (%d)", GasMidStep, GasMid)
+	}
+	if GasSlowStep != GasHigh {
+		t.Errorf("GasSlowStep = %d, want GasHigh (%d)", GasSlowStep, GasHigh)
+	}
+	if GasExtStep != GasExt {
+		t.Errorf("GasExtStep = %d, want GasExt (%d)", GasExtStep, GasExt)
+	}
+
+	// EIP-2929 cold/warm access costs
+	if ColdAccountAccessCost != 2600 {
+		t.Errorf("ColdAccountAccessCost = %d, want 2600", ColdAccountAccessCost)
+	}
+	if ColdSloadCost != 2100 {
+		t.Errorf("ColdSloadCost = %d, want 2100", ColdSloadCost)
+	}
+	if WarmStorageReadCost != 100 {
+		t.Errorf("WarmStorageReadCost = %d, want 100", WarmStorageReadCost)
+	}
+
+	// SSTORE costs
+	if GasSstoreSet != 20000 {
+		t.Errorf("GasSstoreSet = %d, want 20000", GasSstoreSet)
+	}
+	if GasSstoreReset != 2900 {
+		t.Errorf("GasSstoreReset = %d, want 2900", GasSstoreReset)
+	}
+
+	// KECCAK256 costs
+	if GasKeccak256 != 30 {
+		t.Errorf("GasKeccak256 = %d, want 30", GasKeccak256)
+	}
+	if GasKeccak256Word != 6 {
+		t.Errorf("GasKeccak256Word = %d, want 6", GasKeccak256Word)
+	}
+
+	// LOG costs
+	if GasLog != 375 {
+		t.Errorf("GasLog = %d, want 375", GasLog)
+	}
+	if GasLogTopic != 375 {
+		t.Errorf("GasLogTopic = %d, want 375", GasLogTopic)
+	}
+	if GasLogData != 8 {
+		t.Errorf("GasLogData = %d, want 8", GasLogData)
+	}
+
+	// Memory/copy costs
+	if GasMemory != 3 {
+		t.Errorf("GasMemory = %d, want 3", GasMemory)
+	}
+	if GasCopy != 3 {
+		t.Errorf("GasCopy = %d, want 3", GasCopy)
+	}
+}
