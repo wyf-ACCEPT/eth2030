@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/json"
 	"math/big"
+	"sync"
 	"testing"
 
 	"github.com/eth2028/eth2028/core/types"
@@ -962,5 +963,857 @@ func TestMultipleFilters(t *testing.T) {
 	sm.Uninstall(id3)
 	if sm.FilterCount() != 0 {
 		t.Fatalf("want 0 filters, got %d", sm.FilterCount())
+	}
+}
+
+// ---------- WebSocket subscription manager tests ----------
+
+func TestSubscriptionManager_Subscribe(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id := sm.Subscribe(SubNewHeads, FilterQuery{})
+	if id == "" {
+		t.Fatal("expected non-empty subscription ID")
+	}
+
+	sub := sm.GetSubscription(id)
+	if sub == nil {
+		t.Fatal("subscription not found after Subscribe")
+	}
+	if sub.Type != SubNewHeads {
+		t.Fatalf("want SubNewHeads, got %d", sub.Type)
+	}
+	if sub.ID != id {
+		t.Fatalf("want ID %q, got %q", id, sub.ID)
+	}
+}
+
+func TestSubscriptionManager_SubscribeAndUnsubscribe(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id := sm.Subscribe(SubLogs, FilterQuery{})
+	if sm.SubscriptionCount() != 1 {
+		t.Fatalf("want 1 subscription, got %d", sm.SubscriptionCount())
+	}
+
+	ok := sm.Unsubscribe(id)
+	if !ok {
+		t.Fatal("expected Unsubscribe to return true")
+	}
+	if sm.SubscriptionCount() != 0 {
+		t.Fatalf("want 0 subscriptions after unsubscribe, got %d", sm.SubscriptionCount())
+	}
+
+	// Unsubscribing again should return false.
+	ok2 := sm.Unsubscribe(id)
+	if ok2 {
+		t.Fatal("expected Unsubscribe to return false for already removed subscription")
+	}
+}
+
+func TestSubscriptionManager_GetSubscription_NonExistent(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	sub := sm.GetSubscription("0xnonexistent")
+	if sub != nil {
+		t.Fatal("expected nil for non-existent subscription")
+	}
+}
+
+func TestSubscriptionManager_MultipleSubscriptions(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id1 := sm.Subscribe(SubNewHeads, FilterQuery{})
+	id2 := sm.Subscribe(SubLogs, FilterQuery{})
+	id3 := sm.Subscribe(SubPendingTx, FilterQuery{})
+
+	if sm.SubscriptionCount() != 3 {
+		t.Fatalf("want 3 subscriptions, got %d", sm.SubscriptionCount())
+	}
+
+	// IDs should be unique.
+	if id1 == id2 || id2 == id3 || id1 == id3 {
+		t.Fatal("subscription IDs should be unique")
+	}
+
+	// Unsubscribe one, count should decrease.
+	sm.Unsubscribe(id2)
+	if sm.SubscriptionCount() != 2 {
+		t.Fatalf("want 2 subscriptions, got %d", sm.SubscriptionCount())
+	}
+}
+
+func TestNotifyNewHead_MultipleSubscribers(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id1 := sm.Subscribe(SubNewHeads, FilterQuery{})
+	id2 := sm.Subscribe(SubNewHeads, FilterQuery{})
+	logSubID := sm.Subscribe(SubLogs, FilterQuery{}) // should NOT receive
+
+	header := &types.Header{
+		Number:  big.NewInt(100),
+		BaseFee: big.NewInt(1000000000),
+	}
+	sm.NotifyNewHead(header)
+
+	sub1 := sm.GetSubscription(id1)
+	sub2 := sm.GetSubscription(id2)
+	logSub := sm.GetSubscription(logSubID)
+
+	// Both newHeads subs should get the notification.
+	for _, sub := range []*Subscription{sub1, sub2} {
+		select {
+		case msg := <-sub.Channel():
+			block := msg.(*RPCBlock)
+			if block.Number != "0x64" {
+				t.Fatalf("want 0x64, got %v", block.Number)
+			}
+		default:
+			t.Fatal("expected notification on newHeads channel")
+		}
+	}
+
+	// Log subscription should NOT get the notification.
+	select {
+	case <-logSub.Channel():
+		t.Fatal("log subscription should not receive newHeads notification")
+	default:
+		// Good.
+	}
+}
+
+func TestNotifyNewHead_NoSubscribers(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	// No subscribers, should not panic.
+	header := &types.Header{
+		Number:  big.NewInt(50),
+		BaseFee: big.NewInt(1000000000),
+	}
+	sm.NotifyNewHead(header)
+}
+
+func TestNotifyLogs_TopicMatching(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	transferTopic := crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	approvalTopic := crypto.Keccak256Hash([]byte("Approval(address,address,uint256)"))
+
+	// Subscribe to Transfer logs only.
+	transferSubID := sm.Subscribe(SubLogs, FilterQuery{
+		Topics: [][]types.Hash{{transferTopic}},
+	})
+
+	// Subscribe to Approval logs only.
+	approvalSubID := sm.Subscribe(SubLogs, FilterQuery{
+		Topics: [][]types.Hash{{approvalTopic}},
+	})
+
+	// Emit both types of logs.
+	logs := []*types.Log{
+		{
+			Address:     types.HexToAddress("0xaaaa"),
+			Topics:      []types.Hash{transferTopic},
+			BlockNumber: 42,
+		},
+		{
+			Address:     types.HexToAddress("0xbbbb"),
+			Topics:      []types.Hash{approvalTopic},
+			BlockNumber: 42,
+		},
+	}
+	sm.NotifyLogs(logs)
+
+	transferSub := sm.GetSubscription(transferSubID)
+	approvalSub := sm.GetSubscription(approvalSubID)
+
+	// Transfer subscriber should get 1 notification.
+	select {
+	case msg := <-transferSub.Channel():
+		rpcLog := msg.(*RPCLog)
+		if rpcLog.Address != encodeAddress(types.HexToAddress("0xaaaa")) {
+			t.Fatalf("wrong address in transfer notification")
+		}
+	default:
+		t.Fatal("expected transfer notification")
+	}
+
+	// No more for transfer sub.
+	select {
+	case <-transferSub.Channel():
+		t.Fatal("unexpected extra notification for transfer sub")
+	default:
+	}
+
+	// Approval subscriber should get 1 notification.
+	select {
+	case msg := <-approvalSub.Channel():
+		rpcLog := msg.(*RPCLog)
+		if rpcLog.Address != encodeAddress(types.HexToAddress("0xbbbb")) {
+			t.Fatalf("wrong address in approval notification")
+		}
+	default:
+		t.Fatal("expected approval notification")
+	}
+}
+
+func TestNotifyLogs_NoSubscribers(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	// No subscribers, should not panic.
+	logs := []*types.Log{
+		{Address: types.HexToAddress("0xaaaa"), Topics: []types.Hash{types.HexToHash("0x1111")}},
+	}
+	sm.NotifyLogs(logs)
+}
+
+func TestNotifyLogs_AllMatch(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	// Subscribe with empty query (matches everything).
+	id := sm.Subscribe(SubLogs, FilterQuery{})
+	sub := sm.GetSubscription(id)
+
+	logs := []*types.Log{
+		{Address: types.HexToAddress("0xaaaa"), Topics: []types.Hash{types.HexToHash("0x1111")}},
+		{Address: types.HexToAddress("0xbbbb"), Topics: []types.Hash{types.HexToHash("0x2222")}},
+	}
+	sm.NotifyLogs(logs)
+
+	// Should receive 2 notifications.
+	for i := 0; i < 2; i++ {
+		select {
+		case <-sub.Channel():
+			// Good.
+		default:
+			t.Fatalf("expected notification %d", i)
+		}
+	}
+
+	// No more.
+	select {
+	case <-sub.Channel():
+		t.Fatal("unexpected extra notification")
+	default:
+	}
+}
+
+func TestNotifyPendingTxHash_MultipleSubscribers(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id1 := sm.Subscribe(SubPendingTx, FilterQuery{})
+	id2 := sm.Subscribe(SubPendingTx, FilterQuery{})
+	headsID := sm.Subscribe(SubNewHeads, FilterQuery{}) // should NOT receive
+
+	txHash := types.HexToHash("0xabcdef")
+	sm.NotifyPendingTxHash(txHash)
+
+	for _, id := range []string{id1, id2} {
+		sub := sm.GetSubscription(id)
+		select {
+		case msg := <-sub.Channel():
+			hashStr := msg.(string)
+			if hashStr != encodeHash(txHash) {
+				t.Fatalf("want %v, got %v", encodeHash(txHash), hashStr)
+			}
+		default:
+			t.Fatalf("expected notification for pending tx sub %s", id)
+		}
+	}
+
+	// newHeads sub should not receive.
+	headsSub := sm.GetSubscription(headsID)
+	select {
+	case <-headsSub.Channel():
+		t.Fatal("newHeads sub should not receive pending tx hash")
+	default:
+	}
+}
+
+func TestNotifyPendingTxHash_NoSubscribers(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	// Should not panic with no subscribers.
+	sm.NotifyPendingTxHash(types.HexToHash("0x1234"))
+}
+
+func TestSubscription_BufferOverflow(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id := sm.Subscribe(SubPendingTx, FilterQuery{})
+	sub := sm.GetSubscription(id)
+
+	// Fill the buffer (subscriptionBufferSize = 128).
+	for i := 0; i < subscriptionBufferSize; i++ {
+		hash := types.HexToHash("0x" + string(rune(i+1)))
+		sm.NotifyPendingTxHash(hash)
+	}
+
+	// Buffer is full -- next notification should be dropped without blocking.
+	sm.NotifyPendingTxHash(types.HexToHash("0xoverflow"))
+
+	// Drain the buffer to verify we got exactly subscriptionBufferSize messages.
+	count := 0
+	for {
+		select {
+		case <-sub.Channel():
+			count++
+		default:
+			goto done
+		}
+	}
+done:
+	if count != subscriptionBufferSize {
+		t.Fatalf("want %d messages (buffer size), got %d", subscriptionBufferSize, count)
+	}
+}
+
+func TestSubscription_ChannelClosedOnUnsubscribe(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	id := sm.Subscribe(SubNewHeads, FilterQuery{})
+	sub := sm.GetSubscription(id)
+
+	sm.Unsubscribe(id)
+
+	// Channel should be closed after unsubscribe.
+	_, open := <-sub.Channel()
+	if open {
+		t.Fatal("channel should be closed after unsubscribe")
+	}
+}
+
+// ---------- FormatWSNotification tests ----------
+
+func TestFormatWSNotification_RoundTrip(t *testing.T) {
+	header := &types.Header{
+		Number:  big.NewInt(42),
+		BaseFee: big.NewInt(1000000000),
+	}
+	block := FormatHeader(header)
+
+	notif := FormatWSNotification("0xsub123", block)
+
+	// Marshal to JSON.
+	data, err := json.Marshal(notif)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	// Unmarshal back.
+	var decoded WSNotification
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if decoded.JSONRPC != "2.0" {
+		t.Fatalf("want jsonrpc 2.0, got %v", decoded.JSONRPC)
+	}
+	if decoded.Method != "eth_subscription" {
+		t.Fatalf("want method eth_subscription, got %v", decoded.Method)
+	}
+
+	// Parse params.
+	var subResult WSSubscriptionResult
+	if err := json.Unmarshal(decoded.Params, &subResult); err != nil {
+		t.Fatalf("unmarshal params: %v", err)
+	}
+	if subResult.Subscription != "0xsub123" {
+		t.Fatalf("want subscription 0xsub123, got %v", subResult.Subscription)
+	}
+}
+
+func TestFormatWSNotification_NilResult(t *testing.T) {
+	notif := FormatWSNotification("0xabc", nil)
+	if notif.JSONRPC != "2.0" {
+		t.Fatalf("want 2.0, got %v", notif.JSONRPC)
+	}
+	if notif.Method != "eth_subscription" {
+		t.Fatalf("want eth_subscription, got %v", notif.Method)
+	}
+
+	// Params should contain "result":null.
+	var result WSSubscriptionResult
+	json.Unmarshal(notif.Params, &result)
+	if result.Subscription != "0xabc" {
+		t.Fatalf("want 0xabc, got %v", result.Subscription)
+	}
+	if result.Result != nil {
+		t.Fatalf("want nil result, got %v", result.Result)
+	}
+}
+
+func TestFormatWSNotification_StringResult(t *testing.T) {
+	notif := FormatWSNotification("0xdef", "0x1234")
+
+	var result WSSubscriptionResult
+	json.Unmarshal(notif.Params, &result)
+	if result.Subscription != "0xdef" {
+		t.Fatalf("want 0xdef, got %v", result.Subscription)
+	}
+}
+
+// ---------- RPC-level subscription tests ----------
+
+func TestRPC_EthSubscribe_MissingParam(t *testing.T) {
+	api := NewEthAPI(newMockBackend())
+	resp := callRPC(t, api, "eth_subscribe")
+
+	if resp.Error == nil {
+		t.Fatal("expected error for missing subscription type")
+	}
+	if resp.Error.Code != ErrCodeInvalidParams {
+		t.Fatalf("want error code %d, got %d", ErrCodeInvalidParams, resp.Error.Code)
+	}
+}
+
+func TestRPC_EthUnsubscribe_MissingParam(t *testing.T) {
+	api := NewEthAPI(newMockBackend())
+	resp := callRPC(t, api, "eth_unsubscribe")
+
+	if resp.Error == nil {
+		t.Fatal("expected error for missing subscription ID")
+	}
+	if resp.Error.Code != ErrCodeInvalidParams {
+		t.Fatalf("want error code %d, got %d", ErrCodeInvalidParams, resp.Error.Code)
+	}
+}
+
+func TestRPC_EthSubscribe_LogsWithFilter(t *testing.T) {
+	mb := newMockBackend()
+	api := NewEthAPI(mb)
+
+	contractAddr := types.HexToAddress("0xcccc")
+	transferTopic := crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+
+	resp := callRPC(t, api, "eth_subscribe", "logs", map[string]interface{}{
+		"address": []string{encodeAddress(contractAddr)},
+		"topics":  [][]string{{encodeHash(transferTopic)}},
+	})
+	if resp.Error != nil {
+		t.Fatalf("error: %v", resp.Error.Message)
+	}
+	subID := resp.Result.(string)
+
+	sub := api.subs.GetSubscription(subID)
+	if sub == nil {
+		t.Fatal("subscription not found")
+	}
+	if sub.Type != SubLogs {
+		t.Fatalf("want SubLogs, got %d", sub.Type)
+	}
+
+	// Query should have address and topic filters.
+	if len(sub.Query.Addresses) != 1 {
+		t.Fatalf("want 1 address, got %d", len(sub.Query.Addresses))
+	}
+	if sub.Query.Addresses[0] != contractAddr {
+		t.Fatalf("wrong address in query")
+	}
+}
+
+func TestRPC_EthSubscribe_LogsNoFilter(t *testing.T) {
+	api := NewEthAPI(newMockBackend())
+
+	// Subscribe to logs without specifying a filter (matches all logs).
+	resp := callRPC(t, api, "eth_subscribe", "logs")
+	if resp.Error != nil {
+		t.Fatalf("error: %v", resp.Error.Message)
+	}
+	subID := resp.Result.(string)
+
+	sub := api.subs.GetSubscription(subID)
+	if sub == nil {
+		t.Fatal("subscription not found")
+	}
+	// Query should be empty (matches everything).
+	if len(sub.Query.Addresses) != 0 {
+		t.Fatalf("want 0 addresses, got %d", len(sub.Query.Addresses))
+	}
+	if len(sub.Query.Topics) != 0 {
+		t.Fatalf("want 0 topics, got %d", len(sub.Query.Topics))
+	}
+}
+
+func TestRPC_EthSubscribe_FullLifecycle(t *testing.T) {
+	mb := newMockBackend()
+	api := NewEthAPI(mb)
+
+	// Step 1: Subscribe to newHeads.
+	subResp := callRPC(t, api, "eth_subscribe", "newHeads")
+	if subResp.Error != nil {
+		t.Fatalf("subscribe error: %v", subResp.Error.Message)
+	}
+	subID := subResp.Result.(string)
+
+	// Step 2: Verify subscription exists.
+	sub := api.subs.GetSubscription(subID)
+	if sub == nil {
+		t.Fatal("subscription not found")
+	}
+
+	// Step 3: Send a notification.
+	api.subs.NotifyNewHead(&types.Header{
+		Number:  big.NewInt(200),
+		BaseFee: big.NewInt(2000000000),
+	})
+
+	// Step 4: Read the notification.
+	select {
+	case msg := <-sub.Channel():
+		block := msg.(*RPCBlock)
+		if block.Number != "0xc8" { // 200
+			t.Fatalf("want 0xc8, got %v", block.Number)
+		}
+	default:
+		t.Fatal("expected notification")
+	}
+
+	// Step 5: Unsubscribe.
+	unsubResp := callRPC(t, api, "eth_unsubscribe", subID)
+	if unsubResp.Error != nil {
+		t.Fatalf("unsubscribe error: %v", unsubResp.Error.Message)
+	}
+	if unsubResp.Result != true {
+		t.Fatalf("want true, got %v", unsubResp.Result)
+	}
+
+	// Step 6: Verify it's gone.
+	if api.subs.GetSubscription(subID) != nil {
+		t.Fatal("subscription should be removed after unsubscribe")
+	}
+	if api.subs.SubscriptionCount() != 0 {
+		t.Fatalf("want 0 subscriptions, got %d", api.subs.SubscriptionCount())
+	}
+}
+
+// ---------- Concurrent subscription operations ----------
+
+func TestConcurrentSubscriptions(t *testing.T) {
+	mb := newTestBackend()
+	sm := NewSubscriptionManager(mb)
+
+	var wg sync.WaitGroup
+	subIDs := make(chan string, 50)
+
+	// Concurrently create subscriptions.
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			var subType SubType
+			switch n % 3 {
+			case 0:
+				subType = SubNewHeads
+			case 1:
+				subType = SubLogs
+			case 2:
+				subType = SubPendingTx
+			}
+			id := sm.Subscribe(subType, FilterQuery{})
+			subIDs <- id
+		}(i)
+	}
+
+	// Concurrently notify.
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sm.NotifyNewHead(&types.Header{
+				Number:  big.NewInt(100),
+				BaseFee: big.NewInt(1000000000),
+			})
+			sm.NotifyPendingTxHash(types.HexToHash("0x1234"))
+			sm.NotifyLogs([]*types.Log{
+				{Address: types.HexToAddress("0xaaaa"), Topics: []types.Hash{types.HexToHash("0x1111")}},
+			})
+		}()
+	}
+
+	wg.Wait()
+	close(subIDs)
+
+	if sm.SubscriptionCount() != 20 {
+		t.Fatalf("want 20 subscriptions, got %d", sm.SubscriptionCount())
+	}
+
+	// Unsubscribe all concurrently.
+	var wg2 sync.WaitGroup
+	for id := range subIDs {
+		wg2.Add(1)
+		go func(sid string) {
+			defer wg2.Done()
+			sm.Unsubscribe(sid)
+		}(id)
+	}
+	wg2.Wait()
+
+	if sm.SubscriptionCount() != 0 {
+		t.Fatalf("want 0 subscriptions, got %d", sm.SubscriptionCount())
+	}
+}
+
+// ---------- FormatBlock tests ----------
+
+func TestFormatBlock_WithFullTx(t *testing.T) {
+	header := &types.Header{
+		Number:  big.NewInt(10),
+		BaseFee: big.NewInt(1000000000),
+	}
+	to := types.HexToAddress("0xbbbb")
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    1,
+		GasPrice: big.NewInt(1000000000),
+		Gas:      21000,
+		To:       &to,
+		Value:    big.NewInt(1000),
+	})
+	sender := types.HexToAddress("0xaaaa")
+	tx.SetSender(sender)
+
+	block := types.NewBlock(header, &types.Body{
+		Transactions: []*types.Transaction{tx},
+	})
+	result := FormatBlock(block, true)
+
+	blockWithTxs, ok := result.(*RPCBlockWithTxs)
+	if !ok {
+		t.Fatalf("expected *RPCBlockWithTxs, got %T", result)
+	}
+	if len(blockWithTxs.Transactions) != 1 {
+		t.Fatalf("want 1 tx, got %d", len(blockWithTxs.Transactions))
+	}
+	if blockWithTxs.Transactions[0].Nonce != "0x1" {
+		t.Fatalf("want nonce 0x1, got %v", blockWithTxs.Transactions[0].Nonce)
+	}
+}
+
+func TestFormatBlock_EmptyBlock_FullTx(t *testing.T) {
+	header := &types.Header{
+		Number:  big.NewInt(10),
+		BaseFee: big.NewInt(1000000000),
+	}
+	block := types.NewBlock(header, nil)
+	result := FormatBlock(block, true)
+
+	blockWithTxs := result.(*RPCBlockWithTxs)
+	if len(blockWithTxs.Transactions) != 0 {
+		t.Fatalf("want 0 txs, got %d", len(blockWithTxs.Transactions))
+	}
+}
+
+// ---------- FormatLog tests ----------
+
+func TestFormatLog(t *testing.T) {
+	addr := types.HexToAddress("0xcccc")
+	topic1 := types.HexToHash("0x1111")
+	topic2 := types.HexToHash("0x2222")
+	blockHash := types.HexToHash("0xbeef")
+	txHash := types.HexToHash("0xdead")
+
+	log := &types.Log{
+		Address:     addr,
+		Topics:      []types.Hash{topic1, topic2},
+		Data:        []byte{0xab, 0xcd},
+		BlockNumber: 42,
+		BlockHash:   blockHash,
+		TxHash:      txHash,
+		TxIndex:     3,
+		Index:       7,
+		Removed:     false,
+	}
+
+	rpcLog := FormatLog(log)
+	if rpcLog.Address != encodeAddress(addr) {
+		t.Fatalf("want address %v, got %v", encodeAddress(addr), rpcLog.Address)
+	}
+	if len(rpcLog.Topics) != 2 {
+		t.Fatalf("want 2 topics, got %d", len(rpcLog.Topics))
+	}
+	if rpcLog.Topics[0] != encodeHash(topic1) {
+		t.Fatalf("topic 0 mismatch")
+	}
+	if rpcLog.Data != "0xabcd" {
+		t.Fatalf("want data 0xabcd, got %v", rpcLog.Data)
+	}
+	if rpcLog.BlockNumber != "0x2a" {
+		t.Fatalf("want blockNumber 0x2a, got %v", rpcLog.BlockNumber)
+	}
+	if rpcLog.TransactionHash != encodeHash(txHash) {
+		t.Fatalf("txHash mismatch")
+	}
+	if rpcLog.TransactionIndex != "0x3" {
+		t.Fatalf("want txIndex 0x3, got %v", rpcLog.TransactionIndex)
+	}
+	if rpcLog.LogIndex != "0x7" {
+		t.Fatalf("want logIndex 0x7, got %v", rpcLog.LogIndex)
+	}
+	if rpcLog.Removed {
+		t.Fatal("want removed=false")
+	}
+}
+
+func TestFormatLog_RemovedFlag(t *testing.T) {
+	log := &types.Log{
+		Address: types.HexToAddress("0xaaaa"),
+		Removed: true,
+	}
+	rpcLog := FormatLog(log)
+	if !rpcLog.Removed {
+		t.Fatal("want removed=true")
+	}
+}
+
+func TestFormatLog_NoTopics(t *testing.T) {
+	log := &types.Log{
+		Address: types.HexToAddress("0xaaaa"),
+		Topics:  []types.Hash{},
+	}
+	rpcLog := FormatLog(log)
+	if len(rpcLog.Topics) != 0 {
+		t.Fatalf("want 0 topics, got %d", len(rpcLog.Topics))
+	}
+}
+
+// ---------- FormatTransaction tests ----------
+
+func TestFormatTransaction_Pending(t *testing.T) {
+	to := types.HexToAddress("0xbbbb")
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    5,
+		GasPrice: big.NewInt(2000000000),
+		Gas:      21000,
+		To:       &to,
+		Value:    big.NewInt(1e18),
+		Data:     []byte{0x12, 0x34},
+	})
+	sender := types.HexToAddress("0xaaaa")
+	tx.SetSender(sender)
+
+	// Pending tx: no block hash, number, or index.
+	rpcTx := FormatTransaction(tx, nil, nil, nil)
+
+	if rpcTx.BlockHash != nil {
+		t.Fatalf("want nil blockHash for pending tx, got %v", *rpcTx.BlockHash)
+	}
+	if rpcTx.BlockNumber != nil {
+		t.Fatalf("want nil blockNumber for pending tx, got %v", *rpcTx.BlockNumber)
+	}
+	if rpcTx.TransactionIndex != nil {
+		t.Fatalf("want nil txIndex for pending tx, got %v", *rpcTx.TransactionIndex)
+	}
+	if rpcTx.Nonce != "0x5" {
+		t.Fatalf("want nonce 0x5, got %v", rpcTx.Nonce)
+	}
+	if rpcTx.From != encodeAddress(sender) {
+		t.Fatalf("want from %v, got %v", encodeAddress(sender), rpcTx.From)
+	}
+}
+
+func TestFormatTransaction_ContractCreation(t *testing.T) {
+	// Contract creation: no "to" address.
+	tx := types.NewTransaction(&types.LegacyTx{
+		Nonce:    0,
+		GasPrice: big.NewInt(1000000000),
+		Gas:      100000,
+		Value:    big.NewInt(0),
+		Data:     []byte{0x60, 0x00},
+	})
+
+	rpcTx := FormatTransaction(tx, nil, nil, nil)
+	if rpcTx.To != nil {
+		t.Fatalf("want nil to for contract creation, got %v", *rpcTx.To)
+	}
+}
+
+// ---------- FormatReceipt tests ----------
+
+func TestFormatReceipt_ContractCreation(t *testing.T) {
+	contractAddr := types.HexToAddress("0xcccc")
+	receipt := &types.Receipt{
+		Status:            types.ReceiptStatusSuccessful,
+		CumulativeGasUsed: 100000,
+		GasUsed:           100000,
+		TxHash:            types.HexToHash("0x1111"),
+		BlockHash:         types.HexToHash("0x2222"),
+		BlockNumber:       big.NewInt(42),
+		TransactionIndex:  0,
+		ContractAddress:   contractAddr,
+		Logs:              []*types.Log{},
+	}
+
+	rpcReceipt := FormatReceipt(receipt, nil)
+	if rpcReceipt.ContractAddress == nil {
+		t.Fatal("expected non-nil contractAddress")
+	}
+	if *rpcReceipt.ContractAddress != encodeAddress(contractAddr) {
+		t.Fatalf("want contractAddress %v, got %v", encodeAddress(contractAddr), *rpcReceipt.ContractAddress)
+	}
+}
+
+func TestFormatReceipt_NilContractAddress(t *testing.T) {
+	receipt := &types.Receipt{
+		Status:            types.ReceiptStatusSuccessful,
+		CumulativeGasUsed: 21000,
+		GasUsed:           21000,
+		TxHash:            types.HexToHash("0x1111"),
+		BlockHash:         types.HexToHash("0x2222"),
+		BlockNumber:       big.NewInt(42),
+		Logs:              []*types.Log{},
+	}
+
+	rpcReceipt := FormatReceipt(receipt, nil)
+	if rpcReceipt.ContractAddress != nil {
+		t.Fatalf("want nil contractAddress, got %v", *rpcReceipt.ContractAddress)
+	}
+}
+
+func TestFormatReceipt_FailedStatus(t *testing.T) {
+	receipt := &types.Receipt{
+		Status:      types.ReceiptStatusFailed,
+		GasUsed:     21000,
+		TxHash:      types.HexToHash("0x1111"),
+		BlockHash:   types.HexToHash("0x2222"),
+		BlockNumber: big.NewInt(42),
+		Logs:        []*types.Log{},
+	}
+
+	rpcReceipt := FormatReceipt(receipt, nil)
+	if rpcReceipt.Status != "0x0" {
+		t.Fatalf("want status 0x0 (failed), got %v", rpcReceipt.Status)
+	}
+}
+
+func TestFormatReceipt_NilLogs(t *testing.T) {
+	receipt := &types.Receipt{
+		Status:      types.ReceiptStatusSuccessful,
+		GasUsed:     21000,
+		TxHash:      types.HexToHash("0x1111"),
+		BlockHash:   types.HexToHash("0x2222"),
+		BlockNumber: big.NewInt(42),
+		Logs:        nil,
+	}
+
+	rpcReceipt := FormatReceipt(receipt, nil)
+	// Should not panic and should have empty logs.
+	if rpcReceipt.Logs == nil {
+		t.Fatal("want non-nil Logs slice")
+	}
+	if len(rpcReceipt.Logs) != 0 {
+		t.Fatalf("want 0 logs, got %d", len(rpcReceipt.Logs))
 	}
 }

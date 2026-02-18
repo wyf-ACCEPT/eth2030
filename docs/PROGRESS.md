@@ -7,11 +7,11 @@
 | Metric | Value |
 |--------|-------|
 | Packages | 22 |
-| Source LOC | ~36,000 |
-| Test LOC | ~60,000 |
-| Passing tests | 2,000+ |
-| Test files | 117 |
-| Overall completion | ~72% mainnet-equivalent |
+| Source LOC | ~37,000 |
+| Test LOC | ~69,000 |
+| Passing tests | 2,900+ |
+| Test files | 129 |
+| Overall completion | ~74% mainnet-equivalent |
 
 ## Package Completion
 
@@ -28,7 +28,7 @@
 | bal | 1.2K | 90% | BAL tracking, hashing, parallel conflict detection |
 | witness | 2.5K | 75% | Collector complete, verification framework only |
 | txpool | 3K | 85% | Validation, pricing, eviction, blob gas |
-| p2p | 7.5K | 50% | Peer mgmt, message types, no socket I/O |
+| p2p | 7.5K | 70% | TCP transport, devp2p handshake, peer mgmt, server lifecycle |
 | rpc | 5.6K | 90% | 30+ methods, filters, WebSocket subscriptions |
 | sync | 5K | 70% | Full + snap sync pipeline, no peer integration |
 | trie | 4K | 85% | MPT with proofs and persistence |
@@ -54,11 +54,11 @@ proper commitment computation, integration into state root calculation.
 **Needed**: BLS12-381 pairing-based KZG verification using trusted setup.
 **Note**: BLS12-381 curve already implemented; need KZG-specific logic.
 
-### 3. Production Networking (HIGH)
+### 3. Production Networking (MEDIUM)
 
-**Current**: Interfaces defined, peer management works, message types encoded.
-**Needed**: TCP/UDP socket I/O, DevP2P handshake, peer connection lifecycle,
-real network communication.
+**Current**: TCP transport, devp2p handshake, server lifecycle, peer management.
+**Needed**: RLPx encryption, peer discovery (discv4/v5), NAT traversal,
+production connection management.
 
 ### 4. Witness Verification (MEDIUM)
 
@@ -119,7 +119,7 @@ real network communication.
 | Block Validation | 90% | Header, body, execution, receipt validation |
 | Engine API | 95% | V3-V6 payload and forkchoice |
 | Cryptography | 80% | BN254, BLS12-381 done; Verkle/KZG stubbed |
-| P2P Networking | 50% | Designed, not connected to sockets |
+| P2P Networking | 70% | TCP transport, handshake, server; needs RLPx, discovery |
 | Sync | 70% | State machine complete, no peer integration |
 | Database | 85% | FileDB works, no RocksDB/LevelDB |
 
@@ -129,11 +129,13 @@ real network communication.
 |----------|-------|---------|
 | Core (blockchain, blocks) | 22 | Excellent |
 | Types (tx, header, receipt) | 11 | Very Good |
-| State (statedb, snapshots) | 6 | Good |
-| VM (EVM, opcodes, gas) | 18 | Excellent |
+| State (statedb, snapshots) | 7 | Very Good |
+| VM (EVM, opcodes, gas) | 19 | Excellent |
 | E2E integration | 3 | Excellent |
-| Crypto (BN254, BLS12-381) | 4 | Good |
+| Crypto (BN254, BLS12-381) | 8 | Excellent |
 | Engine API | 6 | Good |
 | RPC | 4 | Good |
+| P2P (transport, handshake) | 5 | Good |
 | Sync | 3 | Fair |
+| Witness | 2 | Very Good |
 | Verkle | 2 | Limited |

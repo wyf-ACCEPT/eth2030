@@ -254,7 +254,7 @@ func NewFrontierJumpTable() JumpTable {
 	// Hash
 	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
 
-	// State (stubs)
+	// State access
 	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
 	tbl[SLOAD] = &operation{execute: opSload, constantGas: GasSloadCold, minStack: 1, maxStack: 1024}
 	tbl[SSTORE] = &operation{execute: opSstore, constantGas: GasSstoreSet, minStack: 2, maxStack: 1024, writes: true}

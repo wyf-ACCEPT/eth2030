@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering parallel execution (EIP-7928), ePBS (EIP-7732), Verkle
 state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography.
 
-**Status**: 22 packages, ~36K LOC source, ~60K LOC tests, 2000+ passing tests.
+**Status**: 22 packages, ~37K LOC source, ~69K LOC tests, 2900+ passing tests.
 
 ## Architecture
 
@@ -69,7 +69,7 @@ state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography
 | `pkg/rpc` | JSON-RPC server, 30+ eth_* methods, filters, subscriptions | Complete |
 | `pkg/trie` | Merkle Patricia Trie with proofs | Complete |
 | `pkg/verkle` | Verkle tree types, key derivation (EIP-6800) | Stub |
-| `pkg/p2p` | Peer management, ETH wire protocol, discovery | Framework |
+| `pkg/p2p` | TCP transport, devp2p handshake, peer management, server | In Progress |
 | `pkg/sync` | Full sync + snap sync pipeline, header-first strategy | Framework |
 | `pkg/eth` | ETH protocol handler, codec, message types | Complete |
 | `pkg/node` | Client node: config, lifecycle, subsystem integration | Complete |
