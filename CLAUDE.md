@@ -36,18 +36,25 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 ## Project Structure & Module Organization
 
 - `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
-  - `core/types/` - Core types: Header, Transaction, Receipt, Block, Account
-  - `core/state/` - StateDB interface and in-memory implementation
-  - `core/vm/` - EVM interpreter, opcodes, stack, memory, gas
-  - `core/rawdb/` - Raw database access (planned)
+  - `core/types/` - Core types: Header, Transaction (5 types), Receipt, Block, Account
+  - `core/state/` - StateDB interface, in-memory and trie-backed implementations
+  - `core/vm/` - EVM interpreter, 140+ opcodes, 18 precompiles, gas tables
+  - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage
   - `rlp/` - RLP encoding/decoding
-  - `crypto/` - Keccak-256, secp256k1 ECDSA
-  - `engine/` - Engine API types (V1-V5), forkchoice, payload status
-  - `bal/` - Block Access Lists (EIP-7928)
-  - `witness/` - Execution witness and ZK proof types
-  - `txpool/` - Transaction pool (planned)
-  - `p2p/` - P2P networking (planned)
-- `cmd/eth2028/` - Main binary entry point (planned)
+  - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381
+  - `engine/` - Engine API server (V3-V6), forkchoice, payload building
+  - `bal/` - Block Access Lists (EIP-7928) for parallel execution
+  - `witness/` - Execution witness (EIP-6800/8025), collector, verifier
+  - `txpool/` - Transaction pool with validation, replace-by-fee, eviction
+  - `p2p/` - P2P peer management, ETH wire protocol, discovery
+  - `sync/` - Full sync + snap sync pipeline
+  - `rpc/` - JSON-RPC server, 30+ methods, filters, subscriptions
+  - `eth/` - ETH protocol handler and codec
+  - `node/` - Client node: config, lifecycle, subsystem integration
+  - `verkle/` - Verkle tree types and key derivation (stub)
+  - `log/` - Structured logging (JSON/text)
+  - `metrics/` - Counters, gauges, histograms, Prometheus export
+- `cmd/eth2028/` - CLI binary with flags, signal handling
 - `internal/testutil/` - Shared test utilities
 - `refs/` - Reference submodules (read-only, do NOT modify)
   - **Ethereum core**: go-ethereum, EIPs, ERCs, consensus-specs, execution-apis, execution-spec-tests, beacon-APIs, builder-specs

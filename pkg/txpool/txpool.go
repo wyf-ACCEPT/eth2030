@@ -21,8 +21,17 @@ const (
 	// MaxPerSender is the maximum number of transactions per sender.
 	MaxPerSender = 16
 
-	// MaxTxSize is the maximum allowed transaction data size (128KB).
+	// MaxTxSize is the maximum allowed encoded transaction size (128KB).
 	MaxTxSize = 128 * 1024
+
+	// MaxNonceGap is the maximum allowed gap between a transaction's nonce
+	// and the sender's current state nonce. Transactions with nonces too far
+	// ahead are rejected to prevent memory exhaustion from nonce-gap attacks.
+	MaxNonceGap = 64
+
+	// EIP-2930 access list gas costs.
+	AccessListAddressCost = 2400 // per address in access list
+	AccessListStorageCost = 1900 // per storage key in access list
 
 	// priceBumpPercent is kept for internal use (same as PriceBump).
 	priceBumpPercent = PriceBump
@@ -43,8 +52,11 @@ var (
 	ErrReplacementUnderpriced = errors.New("replacement transaction underpriced")
 	ErrSenderLimitExceeded    = errors.New("per-sender transaction limit exceeded")
 	ErrFeeCapBelowTip         = errors.New("max fee per gas less than max priority fee per gas")
+	ErrFeeCapBelowBaseFee     = errors.New("max fee per gas less than block base fee")
 	ErrBlobTxMissingHashes    = errors.New("blob transaction missing versioned hashes")
+	ErrBlobFeeCapBelowBaseFee = errors.New("blob fee cap less than blob base fee")
 	ErrNegativeGasPrice       = errors.New("negative gas price or fee cap")
+	ErrOversizedRLP           = errors.New("encoded transaction too large")
 )
 
 // Config holds TxPool configuration.
@@ -156,9 +168,10 @@ func (l *txSortedList) Ready(baseNonce uint64) []*types.Transaction {
 
 // TxPool implements a transaction pool for pending and queued transactions.
 type TxPool struct {
-	config  Config
-	state   StateReader
-	baseFee *big.Int // current base fee, nil if unknown
+	config      Config
+	state       StateReader
+	baseFee     *big.Int // current base fee, nil if unknown
+	blobBaseFee *big.Int // current blob base fee (EIP-4844), nil if unknown
 
 	mu      sync.RWMutex
 	pending map[types.Address]*txSortedList // processable transactions
@@ -211,6 +224,12 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 
 	if tx.Nonce() < stateNonce {
 		return ErrNonceTooLow
+	}
+
+	// Nonce gap detection: reject transactions with nonces too far ahead
+	// of the current state nonce to prevent memory exhaustion attacks.
+	if tx.Nonce() > stateNonce+MaxNonceGap {
+		return ErrNonceTooHigh
 	}
 
 	// Check for replace-by-fee: existing tx from same sender with same nonce.
@@ -295,16 +314,43 @@ func (pool *TxPool) checkReplacement(from types.Address, tx *types.Transaction) 
 }
 
 // hasSufficientBump checks if newTx has >= priceBumpPercent higher
-// effective gas price than oldTx.
+// effective gas price than oldTx. For EIP-1559 style transactions, both the
+// fee cap and tip cap must individually meet the bump threshold.
 func (pool *TxPool) hasSufficientBump(oldTx, newTx *types.Transaction) bool {
 	oldPrice := EffectiveGasPrice(oldTx, pool.baseFee)
 	newPrice := EffectiveGasPrice(newTx, pool.baseFee)
 
-	// New price must be >= old price * (100 + priceBumpPercent) / 100
+	// New price must be >= old price * (100 + priceBumpPercent) / 100.
 	threshold := new(big.Int).Mul(oldPrice, big.NewInt(100+priceBumpPercent))
 	threshold.Div(threshold, big.NewInt(100))
+	if newPrice.Cmp(threshold) < 0 {
+		return false
+	}
 
-	return newPrice.Cmp(threshold) >= 0
+	// For EIP-1559 style transactions, also require the tip cap to meet the bump.
+	// This prevents gaming where a tx with a high fee cap but low tip replaces
+	// a tx with a lower fee cap but higher tip.
+	if isDynamic(oldTx) && isDynamic(newTx) {
+		oldTip := oldTx.GasTipCap()
+		newTip := newTx.GasTipCap()
+		if oldTip != nil && newTip != nil {
+			tipThreshold := new(big.Int).Mul(oldTip, big.NewInt(100+priceBumpPercent))
+			tipThreshold.Div(tipThreshold, big.NewInt(100))
+			if newTip.Cmp(tipThreshold) < 0 {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// isDynamic returns true if the transaction is an EIP-1559 style transaction
+// (DynamicFeeTx, BlobTx, or SetCodeTx).
+func isDynamic(tx *types.Transaction) bool {
+	return tx.Type() == types.DynamicFeeTxType ||
+		tx.Type() == types.BlobTxType ||
+		tx.Type() == types.SetCodeTxType
 }
 
 // validateTx performs comprehensive validation of a transaction.
@@ -327,8 +373,21 @@ func (pool *TxPool) validateTx(tx *types.Transaction) error {
 		return ErrGasLimit
 	}
 
-	// Intrinsic gas check (minimum 21000 for a transfer).
+	// RLP size limit enforcement: reject transactions exceeding 128KB encoded size.
+	if rlpBytes, err := tx.EncodeRLP(); err == nil {
+		if len(rlpBytes) > MaxTxSize {
+			return ErrOversizedRLP
+		}
+	}
+
+	// Data size check (max 128KB).
+	if len(tx.Data()) > MaxTxSize {
+		return ErrOversizedData
+	}
+
+	// EIP-2930 access list gas accounting: include access list cost in intrinsic gas.
 	intrinsicGas := IntrinsicGas(tx.Data(), tx.To() == nil)
+	intrinsicGas += AccessListGas(tx.AccessList())
 	if tx.Gas() < intrinsicGas {
 		return ErrIntrinsicGas
 	}
@@ -341,11 +400,6 @@ func (pool *TxPool) validateTx(tx *types.Transaction) error {
 		}
 	}
 
-	// Data size check (max 128KB).
-	if len(tx.Data()) > MaxTxSize {
-		return ErrOversizedData
-	}
-
 	// EIP-1559 (type 2): maxFeePerGas must be >= maxPriorityFeePerGas.
 	if tx.Type() == types.DynamicFeeTxType || tx.Type() == types.BlobTxType || tx.Type() == types.SetCodeTxType {
 		feeCap := tx.GasFeeCap()
@@ -355,10 +409,28 @@ func (pool *TxPool) validateTx(tx *types.Transaction) error {
 		}
 	}
 
+	// EIP-1559 base fee validation: reject txs with GasFeeCap below the current base fee.
+	if pool.baseFee != nil {
+		feeCap := tx.GasFeeCap()
+		if feeCap == nil {
+			feeCap = tx.GasPrice()
+		}
+		if feeCap != nil && feeCap.Cmp(pool.baseFee) < 0 {
+			return ErrFeeCapBelowBaseFee
+		}
+	}
+
 	// Blob transaction (type 3) validation.
 	if tx.Type() == types.BlobTxType {
 		if len(tx.BlobHashes()) == 0 {
 			return ErrBlobTxMissingHashes
+		}
+		// EIP-4844: validate blob gas fee cap against the current blob base fee.
+		if pool.blobBaseFee != nil {
+			blobFeeCap := tx.BlobGasFeeCap()
+			if blobFeeCap == nil || blobFeeCap.Cmp(pool.blobBaseFee) < 0 {
+				return ErrBlobFeeCapBelowBaseFee
+			}
 		}
 	}
 
@@ -794,7 +866,7 @@ func (pool *TxPool) SetBaseFee(baseFee *big.Int) {
 	}
 }
 
-// IntrinsicGas computes the intrinsic gas for a transaction.
+// IntrinsicGas computes the intrinsic gas for a transaction (excluding access list).
 func IntrinsicGas(data []byte, isContractCreation bool) uint64 {
 	gas := uint64(21000)
 	if isContractCreation {
@@ -813,4 +885,26 @@ func IntrinsicGas(data []byte, isContractCreation bool) uint64 {
 		gas += z * 4   // zero byte cost
 	}
 	return gas
+}
+
+// AccessListGas computes the gas cost of an EIP-2930 access list.
+// Each address costs 2400 gas and each storage key costs 1900 gas.
+func AccessListGas(al types.AccessList) uint64 {
+	if len(al) == 0 {
+		return 0
+	}
+	var gas uint64
+	for _, tuple := range al {
+		gas += AccessListAddressCost
+		gas += uint64(len(tuple.StorageKeys)) * AccessListStorageCost
+	}
+	return gas
+}
+
+// SetBlobBaseFee updates the pool's blob base fee (EIP-4844). Blob transactions
+// with a blob fee cap below this value will be rejected during validation.
+func (pool *TxPool) SetBlobBaseFee(blobBaseFee *big.Int) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	pool.blobBaseFee = new(big.Int).Set(blobBaseFee)
 }

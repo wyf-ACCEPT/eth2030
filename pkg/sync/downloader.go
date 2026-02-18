@@ -33,6 +33,9 @@ type SyncProgress struct {
 	PulledBodies  uint64
 	Syncing       bool
 	Percentage    float64
+	Mode          string // "full" or "snap"
+	Stage         string // human-readable stage name
+	SnapProgress  *SnapProgress // snap sync progress (nil during full sync)
 }
 
 // DownloaderConfig configures the Downloader.
@@ -87,6 +90,11 @@ func (d *Downloader) SetFetchers(hf HeaderSource, bf BodySource, ins BlockInsert
 	d.syncer.SetFetchers(hf, bf, ins)
 }
 
+// SetSnapSync configures snap sync components on the underlying syncer.
+func (d *Downloader) SetSnapSync(peer SnapPeer, writer StateWriter) {
+	d.syncer.SetSnapSync(peer, writer)
+}
+
 // Syncer returns the underlying Syncer instance.
 func (d *Downloader) Syncer() *Syncer {
 	return d.syncer
@@ -131,6 +139,9 @@ func (d *Downloader) Progress() SyncProgress {
 		PulledBodies:  p.PulledBodies,
 		Syncing:       d.syncer.IsSyncing(),
 		Percentage:    p.Percentage(),
+		Mode:          p.Mode,
+		Stage:         StageName(p.Stage),
+		SnapProgress:  p.SnapProgress,
 	}
 }
 

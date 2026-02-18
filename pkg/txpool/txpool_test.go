@@ -336,8 +336,9 @@ func TestOversizedData(t *testing.T) {
 	})
 	tx.SetSender(testSender)
 	err := pool.AddLocal(tx)
-	if err != ErrOversizedData {
-		t.Errorf("expected ErrOversizedData, got: %v", err)
+	// RLP size check fires first since 129KB data + RLP overhead > 128KB limit.
+	if err != ErrOversizedRLP && err != ErrOversizedData {
+		t.Errorf("expected ErrOversizedRLP or ErrOversizedData, got: %v", err)
 	}
 }
 
@@ -467,29 +468,29 @@ func TestValidateTx_GasLimitExceeded(t *testing.T) {
 }
 
 // TestValidateTx_MaxTxSize verifies that transactions with data exceeding 128KB
-// are rejected.
+// are rejected, and that RLP-encoded transaction size is also checked.
 func TestValidateTx_MaxTxSize(t *testing.T) {
 	pool, _ := newRichPool()
-
-	// Exactly at limit: should succeed.
-	okData := make([]byte, MaxTxSize)
 	to := types.BytesToAddress([]byte{0xde, 0xad})
-	txOk := types.NewTransaction(&types.LegacyTx{
+
+	// Data size well under RLP limit: should succeed.
+	smallData := make([]byte, 1024) // 1KB data, well under the 128KB RLP limit
+	txSmall := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
 		GasPrice: big.NewInt(1000),
 		Gas:      5_000_000,
 		To:       &to,
 		Value:    big.NewInt(0),
-		Data:     okData,
+		Data:     smallData,
 	})
-	txOk.SetSender(testSender)
-	err := pool.AddLocal(txOk)
+	txSmall.SetSender(testSender)
+	err := pool.AddLocal(txSmall)
 	if err != nil {
-		t.Errorf("expected success at exactly MaxTxSize, got: %v", err)
+		t.Errorf("expected success for small data, got: %v", err)
 	}
 
-	// One byte over limit: should fail.
-	bigData := make([]byte, MaxTxSize+1)
+	// Data at MaxTxSize: RLP overhead pushes encoded size above limit.
+	bigData := make([]byte, MaxTxSize)
 	txBig := types.NewTransaction(&types.LegacyTx{
 		Nonce:    1,
 		GasPrice: big.NewInt(1000),
@@ -500,8 +501,24 @@ func TestValidateTx_MaxTxSize(t *testing.T) {
 	})
 	txBig.SetSender(testSender)
 	err = pool.AddLocal(txBig)
-	if err != ErrOversizedData {
-		t.Errorf("expected ErrOversizedData, got: %v", err)
+	if err != ErrOversizedRLP {
+		t.Errorf("expected ErrOversizedRLP for data at MaxTxSize (RLP overhead), got: %v", err)
+	}
+
+	// One byte over data limit: should also fail.
+	overData := make([]byte, MaxTxSize+1)
+	txOver := types.NewTransaction(&types.LegacyTx{
+		Nonce:    2,
+		GasPrice: big.NewInt(1000),
+		Gas:      5_000_000,
+		To:       &to,
+		Value:    big.NewInt(0),
+		Data:     overData,
+	})
+	txOver.SetSender(testSender)
+	err = pool.AddLocal(txOver)
+	if err != ErrOversizedRLP && err != ErrOversizedData {
+		t.Errorf("expected ErrOversizedRLP or ErrOversizedData, got: %v", err)
 	}
 }
 
@@ -866,5 +883,601 @@ func TestValidateTx_BlobTx_FeeCapBelowTip(t *testing.T) {
 	err := pool.AddLocal(tx)
 	if err != ErrFeeCapBelowTip {
 		t.Errorf("expected ErrFeeCapBelowTip for blob tx, got: %v", err)
+	}
+}
+
+// --- Tests for new validation improvements ---
+
+// makeAccessListTx creates an EIP-2930 access list transaction.
+func makeAccessListTx(from types.Address, nonce uint64, gasPrice int64, gas uint64, al types.AccessList) *types.Transaction {
+	to := types.BytesToAddress([]byte{0xde, 0xad})
+	tx := types.NewTransaction(&types.AccessListTx{
+		ChainID:    big.NewInt(1),
+		Nonce:      nonce,
+		GasPrice:   big.NewInt(gasPrice),
+		Gas:        gas,
+		To:         &to,
+		Value:      big.NewInt(0),
+		AccessList: al,
+	})
+	tx.SetSender(from)
+	return tx
+}
+
+// makeBlobTxWithBlobFee creates a blob tx with a specific blob fee cap.
+func makeBlobTxWithBlobFee(from types.Address, nonce uint64, tipCap, feeCap int64, gas uint64, blobFeeCap int64, blobHashes []types.Hash) *types.Transaction {
+	tx := types.NewTransaction(&types.BlobTx{
+		Nonce:      nonce,
+		GasTipCap:  big.NewInt(tipCap),
+		GasFeeCap:  big.NewInt(feeCap),
+		Gas:        gas,
+		To:         types.BytesToAddress([]byte{0xde, 0xad}),
+		Value:      big.NewInt(0),
+		BlobFeeCap: big.NewInt(blobFeeCap),
+		BlobHashes: blobHashes,
+	})
+	tx.SetSender(from)
+	return tx
+}
+
+// TestValidateTx_EIP1559_FeeCapBelowBaseFee verifies that EIP-1559 transactions
+// with GasFeeCap below the current base fee are rejected.
+func TestValidateTx_EIP1559_FeeCapBelowBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	// Set base fee to 100.
+	pool.SetBaseFee(big.NewInt(100))
+
+	// Dynamic fee tx with feeCap=50, below baseFee=100: should fail.
+	txLow := makeDynamicTx(testSender, 0, 10, 50, 21000)
+	err := pool.AddLocal(txLow)
+	if err != ErrFeeCapBelowBaseFee {
+		t.Errorf("expected ErrFeeCapBelowBaseFee, got: %v", err)
+	}
+
+	// Dynamic fee tx with feeCap=99, just below baseFee=100: should fail.
+	txJustBelow := makeDynamicTx(testSender, 0, 10, 99, 21000)
+	err = pool.AddLocal(txJustBelow)
+	if err != ErrFeeCapBelowBaseFee {
+		t.Errorf("expected ErrFeeCapBelowBaseFee for feeCap=99, got: %v", err)
+	}
+
+	// Dynamic fee tx with feeCap=100, equal to baseFee=100: should succeed.
+	txEqual := makeDynamicTx(testSender, 0, 10, 100, 21000)
+	err = pool.AddLocal(txEqual)
+	if err != nil {
+		t.Errorf("expected success for feeCap=baseFee, got: %v", err)
+	}
+
+	// Dynamic fee tx with feeCap=200, above baseFee=100: should succeed.
+	txAbove := makeDynamicTx(testSender, 1, 10, 200, 21000)
+	err = pool.AddLocal(txAbove)
+	if err != nil {
+		t.Errorf("expected success for feeCap>baseFee, got: %v", err)
+	}
+}
+
+// TestValidateTx_LegacyTx_FeeCapBelowBaseFee verifies that legacy transactions
+// with GasPrice below the current base fee are also rejected.
+func TestValidateTx_LegacyTx_FeeCapBelowBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	// Set base fee to 100.
+	pool.SetBaseFee(big.NewInt(100))
+
+	// Legacy tx with gasPrice=50 < baseFee=100: should fail.
+	txLow := makeTx(0, 50, 21000)
+	err := pool.AddLocal(txLow)
+	if err != ErrFeeCapBelowBaseFee {
+		t.Errorf("expected ErrFeeCapBelowBaseFee for legacy tx, got: %v", err)
+	}
+
+	// Legacy tx with gasPrice=100 == baseFee: should succeed.
+	txOk := makeTx(0, 100, 21000)
+	err = pool.AddLocal(txOk)
+	if err != nil {
+		t.Errorf("expected success for legacy tx at baseFee, got: %v", err)
+	}
+}
+
+// TestValidateTx_NoBaseFee verifies that when baseFee is nil (not set), the
+// base fee check is skipped.
+func TestValidateTx_NoBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	// No baseFee set, low gas price should be fine (only min gas price matters).
+	txLow := makeDynamicTx(testSender, 0, 1, 2, 21000)
+	err := pool.AddLocal(txLow)
+	if err != nil {
+		t.Errorf("expected success without baseFee, got: %v", err)
+	}
+}
+
+// TestValidateTx_BlobTx_BlobFeeCapBelowBaseFee verifies EIP-4844 blob gas fee
+// cap validation against the blob base fee.
+func TestValidateTx_BlobTx_BlobFeeCapBelowBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	hash := types.Hash{0x01}
+
+	// Set blob base fee to 500.
+	pool.SetBlobBaseFee(big.NewInt(500))
+
+	// Blob tx with blobFeeCap=100, below blobBaseFee=500: should fail.
+	txLow := makeBlobTxWithBlobFee(testSender, 0, 10, 200, 21000, 100, []types.Hash{hash})
+	err := pool.AddLocal(txLow)
+	if err != ErrBlobFeeCapBelowBaseFee {
+		t.Errorf("expected ErrBlobFeeCapBelowBaseFee, got: %v", err)
+	}
+
+	// Blob tx with blobFeeCap=499, just below: should fail.
+	txJust := makeBlobTxWithBlobFee(testSender, 0, 10, 200, 21000, 499, []types.Hash{hash})
+	err = pool.AddLocal(txJust)
+	if err != ErrBlobFeeCapBelowBaseFee {
+		t.Errorf("expected ErrBlobFeeCapBelowBaseFee for blobFeeCap=499, got: %v", err)
+	}
+
+	// Blob tx with blobFeeCap=500, equal to blobBaseFee: should succeed.
+	txEqual := makeBlobTxWithBlobFee(testSender, 0, 10, 200, 21000, 500, []types.Hash{hash})
+	err = pool.AddLocal(txEqual)
+	if err != nil {
+		t.Errorf("expected success for blobFeeCap==blobBaseFee, got: %v", err)
+	}
+
+	// Blob tx with blobFeeCap=1000, above blobBaseFee: should succeed.
+	txAbove := makeBlobTxWithBlobFee(testSender, 1, 10, 200, 21000, 1000, []types.Hash{hash})
+	err = pool.AddLocal(txAbove)
+	if err != nil {
+		t.Errorf("expected success for blobFeeCap>blobBaseFee, got: %v", err)
+	}
+}
+
+// TestValidateTx_BlobTx_NoBlobBaseFee verifies that when blobBaseFee is nil,
+// the blob fee cap check is skipped.
+func TestValidateTx_BlobTx_NoBlobBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	hash := types.Hash{0x01}
+
+	// No blob base fee set, low blob fee cap should be fine.
+	tx := makeBlobTxWithBlobFee(testSender, 0, 10, 200, 21000, 1, []types.Hash{hash})
+	err := pool.AddLocal(tx)
+	if err != nil {
+		t.Errorf("expected success without blobBaseFee, got: %v", err)
+	}
+}
+
+// TestValidateTx_RLPSizeLimit verifies that transactions exceeding 128KB encoded
+// RLP size are rejected.
+func TestValidateTx_RLPSizeLimit(t *testing.T) {
+	pool, _ := newRichPool()
+	to := types.BytesToAddress([]byte{0xde, 0xad})
+
+	// A transaction with ~127KB of data should succeed (RLP overhead is small).
+	okData := make([]byte, 127*1024)
+	txOk := types.NewTransaction(&types.LegacyTx{
+		Nonce:    0,
+		GasPrice: big.NewInt(1000),
+		Gas:      5_000_000,
+		To:       &to,
+		Value:    big.NewInt(0),
+		Data:     okData,
+	})
+	txOk.SetSender(testSender)
+	err := pool.AddLocal(txOk)
+	if err != nil {
+		t.Errorf("expected success for ~127KB data, got: %v", err)
+	}
+
+	// A transaction with 128KB of data exceeds the RLP limit due to overhead.
+	bigData := make([]byte, MaxTxSize)
+	txBig := types.NewTransaction(&types.LegacyTx{
+		Nonce:    1,
+		GasPrice: big.NewInt(1000),
+		Gas:      5_000_000,
+		To:       &to,
+		Value:    big.NewInt(0),
+		Data:     bigData,
+	})
+	txBig.SetSender(testSender)
+	err = pool.AddLocal(txBig)
+	if err != ErrOversizedRLP {
+		t.Errorf("expected ErrOversizedRLP for 128KB data, got: %v", err)
+	}
+}
+
+// TestValidateTx_AccessListGasAccounting verifies that EIP-2930 access list gas
+// is included in intrinsic gas validation.
+func TestValidateTx_AccessListGasAccounting(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	addr1 := types.BytesToAddress([]byte{0xaa})
+	addr2 := types.BytesToAddress([]byte{0xbb})
+	key1 := types.Hash{0x01}
+	key2 := types.Hash{0x02}
+
+	al := types.AccessList{
+		{Address: addr1, StorageKeys: []types.Hash{key1, key2}},
+		{Address: addr2, StorageKeys: nil},
+	}
+
+	// Access list cost: 2 addresses * 2400 + 2 keys * 1900 = 4800 + 3800 = 8600
+	// Total intrinsic: 21000 + 8600 = 29600
+	expectedGas := uint64(21000 + 2*AccessListAddressCost + 2*AccessListStorageCost)
+
+	// Transaction with gas exactly at intrinsic + access list cost: should succeed.
+	txOk := makeAccessListTx(testSender, 0, 1000, expectedGas, al)
+	err := pool.AddLocal(txOk)
+	if err != nil {
+		t.Errorf("expected success with exact gas for access list, got: %v", err)
+	}
+
+	// Transaction with gas 1 below required: should fail.
+	txLow := makeAccessListTx(testSender, 1, 1000, expectedGas-1, al)
+	err = pool.AddLocal(txLow)
+	if err != ErrIntrinsicGas {
+		t.Errorf("expected ErrIntrinsicGas for insufficient access list gas, got: %v", err)
+	}
+
+	// Transaction with no access list: only needs 21000.
+	txNoAL := makeAccessListTx(testSender, 1, 1000, 21000, nil)
+	err = pool.AddLocal(txNoAL)
+	if err != nil {
+		t.Errorf("expected success with no access list, got: %v", err)
+	}
+}
+
+// TestValidateTx_AccessListGasAccounting_DynamicTx verifies that access list gas
+// is also checked for EIP-1559 transactions with access lists.
+func TestValidateTx_AccessListGasAccounting_DynamicTx(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	addr := types.BytesToAddress([]byte{0xaa})
+	key := types.Hash{0x01}
+	al := types.AccessList{
+		{Address: addr, StorageKeys: []types.Hash{key}},
+	}
+
+	// Access list cost: 1 address * 2400 + 1 key * 1900 = 4300
+	// Total intrinsic: 21000 + 4300 = 25300
+	requiredGas := uint64(21000 + AccessListAddressCost + AccessListStorageCost)
+
+	// EIP-1559 tx with access list but insufficient gas.
+	to := types.BytesToAddress([]byte{0xde, 0xad})
+	txLow := types.NewTransaction(&types.DynamicFeeTx{
+		ChainID:    big.NewInt(1),
+		Nonce:      0,
+		GasTipCap:  big.NewInt(10),
+		GasFeeCap:  big.NewInt(200),
+		Gas:        requiredGas - 1,
+		To:         &to,
+		Value:      big.NewInt(0),
+		AccessList: al,
+	})
+	txLow.SetSender(testSender)
+	err := pool.AddLocal(txLow)
+	if err != ErrIntrinsicGas {
+		t.Errorf("expected ErrIntrinsicGas for EIP-1559 tx with access list, got: %v", err)
+	}
+
+	// With enough gas: should succeed.
+	txOk := types.NewTransaction(&types.DynamicFeeTx{
+		ChainID:    big.NewInt(1),
+		Nonce:      0,
+		GasTipCap:  big.NewInt(10),
+		GasFeeCap:  big.NewInt(200),
+		Gas:        requiredGas,
+		To:         &to,
+		Value:      big.NewInt(0),
+		AccessList: al,
+	})
+	txOk.SetSender(testSender)
+	err = pool.AddLocal(txOk)
+	if err != nil {
+		t.Errorf("expected success for EIP-1559 tx with enough gas, got: %v", err)
+	}
+}
+
+// TestAccessListGas verifies the AccessListGas helper function.
+func TestAccessListGas(t *testing.T) {
+	// Nil access list: 0 gas.
+	if g := AccessListGas(nil); g != 0 {
+		t.Errorf("nil access list gas = %d, want 0", g)
+	}
+
+	// Empty access list: 0 gas.
+	if g := AccessListGas(types.AccessList{}); g != 0 {
+		t.Errorf("empty access list gas = %d, want 0", g)
+	}
+
+	// One address, no keys: 2400.
+	al1 := types.AccessList{{Address: types.Address{}, StorageKeys: nil}}
+	if g := AccessListGas(al1); g != AccessListAddressCost {
+		t.Errorf("one address gas = %d, want %d", g, AccessListAddressCost)
+	}
+
+	// One address, two keys: 2400 + 2*1900 = 6200.
+	al2 := types.AccessList{{Address: types.Address{}, StorageKeys: []types.Hash{{}, {}}}}
+	expected := AccessListAddressCost + 2*AccessListStorageCost
+	if g := AccessListGas(al2); g != uint64(expected) {
+		t.Errorf("one address two keys gas = %d, want %d", g, expected)
+	}
+
+	// Three addresses, five keys total.
+	al3 := types.AccessList{
+		{Address: types.Address{0x01}, StorageKeys: []types.Hash{{0x01}, {0x02}}},
+		{Address: types.Address{0x02}, StorageKeys: nil},
+		{Address: types.Address{0x03}, StorageKeys: []types.Hash{{0x03}, {0x04}, {0x05}}},
+	}
+	expected3 := 3*AccessListAddressCost + 5*AccessListStorageCost
+	if g := AccessListGas(al3); g != uint64(expected3) {
+		t.Errorf("three addresses five keys gas = %d, want %d", g, expected3)
+	}
+}
+
+// TestNonceGap_TooHigh verifies that transactions with nonces too far ahead
+// of the sender's current state nonce are rejected.
+func TestNonceGap_TooHigh(t *testing.T) {
+	pool, state := newRichPool()
+	state.nonces[testSender] = 0
+
+	// Nonce exactly at MaxNonceGap boundary: should succeed (queued).
+	txAtLimit := makeTx(MaxNonceGap, 1000, 21000)
+	err := pool.AddLocal(txAtLimit)
+	if err != nil {
+		t.Errorf("expected success for nonce at MaxNonceGap boundary, got: %v", err)
+	}
+	if pool.QueuedCount() != 1 {
+		t.Errorf("QueuedCount = %d, want 1", pool.QueuedCount())
+	}
+
+	// Nonce one above MaxNonceGap: should be rejected.
+	txTooHigh := makeTx(MaxNonceGap+1, 1000, 21000)
+	err = pool.AddLocal(txTooHigh)
+	if err != ErrNonceTooHigh {
+		t.Errorf("expected ErrNonceTooHigh, got: %v", err)
+	}
+
+	// Very large nonce gap: should be rejected.
+	txVeryHigh := makeTx(1000, 1000, 21000)
+	err = pool.AddLocal(txVeryHigh)
+	if err != ErrNonceTooHigh {
+		t.Errorf("expected ErrNonceTooHigh for very large gap, got: %v", err)
+	}
+}
+
+// TestNonceGap_NonZeroStateNonce verifies nonce gap detection with a non-zero
+// state nonce.
+func TestNonceGap_NonZeroStateNonce(t *testing.T) {
+	pool, state := newRichPool()
+	state.nonces[testSender] = 100
+
+	// Nonce 100 (state nonce): should succeed as pending.
+	txCur := makeTx(100, 1000, 21000)
+	err := pool.AddLocal(txCur)
+	if err != nil {
+		t.Errorf("expected success for state nonce, got: %v", err)
+	}
+
+	// Nonce 164 (100 + MaxNonceGap=64): should succeed as queued.
+	txAtLimit := makeTx(100+MaxNonceGap, 1000, 21000)
+	err = pool.AddLocal(txAtLimit)
+	if err != nil {
+		t.Errorf("expected success at MaxNonceGap from state nonce, got: %v", err)
+	}
+
+	// Nonce 165 (100 + MaxNonceGap + 1): should be rejected.
+	txOver := makeTx(100+MaxNonceGap+1, 1000, 21000)
+	err = pool.AddLocal(txOver)
+	if err != ErrNonceTooHigh {
+		t.Errorf("expected ErrNonceTooHigh, got: %v", err)
+	}
+}
+
+// TestReplaceByFee_EIP1559_TipBump verifies that EIP-1559 replacement
+// transactions must bump both the effective gas price AND the tip cap.
+func TestReplaceByFee_EIP1559_TipBump(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	// Add original EIP-1559 tx: tipCap=100, feeCap=200.
+	orig := makeDynamicTx(testSender, 0, 100, 200, 21000)
+	if err := pool.AddLocal(orig); err != nil {
+		t.Fatalf("AddLocal original: %v", err)
+	}
+
+	// Replace with higher feeCap but same tip: tipCap=100, feeCap=300.
+	// The effective price may be higher but tip isn't bumped by 10%.
+	noTipBump := makeDynamicTx(testSender, 0, 100, 300, 21000)
+	err := pool.AddLocal(noTipBump)
+	if err != ErrReplacementUnderpriced {
+		t.Errorf("expected ErrReplacementUnderpriced for no tip bump, got: %v", err)
+	}
+
+	// Replace with sufficient bumps on both: tipCap=110 (10% of 100), feeCap=220 (10% of 200).
+	goodReplace := makeDynamicTx(testSender, 0, 110, 220, 21000)
+	err = pool.AddLocal(goodReplace)
+	if err != nil {
+		t.Errorf("expected success for sufficient EIP-1559 bump, got: %v", err)
+	}
+
+	// Verify replacement happened.
+	if pool.Count() != 1 {
+		t.Errorf("pool count = %d, want 1", pool.Count())
+	}
+	if pool.Get(orig.Hash()) != nil {
+		t.Error("original tx should have been replaced")
+	}
+	if pool.Get(goodReplace.Hash()) == nil {
+		t.Error("replacement tx should be in pool")
+	}
+}
+
+// TestReplaceByFee_LegacyToLegacy verifies that legacy-to-legacy replacement
+// only requires the effective gas price bump (no separate tip check).
+func TestReplaceByFee_LegacyToLegacy(t *testing.T) {
+	pool, _ := newRichPool()
+
+	// Add original legacy tx with gas price 1000.
+	orig := makeTx(0, 1000, 21000)
+	if err := pool.AddLocal(orig); err != nil {
+		t.Fatalf("AddLocal original: %v", err)
+	}
+
+	// Replace with 10% bump (1100): should succeed.
+	replacement := makeTx(0, 1100, 21000)
+	err := pool.AddLocal(replacement)
+	if err != nil {
+		t.Errorf("expected success for legacy 10%% bump, got: %v", err)
+	}
+	if pool.Count() != 1 {
+		t.Errorf("pool count = %d, want 1", pool.Count())
+	}
+}
+
+// TestReplaceByFee_QueuedTx_Replacement verifies that replace-by-fee also
+// works for queued (future) transactions.
+func TestReplaceByFee_QueuedTx_Replacement(t *testing.T) {
+	pool, state := newRichPool()
+	state.nonces[testSender] = 0
+
+	// Add future tx at nonce 5 (queued).
+	orig := makeTx(5, 1000, 21000)
+	if err := pool.AddLocal(orig); err != nil {
+		t.Fatalf("AddLocal queued tx: %v", err)
+	}
+	if pool.QueuedCount() != 1 {
+		t.Fatalf("QueuedCount = %d, want 1", pool.QueuedCount())
+	}
+
+	// Replace queued tx with insufficient bump: should fail.
+	lowReplace := makeTx(5, 1050, 21000)
+	err := pool.AddLocal(lowReplace)
+	if err != ErrReplacementUnderpriced {
+		t.Errorf("expected ErrReplacementUnderpriced for queued replacement, got: %v", err)
+	}
+
+	// Replace queued tx with sufficient bump.
+	goodReplace := makeTx(5, 1100, 21000)
+	err = pool.AddLocal(goodReplace)
+	if err != nil {
+		t.Errorf("expected success for queued replacement, got: %v", err)
+	}
+
+	// Original should be replaced.
+	if pool.Get(orig.Hash()) != nil {
+		t.Error("original queued tx should have been replaced")
+	}
+	if pool.Get(goodReplace.Hash()) == nil {
+		t.Error("replacement queued tx should be in pool")
+	}
+}
+
+// TestSetBlobBaseFee verifies the SetBlobBaseFee method.
+func TestSetBlobBaseFee(t *testing.T) {
+	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
+	pool := New(DefaultConfig(), state)
+
+	hash := types.Hash{0x01}
+
+	// Initially no blob base fee, low blob fee cap should work.
+	txLow := makeBlobTxWithBlobFee(testSender, 0, 10, 200, 21000, 1, []types.Hash{hash})
+	err := pool.AddLocal(txLow)
+	if err != nil {
+		t.Errorf("expected success without blobBaseFee, got: %v", err)
+	}
+
+	// Set blob base fee to 100.
+	pool.SetBlobBaseFee(big.NewInt(100))
+
+	// Now a tx with blob fee cap 50 should be rejected.
+	txReject := makeBlobTxWithBlobFee(testSender, 1, 10, 200, 21000, 50, []types.Hash{hash})
+	err = pool.AddLocal(txReject)
+	if err != ErrBlobFeeCapBelowBaseFee {
+		t.Errorf("expected ErrBlobFeeCapBelowBaseFee after setting blob base fee, got: %v", err)
+	}
+
+	// A tx with blob fee cap 200 should succeed.
+	txOk := makeBlobTxWithBlobFee(testSender, 1, 10, 200, 21000, 200, []types.Hash{hash})
+	err = pool.AddLocal(txOk)
+	if err != nil {
+		t.Errorf("expected success with sufficient blob fee cap, got: %v", err)
+	}
+}
+
+// TestNonceGap_FillGap_Promotion verifies that filling a nonce gap properly
+// promotes all sequential queued transactions to pending.
+func TestNonceGap_FillGap_Promotion(t *testing.T) {
+	pool, state := newRichPool()
+	state.nonces[testSender] = 0
+
+	// Add nonces 0, 2, 3, 4 (gap at 1).
+	pool.AddLocal(makeTx(0, 1000, 21000)) // pending
+	pool.AddLocal(makeTx(2, 1000, 21000)) // queued
+	pool.AddLocal(makeTx(3, 1000, 21000)) // queued
+	pool.AddLocal(makeTx(4, 1000, 21000)) // queued
+
+	if pool.PendingCount() != 1 {
+		t.Fatalf("PendingCount = %d, want 1", pool.PendingCount())
+	}
+	if pool.QueuedCount() != 3 {
+		t.Fatalf("QueuedCount = %d, want 3", pool.QueuedCount())
+	}
+
+	// Fill the gap at nonce 1.
+	err := pool.AddLocal(makeTx(1, 1000, 21000))
+	if err != nil {
+		t.Fatalf("AddLocal nonce 1: %v", err)
+	}
+
+	// All 5 txs should now be pending.
+	if pool.PendingCount() != 5 {
+		t.Errorf("PendingCount after fill = %d, want 5", pool.PendingCount())
+	}
+	if pool.QueuedCount() != 0 {
+		t.Errorf("QueuedCount after fill = %d, want 0", pool.QueuedCount())
+	}
+}
+
+// TestNonceGap_MultipleGaps verifies that only contiguous sequences are promoted.
+func TestNonceGap_MultipleGaps(t *testing.T) {
+	pool, state := newRichPool()
+	state.nonces[testSender] = 0
+
+	// Add nonces 0, 2, 5 (gaps at 1 and 3-4).
+	pool.AddLocal(makeTx(0, 1000, 21000)) // pending
+	pool.AddLocal(makeTx(2, 1000, 21000)) // queued
+	pool.AddLocal(makeTx(5, 1000, 21000)) // queued
+
+	if pool.PendingCount() != 1 {
+		t.Fatalf("PendingCount = %d, want 1", pool.PendingCount())
+	}
+	if pool.QueuedCount() != 2 {
+		t.Fatalf("QueuedCount = %d, want 2", pool.QueuedCount())
+	}
+
+	// Fill gap at nonce 1: promotes nonce 2 but not nonce 5 (gap at 3-4).
+	pool.AddLocal(makeTx(1, 1000, 21000))
+	if pool.PendingCount() != 3 {
+		t.Errorf("PendingCount after partial fill = %d, want 3", pool.PendingCount())
+	}
+	if pool.QueuedCount() != 1 {
+		t.Errorf("QueuedCount after partial fill = %d, want 1", pool.QueuedCount())
 	}
 }

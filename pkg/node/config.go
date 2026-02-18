@@ -5,6 +5,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -18,6 +19,10 @@ type Config struct {
 
 	// Network selects the Ethereum network (mainnet, sepolia, holesky).
 	Network string
+
+	// NetworkID is the numeric network identifier. Common values:
+	// 1 = mainnet, 11155111 = sepolia, 17000 = holesky.
+	NetworkID uint64
 
 	// SyncMode selects the sync strategy (full, snap).
 	SyncMode string
@@ -36,20 +41,41 @@ type Config struct {
 
 	// LogLevel controls log verbosity (debug, info, warn, error).
 	LogLevel string
+
+	// Verbosity controls numeric log level (0=silent, 1=error, 2=warn,
+	// 3=info, 4=debug, 5=trace). When set, overrides LogLevel.
+	Verbosity int
+
+	// Metrics enables the metrics collection subsystem.
+	Metrics bool
+}
+
+// defaultDataDir returns the platform-specific default data directory.
+// Falls back to ".eth2028" in the current directory if the home directory
+// cannot be determined.
+func defaultDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ".eth2028"
+	}
+	return filepath.Join(home, ".eth2028")
 }
 
 // DefaultConfig returns a Config with sensible defaults.
 func DefaultConfig() Config {
 	return Config{
-		DataDir:    "eth2028-data",
+		DataDir:    defaultDataDir(),
 		Name:       "eth2028",
 		Network:    "mainnet",
-		SyncMode:   "full",
+		NetworkID:  1,
+		SyncMode:   "snap",
 		P2PPort:    30303,
 		RPCPort:    8545,
 		EnginePort: 8551,
 		MaxPeers:   50,
 		LogLevel:   "info",
+		Verbosity:  3,
+		Metrics:    false,
 	}
 }
 
@@ -70,6 +96,9 @@ func (c *Config) Validate() error {
 	if c.MaxPeers < 0 {
 		return fmt.Errorf("config: invalid max peers: %d", c.MaxPeers)
 	}
+	if c.Verbosity < 0 || c.Verbosity > 5 {
+		return fmt.Errorf("config: verbosity must be 0-5, got %d", c.Verbosity)
+	}
 	switch c.Network {
 	case "mainnet", "sepolia", "holesky":
 	default:
@@ -84,6 +113,51 @@ func (c *Config) Validate() error {
 	case "debug", "info", "warn", "error":
 	default:
 		return fmt.Errorf("config: unknown log level %q", c.LogLevel)
+	}
+	return nil
+}
+
+// VerbosityToLogLevel converts a numeric verbosity level to a log level string.
+func VerbosityToLogLevel(v int) string {
+	switch {
+	case v <= 0:
+		return "error" // silent maps to error-only
+	case v == 1:
+		return "error"
+	case v == 2:
+		return "warn"
+	case v == 3:
+		return "info"
+	default:
+		return "debug" // 4 and 5 both map to debug
+	}
+}
+
+// dataDirSubdirs lists subdirectories created inside the data directory.
+var dataDirSubdirs = []string{
+	"chaindata",
+	"keystore",
+	"nodes",
+}
+
+// InitDataDir creates the data directory and its standard subdirectories
+// if they do not already exist. Returns an error if directory creation fails.
+func (c *Config) InitDataDir() error {
+	if c.DataDir == "" {
+		return errors.New("config: datadir must not be empty")
+	}
+
+	// Create the root data directory.
+	if err := os.MkdirAll(c.DataDir, 0700); err != nil {
+		return fmt.Errorf("config: create datadir: %w", err)
+	}
+
+	// Create standard subdirectories.
+	for _, sub := range dataDirSubdirs {
+		dir := filepath.Join(c.DataDir, sub)
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			return fmt.Errorf("config: create %s: %w", sub, err)
+		}
 	}
 	return nil
 }

@@ -332,10 +332,14 @@ func (s *SnapSyncer) IsRunning() bool {
 
 // Cancel stops the snap sync process.
 func (s *SnapSyncer) Cancel() {
+	s.mu.Lock()
+	ch := s.cancel
+	s.mu.Unlock()
+
 	select {
-	case <-s.cancel:
+	case <-ch:
 	default:
-		close(s.cancel)
+		close(ch)
 	}
 }
 

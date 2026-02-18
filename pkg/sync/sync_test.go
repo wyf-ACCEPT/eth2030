@@ -242,8 +242,8 @@ func TestBodyFetcher_RequestDeliver(t *testing.T) {
 
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
-	if cfg.Mode != ModeFull {
-		t.Fatalf("default mode: want full, got %s", cfg.Mode)
+	if cfg.Mode != ModeSnap {
+		t.Fatalf("default mode: want snap, got %s", cfg.Mode)
 	}
 	if cfg.BatchSize != 192 {
 		t.Fatalf("batch size: want 192, got %d", cfg.BatchSize)

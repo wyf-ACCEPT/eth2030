@@ -23,9 +23,6 @@ type PrecompiledContract interface {
 	Run(input []byte) ([]byte, error)
 }
 
-// Precompile error for unimplemented BN254 operations.
-var ErrBN254NotImplemented = errors.New("bn254 precompile: cryptographic operation not implemented")
-
 // PrecompiledContractsCancun contains the default set of pre-compiled contracts.
 var PrecompiledContractsCancun = map[types.Address]PrecompiledContract{
 	types.BytesToAddress([]byte{1}):    &ecrecover{},

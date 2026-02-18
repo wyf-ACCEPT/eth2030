@@ -1,6 +1,8 @@
 package node
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -20,6 +22,30 @@ func TestDefaultConfig(t *testing.T) {
 	}
 	if cfg.Network != "mainnet" {
 		t.Errorf("expected network mainnet, got %s", cfg.Network)
+	}
+	if cfg.NetworkID != 1 {
+		t.Errorf("expected network id 1, got %d", cfg.NetworkID)
+	}
+	if cfg.SyncMode != "snap" {
+		t.Errorf("expected sync mode snap, got %s", cfg.SyncMode)
+	}
+	if cfg.MaxPeers != 50 {
+		t.Errorf("expected max peers 50, got %d", cfg.MaxPeers)
+	}
+	if cfg.Verbosity != 3 {
+		t.Errorf("expected verbosity 3, got %d", cfg.Verbosity)
+	}
+	if cfg.Metrics {
+		t.Error("expected metrics false by default")
+	}
+
+	// DataDir should point to ~/.eth2028.
+	home, err := os.UserHomeDir()
+	if err == nil {
+		want := filepath.Join(home, ".eth2028")
+		if cfg.DataDir != want {
+			t.Errorf("expected DataDir %q, got %q", want, cfg.DataDir)
+		}
 	}
 }
 
@@ -67,6 +93,31 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name:    "holesky network",
 			modify:  func(c *Config) { c.Network = "holesky" },
+			wantErr: false,
+		},
+		{
+			name:    "verbosity too low",
+			modify:  func(c *Config) { c.Verbosity = -1 },
+			wantErr: true,
+		},
+		{
+			name:    "verbosity too high",
+			modify:  func(c *Config) { c.Verbosity = 6 },
+			wantErr: true,
+		},
+		{
+			name:    "verbosity zero",
+			modify:  func(c *Config) { c.Verbosity = 0 },
+			wantErr: false,
+		},
+		{
+			name:    "verbosity five",
+			modify:  func(c *Config) { c.Verbosity = 5 },
+			wantErr: false,
+		},
+		{
+			name:    "sync mode full",
+			modify:  func(c *Config) { c.SyncMode = "full" },
 			wantErr: false,
 		},
 	}
@@ -331,5 +382,111 @@ func TestNode_Backend(t *testing.T) {
 	price := backend.SuggestGasPrice()
 	if price == nil || price.Sign() <= 0 {
 		t.Error("SuggestGasPrice() should return positive value")
+	}
+}
+
+func TestVerbosityToLogLevel(t *testing.T) {
+	tests := []struct {
+		verbosity int
+		wantLevel string
+	}{
+		{0, "error"},
+		{1, "error"},
+		{2, "warn"},
+		{3, "info"},
+		{4, "debug"},
+		{5, "debug"},
+	}
+	for _, tt := range tests {
+		got := VerbosityToLogLevel(tt.verbosity)
+		if got != tt.wantLevel {
+			t.Errorf("VerbosityToLogLevel(%d) = %q, want %q", tt.verbosity, got, tt.wantLevel)
+		}
+	}
+}
+
+func TestInitDataDir(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "eth2028-test")
+
+	cfg := DefaultConfig()
+	cfg.DataDir = dir
+
+	if err := cfg.InitDataDir(); err != nil {
+		t.Fatalf("InitDataDir() error: %v", err)
+	}
+
+	// Verify root directory.
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("datadir not created: %v", err)
+	}
+	if !info.IsDir() {
+		t.Fatal("datadir is not a directory")
+	}
+
+	// Verify subdirectories.
+	for _, sub := range dataDirSubdirs {
+		subpath := filepath.Join(dir, sub)
+		info, err := os.Stat(subpath)
+		if err != nil {
+			t.Errorf("subdir %q not created: %v", sub, err)
+			continue
+		}
+		if !info.IsDir() {
+			t.Errorf("subdir %q is not a directory", sub)
+		}
+	}
+}
+
+func TestInitDataDir_Idempotent(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "eth2028-test")
+
+	cfg := DefaultConfig()
+	cfg.DataDir = dir
+
+	if err := cfg.InitDataDir(); err != nil {
+		t.Fatalf("first InitDataDir() error: %v", err)
+	}
+
+	// Write a file to verify it is not deleted.
+	marker := filepath.Join(dir, "chaindata", "marker")
+	if err := os.WriteFile(marker, []byte("test"), 0600); err != nil {
+		t.Fatalf("write marker: %v", err)
+	}
+
+	if err := cfg.InitDataDir(); err != nil {
+		t.Fatalf("second InitDataDir() error: %v", err)
+	}
+
+	// Verify marker still exists.
+	if _, err := os.Stat(marker); err != nil {
+		t.Errorf("marker file removed after second init: %v", err)
+	}
+}
+
+func TestInitDataDir_EmptyPath(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.DataDir = ""
+	if err := cfg.InitDataDir(); err == nil {
+		t.Fatal("expected error for empty datadir")
+	}
+}
+
+func TestConfig_ResolvePath(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.DataDir = "/data/eth2028"
+
+	// Relative path should be resolved under datadir.
+	got := cfg.ResolvePath("chaindata")
+	want := "/data/eth2028/chaindata"
+	if got != want {
+		t.Errorf("ResolvePath(chaindata) = %q, want %q", got, want)
+	}
+
+	// Absolute path should be returned as-is.
+	got = cfg.ResolvePath("/absolute/path")
+	want = "/absolute/path"
+	if got != want {
+		t.Errorf("ResolvePath(/absolute/path) = %q, want %q", got, want)
 	}
 }

@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	ErrNotImplemented        = errors.New("not implemented")
 	ErrOutOfGas              = errors.New("out of gas")
 	ErrStackOverflow         = errors.New("stack overflow")
 	ErrStackUnderflow        = errors.New("stack underflow")

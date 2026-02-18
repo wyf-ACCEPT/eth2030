@@ -6,67 +6,76 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering parallel execution (EIP-7928), ePBS (EIP-7732), Verkle
 state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography.
 
+**Status**: 22 packages, ~36K LOC source, ~60K LOC tests, 2000+ passing tests.
+
 ## Architecture
 
 ```
-                 ┌──────────────────────────────┐
-                 │     Consensus Client (CL)     │
-                 └──────────┬───────────────────┘
-                            │ Engine API (JSON-RPC)
-                 ┌──────────▼───────────────────┐
-                 │      Engine API Server         │
-                 │  newPayloadV4/V5, fcuV3/V4    │
-                 └──────────┬───────────────────┘
-                            │
-          ┌─────────────────┼─────────────────┐
-          │                 │                  │
- ┌────────▼──────┐ ┌───────▼───────┐ ┌────────▼──────┐
- │  Block Builder │ │ Block Validator│ │ Payload Store │
- └────────┬──────┘ └───────┬───────┘ └───────────────┘
-          │                 │
- ┌────────▼─────────────────▼──────┐
- │          State Processor         │
- │   Sequential -> Parallel (7928) │
- └────────┬────────────────────────┘
-          │
- ┌────────▼──────────────────────┐
- │          EVM Interpreter       │
- │  Opcodes, Precompiles, Gas    │
- └────────┬──────────────────────┘
-          │
- ┌────────▼──────────────────────┐
- │          StateDB               │
- │  Accounts, Storage, Code      │
- └────────┬──────────────────────┘
-          │
- ┌────────▼──────────────────────┐
- │     Trie Database              │
- │  MPT -> Verkle (EIP-6800)     │
- └────────┬──────────────────────┘
-          │
- ┌────────▼──────────────────────┐
- │     Key-Value Store            │
- └──────────────────────────────┘
+                 +------------------------------+
+                 |     Consensus Client (CL)     |
+                 +--------------+---------------+
+                                | Engine API (JSON-RPC)
+                 +--------------v---------------+
+                 |      Engine API Server         |
+                 |  newPayloadV3-V5, fcuV3/V4    |
+                 +--------------+---------------+
+                                |
+          +---------------------+------------------+
+          |                     |                   |
+ +--------v------+  +----------v--------+  +-------v-------+
+ |  Block Builder |  |  Block Validator  |  | Payload Store |
+ +--------+------+  +----------+--------+  +---------------+
+          |                     |
+ +--------v---------------------v------+
+ |          State Processor             |
+ |   Sequential -> Parallel (EIP-7928) |
+ +--------+----------------------------+
+          |
+ +--------v--------------------------+
+ |          EVM Interpreter           |
+ |  140+ Opcodes, 18 Precompiles     |
+ +--------+--------------------------+
+          |
+ +--------v--------------------------+     +-------------------+
+ |          StateDB                   |---->|  Transaction Pool |
+ |  Accounts, Storage, Code, Logs    |     +-------------------+
+ +--------+--------------------------+
+          |
+ +--------v--------------------------+     +-------------------+
+ |     Trie / Verkle                  |---->|  P2P / Sync       |
+ |  MPT + Verkle (EIP-6800)          |     +-------------------+
+ +--------+--------------------------+
+          |
+ +--------v--------------------------+
+ |     Key-Value Store (rawdb)        |
+ +-----------------------------------+
 ```
 
 ## Package Structure
 
-| Package | Description |
-|---------|-------------|
-| `pkg/core` | Blockchain, state processor, block builder, block validator, base fee logic |
-| `pkg/core/types` | Core Ethereum types: Header, Transaction (5 types), Receipt, Block, Account |
-| `pkg/core/state` | StateDB interface and in-memory implementation |
-| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 9 precompiles, gas tables (Frontier-Glamsterdan) |
-| `pkg/core/rawdb` | Raw database access for blocks, receipts, tx lookups |
-| `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B |
-| `pkg/crypto` | Keccak-256 hashing, secp256k1 ECDSA |
-| `pkg/engine` | Engine API server (V3-V6), forkchoice, payload building |
-| `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution |
-| `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier |
-| `pkg/txpool` | Transaction pool with validation, replace-by-fee, eviction |
-| `pkg/rpc` | JSON-RPC server with eth_* namespace, filters, subscriptions |
-| `pkg/trie` | Merkle Patricia Trie for state/tx/receipt roots |
-| `pkg/p2p` | P2P networking: discovery, DEVp2p, ETH wire protocol |
+| Package | Description | Status |
+|---------|-------------|--------|
+| `pkg/core` | Blockchain, state processor, block builder, validator, fee logic | Complete |
+| `pkg/core/types` | Header, Transaction (5 types), Receipt, Block, Account | Complete |
+| `pkg/core/state` | StateDB interface, in-memory impl, trie-backed state | Complete |
+| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 18 precompiles, gas tables | Complete |
+| `pkg/core/rawdb` | FileDB with WAL, block/receipt/tx storage | Complete |
+| `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
+| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381 | Complete |
+| `pkg/engine` | Engine API server (V3-V6), forkchoice, payload building | Complete |
+| `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
+| `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier | Framework |
+| `pkg/txpool` | Transaction pool: validation, replace-by-fee, eviction | Complete |
+| `pkg/rpc` | JSON-RPC server, 30+ eth_* methods, filters, subscriptions | Complete |
+| `pkg/trie` | Merkle Patricia Trie with proofs | Complete |
+| `pkg/verkle` | Verkle tree types, key derivation (EIP-6800) | Stub |
+| `pkg/p2p` | Peer management, ETH wire protocol, discovery | Framework |
+| `pkg/sync` | Full sync + snap sync pipeline, header-first strategy | Framework |
+| `pkg/eth` | ETH protocol handler, codec, message types | Complete |
+| `pkg/node` | Client node: config, lifecycle, subsystem integration | Complete |
+| `pkg/cmd/eth2028` | CLI binary with flags, signal handling | Complete |
+| `pkg/log` | Structured logging (JSON/text) | Complete |
+| `pkg/metrics` | Counters, gauges, histograms, Prometheus export | Complete |
 
 ## Build & Test
 
@@ -78,24 +87,37 @@ go test ./...
 
 ## EIP Coverage
 
-### Implemented
+### Fully Implemented
 
-| EIP | Name | Status |
-|-----|------|--------|
-| 7928 | Block Access Lists | Types, tracker, header hash, block builder integration |
-| 7685 | EL Requests | Request processing, deposit/withdrawal/consolidation |
-| 7702 | Set Code for EOAs | Transaction type 0x04 |
-| 7904 | Gas Repricing | Glamsterdan jump table with updated gas costs |
-| 4844 | Blob Transactions | Transaction type 0x03 |
-| 1559 | Dynamic Fee Transactions | Transaction type 0x02, base fee calculation |
-| 2930 | Access List Transactions | Transaction type 0x01 |
-| 2929 | Gas Cost for State Access | Cold/warm access tracking, dynamic gas |
-| 8025 | Execution Proofs | Witness collector, verifier interface, proof types |
-| 6800 | Verkle Trees | Witness types, stateless validation framework |
-| 7732 | Enshrined PBS | Engine API types V1-V5 |
-| 150 | Gas Cost Changes (63/64 Rule) | CALL/CREATE gas forwarding |
+| EIP | Name | Details |
+|-----|------|---------|
+| 1559 | Dynamic Fee Market | Base fee calculation, type 0x02 transactions |
+| 2718 | Typed Transactions | Full envelope encoding for all 5 tx types |
+| 2929 | Gas Cost for State Access | Cold/warm tracking, dynamic gas costs |
+| 2930 | Access List Transactions | Type 0x01, access list gas accounting |
 | 2200 | SSTORE Gas Metering | Net gas metering with refunds |
-| 3529 | Reduction in Refunds | Post-London refund cap |
+| 2537 | BLS12-381 Precompiles | All 9 precompiles (0x0b-0x13) |
+| 3529 | Reduction in Refunds | Post-London 50% refund cap |
+| 4844 | Blob Transactions | Type 0x03, versioned hashes, blob gas |
+| 4895 | Withdrawals | Post-Shanghai withdrawal processing |
+| 5656 | MCOPY Opcode | Memory copy operation |
+| 7685 | EL Requests | Deposit/withdrawal/consolidation requests |
+| 7702 | Set Code for EOAs | Type 0x04, authorization signatures |
+| 7904 | Gas Repricing | Glamsterdan jump table |
+| 7928 | Block Access Lists | Tracking, hashing, parallel execution |
+| 1153 | Transient Storage | TLOAD/TSTORE opcodes |
+| 150 | Gas Cost Changes | 63/64 rule for CALL gas forwarding |
+| 152 | BLAKE2 Precompile | Precompile 0x09 |
+| 196/197 | BN254 Pairing | Precompiles 0x06-0x08 |
+
+### Partially Implemented
+
+| EIP | Name | Gap |
+|-----|------|-----|
+| 4844 | KZG Point Evaluation | Format validation only; crypto verification stubbed |
+| 6800 | Verkle Trees | Placeholder hashes; Banderwagon curve not implemented |
+| 7732 | Enshrined PBS | Engine API types defined; builder consensus partial |
+| 8025 | Execution Proofs | Witness collector complete; verification framework only |
 
 ### Planned
 
@@ -105,7 +127,7 @@ go test ./...
 | 8079 | EXECUTE Precompile | K+ |
 | 4444 | History Expiry | Hogota |
 
-## Engine API Methods
+## Engine API
 
 | Method | Fork | Status |
 |--------|------|--------|
@@ -114,52 +136,27 @@ go test ./...
 | `engine_newPayloadV5` | Amsterdam | Implemented |
 | `engine_forkchoiceUpdatedV3` | Cancun | Implemented |
 | `engine_forkchoiceUpdatedV4` | Amsterdam | Implemented |
-| `engine_getPayloadV3` | Cancun | Implemented |
-| `engine_getPayloadV4` | Prague | Implemented |
-| `engine_getPayloadV6` | Amsterdam | Implemented |
+| `engine_getPayloadV3/V4/V6` | Cancun-Amsterdam | Implemented |
 | `engine_exchangeCapabilities` | All | Implemented |
 | `engine_getClientVersionV1` | All | Implemented |
 
-## JSON-RPC Methods
+## JSON-RPC
 
-| Method | Status |
-|--------|--------|
-| `eth_blockNumber` | Implemented |
-| `eth_getBlockByNumber` | Implemented (with fullTx) |
-| `eth_getBlockByHash` | Implemented (with fullTx) |
-| `eth_getBalance` | Implemented |
-| `eth_getTransactionCount` | Implemented |
-| `eth_getCode` | Implemented |
-| `eth_getStorageAt` | Implemented |
-| `eth_call` | Implemented |
-| `eth_estimateGas` | Implemented |
-| `eth_gasPrice` | Implemented |
-| `eth_maxPriorityFeePerGas` | Implemented |
-| `eth_feeHistory` | Implemented |
-| `eth_chainId` | Implemented |
-| `eth_getTransactionByHash` | Implemented |
-| `eth_getTransactionReceipt` | Implemented |
-| `eth_getBlockReceipts` | Implemented |
-| `eth_getLogs` | Implemented |
-| `eth_newFilter` | Implemented |
-| `eth_newBlockFilter` | Implemented |
-| `eth_newPendingTransactionFilter` | Implemented |
-| `eth_getFilterChanges` | Implemented |
-| `eth_getFilterLogs` | Implemented |
-| `eth_uninstallFilter` | Implemented |
-| `eth_subscribe` | Implemented (newHeads, logs, pendingTx) |
-| `eth_unsubscribe` | Implemented |
-| `eth_syncing` | Implemented |
-| `eth_createAccessList` | Implemented |
-| `net_version` | Implemented |
-| `net_peerCount` | Implemented |
-| `web3_clientVersion` | Implemented |
+30+ methods across `eth_*`, `net_*`, `web3_*` namespaces including block/tx
+queries, `eth_call`, `eth_estimateGas`, fee history, log filters, WebSocket
+subscriptions (`newHeads`, `logs`, `pendingTransactions`), and sync status.
 
-## Roadmap
+## Progress
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for the full timeline and
-[docs/DESIGN.md](docs/DESIGN.md) for comprehensive implementation details
-covering all L1 strawmap phases and EIP specifications.
+See [docs/PROGRESS.md](docs/PROGRESS.md) for a detailed gap analysis and
+completion status for each package.
+
+## Docs
+
+- [docs/PROGRESS.md](docs/PROGRESS.md) -- Gap analysis and completion tracking
+- [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
+- [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
+- [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
 
 ## References
 

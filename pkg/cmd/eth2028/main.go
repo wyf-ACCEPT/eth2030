@@ -6,19 +6,19 @@
 //
 // Flags:
 //
-//	-datadir      Data directory for blockchain storage (default: "eth2028-data")
-//	-rpc.port     JSON-RPC HTTP port (default: 8545)
-//	-engine.port  Engine API HTTP port (default: 8551)
-//	-p2p.port     P2P TCP listen port (default: 30303)
-//	-networkid    Network identifier: mainnet, sepolia, holesky (default: "mainnet")
-//	-loglevel     Log verbosity: debug, info, warn, error (default: "info")
-//	-maxpeers     Maximum number of P2P peers (default: 50)
-//	-syncmode     Sync mode: full, snap (default: "full")
-//	-version      Print version and exit
+//	--datadir      Data directory path (default: ~/.eth2028)
+//	--port         P2P listening port (default: 30303)
+//	--http.port    HTTP-RPC port (default: 8545)
+//	--engine.port  Engine API port (default: 8551)
+//	--syncmode     Sync mode: full, snap (default: snap)
+//	--networkid    Network ID (default: 1)
+//	--maxpeers     Max P2P peers (default: 50)
+//	--verbosity    Log level 0-5 (default: 3)
+//	--metrics      Enable metrics collection (default: false)
+//	--version      Print version and exit
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -37,51 +37,47 @@ var (
 )
 
 func main() {
-	os.Exit(run())
+	os.Exit(run(os.Args[1:]))
 }
 
-// run is the actual entry point, returning an exit code. This pattern
-// makes it easy to test the binary without calling os.Exit directly.
-func run() int {
-	cfg := node.DefaultConfig()
-
-	// CLI flags.
-	flag.StringVar(&cfg.DataDir, "datadir", cfg.DataDir, "data directory for blockchain storage")
-	flag.IntVar(&cfg.RPCPort, "rpc.port", cfg.RPCPort, "JSON-RPC HTTP server port")
-	flag.IntVar(&cfg.EnginePort, "engine.port", cfg.EnginePort, "Engine API HTTP server port")
-	flag.IntVar(&cfg.P2PPort, "p2p.port", cfg.P2PPort, "P2P TCP listen port")
-	flag.StringVar(&cfg.Network, "networkid", cfg.Network, "network to join (mainnet, sepolia, holesky)")
-	flag.StringVar(&cfg.LogLevel, "loglevel", cfg.LogLevel, "log verbosity (debug, info, warn, error)")
-	flag.IntVar(&cfg.MaxPeers, "maxpeers", cfg.MaxPeers, "maximum number of P2P peers")
-	flag.StringVar(&cfg.SyncMode, "syncmode", cfg.SyncMode, "sync mode (full, snap)")
-	showVersion := flag.Bool("version", false, "print version and exit")
-
-	flag.Parse()
-
-	if *showVersion {
-		fmt.Printf("eth2028 %s (commit %s)\n", version, commit)
-		return 0
+// run is the actual entry point, returning an exit code. Accepts CLI
+// arguments (without the program name) so it can be tested in isolation.
+func run(args []string) int {
+	cfg, exit, code := parseFlags(args)
+	if exit {
+		return code
 	}
+
+	// Apply verbosity to log level.
+	cfg.LogLevel = node.VerbosityToLogLevel(cfg.Verbosity)
 
 	// Configure log format.
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 
 	// Startup banner showing resolved configuration.
 	log.Printf("eth2028 %s starting", version)
-	log.Printf("  network:     %s", cfg.Network)
 	log.Printf("  datadir:     %s", cfg.DataDir)
-	log.Printf("  rpc port:    %d", cfg.RPCPort)
-	log.Printf("  engine port: %d", cfg.EnginePort)
+	log.Printf("  network id:  %d", cfg.NetworkID)
 	log.Printf("  p2p port:    %d", cfg.P2PPort)
+	log.Printf("  http port:   %d", cfg.RPCPort)
+	log.Printf("  engine port: %d", cfg.EnginePort)
 	log.Printf("  max peers:   %d", cfg.MaxPeers)
 	log.Printf("  sync mode:   %s", cfg.SyncMode)
-	log.Printf("  log level:   %s", cfg.LogLevel)
+	log.Printf("  verbosity:   %d (%s)", cfg.Verbosity, cfg.LogLevel)
+	log.Printf("  metrics:     %v", cfg.Metrics)
 
-	// Validate configuration before creating the node.
+	// Validate configuration before doing any work.
 	if err := cfg.Validate(); err != nil {
 		log.Printf("Invalid configuration: %v", err)
 		return 1
 	}
+
+	// Initialize data directory structure.
+	if err := cfg.InitDataDir(); err != nil {
+		log.Printf("Failed to initialize datadir: %v", err)
+		return 1
+	}
+	log.Printf("Data directory initialized: %s", cfg.DataDir)
 
 	// Create the node (initializes StateDB, blockchain, txpool, RPC, Engine API).
 	n, err := node.New(&cfg)
@@ -110,4 +106,42 @@ func run() int {
 
 	log.Println("Shutdown complete")
 	return 0
+}
+
+// parseFlags parses CLI arguments into a Config. Returns the config, whether
+// the caller should exit immediately, and the exit code.
+func parseFlags(args []string) (node.Config, bool, int) {
+	cfg := node.DefaultConfig()
+	fs := newFlagSet(&cfg)
+
+	showVersion := fs.Bool("version", false, "print version and exit")
+
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return cfg, true, 2
+	}
+
+	if *showVersion {
+		fmt.Printf("eth2028 %s (commit %s)\n", version, commit)
+		return cfg, true, 0
+	}
+
+	return cfg, false, 0
+}
+
+// newFlagSet creates a flag.FlagSet that binds all CLI flags to the given
+// Config. The FlagSet uses ContinueOnError so callers control the error
+// handling behavior.
+func newFlagSet(cfg *node.Config) *flagSet {
+	fs := newCustomFlagSet("eth2028")
+	fs.StringVar(&cfg.DataDir, "datadir", cfg.DataDir, "data directory path")
+	fs.IntVar(&cfg.P2PPort, "port", cfg.P2PPort, "P2P listening port")
+	fs.IntVar(&cfg.RPCPort, "http.port", cfg.RPCPort, "HTTP-RPC server port")
+	fs.IntVar(&cfg.EnginePort, "engine.port", cfg.EnginePort, "Engine API server port")
+	fs.StringVar(&cfg.SyncMode, "syncmode", cfg.SyncMode, "sync mode (full, snap)")
+	fs.Uint64Var(&cfg.NetworkID, "networkid", cfg.NetworkID, "network identifier")
+	fs.IntVar(&cfg.MaxPeers, "maxpeers", cfg.MaxPeers, "maximum number of P2P peers")
+	fs.IntVar(&cfg.Verbosity, "verbosity", cfg.Verbosity, "log level 0-5 (0=silent, 5=trace)")
+	fs.BoolVar(&cfg.Metrics, "metrics", cfg.Metrics, "enable metrics collection")
+	return fs
 }
