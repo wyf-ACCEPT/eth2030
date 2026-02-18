@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/crypto"
 	"golang.org/x/crypto/ripemd160"
 )
 
@@ -411,19 +412,7 @@ func TestKZGPrecompileFieldElementValidation(t *testing.T) {
 
 func TestKZGPrecompileValidInput(t *testing.T) {
 	c := &kzgPointEvaluation{}
-
-	// Build a valid input: versioned_hash = sha256(commitment) with version prefix,
-	// z and y as zero (valid field elements), commitment and proof as 48 zero bytes.
-	commitment := make([]byte, 48)
-	commitHash := sha256Sum(commitment)
-	commitHash[0] = 0x01 // version prefix
-
-	input := make([]byte, 192)
-	copy(input[0:32], commitHash[:])   // versioned_hash
-	// z = 0 (32 zero bytes at input[32:64]) -- valid field element
-	// y = 0 (32 zero bytes at input[64:96]) -- valid field element
-	copy(input[96:144], commitment)    // commitment
-	// proof = 48 zero bytes at input[144:192]
+	input := buildKZGPrecompileInput(t)
 
 	out, err := c.Run(input)
 	if err != nil {
@@ -444,6 +433,20 @@ func TestKZGPrecompileValidInput(t *testing.T) {
 	expectedMod, _ := new(big.Int).SetString("52435875175126190479447740508185965837690552500527637822603658699938581184513", 10)
 	if mod.Cmp(expectedMod) != 0 {
 		t.Errorf("BLS_MODULUS = %s, want %s", mod, expectedMod)
+	}
+}
+
+// TestKZGPrecompileWrongProof tests that an invalid proof is rejected.
+func TestKZGPrecompileWrongProof(t *testing.T) {
+	c := &kzgPointEvaluation{}
+	input := buildKZGPrecompileInput(t)
+
+	// Corrupt the proof (last 48 bytes) by flipping a bit.
+	input[191] ^= 0x01
+
+	_, err := c.Run(input)
+	if err == nil {
+		t.Fatal("expected error for wrong proof")
 	}
 }
 
@@ -469,14 +472,7 @@ func TestKZGPrecompileRegistered(t *testing.T) {
 }
 
 func TestKZGPrecompileViaRunner(t *testing.T) {
-	// Build valid input (same as TestKZGPrecompileValidInput).
-	commitment := make([]byte, 48)
-	commitHash := sha256Sum(commitment)
-	commitHash[0] = 0x01
-
-	input := make([]byte, 192)
-	copy(input[0:32], commitHash[:])
-	copy(input[96:144], commitment)
+	input := buildKZGPrecompileInput(t)
 
 	addr := types.BytesToAddress([]byte{0x0a})
 	out, remainingGas, err := RunPrecompiledContract(addr, input, 100000)
@@ -502,6 +498,43 @@ func TestKZGPrecompileOutOfGas(t *testing.T) {
 // sha256Sum is a helper that returns [32]byte.
 func sha256Sum(data []byte) [32]byte {
 	return sha256.Sum256(data)
+}
+
+// buildKZGPrecompileInput constructs a valid 192-byte KZG point evaluation input
+// using a real commitment and proof for polynomial p(X) = 3X + 7,
+// evaluated at z=5 giving y=22, with trusted setup secret s=42.
+func buildKZGPrecompileInput(t *testing.T) []byte {
+	t.Helper()
+
+	secret := big.NewInt(42)
+	z := big.NewInt(5)
+	polyAtS := big.NewInt(133) // p(s) = 3*42 + 7
+	y := big.NewInt(22)        // p(5) = 22
+
+	commitPoint := crypto.KZGCommit(polyAtS)
+	proofPoint := crypto.KZGComputeProof(secret, z, polyAtS, y)
+
+	commitBytes := crypto.KZGCompressG1(commitPoint)
+	proofBytes := crypto.KZGCompressG1(proofPoint)
+
+	// Build versioned hash: sha256(commitment) with version prefix.
+	commitHash := sha256Sum(commitBytes)
+	commitHash[0] = types.VersionedHashVersionKZG
+
+	// Build 192-byte input: versioned_hash(32) | z(32) | y(32) | commitment(48) | proof(48)
+	input := make([]byte, 192)
+	copy(input[0:32], commitHash[:])
+
+	zBytes := z.Bytes()
+	copy(input[64-len(zBytes):64], zBytes)
+
+	yBytes := y.Bytes()
+	copy(input[96-len(yBytes):96], yBytes)
+
+	copy(input[96:144], commitBytes)
+	copy(input[144:192], proofBytes)
+
+	return input
 }
 
 // buildModExpInput constructs the 96-byte header + data for the modexp precompile.

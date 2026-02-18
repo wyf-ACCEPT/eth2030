@@ -516,9 +516,11 @@ func (c *kzgPointEvaluation) Run(input []byte) ([]byte, error) {
 		return nil, errors.New("kzg: commitment does not match versioned hash")
 	}
 
-	// KZG proof verification is stubbed -- actual cryptographic verification
-	// requires a KZG library with a trusted setup. We validate format only.
-	// In production, verify_kzg_proof(commitment, z, y, proof) would be called here.
+	// KZG proof verification using BLS12-381 pairing.
+	proof := input[144:192]
+	if err := crypto.KZGVerifyFromBytes(commitment, z, y, proof); err != nil {
+		return nil, errors.New("kzg: proof verification failed")
+	}
 
 	// Return FIELD_ELEMENTS_PER_BLOB and BLS_MODULUS as 32-byte big-endian values.
 	result := make([]byte, 64)
