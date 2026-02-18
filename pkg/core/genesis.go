@@ -1,8 +1,11 @@
 package core
 
 import (
+	"encoding/json"
 	"math/big"
 
+	"github.com/eth2028/eth2028/core/rawdb"
+	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
 )
 
@@ -113,6 +116,62 @@ func (g *Genesis) ToBlock() *types.Block {
 	}
 
 	return types.NewBlock(head, nil)
+}
+
+// SetupGenesisBlock initializes a genesis block's state. It applies the genesis
+// allocation (balances, code, nonces, storage) to the given state and returns
+// the genesis block with its state root set.
+func (g *Genesis) SetupGenesisBlock(statedb *state.MemoryStateDB) *types.Block {
+	// Apply genesis alloc to state.
+	for addr, account := range g.Alloc {
+		statedb.CreateAccount(addr)
+		if account.Balance != nil {
+			statedb.AddBalance(addr, account.Balance)
+		}
+		if account.Nonce > 0 {
+			statedb.SetNonce(addr, account.Nonce)
+		}
+		if len(account.Code) > 0 {
+			statedb.SetCode(addr, account.Code)
+		}
+		for key, val := range account.Storage {
+			statedb.SetState(addr, key, val)
+		}
+	}
+
+	// Compute the state root from the genesis state.
+	stateRoot := statedb.GetRoot()
+
+	// Build the genesis block with the computed state root.
+	block := g.ToBlock()
+	header := block.Header()
+	header.Root = stateRoot
+	return types.NewBlock(header, block.Body())
+}
+
+// CommitGenesis initializes the database with the genesis block and state.
+// Returns the initialized blockchain.
+func (g *Genesis) CommitGenesis(db rawdb.Database) (*Blockchain, error) {
+	statedb := state.NewMemoryStateDB()
+	block := g.SetupGenesisBlock(statedb)
+
+	config := g.Config
+	if config == nil {
+		config = TestConfig
+	}
+
+	bc, err := NewBlockchain(config, block, statedb, db)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store genesis config as JSON in rawdb.
+	configData, err := json.Marshal(config)
+	if err == nil {
+		db.Put([]byte("eth2028-chain-config"), configData)
+	}
+
+	return bc, nil
 }
 
 // DefaultGenesisBlock returns the mainnet genesis specification.

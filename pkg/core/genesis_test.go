@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/eth2028/eth2028/core/rawdb"
+	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
 )
 
@@ -444,6 +446,95 @@ func TestPetersburgNilFallback(t *testing.T) {
 	}
 	if cfg.IsPetersburg(big.NewInt(99)) {
 		t.Error("Petersburg should not be active before Constantinople")
+	}
+}
+
+func TestSetupGenesisBlock(t *testing.T) {
+	addr1 := types.HexToAddress("0xaaaa")
+	addr2 := types.HexToAddress("0xbbbb")
+
+	g := &Genesis{
+		Config:     TestConfig,
+		GasLimit:   30_000_000,
+		Difficulty: big.NewInt(1),
+		Alloc: GenesisAlloc{
+			addr1: GenesisAccount{
+				Balance: big.NewInt(1e18),
+				Nonce:   5,
+			},
+			addr2: GenesisAccount{
+				Balance: big.NewInt(2e18),
+				Code:    []byte{0x60, 0x00, 0xf3}, // PUSH1 0 RETURN
+				Storage: map[types.Hash]types.Hash{
+					types.HexToHash("0x01"): types.HexToHash("0xff"),
+				},
+			},
+		},
+	}
+
+	statedb := state.NewMemoryStateDB()
+	block := g.SetupGenesisBlock(statedb)
+
+	// Verify genesis block properties.
+	if block.NumberU64() != 0 {
+		t.Fatalf("genesis number = %d, want 0", block.NumberU64())
+	}
+
+	// Verify state was applied.
+	if got := statedb.GetBalance(addr1); got.Cmp(big.NewInt(1e18)) != 0 {
+		t.Errorf("addr1 balance = %v, want 1e18", got)
+	}
+	if got := statedb.GetNonce(addr1); got != 5 {
+		t.Errorf("addr1 nonce = %d, want 5", got)
+	}
+	if got := statedb.GetBalance(addr2); got.Cmp(big.NewInt(2e18)) != 0 {
+		t.Errorf("addr2 balance = %v, want 2e18", got)
+	}
+	if got := statedb.GetCode(addr2); len(got) != 3 {
+		t.Errorf("addr2 code length = %d, want 3", len(got))
+	}
+	if got := statedb.GetState(addr2, types.HexToHash("0x01")); got != types.HexToHash("0xff") {
+		t.Errorf("addr2 storage[0x01] = %v, want 0xff", got)
+	}
+
+	// State root should be non-empty.
+	header := block.Header()
+	if header.Root == (types.Hash{}) {
+		t.Error("genesis state root should not be zero")
+	}
+}
+
+func TestCommitGenesis(t *testing.T) {
+	g := &Genesis{
+		Config:     TestConfig,
+		GasLimit:   30_000_000,
+		Difficulty: big.NewInt(1),
+		Alloc: GenesisAlloc{
+			types.HexToAddress("0xaaaa"): GenesisAccount{
+				Balance: big.NewInt(1e18),
+			},
+		},
+	}
+
+	db := rawdb.NewMemoryDB()
+	bc, err := g.CommitGenesis(db)
+	if err != nil {
+		t.Fatalf("CommitGenesis error: %v", err)
+	}
+
+	// Verify blockchain is initialized.
+	if bc.Genesis().NumberU64() != 0 {
+		t.Errorf("genesis number = %d, want 0", bc.Genesis().NumberU64())
+	}
+	if bc.CurrentBlock().NumberU64() != 0 {
+		t.Errorf("current block = %d, want 0", bc.CurrentBlock().NumberU64())
+	}
+
+	// Verify state.
+	st := bc.State()
+	addr := types.HexToAddress("0xaaaa")
+	if got := st.GetBalance(addr); got.Cmp(big.NewInt(1e18)) != 0 {
+		t.Errorf("balance after CommitGenesis = %v, want 1e18", got)
 	}
 }
 

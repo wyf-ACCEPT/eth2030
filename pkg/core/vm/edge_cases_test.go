@@ -190,6 +190,7 @@ func (m *selfDestructMockState) SetState(types.Address, types.Hash, types.Hash) 
 func (m *selfDestructMockState) GetCommittedState(types.Address, types.Hash) types.Hash        { return types.Hash{} }
 func (m *selfDestructMockState) GetTransientState(types.Address, types.Hash) types.Hash        { return types.Hash{} }
 func (m *selfDestructMockState) SetTransientState(types.Address, types.Hash, types.Hash)       {}
+func (m *selfDestructMockState) ClearTransientStorage()                                        {}
 func (m *selfDestructMockState) SelfDestruct(addr types.Address)                               { m.destructed[addr] = true }
 func (m *selfDestructMockState) HasSelfDestructed(addr types.Address) bool                     { return m.destructed[addr] }
 func (m *selfDestructMockState) Exist(types.Address) bool                                      { return true }

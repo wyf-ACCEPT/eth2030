@@ -76,12 +76,23 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 		header   = block.Header()
 	)
 
+	// EIP-4788: store the parent beacon block root in the beacon root contract.
+	// This is a system-level operation that runs before any user transactions.
+	if p.config != nil && p.config.IsCancun(header.Time) {
+		ProcessBeaconBlockRoot(statedb, header)
+	}
+
 	// Determine if BAL tracking is active for this block.
 	balActive := p.config != nil && p.config.IsAmsterdam(header.Time)
 
 	var blockBAL *bal.BlockAccessList
 	if balActive {
 		blockBAL = bal.NewBlockAccessList()
+	}
+
+	// EIP-2935: store parent block hash in history storage contract (Prague+).
+	if p.config != nil && p.config.IsPrague(header.Time) && header.Number.Uint64() > 0 {
+		ProcessParentBlockHash(statedb, header.Number.Uint64()-1, header.ParentHash)
 	}
 
 	var cumulativeGasUsed uint64
