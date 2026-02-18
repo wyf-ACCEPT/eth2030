@@ -254,51 +254,63 @@ func (f *blsFp12) isOne() bool {
 // --- Miller loop ---
 
 // blsLineFunctionAdd computes the line function for point addition in the Miller loop.
-// Given R (Jacobian G2), Q (affine G2), P (affine G1), computes the line evaluation
-// and returns the new R.
+// Given R (G2 twist point), Q (affine G2 twist coordinates), P (affine G1 point),
+// computes the sparse Fp12 line evaluation and returns the new R = R + Q.
+//
+// For BLS12-381's D-twist, the untwist map sends (x',y') → (x'/w², y'/w³).
+// The chord through the untwisted R' and Q' evaluated at P = (px, py),
+// after multiplying by w³ to clear denominators, gives:
+//
+//	l(P) = (λ·rx - ry) + (-λ·px)·v + py·v·w
+//
+// where λ = (qy - ry)/(qx - rx), and v, w are the Fp12 tower variables.
 func blsLineFunctionAdd(r *BlsG2Point, qx, qy *blsFp2, px, py *big.Int) (*blsFp12, *BlsG2Point) {
 	if r.blsG2IsInfinity() {
 		return blsFp12One(), blsG2FromAffine(qx, qy)
 	}
 
-	// Convert R to affine for line computation.
 	rx, ry := r.blsG2ToAffine()
 
 	if rx.equal(qx) && ry.equal(qy) {
 		return blsLineFunctionDouble(r, px, py)
 	}
 
-	// lambda = (qy - ry) / (qx - rx)
+	// λ = (qy - ry) / (qx - rx) in Fp2.
 	num := blsFp2Sub(qy, ry)
 	den := blsFp2Sub(qx, rx)
 
 	if den.isZero() {
-		// Points have same x but different y: the line is vertical.
-		// This contributes a factor that cancels in the final exponentiation.
-		newR := BlsG2Infinity()
-		return blsFp12One(), newR
+		// Points have same x but different y: vertical line.
+		// This contributes a factor killed by the final exponentiation.
+		return blsFp12One(), BlsG2Infinity()
 	}
 
 	lambda := blsFp2Mul(num, blsFp2Inv(den))
 
-	// Line evaluation at P: l(P) = lambda * (px - rx) - (py - ry)
-	// Embed px, py into Fp2 (as real parts).
-	pxFp2 := &blsFp2{c0: new(big.Int).Set(px), c1: new(big.Int)}
-	pyFp2 := &blsFp2{c0: new(big.Int).Set(py), c1: new(big.Int)}
+	// Sparse Fp12 line evaluation:
+	//   c0 = Fp6{λ·rx - ry, -λ·px, 0}
+	//   c1 = Fp6{0, py, 0}
+	ell0 := blsFp2Sub(blsFp2Mul(lambda, rx), ry)
+	ell1 := blsFp2Neg(blsFp2MulScalar(lambda, px))
 
-	lineVal := blsFp2Sub(blsFp2Mul(lambda, blsFp2Sub(pxFp2, rx)), blsFp2Sub(pyFp2, ry))
+	f := &blsFp12{
+		c0: &blsFp6{c0: ell0, c1: ell1, c2: blsFp2Zero()},
+		c1: &blsFp6{c0: blsFp2Zero(), c1: &blsFp2{c0: new(big.Int).Set(py), c1: new(big.Int)}, c2: blsFp2Zero()},
+	}
 
-	// New point: R + Q
 	newR := blsG2Add(r, blsG2FromAffine(qx, qy))
-
-	// Embed lineVal into Fp12.
-	f := blsFp12One()
-	f.c0.c0 = lineVal
-
 	return f, newR
 }
 
 // blsLineFunctionDouble computes the line function for point doubling.
+// Given R (G2 twist point), P (affine G1 point), computes the sparse Fp12
+// line evaluation and returns the new R = 2R.
+//
+// The tangent line at the untwisted R' evaluated at P, after the twist map:
+//
+//	l(P) = (λ·rx - ry) + (-λ·px)·v + py·v·w
+//
+// where λ = 3·rx²/(2·ry).
 func blsLineFunctionDouble(r *BlsG2Point, px, py *big.Int) (*blsFp12, *BlsG2Point) {
 	if r.blsG2IsInfinity() {
 		return blsFp12One(), BlsG2Infinity()
@@ -310,7 +322,7 @@ func blsLineFunctionDouble(r *BlsG2Point, px, py *big.Int) (*blsFp12, *BlsG2Poin
 		return blsFp12One(), BlsG2Infinity()
 	}
 
-	// lambda = 3*rx^2 / (2*ry)  (for a=0 curves)
+	// λ = 3·rx² / (2·ry) in Fp2 (a=0 for the twist curve).
 	rxSq := blsFp2Sqr(rx)
 	three := &blsFp2{c0: big.NewInt(3), c1: new(big.Int)}
 	two := &blsFp2{c0: big.NewInt(2), c1: new(big.Int)}
@@ -318,16 +330,18 @@ func blsLineFunctionDouble(r *BlsG2Point, px, py *big.Int) (*blsFp12, *BlsG2Poin
 	den := blsFp2Mul(two, ry)
 	lambda := blsFp2Mul(num, blsFp2Inv(den))
 
-	pxFp2 := &blsFp2{c0: new(big.Int).Set(px), c1: new(big.Int)}
-	pyFp2 := &blsFp2{c0: new(big.Int).Set(py), c1: new(big.Int)}
+	// Sparse Fp12 line evaluation:
+	//   c0 = Fp6{λ·rx - ry, -λ·px, 0}
+	//   c1 = Fp6{0, py, 0}
+	ell0 := blsFp2Sub(blsFp2Mul(lambda, rx), ry)
+	ell1 := blsFp2Neg(blsFp2MulScalar(lambda, px))
 
-	lineVal := blsFp2Sub(blsFp2Mul(lambda, blsFp2Sub(pxFp2, rx)), blsFp2Sub(pyFp2, ry))
+	f := &blsFp12{
+		c0: &blsFp6{c0: ell0, c1: ell1, c2: blsFp2Zero()},
+		c1: &blsFp6{c0: blsFp2Zero(), c1: &blsFp2{c0: new(big.Int).Set(py), c1: new(big.Int)}, c2: blsFp2Zero()},
+	}
 
 	newR := blsG2Double(r)
-
-	f := blsFp12One()
-	f.c0.c0 = lineVal
-
 	return f, newR
 }
 

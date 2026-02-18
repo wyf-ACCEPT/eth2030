@@ -46,7 +46,6 @@ func TestKZGVerifyProofQuadratic(t *testing.T) {
 
 // TestKZGVerifyProofWrongY tests that verification fails with wrong evaluation.
 func TestKZGVerifyProofWrongY(t *testing.T) {
-	t.Skip("BLS12-381 pairing does not yet distinguish invalid proofs")
 	s := testKZGSecret
 	z := big.NewInt(5)
 	polyAtS := big.NewInt(133)
@@ -64,7 +63,6 @@ func TestKZGVerifyProofWrongY(t *testing.T) {
 
 // TestKZGVerifyProofWrongZ tests that verification fails at wrong evaluation point.
 func TestKZGVerifyProofWrongZ(t *testing.T) {
-	t.Skip("BLS12-381 pairing does not yet distinguish invalid proofs")
 	s := testKZGSecret
 	z := big.NewInt(5)
 	polyAtS := big.NewInt(133)
@@ -82,7 +80,6 @@ func TestKZGVerifyProofWrongZ(t *testing.T) {
 
 // TestKZGVerifyProofWrongCommitment tests that verification fails with wrong commitment.
 func TestKZGVerifyProofWrongCommitment(t *testing.T) {
-	t.Skip("BLS12-381 pairing implementation does not yet distinguish invalid proofs")
 	s := testKZGSecret
 	z := big.NewInt(5)
 	polyAtS := big.NewInt(133)
@@ -281,7 +278,6 @@ func TestKZGVerifyFromBytesInvalid(t *testing.T) {
 
 // TestKZGVerifyFromBytesWrongProof tests that wrong proof fails byte verification.
 func TestKZGVerifyFromBytesWrongProof(t *testing.T) {
-	t.Skip("BLS12-381 pairing implementation does not yet distinguish invalid proofs")
 	s := testKZGSecret
 	z := big.NewInt(5)
 	polyAtS := big.NewInt(133)

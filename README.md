@@ -61,7 +61,7 @@ state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography
 | `pkg/core/vm` | EVM interpreter, 140+ opcodes, 18 precompiles, gas tables | Complete |
 | `pkg/core/rawdb` | FileDB with WAL, block/receipt/tx storage | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
-| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381 | Complete |
+| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, KZG | Complete |
 | `pkg/engine` | Engine API server (V3-V6), forkchoice, payload building | Complete |
 | `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
 | `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier | Framework |
@@ -109,12 +109,12 @@ go test ./...
 | 150 | Gas Cost Changes | 63/64 rule for CALL gas forwarding |
 | 152 | BLAKE2 Precompile | Precompile 0x09 |
 | 196/197 | BN254 Pairing | Precompiles 0x06-0x08 |
+| 4844 | KZG Point Evaluation | BLS12-381 pairing-based verification |
 
 ### Partially Implemented
 
 | EIP | Name | Gap |
 |-----|------|-----|
-| 4844 | KZG Point Evaluation | Format validation only; crypto verification stubbed |
 | 6800 | Verkle Trees | Placeholder hashes; Banderwagon curve not implemented |
 | 7732 | Enshrined PBS | Engine API types defined; builder consensus partial |
 | 8025 | Execution Proofs | Witness collector complete; verification framework only |

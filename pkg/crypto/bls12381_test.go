@@ -832,6 +832,63 @@ func TestBLS12PairingAllInfinity(t *testing.T) {
 	}
 }
 
+// TestBLS12PairingBilinearity tests e(a*G1, G2) * e(-a*G1, G2) == 1.
+// This verifies the pairing implementation has correct bilinearity.
+func TestBLS12PairingBilinearity(t *testing.T) {
+	a := big.NewInt(7)
+
+	// Compute a*G1 and -a*G1.
+	aG1 := blsG1ScalarMul(BlsG1Generator(), a)
+	negAG1 := blsG1Neg(aG1)
+	g2 := BlsG2Generator()
+
+	// e(a*G1, G2) * e(-a*G1, G2) should equal 1 in GT.
+	result := blsMultiPairing(
+		[]*BlsG1Point{aG1, negAG1},
+		[]*BlsG2Point{g2, g2},
+	)
+	if !result {
+		t.Fatal("e(aG1, G2) * e(-aG1, G2) should equal 1")
+	}
+}
+
+// TestBLS12PairingSingleNonTrivial tests that e(G1, G2) is not the identity.
+func TestBLS12PairingSingleNonTrivial(t *testing.T) {
+	g1 := BlsG1Generator()
+	g2 := BlsG2Generator()
+
+	// e(G1, G2) should NOT be 1 (it's a generator of GT).
+	result := blsMultiPairing(
+		[]*BlsG1Point{g1},
+		[]*BlsG2Point{g2},
+	)
+	if result {
+		t.Fatal("e(G1, G2) should not be the identity")
+	}
+}
+
+// TestBLS12PairingSwapScalar tests e(a*G1, b*G2) == e(b*G1, a*G2).
+func TestBLS12PairingSwapScalar(t *testing.T) {
+	a := big.NewInt(3)
+	b := big.NewInt(5)
+
+	aG1 := blsG1ScalarMul(BlsG1Generator(), a)
+	bG2 := blsG2ScalarMul(BlsG2Generator(), b)
+	bG1 := blsG1ScalarMul(BlsG1Generator(), b)
+	aG2 := blsG2ScalarMul(BlsG2Generator(), a)
+
+	// e(aG1, bG2) * e(-bG1, aG2) should equal 1 if bilinear.
+	// Because e(aG1, bG2) = e(G1,G2)^(ab) = e(bG1, aG2).
+	negBG1 := blsG1Neg(bG1)
+	result := blsMultiPairing(
+		[]*BlsG1Point{aG1, negBG1},
+		[]*BlsG2Point{bG2, aG2},
+	)
+	if !result {
+		t.Fatal("e(aG1, bG2) * e(-bG1, aG2) should equal 1 (bilinearity)")
+	}
+}
+
 // --- Map-to-curve tests ---
 
 func TestBLS12MapFpToG1Zero(t *testing.T) {

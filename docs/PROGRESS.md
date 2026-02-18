@@ -48,11 +48,11 @@
 proper commitment computation, integration into state root calculation.
 **Blocks**: Stateless validation, witness verification.
 
-### 2. KZG Proof Verification (HIGH)
+### 2. KZG Proof Verification (DONE)
 
-**Current**: Format validation only (SHA256 commitment matching).
-**Needed**: BLS12-381 pairing-based KZG verification using trusted setup.
-**Note**: BLS12-381 curve already implemented; need KZG-specific logic.
+**Current**: Full pairing-based KZG verification with BLS12-381 optimal ate pairing.
+Commit/proof/verify pipeline, G1 compress/decompress (ZCash format), trusted setup.
+**Remaining**: Load production trusted setup from Ethereum KZG ceremony output.
 
 ### 3. Production Networking (MEDIUM)
 
@@ -94,10 +94,10 @@ production connection management.
 - **EIP-150**: 63/64 gas forwarding rule
 - **EIP-152**: BLAKE2 precompile
 - **EIP-196/197**: BN254 pairing precompiles
+- **EIP-4844 KZG**: Full pairing-based KZG verification (BLS12-381 optimal ate)
 
-### Partial (4 EIPs)
+### Partial (3 EIPs)
 
-- **EIP-4844 KZG**: Format validation only; crypto verification stubbed
 - **EIP-6800**: Verkle types and key derivation; no Banderwagon curve
 - **EIP-7732**: Engine API types V1-V5; builder consensus integration partial
 - **EIP-8025**: Witness collector complete; verification framework only
@@ -118,7 +118,7 @@ production connection management.
 | RPC API | 90% | 30+ methods, filters, subscriptions |
 | Block Validation | 90% | Header, body, execution, receipt validation |
 | Engine API | 95% | V3-V6 payload and forkchoice |
-| Cryptography | 80% | BN254, BLS12-381 done; Verkle/KZG stubbed |
+| Cryptography | 90% | BN254, BLS12-381, KZG pairing done; Verkle is gap |
 | P2P Networking | 70% | TCP transport, handshake, server; needs RLPx, discovery |
 | Sync | 70% | State machine complete, no peer integration |
 | Database | 85% | FileDB works, no RocksDB/LevelDB |
