@@ -6,25 +6,31 @@ import (
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2028/eth2028/trie"
 	"golang.org/x/crypto/sha3"
 )
 
 // Block validation errors.
 var (
-	ErrUnknownParent      = errors.New("unknown parent")
-	ErrFutureBlock        = errors.New("block in the future")
-	ErrInvalidNumber      = errors.New("invalid block number")
-	ErrInvalidGasLimit    = errors.New("invalid gas limit")
-	ErrInvalidGasUsed     = errors.New("gas used exceeds gas limit")
-	ErrInvalidTimestamp    = errors.New("timestamp not greater than parent")
-	ErrExtraDataTooLong   = errors.New("extra data too long")
-	ErrInvalidBaseFee     = errors.New("invalid base fee")
-	ErrInvalidDifficulty  = errors.New("invalid difficulty for post-merge block")
-	ErrInvalidUncleHash   = errors.New("invalid uncle hash for post-merge block")
-	ErrInvalidNonce       = errors.New("invalid nonce for post-merge block")
-	ErrInvalidRequestHash       = errors.New("invalid requests hash")
-	ErrInvalidBlockAccessList   = errors.New("invalid block access list hash")
-	ErrMissingBlockAccessList   = errors.New("missing block access list hash")
+	ErrUnknownParent          = errors.New("unknown parent")
+	ErrFutureBlock            = errors.New("block in the future")
+	ErrInvalidNumber          = errors.New("invalid block number")
+	ErrInvalidGasLimit        = errors.New("invalid gas limit")
+	ErrInvalidGasUsed         = errors.New("gas used exceeds gas limit")
+	ErrInvalidTimestamp        = errors.New("timestamp not greater than parent")
+	ErrExtraDataTooLong       = errors.New("extra data too long")
+	ErrInvalidBaseFee         = errors.New("invalid base fee")
+	ErrInvalidDifficulty      = errors.New("invalid difficulty for post-merge block")
+	ErrInvalidUncleHash       = errors.New("invalid uncle hash for post-merge block")
+	ErrInvalidNonce           = errors.New("invalid nonce for post-merge block")
+	ErrInvalidRequestHash     = errors.New("invalid requests hash")
+	ErrInvalidBlockAccessList = errors.New("invalid block access list hash")
+	ErrMissingBlockAccessList = errors.New("missing block access list hash")
+	ErrInvalidStateRoot       = errors.New("invalid state root")
+	ErrInvalidReceiptRoot     = errors.New("invalid receipt root")
+	ErrInvalidTxRoot          = errors.New("invalid transaction root")
+	ErrInvalidGasUsedTotal    = errors.New("invalid total gas used")
 )
 
 const (
@@ -47,7 +53,7 @@ const (
 	BaseFeeChangeDenominator uint64 = 8
 )
 
-// EmptyUncleHash is the keccak256 of RLP([]) — the hash of an empty uncle list.
+// EmptyUncleHash is the keccak256 of RLP([]) -- the hash of an empty uncle list.
 // RLP of an empty list is 0xc0; keccak256(0xc0) = 1dcc4de8...
 var EmptyUncleHash = func() types.Hash {
 	d := sha3.NewLegacyKeccak256()
@@ -133,6 +139,14 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 		return ErrInvalidUncleHash
 	}
 
+	// Validate transaction trie root: compute the Merkle trie hash from the
+	// block's transactions and compare to header.TxHash.
+	computedTxHash := computeTxsRoot(block.Transactions())
+	if header.TxHash != computedTxHash {
+		return fmt.Errorf("%w: header=%s computed=%s", ErrInvalidTxRoot,
+			header.TxHash.Hex(), computedTxHash.Hex())
+	}
+
 	// EIP-4844: validate blob gas used matches the sum of blob gas from transactions.
 	if v.config != nil && v.config.IsCancun(header.Time) {
 		var totalBlobGas uint64
@@ -152,6 +166,42 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 	}
 
 	return nil
+}
+
+// computeTxsRoot computes the transaction trie root from a list of transactions.
+// Key: RLP(index), Value: RLP-encoded transaction.
+func computeTxsRoot(txs []*types.Transaction) types.Hash {
+	if len(txs) == 0 {
+		return types.EmptyRootHash
+	}
+	t := trie.New()
+	for i, tx := range txs {
+		key, _ := rlp.EncodeToBytes(uint64(i))
+		val, err := tx.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		t.Put(key, val)
+	}
+	return t.Hash()
+}
+
+// computeReceiptsRoot computes the receipt trie root from a list of receipts.
+// Key: RLP(index), Value: RLP-encoded receipt.
+func computeReceiptsRoot(receipts []*types.Receipt) types.Hash {
+	if len(receipts) == 0 {
+		return types.EmptyRootHash
+	}
+	t := trie.New()
+	for i, receipt := range receipts {
+		key, _ := rlp.EncodeToBytes(uint64(i))
+		val, err := receipt.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		t.Put(key, val)
+	}
+	return t.Hash()
 }
 
 // ValidateRequests verifies the requests_hash field in a post-Prague block

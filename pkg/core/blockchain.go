@@ -158,11 +158,44 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 	}
 	receipts := result.Receipts
 
+	// Validate gas used: the total gas consumed must match header.GasUsed.
+	var totalGasUsed uint64
+	for _, r := range receipts {
+		totalGasUsed += r.GasUsed
+	}
+	if header.GasUsed != totalGasUsed {
+		return fmt.Errorf("%w: header=%d computed=%d", ErrInvalidGasUsedTotal, header.GasUsed, totalGasUsed)
+	}
+
+	// Validate receipt root: the Merkle trie hash of receipts must match
+	// header.ReceiptHash.
+	computedReceiptHash := computeReceiptsRoot(receipts)
+	if header.ReceiptHash != computedReceiptHash {
+		return fmt.Errorf("%w: header=%s computed=%s", ErrInvalidReceiptRoot,
+			header.ReceiptHash.Hex(), computedReceiptHash.Hex())
+	}
+
 	// Validate block bloom: the bloom in the header must match the computed
 	// bloom from all receipt logs.
 	blockBloom := types.CreateBloom(receipts)
 	if header.Bloom != blockBloom {
 		return fmt.Errorf("invalid bloom (remote: %x local: %x)", header.Bloom, blockBloom)
+	}
+
+	// EIP-7685: process execution layer requests (Prague+).
+	// ProcessRequests may modify state (e.g. clearing request count slots),
+	// so it must run before computing the state root.
+	if bc.config != nil && bc.config.IsPrague(header.Time) {
+		if _, err := ProcessRequests(bc.config, statedb, header); err != nil {
+			return fmt.Errorf("process requests block %d: %w", block.NumberU64(), err)
+		}
+	}
+
+	// Validate state root: the post-execution state root must match header.Root.
+	computedRoot := statedb.GetRoot()
+	if header.Root != computedRoot {
+		return fmt.Errorf("%w: header=%s computed=%s", ErrInvalidStateRoot,
+			header.Root.Hex(), computedRoot.Hex())
 	}
 
 	// Validate Block Access List hash (EIP-7928).
@@ -361,6 +394,33 @@ func (bc *Blockchain) State() *state.MemoryStateDB {
 	bc.mu.RLock()
 	defer bc.mu.RUnlock()
 	return bc.currentState.Copy()
+}
+
+// StateAtRoot returns the state for the given state root hash.
+// It searches canonical blocks for one whose header root matches,
+// then re-executes from the nearest cached snapshot.
+func (bc *Blockchain) StateAtRoot(root types.Hash) (state.StateDB, error) {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	// Fast path: check if root matches the current head state.
+	if bc.currentState.GetRoot() == root {
+		return bc.currentState.Copy(), nil
+	}
+
+	// Check if root matches the genesis state.
+	if bc.genesisState.GetRoot() == root {
+		return bc.genesisState.Copy(), nil
+	}
+
+	// Search canonical blocks for a block with this state root.
+	for _, block := range bc.blockCache {
+		if block.Header().Root == root {
+			return bc.stateAt(block)
+		}
+	}
+
+	return nil, fmt.Errorf("%w: no block found with state root %v", ErrStateNotFound, root)
 }
 
 // stateAt returns the state after executing up to (and including) the given block.

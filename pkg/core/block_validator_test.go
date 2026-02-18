@@ -215,6 +215,7 @@ func TestCalcBaseFee_NilParent(t *testing.T) {
 func TestValidateBody_NoUncles(t *testing.T) {
 	v := NewBlockValidator(TestConfig)
 	header := makeValidParent()
+	header.TxHash = types.EmptyRootHash // correct root for empty tx list
 	block := types.NewBlock(header, &types.Body{
 		Withdrawals: []*types.Withdrawal{}, // Post-Shanghai requires withdrawals.
 	})

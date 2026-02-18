@@ -55,8 +55,12 @@ func TestProcessWithBAL_WithTransactions(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block := makeBlockWithState(genesis, []*types.Transaction{tx}, statedb)
+	// Use a copy of state for block building so the original state is
+	// preserved for ProcessWithBAL re-execution.
+	buildState := statedb.Copy()
+	block := makeBlockWithState(genesis, []*types.Transaction{tx}, buildState)
 
+	// Re-execute against the original (unmodified) state.
 	result, err := proc.ProcessWithBAL(block, statedb)
 	if err != nil {
 		t.Fatalf("ProcessWithBAL: %v", err)
@@ -139,7 +143,9 @@ func TestBALHash_Computed(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block := makeBlockWithState(genesis, []*types.Transaction{tx}, statedb)
+	// Use a copy for block building to preserve original state.
+	buildState := statedb.Copy()
+	block := makeBlockWithState(genesis, []*types.Transaction{tx}, buildState)
 
 	// Process twice with fresh state copies to verify determinism.
 	state1 := statedb.Copy()

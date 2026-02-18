@@ -86,9 +86,7 @@ func (b *nodeBackend) ChainID() *big.Int {
 }
 
 func (b *nodeBackend) StateAt(root types.Hash) (state.StateDB, error) {
-	// For now, return the current state regardless of root.
-	// A proper implementation would look up state by trie root.
-	return b.node.blockchain.State(), nil
+	return b.node.blockchain.StateAtRoot(root)
 }
 
 func (b *nodeBackend) GetProof(addr types.Address, storageKeys []types.Hash, blockNumber rpc.BlockNumber) (*trie.AccountProof, error) {
@@ -185,7 +183,10 @@ func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte
 	}
 
 	// Get state at this block.
-	statedb := bc.State()
+	statedb, err := b.StateAt(header.Root)
+	if err != nil {
+		return nil, 0, fmt.Errorf("state not found: %w", err)
+	}
 
 	// Default gas to 50M if zero.
 	if gas == 0 {
@@ -242,8 +243,15 @@ func (b *nodeBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, 
 	}
 
 	// Get state at the parent block.
-	statedb := bc.State()
 	header := block.Header()
+	parentBlock := bc.GetBlock(header.ParentHash)
+	if parentBlock == nil {
+		return nil, fmt.Errorf("parent block %v not found", header.ParentHash)
+	}
+	statedb, err := b.StateAt(parentBlock.Header().Root)
+	if err != nil {
+		return nil, fmt.Errorf("state not found for parent block: %w", err)
+	}
 
 	blockCtx := vm.BlockContext{
 		GetHash:     bc.GetHashFn(),

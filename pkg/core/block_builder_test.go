@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
@@ -526,8 +525,10 @@ func TestReorg_Simple(t *testing.T) {
 	}
 
 	// Build original chain: genesis -> A1 -> A2
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
+	// Use makeChainBlocks with a shared state copy so system-level state
+	// (EIP-4788/EIP-2935) accumulates correctly across blocks.
+	aBlocks := makeChainBlocks(genesis, 2, statedb.Copy())
+	a1, a2 := aBlocks[0], aBlocks[1]
 	if err := bc.InsertBlock(a1); err != nil {
 		t.Fatalf("insert A1: %v", err)
 	}
@@ -540,48 +541,64 @@ func TestReorg_Simple(t *testing.T) {
 	}
 
 	// Build fork chain: genesis -> B1 -> B2 -> B3 (longer)
-	// B1 needs different timestamp to get different hash.
-	emptyBALHash := bal.NewBlockAccessList().Hash()
+	// Use a different state copy so the fork produces different block hashes.
+	bState := statedb.Copy()
+	// Advance the fork state timestamp by building a block with a different
+	// timestamp. We use makeBlockWithState for B1 to get a distinct hash,
+	// then chain the rest via makeChainBlocks.
+	b1Header := &types.Header{
+		ParentHash: genesis.Hash(),
+		Number:     big.NewInt(1),
+		GasLimit:   genesis.GasLimit(),
+		Time:       genesis.Time() + 6, // different timestamp -> different hash
+		Difficulty: new(big.Int),
+		BaseFee:    CalcBaseFee(genesis.Header()),
+		UncleHash:  EmptyUncleHash,
+	}
+	// Process B1 through the state processor to get correct state root, etc.
+	emptyWHash := types.EmptyRootHash
+	b1Header.WithdrawalsHash = &emptyWHash
 	zeroBlobGas := uint64(0)
-	var parentExcess, parentUsed uint64
+	var pExcess, pUsed uint64
 	if genesis.Header().ExcessBlobGas != nil {
-		parentExcess = *genesis.Header().ExcessBlobGas
+		pExcess = *genesis.Header().ExcessBlobGas
 	}
 	if genesis.Header().BlobGasUsed != nil {
-		parentUsed = *genesis.Header().BlobGasUsed
+		pUsed = *genesis.Header().BlobGasUsed
 	}
-	b1ExcessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
-	emptyWHash := types.EmptyRootHash
-	b1Header := &types.Header{
-		ParentHash:          genesis.Hash(),
-		Number:              big.NewInt(1),
-		GasLimit:            genesis.GasLimit(),
-		GasUsed:             0,
-		Time:                genesis.Time() + 6, // different timestamp
-		Difficulty:          new(big.Int),
-		BaseFee:             CalcBaseFee(genesis.Header()),
-		UncleHash:           EmptyUncleHash,
-		BlockAccessListHash: &emptyBALHash,
-		WithdrawalsHash:     &emptyWHash,
-		BlobGasUsed:         &zeroBlobGas,
-		ExcessBlobGas:       &b1ExcessBlobGas,
-	}
-	b1 := types.NewBlock(b1Header, &types.Body{
-		Withdrawals: []*types.Withdrawal{}, // Shanghai+ requires withdrawals
-	})
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
+	b1ExcessBlobGas := CalcExcessBlobGas(pExcess, pUsed)
+	b1Header.BlobGasUsed = &zeroBlobGas
+	b1Header.ExcessBlobGas = &b1ExcessBlobGas
+	b1Body := &types.Body{Withdrawals: []*types.Withdrawal{}}
+	b1Block := types.NewBlock(b1Header, b1Body)
 
-	// Insert all fork blocks so they are known to the blockchain.
-	// B1 is at the same height as A1 but InsertBlock still stores it.
+	// Execute against bState to get correct fields.
+	proc := NewStateProcessor(TestConfig)
+	result, procErr := proc.ProcessWithBAL(b1Block, bState)
+	if procErr == nil {
+		b1Header.GasUsed = 0
+		if result.BlockAccessList != nil {
+			h := result.BlockAccessList.Hash()
+			b1Header.BlockAccessListHash = &h
+		}
+		b1Header.Bloom = types.CreateBloom(result.Receipts)
+		b1Header.ReceiptHash = deriveReceiptsRoot(result.Receipts)
+		b1Header.Root = bState.GetRoot()
+	}
+	b1Header.TxHash = deriveTxsRoot(nil)
+	b1 := types.NewBlock(b1Header, b1Body)
+
+	// Build B2, B3 from B1 using makeChainBlocks with the already-advanced state.
+	bRest := makeChainBlocks(b1, 2, bState)
+	b2, b3 := bRest[0], bRest[1]
+
+	// Insert all fork blocks.
 	if err := bc.InsertBlock(b1); err != nil {
 		t.Logf("b1 insert (side chain): %v", err)
 	}
-	// B2 is at the same height as A2.
 	if err := bc.InsertBlock(b2); err != nil {
 		t.Logf("b2 insert (side chain): %v", err)
 	}
-	// B3 extends to height 3.
 	if err := bc.InsertBlock(b3); err != nil {
 		t.Logf("b3 insert: %v", err)
 	}

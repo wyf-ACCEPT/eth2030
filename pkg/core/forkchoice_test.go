@@ -25,7 +25,8 @@ func testForkChoice(t *testing.T) (*Blockchain, *ForkChoice) {
 }
 
 // makeForkBlock creates a block with a different timestamp offset to produce
-// a distinct hash from makeBlock. This is used to create fork chains.
+// a distinct hash from makeBlock. This is used to create fork chains that
+// are added directly to the block cache (bypassing InsertBlock validation).
 func makeForkBlock(parent *types.Block, timeOffset uint64) *types.Block {
 	parentHeader := parent.Header()
 	emptyBALHash := bal.NewBlockAccessList().Hash()
@@ -64,11 +65,10 @@ func TestForkChoice_SimpleUpdate(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build a chain: genesis -> b1 -> b2 -> b3.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
+	chain := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	b1, b2, b3 := chain[0], chain[1], chain[2]
 
-	for _, b := range []*types.Block{b1, b2, b3} {
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock(%d): %v", b.NumberU64(), err)
 		}
@@ -122,17 +122,13 @@ func TestForkChoice_UpdateWithZeroHashes(t *testing.T) {
 
 func TestForkChoice_ProgressiveFinalization(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
 	// Build a chain of 5 blocks.
-	blocks := make([]*types.Block, 5)
-	parent := genesis
-	for i := 0; i < 5; i++ {
-		blocks[i] = makeBlock(parent, nil)
-		if err := bc.InsertBlock(blocks[i]); err != nil {
+	blocks := makeChainBlocks(bc.Genesis(), 5, state.NewMemoryStateDB())
+	for i, b := range blocks {
+		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock(%d): %v", i+1, err)
 		}
-		parent = blocks[i]
 	}
 
 	// Step 1: head=b5, safe=b3, finalized=b1.
@@ -169,9 +165,8 @@ func TestForkChoice_UnknownHead(t *testing.T) {
 
 func TestForkChoice_UnknownFinalized(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
-	b1 := makeBlock(genesis, nil)
+	b1 := makeBlock(bc.Genesis(), nil)
 	if err := bc.InsertBlock(b1); err != nil {
 		t.Fatalf("InsertBlock: %v", err)
 	}
@@ -185,9 +180,8 @@ func TestForkChoice_UnknownFinalized(t *testing.T) {
 
 func TestForkChoice_UnknownSafe(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
-	b1 := makeBlock(genesis, nil)
+	b1 := makeBlock(bc.Genesis(), nil)
 	if err := bc.InsertBlock(b1); err != nil {
 		t.Fatalf("InsertBlock: %v", err)
 	}
@@ -206,8 +200,8 @@ func TestForkChoice_ReorgToLongerChain(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
+	chainA := makeChainBlocks(genesis, 2, state.NewMemoryStateDB())
+	a1, a2 := chainA[0], chainA[1]
 	if err := bc.InsertBlock(a1); err != nil {
 		t.Fatalf("insert a1: %v", err)
 	}
@@ -221,8 +215,7 @@ func TestForkChoice_ReorgToLongerChain(t *testing.T) {
 	}
 
 	// Build fork chain B: genesis -> b1 -> b2 -> b3.
-	// Manually add to block cache to avoid InsertBlock auto-promoting b3
-	// when it extends past the current head height.
+	// Manually add to block cache to avoid InsertBlock validation.
 	b1 := makeForkBlock(genesis, 6) // different timestamp -> different hash
 	b2 := makeForkBlock(b1, 12)
 	b3 := makeForkBlock(b2, 12)
@@ -264,17 +257,15 @@ func TestForkChoice_ReorgToShorterChainNotAllowed(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2 -> a3, finalize a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	a3 := makeBlock(a2, nil)
-	for _, b := range []*types.Block{a1, a2, a3} {
+	chainA := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	for _, b := range chainA {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Finalize a2.
-	if err := fc.ForkchoiceUpdate(a3.Hash(), a2.Hash(), a2.Hash()); err != nil {
+	if err := fc.ForkchoiceUpdate(chainA[2].Hash(), chainA[1].Hash(), chainA[1].Hash()); err != nil {
 		t.Fatalf("finalize: %v", err)
 	}
 
@@ -299,21 +290,19 @@ func TestFindCommonAncestor_SameChain(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build a linear chain.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	for _, b := range []*types.Block{b1, b2, b3} {
+	chain := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Common ancestor of b1 and b3 on the same chain is b1.
-	ancestor := FindCommonAncestor(bc, b1, b3)
+	ancestor := FindCommonAncestor(bc, chain[0], chain[2])
 	if ancestor == nil {
 		t.Fatal("expected common ancestor")
 	}
-	if ancestor.Hash() != b1.Hash() {
+	if ancestor.Hash() != chain[0].Hash() {
 		t.Errorf("common ancestor = %v (block %d), want b1 (block 1)",
 			ancestor.Hash(), ancestor.NumberU64())
 	}
@@ -324,13 +313,11 @@ func TestFindCommonAncestor_Fork(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	if err := bc.InsertBlock(a1); err != nil {
-		t.Fatalf("insert a1: %v", err)
-	}
-	if err := bc.InsertBlock(a2); err != nil {
-		t.Fatalf("insert a2: %v", err)
+	chainA := makeChainBlocks(genesis, 2, state.NewMemoryStateDB())
+	for _, b := range chainA {
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("insert: %v", err)
+		}
 	}
 
 	// Build chain B: genesis -> b1 -> b2.
@@ -344,7 +331,7 @@ func TestFindCommonAncestor_Fork(t *testing.T) {
 	bc.mu.Unlock()
 
 	// Common ancestor of a2 and b2 should be genesis.
-	ancestor := FindCommonAncestor(bc, a2, b2)
+	ancestor := FindCommonAncestor(bc, chainA[1], b2)
 	if ancestor == nil {
 		t.Fatal("expected common ancestor")
 	}
@@ -359,17 +346,15 @@ func TestFindCommonAncestor_ForkAtBlock1(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2 -> a3.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	a3 := makeBlock(a2, nil)
-	for _, b := range []*types.Block{a1, a2, a3} {
+	chainA := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	for _, b := range chainA {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Build chain B: genesis -> a1 -> b2 -> b3 (fork at block 1).
-	b2 := makeForkBlock(a1, 6)
+	b2 := makeForkBlock(chainA[0], 6)
 	b3 := makeForkBlock(b2, 12)
 
 	bc.mu.Lock()
@@ -378,11 +363,11 @@ func TestFindCommonAncestor_ForkAtBlock1(t *testing.T) {
 	bc.mu.Unlock()
 
 	// Common ancestor of a3 and b3 should be a1.
-	ancestor := FindCommonAncestor(bc, a3, b3)
+	ancestor := FindCommonAncestor(bc, chainA[2], b3)
 	if ancestor == nil {
 		t.Fatal("expected common ancestor")
 	}
-	if ancestor.Hash() != a1.Hash() {
+	if ancestor.Hash() != chainA[0].Hash() {
 		t.Errorf("common ancestor = block %d, want a1 (block 1)",
 			ancestor.NumberU64())
 	}
@@ -393,14 +378,11 @@ func TestFindCommonAncestor_UnequalHeights(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2 -> a3 -> a4 -> a5.
-	blocks := make([]*types.Block, 5)
-	parent := genesis
-	for i := 0; i < 5; i++ {
-		blocks[i] = makeBlock(parent, nil)
-		if err := bc.InsertBlock(blocks[i]); err != nil {
+	blocks := makeChainBlocks(genesis, 5, state.NewMemoryStateDB())
+	for _, b := range blocks {
+		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
-		parent = blocks[i]
 	}
 
 	// Build chain B: genesis -> a1 -> a2 -> b3 (fork at a2, shorter chain).
@@ -460,24 +442,21 @@ func TestForkChoice_FinalizationPreventsReorg(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain: genesis -> b1 -> b2 -> b3 -> b4.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	b4 := makeBlock(b3, nil)
-	for _, b := range []*types.Block{b1, b2, b3, b4} {
+	chain := makeChainBlocks(genesis, 4, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Finalize b3.
-	err := fc.ForkchoiceUpdate(b4.Hash(), b3.Hash(), b3.Hash())
+	err := fc.ForkchoiceUpdate(chain[3].Hash(), chain[2].Hash(), chain[2].Hash())
 	if err != nil {
 		t.Fatalf("finalize b3: %v", err)
 	}
 
 	// Build a fork that diverges from b1 (below finalized b3).
-	fork2 := makeForkBlock(b1, 6)
+	fork2 := makeForkBlock(chain[0], 6)
 	fork3 := makeForkBlock(fork2, 12)
 	fork4 := makeForkBlock(fork3, 12)
 	fork5 := makeForkBlock(fork4, 12)
@@ -497,36 +476,33 @@ func TestForkChoice_FinalizationPreventsReorg(t *testing.T) {
 	}
 
 	// Head should still be b4.
-	if fc.Head().Hash() != b4.Hash() {
+	if fc.Head().Hash() != chain[3].Hash() {
 		t.Errorf("head changed despite failed reorg")
 	}
-	if bc.CurrentBlock().Hash() != b4.Hash() {
+	if bc.CurrentBlock().Hash() != chain[3].Hash() {
 		t.Errorf("blockchain head changed despite failed reorg")
 	}
 }
 
 func TestForkChoice_ReorgAboveFinalized(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
 	// Build chain: genesis -> b1 -> b2 -> b3.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	for _, b := range []*types.Block{b1, b2, b3} {
+	chain := makeChainBlocks(bc.Genesis(), 3, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Finalize b1.
-	err := fc.ForkchoiceUpdate(b3.Hash(), b1.Hash(), b1.Hash())
+	err := fc.ForkchoiceUpdate(chain[2].Hash(), chain[0].Hash(), chain[0].Hash())
 	if err != nil {
 		t.Fatalf("finalize b1: %v", err)
 	}
 
 	// Build a fork that diverges from b2 (above finalized b1).
-	fork3 := makeForkBlock(b2, 6)
+	fork3 := makeForkBlock(chain[1], 6)
 	fork4 := makeForkBlock(fork3, 12)
 
 	bc.mu.Lock()
@@ -535,7 +511,7 @@ func TestForkChoice_ReorgAboveFinalized(t *testing.T) {
 	bc.mu.Unlock()
 
 	// This reorg is valid because the fork point (b2) is above finalized (b1).
-	err = fc.ForkchoiceUpdate(fork4.Hash(), b1.Hash(), b1.Hash())
+	err = fc.ForkchoiceUpdate(fork4.Hash(), chain[0].Hash(), chain[0].Hash())
 	if err != nil {
 		t.Fatalf("reorg above finalized should succeed: %v", err)
 	}
@@ -555,13 +531,11 @@ func TestForkChoice_ReorgWithValidation_Success(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	if err := bc.InsertBlock(a1); err != nil {
-		t.Fatalf("insert a1: %v", err)
-	}
-	if err := bc.InsertBlock(a2); err != nil {
-		t.Fatalf("insert a2: %v", err)
+	chainA := makeChainBlocks(genesis, 2, state.NewMemoryStateDB())
+	for _, b := range chainA {
+		if err := bc.InsertBlock(b); err != nil {
+			t.Fatalf("insert: %v", err)
+		}
 	}
 
 	// Build chain B: genesis -> b1 -> b2 -> b3.
@@ -591,10 +565,8 @@ func TestForkChoice_ReorgWithValidation_BlockedByFinalized(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain: genesis -> b1 -> b2 -> b3.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	for _, b := range []*types.Block{b1, b2, b3} {
+	chain := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
@@ -602,9 +574,9 @@ func TestForkChoice_ReorgWithValidation_BlockedByFinalized(t *testing.T) {
 
 	// Set finalized to b2 via internal update.
 	fc.mu.Lock()
-	fc.head = b3
-	fc.safe = b2
-	fc.finalized = b2
+	fc.head = chain[2]
+	fc.safe = chain[1]
+	fc.finalized = chain[1]
 	fc.mu.Unlock()
 
 	// Build fork diverging at genesis.
@@ -629,9 +601,8 @@ func TestForkChoice_ReorgWithValidation_BlockedByFinalized(t *testing.T) {
 
 func TestForkChoice_ReorgWithValidation_NoOp(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
-	b1 := makeBlock(genesis, nil)
+	b1 := makeBlock(bc.Genesis(), nil)
 	if err := bc.InsertBlock(b1); err != nil {
 		t.Fatalf("insert b1: %v", err)
 	}
@@ -652,19 +623,16 @@ func TestForkChoice_ReorgWithValidation_NoOp(t *testing.T) {
 
 func TestForkChoice_SafeBelowFinalized(t *testing.T) {
 	bc, fc := testForkChoice(t)
-	genesis := bc.Genesis()
 
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	for _, b := range []*types.Block{b1, b2, b3} {
+	chain := makeChainBlocks(bc.Genesis(), 3, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Try to set safe=b1, finalized=b2 -- safe is below finalized.
-	err := fc.ForkchoiceUpdate(b3.Hash(), b1.Hash(), b2.Hash())
+	err := fc.ForkchoiceUpdate(chain[2].Hash(), chain[0].Hash(), chain[1].Hash())
 	if err == nil {
 		t.Fatal("expected error when safe block number < finalized block number")
 	}
@@ -675,9 +643,8 @@ func TestForkChoice_FinalizedNotInHeadAncestry(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	for _, b := range []*types.Block{a1, a2} {
+	chainA := makeChainBlocks(genesis, 2, state.NewMemoryStateDB())
+	for _, b := range chainA {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
@@ -690,7 +657,7 @@ func TestForkChoice_FinalizedNotInHeadAncestry(t *testing.T) {
 	bc.mu.Unlock()
 
 	// Try to set head=a2 with finalized=b1 (b1 is NOT in a2's ancestry).
-	err := fc.ForkchoiceUpdate(a2.Hash(), genesis.Hash(), b1.Hash())
+	err := fc.ForkchoiceUpdate(chainA[1].Hash(), genesis.Hash(), b1.Hash())
 	if err == nil {
 		t.Fatal("expected error: finalized block not in head's ancestry")
 	}
@@ -701,9 +668,8 @@ func TestForkChoice_SafeNotInHeadAncestry(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain A: genesis -> a1 -> a2.
-	a1 := makeBlock(genesis, nil)
-	a2 := makeBlock(a1, nil)
-	for _, b := range []*types.Block{a1, a2} {
+	chainA := makeChainBlocks(genesis, 2, state.NewMemoryStateDB())
+	for _, b := range chainA {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
@@ -716,7 +682,7 @@ func TestForkChoice_SafeNotInHeadAncestry(t *testing.T) {
 	bc.mu.Unlock()
 
 	// Try to set head=a2 with safe=b1 (b1 is NOT in a2's ancestry).
-	err := fc.ForkchoiceUpdate(a2.Hash(), b1.Hash(), genesis.Hash())
+	err := fc.ForkchoiceUpdate(chainA[1].Hash(), b1.Hash(), genesis.Hash())
 	if err == nil {
 		t.Fatal("expected error: safe block not in head's ancestry")
 	}
@@ -725,15 +691,15 @@ func TestForkChoice_SafeNotInHeadAncestry(t *testing.T) {
 // --- State Rollback During Reorg ---
 
 func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
-	statedb := state.NewMemoryStateDB()
+	genesisState := state.NewMemoryStateDB()
 	sender := types.BytesToAddress([]byte{0x01})
 	receiverA := types.BytesToAddress([]byte{0x02})
 	receiverB := types.BytesToAddress([]byte{0x03})
-	statedb.AddBalance(sender, big.NewInt(100_000_000))
+	genesisState.AddBalance(sender, big.NewInt(100_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
 	db := rawdb.NewMemoryDB()
-	bc, err := NewBlockchain(TestConfig, genesis, statedb, db)
+	bc, err := NewBlockchain(TestConfig, genesis, genesisState, db)
 	if err != nil {
 		t.Fatalf("NewBlockchain: %v", err)
 	}
@@ -749,7 +715,9 @@ func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
 	})
 	txA.SetSender(sender)
 
-	a1 := makeBlockWithState(genesis, []*types.Transaction{txA}, statedb)
+	// Use a copy of genesis state to build the block.
+	a1State := genesisState.Copy()
+	a1 := makeBlockWithState(genesis, []*types.Transaction{txA}, a1State)
 	if err := bc.InsertBlock(a1); err != nil {
 		t.Fatalf("insert a1: %v", err)
 	}
@@ -770,7 +738,9 @@ func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
 	})
 	txB.SetSender(sender)
 
-	b1 := makeBlockWithState(genesis, []*types.Transaction{txB}, statedb)
+	// Use a fresh copy of genesis state (not the mutated a1State).
+	b1State := genesisState.Copy()
+	b1 := makeBlockWithState(genesis, []*types.Transaction{txB}, b1State)
 
 	// b1 may have the same or different hash from a1.
 	// If same (since parent and nonce are same), make a different fork block.
@@ -841,17 +811,15 @@ func TestForkChoice_AdvanceHead(t *testing.T) {
 	genesis := bc.Genesis()
 
 	// Build chain: genesis -> b1 -> b2 -> b3.
-	b1 := makeBlock(genesis, nil)
-	b2 := makeBlock(b1, nil)
-	b3 := makeBlock(b2, nil)
-	for _, b := range []*types.Block{b1, b2, b3} {
+	chain := makeChainBlocks(genesis, 3, state.NewMemoryStateDB())
+	for _, b := range chain {
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("insert: %v", err)
 		}
 	}
 
 	// Advance head progressively.
-	for i, b := range []*types.Block{b1, b2, b3} {
+	for i, b := range chain {
 		err := fc.ForkchoiceUpdate(b.Hash(), genesis.Hash(), genesis.Hash())
 		if err != nil {
 			t.Fatalf("advance head step %d: %v", i+1, err)

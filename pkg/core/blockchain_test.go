@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
@@ -24,57 +23,32 @@ func testChain(t *testing.T) (*Blockchain, *state.MemoryStateDB) {
 }
 
 // makeBlock builds a valid child block of parent with the given transactions.
-// It sets the BlockAccessListHash for Amsterdam-compatible blocks (TestConfig).
+// It uses an empty state to compute all consensus-critical header fields.
+// This is suitable only for the FIRST block after a genesis with empty state.
+// For chains of blocks, use makeBlockWithState with a shared state that
+// accumulates changes across blocks.
 func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
-	parentHeader := parent.Header()
-	blobGasUsed := uint64(0)
-	var parentExcess, parentUsed uint64
-	if parentHeader.ExcessBlobGas != nil {
-		parentExcess = *parentHeader.ExcessBlobGas
-	}
-	if parentHeader.BlobGasUsed != nil {
-		parentUsed = *parentHeader.BlobGasUsed
-	}
-	excessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
-	emptyWithdrawalsHash := types.EmptyRootHash
-	header := &types.Header{
-		ParentHash:      parent.Hash(),
-		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:        parentHeader.GasLimit,
-		GasUsed:         uint64(len(txs)) * TxGas,
-		Time:            parentHeader.Time + 12,
-		Difficulty:      new(big.Int),
-		BaseFee:         CalcBaseFee(parentHeader),
-		UncleHash:       EmptyUncleHash,
-		WithdrawalsHash: &emptyWithdrawalsHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
-	}
-
-	// Compute BAL hash for Amsterdam blocks. For test blocks built with
-	// makeBlock, we construct a BAL from the transaction senders/recipients.
-	if TestConfig.IsAmsterdam(header.Time) {
-		blockBAL := bal.NewBlockAccessList()
-		// For blocks with transactions, add entries for each tx's sender/recipient.
-		// The actual balance/nonce changes will be computed during execution, but we
-		// need a deterministic BAL hash that matches what ProcessWithBAL computes.
-		// Since makeBlock doesn't execute transactions, we use a simple approach:
-		// set the BAL hash to the hash of an empty BAL for empty blocks. For blocks
-		// with transactions, the caller must ensure the BAL hash is correct.
-		h := blockBAL.Hash()
-		header.BlockAccessListHash = &h
-	}
-
-	body := &types.Body{
-		Transactions: txs,
-		Withdrawals:  []*types.Withdrawal{}, // Shanghai+ requires withdrawals
-	}
-	return types.NewBlock(header, body)
+	return makeBlockWithState(parent, txs, state.NewMemoryStateDB())
 }
 
-// makeBlockWithState builds a valid child block and computes the correct BAL
-// hash by executing the transactions against the provided state. Use this for
-// blocks that contain transactions when Amsterdam fork is active.
+// makeChainBlocks builds a chain of empty blocks from the given parent using
+// the provided state (which is mutated in place). The state should be a copy
+// of the genesis state at the point of the parent block.
+func makeChainBlocks(parent *types.Block, count int, statedb *state.MemoryStateDB) []*types.Block {
+	blocks := make([]*types.Block, count)
+	for i := 0; i < count; i++ {
+		blocks[i] = makeBlockWithState(parent, nil, statedb)
+		parent = blocks[i]
+	}
+	return blocks
+}
+
+// makeBlockWithState builds a valid child block and computes the correct header
+// fields by executing the transactions against the provided state. The state is
+// mutated in place so callers can chain multiple blocks: each call advances the
+// state to the post-execution state of the new block.
+// All consensus-critical fields are computed: state root, transaction root,
+// receipt root, bloom, gas used, and the BAL hash (EIP-7928).
 func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *state.MemoryStateDB) *types.Block {
 	parentHeader := parent.Header()
 	blobGasUsed := uint64(0)
@@ -107,10 +81,11 @@ func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *
 
 	block := types.NewBlock(header, body)
 
-	// Execute transactions on a copy to compute gas used and BAL hash.
-	tmpState := statedb.Copy()
+	// Execute transactions directly on the provided state to compute gas used,
+	// bloom, BAL hash, state root, transaction root, and receipt root.
+	// The state is advanced in place so that callers can chain multiple blocks.
 	proc := NewStateProcessor(TestConfig)
-	result, err := proc.ProcessWithBAL(block, tmpState)
+	result, err := proc.ProcessWithBAL(block, statedb)
 	if err == nil {
 		// Compute gas used from receipts.
 		var gasUsed uint64
@@ -127,7 +102,16 @@ func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *
 
 		// Set bloom from receipts.
 		header.Bloom = types.CreateBloom(result.Receipts)
+
+		// Set receipt root from the computed receipts.
+		header.ReceiptHash = deriveReceiptsRoot(result.Receipts)
+
+		// Set state root from the post-execution state.
+		header.Root = statedb.GetRoot()
 	}
+
+	// Set transaction trie root.
+	header.TxHash = deriveTxsRoot(txs)
 
 	return types.NewBlock(header, body)
 }
@@ -223,7 +207,7 @@ func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb)
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb.Copy())
 	err = bc.InsertBlock(block1)
 	if err != nil {
 		t.Fatalf("InsertBlock with tx: %v", err)
@@ -242,16 +226,10 @@ func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 }
 
 func TestBlockchain_InsertChain(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
-	// Build 5 blocks.
-	var blocks []*types.Block
-	parent := bc.Genesis()
-	for i := 0; i < 5; i++ {
-		b := makeBlock(parent, nil)
-		blocks = append(blocks, b)
-		parent = b
-	}
+	// Build 5 blocks with state tracking.
+	blocks := makeChainBlocks(bc.Genesis(), 5, statedb.Copy())
 
 	n, err := bc.InsertChain(blocks)
 	if err != nil {
@@ -283,12 +261,13 @@ func TestBlockchain_InsertChain(t *testing.T) {
 }
 
 func TestBlockchain_GetBlockByNumber(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Insert 3 blocks.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < 3; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -313,12 +292,13 @@ func TestBlockchain_GetBlockByNumber(t *testing.T) {
 }
 
 func TestBlockchain_GetHashFn(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Build 5 blocks.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < 5; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -419,12 +399,13 @@ func TestBlockchain_InvalidBlock(t *testing.T) {
 }
 
 func TestBlockchain_SetHead(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Build 5 blocks.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < 5; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -466,12 +447,13 @@ func TestBlockchain_SetHead(t *testing.T) {
 }
 
 func TestBlockchain_SetHeadToGenesis(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Build 3 blocks.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < 3; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -581,7 +563,7 @@ func TestBlockchain_WriteReadBlock_WithTransactions(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb)
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb.Copy())
 	if err := bc.InsertBlock(block1); err != nil {
 		t.Fatalf("InsertBlock with tx: %v", err)
 	}
@@ -647,13 +629,14 @@ func TestBlockchain_WriteReadBlock_GenesisFromDB(t *testing.T) {
 // --- State cache tests ---
 
 func TestBlockchain_StateCachePopulated(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Insert blocks up to stateSnapshotInterval to trigger a cache snapshot.
 	// stateSnapshotInterval is 16, so block 16 should trigger caching.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < int(stateSnapshotInterval); i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -676,12 +659,13 @@ func TestBlockchain_StateCachePopulated(t *testing.T) {
 }
 
 func TestBlockchain_StateCacheNotPopulatedAtNonInterval(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Insert a few blocks (less than stateSnapshotInterval).
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	for i := 0; i < 5; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -762,13 +746,14 @@ func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
 }
 
 func TestBlockchain_GetBlockFallbackToRawDB(t *testing.T) {
-	bc, _ := testChain(t)
+	bc, statedb := testChain(t)
 
 	// Insert 3 blocks.
+	buildState := statedb.Copy()
 	parent := bc.Genesis()
 	blocks := make([]*types.Block, 3)
 	for i := 0; i < 3; i++ {
-		b := makeBlock(parent, nil)
+		b := makeBlockWithState(parent, nil, buildState)
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}

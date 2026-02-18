@@ -175,15 +175,23 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 
 	gasPool := new(GasPool).AddGas(header.GasLimit)
 
+	// EIP-4788: store the parent beacon block root before any user transactions.
+	if b.config != nil && b.config.IsCancun(header.Time) {
+		ProcessBeaconBlockRoot(statedb, header)
+	}
+
+	// EIP-2935: store parent block hash in history storage contract (Prague+).
+	pragueActive := b.config != nil && b.config.IsPrague(header.Time)
+	if pragueActive && header.Number.Uint64() > 0 {
+		ProcessParentBlockHash(statedb, header.Number.Uint64()-1, header.ParentHash)
+	}
+
 	// Determine if BAL tracking is active for this block.
 	balActive := b.config != nil && b.config.IsAmsterdam(header.Time)
 	var blockBAL *bal.BlockAccessList
 	if balActive {
 		blockBAL = bal.NewBlockAccessList()
 	}
-
-	// Check if EIP-7623 calldata floor is active (Prague+).
-	pragueActive := b.config != nil && b.config.IsPrague(header.Time)
 
 	var (
 		txs      []*types.Transaction
@@ -255,26 +263,6 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 			continue
 		}
 
-		// EIP-7623: apply calldata floor gas after execution (Prague+).
-		if pragueActive {
-			delta := calldataFloorDelta(tx, used)
-			if delta > 0 {
-				// Charge the additional gas. If it would exceed the remaining
-				// gas pool, revert the transaction.
-				if gasPool.Gas() < delta {
-					statedb.RevertToSnapshot(snap)
-					gasPool.AddGas(used) // return the gas that ApplyTransaction consumed
-					continue
-				}
-				if err := gasPool.SubGas(delta); err != nil {
-					statedb.RevertToSnapshot(snap)
-					gasPool.AddGas(used)
-					continue
-				}
-				used += delta
-			}
-		}
-
 		txs = append(txs, tx)
 		receipts = append(receipts, receipt)
 		gasUsed += used
@@ -306,6 +294,15 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 
 	// Compute block-level bloom filter from all receipts.
 	header.Bloom = types.CreateBloom(receipts)
+
+	// Set CumulativeGasUsed on each receipt (running total, not individual).
+	// Receipt RLP encoding includes CumulativeGasUsed, so this must match
+	// what ProcessWithBAL produces during re-execution.
+	var cumGas uint64
+	for _, r := range receipts {
+		cumGas += r.GasUsed
+		r.CumulativeGasUsed = cumGas
+	}
 
 	// Compute transaction and receipt roots.
 	header.TxHash = deriveTxsRoot(txs)
@@ -393,6 +390,16 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 	}
 
 	gasPool := new(GasPool).AddGas(header.GasLimit)
+
+	// EIP-4788: store the parent beacon block root before any user transactions.
+	if b.config != nil && b.config.IsCancun(header.Time) {
+		ProcessBeaconBlockRoot(statedb, header)
+	}
+
+	// EIP-2935: store parent block hash in history storage contract (Prague+).
+	if b.config != nil && b.config.IsPrague(header.Time) && header.Number.Uint64() > 0 {
+		ProcessParentBlockHash(statedb, header.Number.Uint64()-1, header.ParentHash)
+	}
 
 	// Determine if BAL tracking is active for this block.
 	balActive := b.config != nil && b.config.IsAmsterdam(header.Time)
@@ -503,6 +510,13 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 		statedb.RevertToSnapshot(snapshot)
 	}
 
+	// Set CumulativeGasUsed on each receipt (running total).
+	var cumGasLegacy uint64
+	for _, r := range receipts {
+		cumGasLegacy += r.GasUsed
+		r.CumulativeGasUsed = cumGasLegacy
+	}
+
 	// Compute transaction and receipt roots.
 	header.TxHash = deriveTxsRoot(txs)
 	header.ReceiptHash = deriveReceiptsRoot(receipts)
@@ -578,6 +592,12 @@ func calcGasLimit(parentGasLimit, parentGasUsed uint64) uint64 {
 	}
 	return parentGasLimit
 }
+
+// DeriveTxsRoot is the exported version of deriveTxsRoot.
+func DeriveTxsRoot(txs []*types.Transaction) types.Hash { return deriveTxsRoot(txs) }
+
+// DeriveReceiptsRoot is the exported version of deriveReceiptsRoot.
+func DeriveReceiptsRoot(receipts []*types.Receipt) types.Hash { return deriveReceiptsRoot(receipts) }
 
 // deriveTxsRoot computes the transactions root using a Merkle Patricia Trie.
 // Key: RLP(index), Value: RLP-encoded transaction.

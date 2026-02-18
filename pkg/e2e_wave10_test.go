@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
@@ -71,30 +70,37 @@ func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB,
 		ExcessBlobGas:   &excessBlobGas,
 	}
 
-	// Process transactions.
-	gp := new(core.GasPool).AddGas(header.GasLimit)
-	var (
-		receipts []*types.Receipt
-		gasUsed  uint64
-	)
-	for _, tx := range txs {
-		receipt, used, err := core.ApplyTransaction(core.TestConfig, statedb, header, tx, gp)
-		if err != nil {
-			t.Fatalf("apply tx: %v", err)
+	body := &types.Body{
+		Transactions: txs,
+		Withdrawals:  []*types.Withdrawal{},
+	}
+	block := types.NewBlock(header, body)
+
+	// Execute block through the state processor to compute all consensus-
+	// critical fields: state root, receipt root, bloom, gas used, BAL hash.
+	proc := core.NewStateProcessor(core.TestConfig)
+	result, err := proc.ProcessWithBAL(block, statedb)
+	if err == nil {
+		var gasUsed uint64
+		for _, r := range result.Receipts {
+			gasUsed += r.GasUsed
 		}
-		receipts = append(receipts, receipt)
-		gasUsed += used
+		header.GasUsed = gasUsed
+		header.Bloom = types.CreateBloom(result.Receipts)
+		header.ReceiptHash = core.DeriveReceiptsRoot(result.Receipts)
+		header.Root = statedb.GetRoot()
+		if result.BlockAccessList != nil {
+			h := result.BlockAccessList.Hash()
+			header.BlockAccessListHash = &h
+		}
+	} else {
+		t.Fatalf("ProcessWithBAL: %v", err)
 	}
-	_ = receipts
-	header.GasUsed = gasUsed
 
-	// Set Block Access List hash for Amsterdam-active blocks.
-	if core.TestConfig.IsAmsterdam(header.Time) {
-		emptyBALHash := bal.NewBlockAccessList().Hash()
-		header.BlockAccessListHash = &emptyBALHash
-	}
+	// Set transaction trie root.
+	header.TxHash = core.DeriveTxsRoot(txs)
 
-	return types.NewBlock(header, &types.Body{Transactions: txs, Withdrawals: []*types.Withdrawal{}})
+	return types.NewBlock(header, body)
 }
 
 func TestBlockchainE2E_FullLifecycle(t *testing.T) {
@@ -307,7 +313,7 @@ func (b *blockchainBackend) CurrentHeader() *types.Header {
 func (b *blockchainBackend) ChainID() *big.Int { return b.chainID }
 
 func (b *blockchainBackend) StateAt(root types.Hash) (state.StateDB, error) {
-	return b.bc.State(), nil
+	return b.bc.StateAtRoot(root)
 }
 
 func (b *blockchainBackend) SendTransaction(tx *types.Transaction) error { return nil }

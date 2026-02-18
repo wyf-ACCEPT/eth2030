@@ -592,6 +592,16 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	// and EIP-7702 authorization costs).
 	igas := intrinsicGas(msg.Data, isCreate, authCount, emptyAuthCount)
 	igas += accessListGas(msg.AccessList)
+
+	// EIP-7623: the gas limit must also cover the calldata floor (Prague+).
+	// This prevents post-execution floor adjustment from exceeding gas limit.
+	if config != nil && config.IsPrague(header.Time) {
+		floor := calldataFloorGas(msg.Data, isCreate)
+		if floor > igas {
+			igas = floor
+		}
+	}
+
 	if igas > msg.GasLimit {
 		// Intrinsic gas exceeds gas limit — consume all gas
 		gp.AddGas(0) // nothing to return
@@ -700,6 +710,16 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		refund = maxRefund
 	}
 	gasUsed -= refund
+
+	// EIP-7623: apply calldata floor gas (Prague+).
+	// The floor cost ensures a minimum gas charge for transactions with
+	// significant calldata, incentivizing blob usage over calldata.
+	if config != nil && config.IsPrague(header.Time) {
+		floor := calldataFloorGas(msg.Data, isCreate)
+		if floor > gasUsed {
+			gasUsed = floor
+		}
+	}
 
 	// Refund remaining gas to sender
 	remainingGas := msg.GasLimit - gasUsed
