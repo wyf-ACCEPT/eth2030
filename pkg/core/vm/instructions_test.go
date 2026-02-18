@@ -20,25 +20,33 @@ func newMockStateDB() *mockStateDB {
 	}
 }
 
-func (m *mockStateDB) CreateAccount(types.Address)              {}
-func (m *mockStateDB) GetBalance(types.Address) *big.Int        { return new(big.Int) }
-func (m *mockStateDB) AddBalance(types.Address, *big.Int)       {}
-func (m *mockStateDB) SubBalance(types.Address, *big.Int)       {}
-func (m *mockStateDB) GetNonce(types.Address) uint64            { return 0 }
-func (m *mockStateDB) SetNonce(types.Address, uint64)           {}
-func (m *mockStateDB) GetCode(types.Address) []byte             { return nil }
-func (m *mockStateDB) SetCode(types.Address, []byte)            {}
-func (m *mockStateDB) GetCodeHash(types.Address) types.Hash     { return types.Hash{} }
-func (m *mockStateDB) SelfDestruct(types.Address)                                        {}
-func (m *mockStateDB) HasSelfDestructed(types.Address) bool                               { return false }
-func (m *mockStateDB) Exist(types.Address) bool                                           { return false }
-func (m *mockStateDB) Snapshot() int                                                      { return 0 }
-func (m *mockStateDB) RevertToSnapshot(int)                                               {}
-func (m *mockStateDB) AddLog(*types.Log)                                                  {}
-func (m *mockStateDB) AddAddressToAccessList(types.Address)                               {}
-func (m *mockStateDB) AddSlotToAccessList(types.Address, types.Hash)                      {}
-func (m *mockStateDB) AddressInAccessList(types.Address) bool                             { return false }
-func (m *mockStateDB) SlotInAccessList(types.Address, types.Hash) (bool, bool)            { return false, false }
+func (m *mockStateDB) CreateAccount(types.Address)                                {}
+func (m *mockStateDB) GetBalance(types.Address) *big.Int                          { return new(big.Int) }
+func (m *mockStateDB) AddBalance(types.Address, *big.Int)                         {}
+func (m *mockStateDB) SubBalance(types.Address, *big.Int)                         {}
+func (m *mockStateDB) GetNonce(types.Address) uint64                              { return 0 }
+func (m *mockStateDB) SetNonce(types.Address, uint64)                             {}
+func (m *mockStateDB) GetCode(types.Address) []byte                               { return nil }
+func (m *mockStateDB) SetCode(types.Address, []byte)                              {}
+func (m *mockStateDB) GetCodeHash(types.Address) types.Hash                       { return types.Hash{} }
+func (m *mockStateDB) GetCodeSize(types.Address) int                              { return 0 }
+func (m *mockStateDB) SelfDestruct(types.Address)                                 {}
+func (m *mockStateDB) HasSelfDestructed(types.Address) bool                       { return false }
+func (m *mockStateDB) Exist(types.Address) bool                                   { return false }
+func (m *mockStateDB) Empty(types.Address) bool                                   { return true }
+func (m *mockStateDB) Snapshot() int                                              { return 0 }
+func (m *mockStateDB) RevertToSnapshot(int)                                       {}
+func (m *mockStateDB) AddLog(*types.Log)                                          {}
+func (m *mockStateDB) AddRefund(uint64)                                           {}
+func (m *mockStateDB) SubRefund(uint64)                                           {}
+func (m *mockStateDB) GetRefund() uint64                                          { return 0 }
+func (m *mockStateDB) AddAddressToAccessList(types.Address)                       {}
+func (m *mockStateDB) AddSlotToAccessList(types.Address, types.Hash)              {}
+func (m *mockStateDB) AddressInAccessList(types.Address) bool                     { return false }
+func (m *mockStateDB) SlotInAccessList(types.Address, types.Hash) (bool, bool)    { return false, false }
+func (m *mockStateDB) GetCommittedState(addr types.Address, key types.Hash) types.Hash {
+	return m.GetState(addr, key)
+}
 
 func (m *mockStateDB) GetState(addr types.Address, key types.Hash) types.Hash {
 	if s, ok := m.storage[addr]; ok {

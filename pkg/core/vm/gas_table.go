@@ -263,17 +263,16 @@ func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 
 	key := bigToHash(loc)
 	current := evm.StateDB.GetState(contract.Address, key)
+	original := evm.StateDB.GetCommittedState(contract.Address, key)
 	val := bigToHash(stack.Back(1))
 
 	var currentBytes, originalBytes, newBytes [32]byte
 	copy(currentBytes[:], current[:])
+	copy(originalBytes[:], original[:])
 	copy(newBytes[:], val[:])
-	// For simplicity we treat the committed state as original.
-	// A full implementation would use GetCommittedState.
-	copy(originalBytes[:], current[:])
 
 	gas, _ := SstoreGas(originalBytes, currentBytes, newBytes, false)
-	// Replace the cold surcharge: SstoreGas doesn't know about EIP-2929 cold.
+	// Add the cold surcharge: SstoreGas doesn't know about EIP-2929 cold.
 	return gas + coldGas
 }
 

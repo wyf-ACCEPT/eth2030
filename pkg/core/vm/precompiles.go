@@ -301,7 +301,6 @@ func maxUint64(a, b uint64) uint64 {
 
 // --- bn256Add (address 0x06) - EIP-196 ---
 // BN254 (alt_bn128) elliptic curve point addition.
-// Stub: returns an error since the BN254 crypto library is not yet integrated.
 
 type bn256Add struct{}
 
@@ -310,15 +309,11 @@ func (c *bn256Add) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bn256Add) Run(input []byte) ([]byte, error) {
-	// Input: two points (x1, y1, x2, y2) as 4 x 32-byte big-endian integers (128 bytes).
-	// Output: the sum point (x3, y3) as 2 x 32-byte big-endian integers (64 bytes).
-	// Stub: actual BN254 point addition requires a dedicated crypto library.
-	return nil, ErrBN254NotImplemented
+	return crypto.BN254Add(input)
 }
 
 // --- bn256ScalarMul (address 0x07) - EIP-196 ---
 // BN254 (alt_bn128) elliptic curve scalar multiplication.
-// Stub: returns an error since the BN254 crypto library is not yet integrated.
 
 type bn256ScalarMul struct{}
 
@@ -327,15 +322,11 @@ func (c *bn256ScalarMul) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bn256ScalarMul) Run(input []byte) ([]byte, error) {
-	// Input: a point (x, y) and a scalar s as 3 x 32-byte big-endian integers (96 bytes).
-	// Output: the scalar product point (x', y') as 2 x 32-byte big-endian integers (64 bytes).
-	// Stub: actual BN254 scalar multiplication requires a dedicated crypto library.
-	return nil, ErrBN254NotImplemented
+	return crypto.BN254ScalarMul(input)
 }
 
 // --- bn256Pairing (address 0x08) - EIP-197 ---
 // BN254 (alt_bn128) elliptic curve pairing check.
-// Stub: returns an error since the BN254 crypto library is not yet integrated.
 
 type bn256Pairing struct{}
 
@@ -347,14 +338,7 @@ func (c *bn256Pairing) RequiredGas(input []byte) uint64 {
 }
 
 func (c *bn256Pairing) Run(input []byte) ([]byte, error) {
-	// Input: k pairs of (G1, G2) points, each pair is 192 bytes.
-	// Output: 32 bytes with 1 if pairing check succeeds, 0 otherwise.
-	// Input length must be a multiple of 192.
-	if len(input)%192 != 0 {
-		return nil, errors.New("bn256 pairing: invalid input length")
-	}
-	// Stub: actual BN254 pairing check requires a dedicated crypto library.
-	return nil, ErrBN254NotImplemented
+	return crypto.BN254PairingCheck(input)
 }
 
 // --- blake2F (address 0x09) - EIP-152 ---

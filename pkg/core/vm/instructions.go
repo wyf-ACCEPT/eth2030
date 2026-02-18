@@ -597,8 +597,26 @@ func opSstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	loc, val := stack.Pop(), stack.Pop()
 	if evm.StateDB != nil {
 		key := bigToHash(loc)
-		value := bigToHash(val)
-		evm.StateDB.SetState(contract.Address, key, value)
+		newVal := bigToHash(val)
+
+		// Get current and original (committed) values for refund calculation.
+		current := evm.StateDB.GetState(contract.Address, key)
+		original := evm.StateDB.GetCommittedState(contract.Address, key)
+
+		// Calculate refund per EIP-2200/EIP-3529.
+		var currentBytes, originalBytes, newBytes [32]byte
+		copy(currentBytes[:], current[:])
+		copy(originalBytes[:], original[:])
+		copy(newBytes[:], newVal[:])
+
+		_, refund := SstoreGas(originalBytes, currentBytes, newBytes, false)
+		if refund > 0 {
+			evm.StateDB.AddRefund(uint64(refund))
+		} else if refund < 0 {
+			evm.StateDB.SubRefund(uint64(-refund))
+		}
+
+		evm.StateDB.SetState(contract.Address, key, newVal)
 	}
 	return nil, nil
 }

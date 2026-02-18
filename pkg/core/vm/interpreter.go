@@ -58,9 +58,12 @@ type StateDB interface {
 	SetCode(addr types.Address, code []byte)
 	GetCodeHash(addr types.Address) types.Hash
 
+	GetCodeSize(addr types.Address) int
+
 	// Storage
 	GetState(addr types.Address, key types.Hash) types.Hash
 	SetState(addr types.Address, key types.Hash, value types.Hash)
+	GetCommittedState(addr types.Address, key types.Hash) types.Hash
 
 	// Transient storage (EIP-1153)
 	GetTransientState(addr types.Address, key types.Hash) types.Hash
@@ -72,6 +75,7 @@ type StateDB interface {
 
 	// Account existence
 	Exist(addr types.Address) bool
+	Empty(addr types.Address) bool
 
 	// Snapshot and revert
 	Snapshot() int
@@ -79,6 +83,11 @@ type StateDB interface {
 
 	// Logs
 	AddLog(log *types.Log)
+
+	// Refund counter (EIP-3529)
+	AddRefund(gas uint64)
+	SubRefund(gas uint64)
+	GetRefund() uint64
 
 	// Access list (EIP-2929 warm/cold tracking)
 	AddAddressToAccessList(addr types.Address)
@@ -125,6 +134,56 @@ func NewEVMWithState(blockCtx BlockContext, txCtx TxContext, config Config, stat
 	evm := NewEVM(blockCtx, txCtx, config)
 	evm.StateDB = stateDB
 	return evm
+}
+
+// SetJumpTable replaces the EVM's jump table. Use SelectJumpTable to pick
+// the correct table for a given fork.
+func (evm *EVM) SetJumpTable(jt JumpTable) {
+	evm.jumpTable = jt
+}
+
+// ForkRules mirrors the chain configuration fork flags needed to select
+// the correct jump table. The caller (processor) converts ChainConfig.Rules
+// into this struct to avoid a circular import.
+type ForkRules struct {
+	IsPrague         bool
+	IsCancun         bool
+	IsShanghai       bool
+	IsMerge          bool
+	IsLondon         bool
+	IsBerlin         bool
+	IsIstanbul       bool
+	IsConstantinople bool
+	IsByzantium      bool
+	IsHomestead      bool
+}
+
+// SelectJumpTable returns the correct jump table for the given fork rules.
+func SelectJumpTable(rules ForkRules) JumpTable {
+	switch {
+	case rules.IsPrague:
+		return NewPragueJumpTable()
+	case rules.IsCancun:
+		return NewCancunJumpTable()
+	case rules.IsShanghai:
+		return NewShanghaiJumpTable()
+	case rules.IsMerge:
+		return NewMergeJumpTable()
+	case rules.IsLondon:
+		return NewLondonJumpTable()
+	case rules.IsBerlin:
+		return NewBerlinJumpTable()
+	case rules.IsIstanbul:
+		return NewIstanbulJumpTable()
+	case rules.IsConstantinople:
+		return NewConstantinopleJumpTable()
+	case rules.IsByzantium:
+		return NewByzantiumJumpTable()
+	case rules.IsHomestead:
+		return NewHomesteadJumpTable()
+	default:
+		return NewFrontierJumpTable()
+	}
 }
 
 // Run executes the contract bytecode using the interpreter loop.

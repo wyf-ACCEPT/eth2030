@@ -798,36 +798,89 @@ func TestBlake2FPrecompile_GasCost(t *testing.T) {
 	}
 }
 
-// TestBN256AddStub verifies that the BN256 point addition stub returns an error.
-func TestBN256AddStub(t *testing.T) {
+// TestBN256Add verifies that BN256 point addition works correctly.
+func TestBN256Add(t *testing.T) {
 	c := &bn256Add{}
 
 	if g := c.RequiredGas(nil); g != 150 {
 		t.Errorf("bn256Add gas = %d, want 150", g)
 	}
 
-	_, err := c.Run(make([]byte, 128))
-	if err != ErrBN254NotImplemented {
-		t.Errorf("bn256Add: expected ErrBN254NotImplemented, got %v", err)
+	// Adding identity to identity should return identity.
+	out, err := c.Run(make([]byte, 128))
+	if err != nil {
+		t.Fatalf("bn256Add(0+0): unexpected error: %v", err)
+	}
+	if len(out) != 64 {
+		t.Fatalf("bn256Add output length = %d, want 64", len(out))
+	}
+	// Should be all zeros (identity).
+	for i, b := range out {
+		if b != 0 {
+			t.Fatalf("bn256Add(0+0) byte %d = %d, want 0", i, b)
+		}
+	}
+
+	// G + G should return 2G.
+	input := make([]byte, 128)
+	input[31] = 1   // x1 = 1
+	input[63] = 2   // y1 = 2
+	input[95] = 1   // x2 = 1
+	input[127] = 2  // y2 = 2
+	out, err = c.Run(input)
+	if err != nil {
+		t.Fatalf("bn256Add(G+G): unexpected error: %v", err)
+	}
+	if len(out) != 64 {
+		t.Fatalf("bn256Add(G+G) output length = %d, want 64", len(out))
+	}
+	// Verify result is on the curve by using it in another add.
+	x := new(big.Int).SetBytes(out[:32])
+	y := new(big.Int).SetBytes(out[32:64])
+	if x.Sign() == 0 && y.Sign() == 0 {
+		t.Fatal("bn256Add(G+G) should not be identity")
 	}
 }
 
-// TestBN256ScalarMulStub verifies that the BN256 scalar mul stub returns an error.
-func TestBN256ScalarMulStub(t *testing.T) {
+// TestBN256ScalarMul verifies that BN256 scalar multiplication works correctly.
+func TestBN256ScalarMul(t *testing.T) {
 	c := &bn256ScalarMul{}
 
 	if g := c.RequiredGas(nil); g != 6000 {
 		t.Errorf("bn256ScalarMul gas = %d, want 6000", g)
 	}
 
-	_, err := c.Run(make([]byte, 96))
-	if err != ErrBN254NotImplemented {
-		t.Errorf("bn256ScalarMul: expected ErrBN254NotImplemented, got %v", err)
+	// 1 * G = G
+	input := make([]byte, 96)
+	input[31] = 1  // x = 1
+	input[63] = 2  // y = 2
+	input[95] = 1  // scalar = 1
+	out, err := c.Run(input)
+	if err != nil {
+		t.Fatalf("bn256ScalarMul(1*G): unexpected error: %v", err)
+	}
+	if out[31] != 1 || out[63] != 2 {
+		t.Fatalf("bn256ScalarMul(1*G) should return G, got %x", out)
+	}
+
+	// 0 * G = identity
+	input2 := make([]byte, 96)
+	input2[31] = 1  // x = 1
+	input2[63] = 2  // y = 2
+	// scalar = 0
+	out2, err := c.Run(input2)
+	if err != nil {
+		t.Fatalf("bn256ScalarMul(0*G): unexpected error: %v", err)
+	}
+	for i, b := range out2 {
+		if b != 0 {
+			t.Fatalf("bn256ScalarMul(0*G) byte %d = %d, want 0", i, b)
+		}
 	}
 }
 
-// TestBN256PairingStub verifies that the BN256 pairing stub returns an error.
-func TestBN256PairingStub(t *testing.T) {
+// TestBN256Pairing verifies the BN256 pairing precompile.
+func TestBN256Pairing(t *testing.T) {
 	c := &bn256Pairing{}
 
 	// Gas cost: 45000 + 34000*k where k = len(input)/192.
@@ -841,10 +894,13 @@ func TestBN256PairingStub(t *testing.T) {
 		t.Errorf("bn256Pairing gas (2 pairs) = %d, want %d", g, 45000+34000*2)
 	}
 
-	// Valid length (multiple of 192).
-	_, err := c.Run(make([]byte, 192))
-	if err != ErrBN254NotImplemented {
-		t.Errorf("bn256Pairing(valid): expected ErrBN254NotImplemented, got %v", err)
+	// Empty input should return 1 (true).
+	out, err := c.Run(nil)
+	if err != nil {
+		t.Fatalf("bn256Pairing(empty): unexpected error: %v", err)
+	}
+	if out[31] != 1 {
+		t.Fatalf("bn256Pairing(empty) should return 1, got %x", out)
 	}
 
 	// Invalid length (not multiple of 192).
