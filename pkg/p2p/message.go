@@ -69,7 +69,9 @@ func ValidateMessageCode(code uint64) error {
 	case StatusMsg, NewBlockHashesMsg, TransactionsMsg,
 		GetBlockHeadersMsg, BlockHeadersMsg,
 		GetBlockBodiesMsg, BlockBodiesMsg,
-		NewBlockMsg, GetReceiptsMsg, ReceiptsMsg:
+		NewBlockMsg, NewPooledTransactionHashesMsg,
+		GetPooledTransactionsMsg, PooledTransactionsMsg,
+		GetReceiptsMsg, ReceiptsMsg:
 		return nil
 	default:
 		return fmt.Errorf("%w: 0x%02x", ErrInvalidMsgCode, code)
@@ -95,6 +97,12 @@ func MessageName(code uint64) string {
 		return "BlockBodies"
 	case NewBlockMsg:
 		return "NewBlock"
+	case NewPooledTransactionHashesMsg:
+		return "NewPooledTransactionHashes"
+	case GetPooledTransactionsMsg:
+		return "GetPooledTransactions"
+	case PooledTransactionsMsg:
+		return "PooledTransactions"
 	case GetReceiptsMsg:
 		return "GetReceipts"
 	case ReceiptsMsg:

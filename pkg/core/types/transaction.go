@@ -419,6 +419,15 @@ func (tx *Transaction) Nonce() uint64 { return tx.inner.nonce() }
 // To returns the recipient address, or nil for contract creation.
 func (tx *Transaction) To() *Address { return tx.inner.to() }
 
+// AuthorizationList returns the authorization list for EIP-7702 SetCode transactions.
+// Returns nil for all other transaction types.
+func (tx *Transaction) AuthorizationList() []Authorization {
+	if setCode, ok := tx.inner.(*SetCodeTx); ok {
+		return setCode.AuthorizationList
+	}
+	return nil
+}
+
 // BlobGasFeeCap returns the blob gas fee cap for EIP-4844 blob transactions.
 func (tx *Transaction) BlobGasFeeCap() *big.Int {
 	if blob, ok := tx.inner.(*BlobTx); ok {

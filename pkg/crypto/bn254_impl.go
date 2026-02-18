@@ -13,125 +13,186 @@ package crypto
 // The Frobenius endomorphism x -> x^p acts on each coefficient by conjugation
 // (in F_p^2) and multiplication by precomputed constants (powers of xi).
 //
-// These constants are xi^((p^k - 1) / d) for various k and d, computed offline.
+// An F_p^12 element f = c00 + c01*v + c02*v^2 + (c10 + c11*v + c12*v^2)*w
+// maps under pi (x -> x^p) as:
+//
+//   c00: conj(c00)
+//   c01: conj(c01) * xi^((p-1)/3)
+//   c02: conj(c02) * xi^(2(p-1)/3)
+//   c10: conj(c10) * xi^((p-1)/6)
+//   c11: conj(c11) * xi^((p-1)/2)     [= xi^((p-1)/6 + (p-1)/3)]
+//   c12: conj(c12) * xi^(5(p-1)/6)    [= xi^((p-1)/6 + 2(p-1)/3)]
+//
+// For p^2 Frobenius, conjugation^2 = identity, so no conjugation is applied,
+// and the constants are xi^((p^2-1)/d) for the same structure.
+//
+// For p^3 Frobenius, conjugation^3 = conjugation, same pattern with p^3 constants.
 
 import "math/big"
 
-// Frobenius constants for F_p^6 and F_p^12.
-//
-// In F_p^6, the Frobenius pi acts on (c0 + c1*v + c2*v^2) as:
-//   pi(c0) + pi(c1) * xi^((p-1)/3) * v + pi(c2) * xi^((2(p-1))/3) * v^2
-// where pi on F_p^2 is conjugation.
-//
-// In F_p^12, pi acts on (a + b*w) as:
-//   pi(a) + pi(b) * xi^((p-1)/2) * w
-//
-// For higher Frobenius powers (p^2, p^3), we use the corresponding powers.
-
-// gammaCoefficients are precomputed constants for Frobenius maps.
-// gamma[i][j] = xi^((j*(p^i - 1)) / d) where d depends on the tower level.
-
-// For Frobenius pi (p^1):
-// gamma11 = xi^((p-1)/3) -- coefficient for v in F_p^6
-// gamma12 = xi^((2(p-1))/3) -- coefficient for v^2 in F_p^6
-// gamma13 = xi^((p-1)/2) -- coefficient for w in F_p^12
+// --- Frobenius p^1 constants ---
+// Each constant is xi^(k*(p-1)/6) for k = 1..5.
 
 var (
-	// xi^((p-1)/3) in F_p^2 -- used for c1 coefficient in Frobenius on F_p^6
-	gamma11a0, _ = new(big.Int).SetString("21575463638280843010398324269430826099269044274347216827212613867836435027261", 10)
-	gamma11a1, _ = new(big.Int).SetString("10307601595873709700078755136146204025218092992518765122318458099831426205727", 10)
-	gamma11     = &fp2{a0: gamma11a0, a1: gamma11a1}
+	// frobC1_1 = xi^((p-1)/6) -- for c10 (w coefficient, no v)
+	frobC1_1 = &fp2{
+		a0: bigFromStr("8376118865763821496583973867626364092589906065868298776909617916018768340080"),
+		a1: bigFromStr("16469823323077808223889137241176536799009286646108169935659301613961712198316"),
+	}
 
-	// xi^((2(p-1))/3) in F_p^2
-	gamma12a0, _ = new(big.Int).SetString("2821565182194536844548159561693502659359617185244120367078079554186484126554", 10)
-	gamma12a1, _ = new(big.Int).SetString("3505843767911556378687030309984248845540243509899259266946897622437848376689", 10)
-	gamma12     = &fp2{a0: gamma12a0, a1: gamma12a1}
+	// frobC1_2 = xi^((p-1)/3) -- for c01 (v coefficient, no w)
+	frobC1_2 = &fp2{
+		a0: bigFromStr("21575463638280843010398324269430826099269044274347216827212613867836435027261"),
+		a1: bigFromStr("10307601595873709700152284273816112264069230130616436755625194854815875713954"),
+	}
 
-	// xi^((p-1)/2) in F_p^2
-	gamma13a0, _ = new(big.Int).SetString("3505843767911556378687030309984248845540243509899259266946897622437848376689", 10)
-	gamma13a1, _ = new(big.Int).SetString("2821565182194536844548159561693502659359617185244120367078079554186484126554", 10)
-	gamma13     = &fp2{a0: gamma13a0, a1: gamma13a1}
+	// frobC1_3 = xi^((p-1)/2) -- for c11 (v*w coefficient)
+	frobC1_3 = &fp2{
+		a0: bigFromStr("2821565182194536844548159561693502659359617185244120367078079554186484126554"),
+		a1: bigFromStr("3505843767911556378687030309984248845540243509899259641013678093033130930403"),
+	}
 
-	// For Frobenius pi^2 (p^2):
-	// xi^((p^2-1)/3)
-	gamma21a0, _ = new(big.Int).SetString("21888242871839275220042445260109153167277707414472061641714758635765020556616", 10)
-	gamma21     = &fp2{a0: gamma21a0, a1: new(big.Int)}
+	// frobC1_4 = xi^(2(p-1)/3) -- for c02 (v^2 coefficient, no w)
+	frobC1_4 = &fp2{
+		a0: bigFromStr("2581911344467009335267311115468803099551665605076196740867805258568234346338"),
+		a1: bigFromStr("19937756971775647987995932169929341994314640652964949448313374472400716661030"),
+	}
 
-	// xi^((2(p^2-1))/3)
-	gamma22a0, _ = new(big.Int).SetString("21888242871839275220042445260109153167277707414472061641714758635765020556617", 10)
-	gamma22     = &fp2{a0: gamma22a0, a1: new(big.Int)}
-
-	// xi^((p^2-1)/2) = -1
-	gamma23 = &fp2{a0: new(big.Int).Sub(bn254P, big.NewInt(1)), a1: new(big.Int)}
-
-	// For Frobenius pi^3 (p^3):
-	// These are conjugates of the pi^1 constants.
-	gamma31a0, _ = new(big.Int).SetString("3772000881919853776433251133173384969862764767146999707016920680176045572446", 10)
-	gamma31a1, _ = new(big.Int).SetString("19066677689644738135277537586023210547564610619270757373956590089388396372654", 10)
-	gamma31     = &fp2{a0: gamma31a0, a1: gamma31a1}
-
-	gamma32a0, _ = new(big.Int).SetString("5324479202449903542726783395506214481928257762400643279780343368557297135718", 10)
-	gamma32a1, _ = new(big.Int).SetString("16208900380737693084919495127334387981393726419856888799917914180988844123039", 10)
-	gamma32     = &fp2{a0: gamma32a0, a1: gamma32a1}
-
-	gamma33a0, _ = new(big.Int).SetString("18566938241244942414004596690298913868373833782006617400804628704885040364344", 10)
-	gamma33a1, _ = new(big.Int).SetString("16208900380737693084919495127334387981393726419856888799917914180988844123039", 10)
-	gamma33     = &fp2{a0: gamma33a0, a1: gamma33a1}
+	// frobC1_5 = xi^(5(p-1)/6) -- for c12 (v^2*w coefficient)
+	frobC1_5 = &fp2{
+		a0: bigFromStr("685108087231508774477564247770172212460312782337200605669322048753928464687"),
+		a1: bigFromStr("8447204650696766136447902020341177575205426561248465145919723016860428151883"),
+	}
 )
+
+// --- Frobenius p^2 constants ---
+// For p^2, conjugation^2 = identity, so constants are real (in F_p).
+
+var (
+	// frobC2_1 = xi^((p^2-1)/6) -- for c10
+	frobC2_1 = &fp2{
+		a0: bigFromStr("21888242871839275220042445260109153167277707414472061641714758635765020556617"),
+		a1: new(big.Int),
+	}
+
+	// frobC2_2 = xi^((p^2-1)/3) -- for c01
+	frobC2_2 = &fp2{
+		a0: bigFromStr("21888242871839275220042445260109153167277707414472061641714758635765020556616"),
+		a1: new(big.Int),
+	}
+
+	// frobC2_3 = xi^((p^2-1)/2) -- for c11
+	frobC2_3 = &fp2{
+		a0: bigFromStr("21888242871839275222246405745257275088696311157297823662689037894645226208582"),
+		a1: new(big.Int),
+	}
+
+	// frobC2_4 = xi^(2(p^2-1)/3) -- for c02
+	frobC2_4 = &fp2{
+		a0: bigFromStr("2203960485148121921418603742825762020974279258880205651966"),
+		a1: new(big.Int),
+	}
+
+	// frobC2_5 = xi^(5(p^2-1)/6) -- for c12
+	frobC2_5 = &fp2{
+		a0: bigFromStr("2203960485148121921418603742825762020974279258880205651967"),
+		a1: new(big.Int),
+	}
+)
+
+// --- Frobenius p^3 constants ---
+
+var (
+	// frobC3_1 = xi^((p^3-1)/6) -- for c10
+	frobC3_1 = &fp2{
+		a0: bigFromStr("11697423496358154304825782922584725312912383441159505038794027105778954184319"),
+		a1: bigFromStr("303847389135065887422783454877609941456349188919719272345083954437860409601"),
+	}
+
+	// frobC3_2 = xi^((p^3-1)/3) -- for c01
+	frobC3_2 = &fp2{
+		a0: bigFromStr("3772000881919853776433695186713858239009073593817195771773381919316419345261"),
+		a1: bigFromStr("2236595495967245188281701248203181795121068902605861227855261137820944008926"),
+	}
+
+	// frobC3_3 = xi^((p^3-1)/2) -- for c11
+	frobC3_3 = &fp2{
+		a0: bigFromStr("19066677689644738377698246183563772429336693972053703295610958340458742082029"),
+		a1: bigFromStr("18382399103927718843559375435273026243156067647398564021675359801612095278180"),
+	}
+
+	// frobC3_4 = xi^(2(p^3-1)/3) -- for c02
+	frobC3_4 = &fp2{
+		a0: bigFromStr("5324479202449903542726783395506214481928257762400643279780343368557297135718"),
+		a1: bigFromStr("16208900380737693084919495127334387981393726419856888799917914180988844123039"),
+	}
+
+	// frobC3_5 = xi^(5(p^3-1)/6) -- for c12
+	frobC3_5 = &fp2{
+		a0: bigFromStr("8941241848238582420466759817324047081148088512956452953208002715982955420483"),
+		a1: bigFromStr("10338197737521362862238855242243140895517409139741313354160881284257516364953"),
+	}
+)
+
+// bigFromStr parses a decimal string to *big.Int. Panics on invalid input.
+func bigFromStr(s string) *big.Int {
+	v, ok := new(big.Int).SetString(s, 10)
+	if !ok {
+		panic("bn254_impl: invalid big.Int literal: " + s)
+	}
+	return v
+}
 
 // fp12FrobeniusEfficient computes the Frobenius endomorphism f^p on F_p^12
 // using the tower structure, avoiding the expensive generic exponentiation.
-//
-// For f = (a0 + a1*w) where a0, a1 in F_p^6 and a_i = (c0 + c1*v + c2*v^2):
-//   f^p = conj(a0.c0) + conj(a0.c1)*gamma11*v + conj(a0.c2)*gamma12*v^2
-//       + (conj(a1.c0) + conj(a1.c1)*gamma11*v + conj(a1.c2)*gamma12*v^2) * gamma13 * w
 func fp12FrobeniusEfficient(f *fp12) *fp12 {
-	// Apply Frobenius to each F_p^2 coefficient (conjugation) and multiply by gammas.
-	c00 := fp2Conj(f.c0.c0)
-	c01 := fp2Mul(fp2Conj(f.c0.c1), gamma11)
-	c02 := fp2Mul(fp2Conj(f.c0.c2), gamma12)
-
-	c10 := fp2Mul(fp2Conj(f.c1.c0), gamma13)
-	c11 := fp2Mul(fp2Mul(fp2Conj(f.c1.c1), gamma11), gamma13)
-	c12 := fp2Mul(fp2Mul(fp2Conj(f.c1.c2), gamma12), gamma13)
-
 	return &fp12{
-		c0: &fp6{c0: c00, c1: c01, c2: c02},
-		c1: &fp6{c0: c10, c1: c11, c2: c12},
+		c0: &fp6{
+			c0: fp2Conj(f.c0.c0),
+			c1: fp2Mul(fp2Conj(f.c0.c1), frobC1_2),
+			c2: fp2Mul(fp2Conj(f.c0.c2), frobC1_4),
+		},
+		c1: &fp6{
+			c0: fp2Mul(fp2Conj(f.c1.c0), frobC1_1),
+			c1: fp2Mul(fp2Conj(f.c1.c1), frobC1_3),
+			c2: fp2Mul(fp2Conj(f.c1.c2), frobC1_5),
+		},
 	}
 }
 
 // fp12FrobeniusSqEfficient computes f^(p^2) on F_p^12.
 // For p^2, conjugation composed with itself is the identity on F_p^2,
-// so we just multiply by the gamma2x constants (which are in F_p, not F_p^2).
+// so we just multiply each coefficient by the corresponding p^2 constant.
 func fp12FrobeniusSqEfficient(f *fp12) *fp12 {
-	c00 := newFp2(f.c0.c0.a0, f.c0.c0.a1)
-	c01 := fp2Mul(f.c0.c1, gamma21)
-	c02 := fp2Mul(f.c0.c2, gamma22)
-
-	c10 := fp2Mul(f.c1.c0, gamma23)
-	c11 := fp2Mul(fp2Mul(f.c1.c1, gamma21), gamma23)
-	c12 := fp2Mul(fp2Mul(f.c1.c2, gamma22), gamma23)
-
 	return &fp12{
-		c0: &fp6{c0: c00, c1: c01, c2: c02},
-		c1: &fp6{c0: c10, c1: c11, c2: c12},
+		c0: &fp6{
+			c0: newFp2(f.c0.c0.a0, f.c0.c0.a1),
+			c1: fp2Mul(f.c0.c1, frobC2_2),
+			c2: fp2Mul(f.c0.c2, frobC2_4),
+		},
+		c1: &fp6{
+			c0: fp2Mul(f.c1.c0, frobC2_1),
+			c1: fp2Mul(f.c1.c1, frobC2_3),
+			c2: fp2Mul(f.c1.c2, frobC2_5),
+		},
 	}
 }
 
 // fp12FrobeniusCubeEfficient computes f^(p^3) on F_p^12.
+// Conjugation^3 = conjugation, so each F_p^2 coefficient is conjugated
+// and multiplied by the corresponding p^3 constant.
 func fp12FrobeniusCubeEfficient(f *fp12) *fp12 {
-	c00 := fp2Conj(f.c0.c0)
-	c01 := fp2Mul(fp2Conj(f.c0.c1), gamma31)
-	c02 := fp2Mul(fp2Conj(f.c0.c2), gamma32)
-
-	c10 := fp2Mul(fp2Conj(f.c1.c0), gamma33)
-	c11 := fp2Mul(fp2Mul(fp2Conj(f.c1.c1), gamma31), gamma33)
-	c12 := fp2Mul(fp2Mul(fp2Conj(f.c1.c2), gamma32), gamma33)
-
 	return &fp12{
-		c0: &fp6{c0: c00, c1: c01, c2: c02},
-		c1: &fp6{c0: c10, c1: c11, c2: c12},
+		c0: &fp6{
+			c0: fp2Conj(f.c0.c0),
+			c1: fp2Mul(fp2Conj(f.c0.c1), frobC3_2),
+			c2: fp2Mul(fp2Conj(f.c0.c2), frobC3_4),
+		},
+		c1: &fp6{
+			c0: fp2Mul(fp2Conj(f.c1.c0), frobC3_1),
+			c1: fp2Mul(fp2Conj(f.c1.c1), frobC3_3),
+			c2: fp2Mul(fp2Conj(f.c1.c2), frobC3_5),
+		},
 	}
 }
 

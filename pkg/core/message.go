@@ -19,6 +19,8 @@ type Message struct {
 	Data       []byte
 	AccessList types.AccessList
 	BlobHashes []types.Hash
+	AuthList   []types.Authorization // EIP-7702 authorization list for SetCode transactions
+	TxType     uint8                 // transaction type (for fork-specific processing)
 }
 
 // TransactionToMessage converts a transaction into a Message for execution.
@@ -34,6 +36,8 @@ func TransactionToMessage(tx *types.Transaction) Message {
 		Data:       tx.Data(),
 		AccessList: tx.AccessList(),
 		BlobHashes: tx.BlobHashes(),
+		AuthList:   tx.AuthorizationList(),
+		TxType:     tx.Type(),
 	}
 	if sender := tx.Sender(); sender != nil {
 		msg.From = *sender

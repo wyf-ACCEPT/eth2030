@@ -117,6 +117,32 @@ func getStorageStem(addr types.Address, slot uint64) [StemSize]byte {
 	return stem
 }
 
+// VerkleKeyFromAddress computes the 32-byte tree key for an address
+// with a given suffix, per EIP-6800 stem derivation.
+// The first 31 bytes are the stem (derived from the address via the
+// Pedersen hash placeholder) and the last byte is the suffix that
+// selects the field within the leaf node.
+func VerkleKeyFromAddress(addr types.Address, suffix byte) []byte {
+	stem := getAccountStem(addr)
+	key := make([]byte, KeySize)
+	copy(key[:StemSize], stem[:])
+	key[StemSize] = suffix
+	return key
+}
+
+// AccountHeaderKeys returns the five standard EIP-6800 account header
+// tree keys for an address: version, balance, nonce, code_hash, and
+// code_size. These all share the same 31-byte stem.
+func AccountHeaderKeys(addr types.Address) [5][KeySize]byte {
+	return [5][KeySize]byte{
+		GetTreeKeyForVersion(addr),
+		GetTreeKeyForBalance(addr),
+		GetTreeKeyForNonce(addr),
+		GetTreeKeyForCodeHash(addr),
+		GetTreeKeyForCodeSize(addr),
+	}
+}
+
 // StemFromKey extracts the 31-byte stem from a 32-byte tree key.
 func StemFromKey(key [KeySize]byte) [StemSize]byte {
 	var stem [StemSize]byte

@@ -115,7 +115,9 @@ func TestValidateMessageCode(t *testing.T) {
 		StatusMsg, NewBlockHashesMsg, TransactionsMsg,
 		GetBlockHeadersMsg, BlockHeadersMsg,
 		GetBlockBodiesMsg, BlockBodiesMsg,
-		NewBlockMsg, GetReceiptsMsg, ReceiptsMsg,
+		NewBlockMsg, NewPooledTransactionHashesMsg,
+		GetPooledTransactionsMsg, PooledTransactionsMsg,
+		GetReceiptsMsg, ReceiptsMsg,
 	}
 	for _, code := range validCodes {
 		if err := ValidateMessageCode(code); err != nil {
@@ -123,8 +125,8 @@ func TestValidateMessageCode(t *testing.T) {
 		}
 	}
 
-	// Invalid codes.
-	invalidCodes := []uint64{0x08, 0x0b, 0x0c, 0xff, 0x100}
+	// Invalid codes: gaps between 0x0a and 0x0f, and codes beyond 0x10.
+	invalidCodes := []uint64{0x0b, 0x0c, 0x0d, 0x0e, 0x11, 0xff, 0x100}
 	for _, code := range invalidCodes {
 		if err := ValidateMessageCode(code); err == nil {
 			t.Errorf("ValidateMessageCode(0x%02x) = nil, want error", code)
@@ -145,6 +147,9 @@ func TestMessageName(t *testing.T) {
 		{GetBlockBodiesMsg, "GetBlockBodies"},
 		{BlockBodiesMsg, "BlockBodies"},
 		{NewBlockMsg, "NewBlock"},
+		{NewPooledTransactionHashesMsg, "NewPooledTransactionHashes"},
+		{GetPooledTransactionsMsg, "GetPooledTransactions"},
+		{PooledTransactionsMsg, "PooledTransactions"},
 		{GetReceiptsMsg, "GetReceipts"},
 		{ReceiptsMsg, "Receipts"},
 	}

@@ -19,8 +19,9 @@ import "math/big"
 // ateLoopCount is |6u+2| for BN254: 29793968203157093288.
 var ateLoopCount, _ = new(big.Int).SetString("29793968203157093288", 10)
 
-// BN parameter u.
-var bn254U, _ = new(big.Int).SetString("4965661367071055296", 10)
+// BN parameter u. This is the BN254 curve parameter such that p = 36u^4 + 36u^3 + 24u^2 + 6u + 1
+// and the ate loop count = |6u+2| = 29793968203157093288.
+var bn254U, _ = new(big.Int).SetString("4965661367192848881", 10)
 
 // BN254Pair computes the optimal Ate pairing e(P, Q).
 func BN254Pair(p *G1Point, q *G2Point) *fp12 {
@@ -165,9 +166,9 @@ func sparseLineToFp12(a, b, c *fp2) *fp12 {
 // Frobenius endomorphism constants for G2.
 var (
 	frobXa0, _ = new(big.Int).SetString("21575463638280843010398324269430826099269044274347216827212613867836435027261", 10)
-	frobXa1, _ = new(big.Int).SetString("10307601595873709700078755136146204025218092992518765122318458099831426205727", 10)
+	frobXa1, _ = new(big.Int).SetString("10307601595873709700152284273816112264069230130616436755625194854815875713954", 10)
 	frobYa0, _ = new(big.Int).SetString("2821565182194536844548159561693502659359617185244120367078079554186484126554", 10)
-	frobYa1, _ = new(big.Int).SetString("3505843767911556378687030309984248845540243509899259266946897622437848376689", 10)
+	frobYa1, _ = new(big.Int).SetString("3505843767911556378687030309984248845540243509899259641013678093033130930403", 10)
 
 	xiToPMinus1Over3 = &fp2{a0: frobXa0, a1: frobXa1}
 	xiToPMinus1Over2 = &fp2{a0: frobYa0, a1: frobYa1}
@@ -236,11 +237,11 @@ func finalExpHard(f *fp12) *fp12 {
 	return t0
 }
 
-// fp12Frob computes f^p using the efficient tower-based Frobenius map.
+// fp12Frob computes f^p (Frobenius endomorphism) using precomputed constants.
 func fp12Frob(f *fp12) *fp12 { return fp12FrobeniusEfficient(f) }
 
-// fp12FrobSq computes f^(p^2) using the efficient tower-based Frobenius map.
+// fp12FrobSq computes f^(p^2) using precomputed constants.
 func fp12FrobSq(f *fp12) *fp12 { return fp12FrobeniusSqEfficient(f) }
 
-// fp12Frob3 computes f^(p^3) using the efficient tower-based Frobenius map.
+// fp12Frob3 computes f^(p^3) using precomputed constants.
 func fp12Frob3(f *fp12) *fp12 { return fp12FrobeniusCubeEfficient(f) }

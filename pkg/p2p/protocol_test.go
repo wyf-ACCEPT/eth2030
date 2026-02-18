@@ -22,8 +22,11 @@ func TestMessageCodes(t *testing.T) {
 		{"GetBlockBodiesMsg", GetBlockBodiesMsg, 0x05},
 		{"BlockBodiesMsg", BlockBodiesMsg, 0x06},
 		{"NewBlockMsg", NewBlockMsg, 0x07},
-		{"GetReceiptsMsg", GetReceiptsMsg, 0x09},
-		{"ReceiptsMsg", ReceiptsMsg, 0x0a},
+		{"NewPooledTransactionHashesMsg", NewPooledTransactionHashesMsg, 0x08},
+		{"GetPooledTransactionsMsg", GetPooledTransactionsMsg, 0x09},
+		{"PooledTransactionsMsg", PooledTransactionsMsg, 0x0a},
+		{"GetReceiptsMsg", GetReceiptsMsg, 0x0f},
+		{"ReceiptsMsg", ReceiptsMsg, 0x10},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -249,5 +252,39 @@ func TestNewPooledTransactionHashesPacket68(t *testing.T) {
 	}
 	if pkt.Hashes[0] != h {
 		t.Error("Hashes[0] mismatch")
+	}
+}
+
+func TestGetPooledTransactionsPacket(t *testing.T) {
+	h1 := types.HexToHash("aabb")
+	h2 := types.HexToHash("ccdd")
+	pkt := GetPooledTransactionsPacket{
+		RequestID: 99,
+		Hashes:    GetPooledTransactionsRequest{h1, h2},
+	}
+	if pkt.RequestID != 99 {
+		t.Errorf("RequestID = %d, want 99", pkt.RequestID)
+	}
+	if len(pkt.Hashes) != 2 {
+		t.Errorf("len(Hashes) = %d, want 2", len(pkt.Hashes))
+	}
+	if pkt.Hashes[0] != h1 {
+		t.Error("Hashes[0] mismatch")
+	}
+	if pkt.Hashes[1] != h2 {
+		t.Error("Hashes[1] mismatch")
+	}
+}
+
+func TestPooledTransactionsPacket(t *testing.T) {
+	pkt := PooledTransactionsPacket{
+		RequestID:    55,
+		Transactions: []*types.Transaction{},
+	}
+	if pkt.RequestID != 55 {
+		t.Errorf("RequestID = %d, want 55", pkt.RequestID)
+	}
+	if len(pkt.Transactions) != 0 {
+		t.Errorf("len(Transactions) = %d, want 0", len(pkt.Transactions))
 	}
 }

@@ -20,6 +20,15 @@ const (
 	TxDataNonZeroGas uint64 = 16
 	// TxCreateGas is the extra gas for contract creation transactions.
 	TxCreateGas uint64 = 32000
+
+	// EIP-7702: per-authorization base gas cost charged for every entry
+	// in the authorization list, regardless of whether the target account
+	// is empty or not.
+	PerAuthBaseCost uint64 = 12500
+
+	// EIP-7702: additional gas charged per authorization entry that targets
+	// an account that does not yet exist in the state trie (empty account).
+	PerEmptyAccountCost uint64 = 25000
 )
 
 var (
@@ -384,7 +393,10 @@ func applyTransaction(config *ChainConfig, getHash vm.GetHashFunc, statedb state
 }
 
 // intrinsicGas computes the base gas cost of a transaction before EVM execution.
-func intrinsicGas(data []byte, isCreate bool) uint64 {
+// For EIP-7702 SetCode transactions, authCount is the number of authorization
+// entries, and emptyAuthCount is the number of those entries targeting accounts
+// that do not yet exist in state.
+func intrinsicGas(data []byte, isCreate bool, authCount, emptyAuthCount uint64) uint64 {
 	gas := TxGas
 	if isCreate {
 		gas += TxCreateGas
@@ -396,6 +408,9 @@ func intrinsicGas(data []byte, isCreate bool) uint64 {
 			gas += TxDataNonZeroGas
 		}
 	}
+	// EIP-7702: per-authorization gas costs.
+	gas += authCount * PerAuthBaseCost
+	gas += emptyAuthCount * PerEmptyAccountCost
 	return gas
 }
 
@@ -450,8 +465,20 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		statedb.SetNonce(msg.From, msg.Nonce+1)
 	}
 
-	// Compute intrinsic gas (includes access list costs per EIP-2930)
-	igas := intrinsicGas(msg.Data, isCreate)
+	// Count EIP-7702 authorizations for intrinsic gas calculation.
+	var authCount, emptyAuthCount uint64
+	if msg.TxType == types.SetCodeTxType && len(msg.AuthList) > 0 {
+		authCount = uint64(len(msg.AuthList))
+		for _, auth := range msg.AuthList {
+			if !statedb.Exist(auth.Address) || statedb.Empty(auth.Address) {
+				emptyAuthCount++
+			}
+		}
+	}
+
+	// Compute intrinsic gas (includes access list costs per EIP-2930
+	// and EIP-7702 authorization costs).
+	igas := intrinsicGas(msg.Data, isCreate, authCount, emptyAuthCount)
 	igas += accessListGas(msg.AccessList)
 	if igas > msg.GasLimit {
 		// Intrinsic gas exceeds gas limit — consume all gas
@@ -511,6 +538,19 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		statedb.AddAddressToAccessList(tuple.Address)
 		for _, key := range tuple.StorageKeys {
 			statedb.AddSlotToAccessList(tuple.Address, key)
+		}
+	}
+
+	// EIP-7702: process authorization list for SetCode (type 0x04) transactions.
+	// Per the spec, authorizations are processed before main EVM execution.
+	// The authorization list sets delegation code on signer accounts.
+	if msg.TxType == types.SetCodeTxType && len(msg.AuthList) > 0 {
+		var chainID *big.Int
+		if config != nil && config.ChainID != nil {
+			chainID = config.ChainID
+		}
+		if err := ProcessAuthorizations(statedb, msg.AuthList, chainID); err != nil {
+			return nil, fmt.Errorf("processing EIP-7702 authorizations: %w", err)
 		}
 	}
 
