@@ -236,14 +236,11 @@ func finalExpHard(f *fp12) *fp12 {
 	return t0
 }
 
-func fp12Frob(f *fp12) *fp12  { return fp12Exp(f, bn254P) }
+// fp12Frob computes f^p using the efficient tower-based Frobenius map.
+func fp12Frob(f *fp12) *fp12 { return fp12FrobeniusEfficient(f) }
 
-func fp12FrobSq(f *fp12) *fp12 {
-	pSq := new(big.Int).Mul(bn254P, bn254P)
-	return fp12Exp(f, pSq)
-}
+// fp12FrobSq computes f^(p^2) using the efficient tower-based Frobenius map.
+func fp12FrobSq(f *fp12) *fp12 { return fp12FrobeniusSqEfficient(f) }
 
-func fp12Frob3(f *fp12) *fp12 {
-	pCu := new(big.Int).Mul(bn254P, new(big.Int).Mul(bn254P, bn254P))
-	return fp12Exp(f, pCu)
-}
+// fp12Frob3 computes f^(p^3) using the efficient tower-based Frobenius map.
+func fp12Frob3(f *fp12) *fp12 { return fp12FrobeniusCubeEfficient(f) }
