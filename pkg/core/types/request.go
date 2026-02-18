@@ -2,6 +2,7 @@ package types
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 )
@@ -9,10 +10,126 @@ import (
 // Request types defined by EIP-7685.
 // Each request type is identified by a single byte prefix.
 const (
-	DepositRequestType    byte = 0x00 // EIP-6110: supply validator deposits
-	WithdrawalRequestType byte = 0x01 // EIP-7002: trigger validator withdrawals
+	DepositRequestType       byte = 0x00 // EIP-6110: supply validator deposits
+	WithdrawalRequestType    byte = 0x01 // EIP-7002: trigger validator withdrawals
 	ConsolidationRequestType byte = 0x02 // EIP-7251: validator consolidations
 )
+
+// System contract addresses for EIP-7685 request processing.
+// These contracts are called after all user transactions to collect
+// execution layer requests.
+var (
+	// DepositContractAddress is the beacon chain deposit contract (EIP-6110).
+	DepositContractAddress = HexToAddress("0x00000000219ab540356cBB839Cbe05303d7705Fa")
+
+	// WithdrawalRequestAddress is the system contract for triggering
+	// validator withdrawals (EIP-7002).
+	WithdrawalRequestAddress = HexToAddress("0x0c15F14308530b7CDB8460094BbB9cC28b9AaAAb")
+
+	// ConsolidationRequestAddress is the system contract for validator
+	// consolidations (EIP-7251).
+	ConsolidationRequestAddress = HexToAddress("0x00431F263cE400f4da8Fc0D8Edf967BBB28Bc16a")
+)
+
+// SystemAddress is the caller address used for system contract calls.
+// Per EIP-7685, system calls use a special "system" address as the caller.
+var SystemAddress = HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
+
+// DepositRequest represents a validator deposit parsed from the deposit contract.
+// Per EIP-6110, deposits are read from the deposit contract's storage/logs.
+type DepositRequest struct {
+	Pubkey                [48]byte
+	WithdrawalCredentials [32]byte
+	Amount                uint64
+	Signature             [96]byte
+	Index                 uint64
+}
+
+// Encode serializes a deposit request to bytes.
+// Layout: pubkey(48) || withdrawal_credentials(32) || amount(8) || signature(96) || index(8)
+func (d *DepositRequest) Encode() []byte {
+	buf := make([]byte, 192)
+	copy(buf[0:48], d.Pubkey[:])
+	copy(buf[48:80], d.WithdrawalCredentials[:])
+	binary.LittleEndian.PutUint64(buf[80:88], d.Amount)
+	copy(buf[88:184], d.Signature[:])
+	binary.LittleEndian.PutUint64(buf[184:192], d.Index)
+	return buf
+}
+
+// DecodeDepositRequest deserializes a deposit request from bytes.
+func DecodeDepositRequest(data []byte) (*DepositRequest, error) {
+	if len(data) != 192 {
+		return nil, fmt.Errorf("invalid deposit request length: %d, want 192", len(data))
+	}
+	d := &DepositRequest{}
+	copy(d.Pubkey[:], data[0:48])
+	copy(d.WithdrawalCredentials[:], data[48:80])
+	d.Amount = binary.LittleEndian.Uint64(data[80:88])
+	copy(d.Signature[:], data[88:184])
+	d.Index = binary.LittleEndian.Uint64(data[184:192])
+	return d, nil
+}
+
+// WithdrawalRequest represents a validator withdrawal request from the
+// system contract (EIP-7002).
+type WithdrawalRequest struct {
+	SourceAddress   Address
+	ValidatorPubkey [48]byte
+	Amount          uint64
+}
+
+// Encode serializes a withdrawal request to bytes.
+// Layout: source_address(20) || validator_pubkey(48) || amount(8)
+func (w *WithdrawalRequest) Encode() []byte {
+	buf := make([]byte, 76)
+	copy(buf[0:20], w.SourceAddress[:])
+	copy(buf[20:68], w.ValidatorPubkey[:])
+	binary.LittleEndian.PutUint64(buf[68:76], w.Amount)
+	return buf
+}
+
+// DecodeWithdrawalRequest deserializes a withdrawal request from bytes.
+func DecodeWithdrawalRequest(data []byte) (*WithdrawalRequest, error) {
+	if len(data) != 76 {
+		return nil, fmt.Errorf("invalid withdrawal request length: %d, want 76", len(data))
+	}
+	w := &WithdrawalRequest{}
+	copy(w.SourceAddress[:], data[0:20])
+	copy(w.ValidatorPubkey[:], data[20:68])
+	w.Amount = binary.LittleEndian.Uint64(data[68:76])
+	return w, nil
+}
+
+// ConsolidationRequest represents a validator consolidation request from
+// the system contract (EIP-7251).
+type ConsolidationRequest struct {
+	SourceAddress Address
+	SourcePubkey  [48]byte
+	TargetPubkey  [48]byte
+}
+
+// Encode serializes a consolidation request to bytes.
+// Layout: source_address(20) || source_pubkey(48) || target_pubkey(48)
+func (c *ConsolidationRequest) Encode() []byte {
+	buf := make([]byte, 116)
+	copy(buf[0:20], c.SourceAddress[:])
+	copy(buf[20:68], c.SourcePubkey[:])
+	copy(buf[68:116], c.TargetPubkey[:])
+	return buf
+}
+
+// DecodeConsolidationRequest deserializes a consolidation request from bytes.
+func DecodeConsolidationRequest(data []byte) (*ConsolidationRequest, error) {
+	if len(data) != 116 {
+		return nil, fmt.Errorf("invalid consolidation request length: %d, want 116", len(data))
+	}
+	c := &ConsolidationRequest{}
+	copy(c.SourceAddress[:], data[0:20])
+	copy(c.SourcePubkey[:], data[20:68])
+	copy(c.TargetPubkey[:], data[68:116])
+	return c, nil
+}
 
 // Request represents a typed execution layer request per EIP-7685.
 // Format: request_type || request_data

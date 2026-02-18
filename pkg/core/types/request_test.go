@@ -160,3 +160,153 @@ func TestRequestTypeConstants(t *testing.T) {
 		t.Errorf("ConsolidationRequestType = %d, want 2", ConsolidationRequestType)
 	}
 }
+
+func TestSystemContractAddresses(t *testing.T) {
+	// Verify system contract addresses are non-zero.
+	if DepositContractAddress.IsZero() {
+		t.Fatal("DepositContractAddress should not be zero")
+	}
+	if WithdrawalRequestAddress.IsZero() {
+		t.Fatal("WithdrawalRequestAddress should not be zero")
+	}
+	if ConsolidationRequestAddress.IsZero() {
+		t.Fatal("ConsolidationRequestAddress should not be zero")
+	}
+
+	// Verify they are all distinct.
+	if DepositContractAddress == WithdrawalRequestAddress {
+		t.Fatal("deposit and withdrawal addresses should differ")
+	}
+	if DepositContractAddress == ConsolidationRequestAddress {
+		t.Fatal("deposit and consolidation addresses should differ")
+	}
+	if WithdrawalRequestAddress == ConsolidationRequestAddress {
+		t.Fatal("withdrawal and consolidation addresses should differ")
+	}
+}
+
+func TestSystemAddress(t *testing.T) {
+	if SystemAddress.IsZero() {
+		t.Fatal("SystemAddress should not be zero")
+	}
+	expected := HexToAddress("0xfffffffffffffffffffffffffffffffffffffffe")
+	if SystemAddress != expected {
+		t.Fatalf("SystemAddress = %s, want %s", SystemAddress.Hex(), expected.Hex())
+	}
+}
+
+func TestDepositRequest_EncodeDecode(t *testing.T) {
+	d := &DepositRequest{
+		Amount: 32_000_000_000, // 32 ETH in Gwei
+		Index:  42,
+	}
+	d.Pubkey[0] = 0xAA
+	d.Pubkey[47] = 0xBB
+	d.WithdrawalCredentials[0] = 0x01
+	d.Signature[0] = 0xCC
+
+	encoded := d.Encode()
+	if len(encoded) != 192 {
+		t.Fatalf("deposit request encoding length = %d, want 192", len(encoded))
+	}
+
+	decoded, err := DecodeDepositRequest(encoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if decoded.Pubkey != d.Pubkey {
+		t.Fatal("pubkey mismatch after decode")
+	}
+	if decoded.WithdrawalCredentials != d.WithdrawalCredentials {
+		t.Fatal("withdrawal credentials mismatch after decode")
+	}
+	if decoded.Amount != d.Amount {
+		t.Fatalf("amount mismatch: got %d, want %d", decoded.Amount, d.Amount)
+	}
+	if decoded.Signature != d.Signature {
+		t.Fatal("signature mismatch after decode")
+	}
+	if decoded.Index != d.Index {
+		t.Fatalf("index mismatch: got %d, want %d", decoded.Index, d.Index)
+	}
+}
+
+func TestDepositRequest_DecodeInvalidLength(t *testing.T) {
+	_, err := DecodeDepositRequest(make([]byte, 100))
+	if err == nil {
+		t.Fatal("expected error for invalid deposit request length")
+	}
+	_, err = DecodeDepositRequest(make([]byte, 0))
+	if err == nil {
+		t.Fatal("expected error for empty deposit request")
+	}
+}
+
+func TestWithdrawalRequest_EncodeDecode(t *testing.T) {
+	w := &WithdrawalRequest{
+		SourceAddress: HexToAddress("0xdead"),
+		Amount:        1_000_000_000,
+	}
+	w.ValidatorPubkey[0] = 0xBE
+	w.ValidatorPubkey[47] = 0xEF
+
+	encoded := w.Encode()
+	if len(encoded) != 76 {
+		t.Fatalf("withdrawal request encoding length = %d, want 76", len(encoded))
+	}
+
+	decoded, err := DecodeWithdrawalRequest(encoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if decoded.SourceAddress != w.SourceAddress {
+		t.Fatal("source address mismatch")
+	}
+	if decoded.ValidatorPubkey != w.ValidatorPubkey {
+		t.Fatal("validator pubkey mismatch")
+	}
+	if decoded.Amount != w.Amount {
+		t.Fatalf("amount mismatch: got %d, want %d", decoded.Amount, w.Amount)
+	}
+}
+
+func TestWithdrawalRequest_DecodeInvalidLength(t *testing.T) {
+	_, err := DecodeWithdrawalRequest(make([]byte, 50))
+	if err == nil {
+		t.Fatal("expected error for invalid withdrawal request length")
+	}
+}
+
+func TestConsolidationRequest_EncodeDecode(t *testing.T) {
+	c := &ConsolidationRequest{
+		SourceAddress: HexToAddress("0x1234"),
+	}
+	c.SourcePubkey[0] = 0xAA
+	c.TargetPubkey[0] = 0xBB
+
+	encoded := c.Encode()
+	if len(encoded) != 116 {
+		t.Fatalf("consolidation request encoding length = %d, want 116", len(encoded))
+	}
+
+	decoded, err := DecodeConsolidationRequest(encoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if decoded.SourceAddress != c.SourceAddress {
+		t.Fatal("source address mismatch")
+	}
+	if decoded.SourcePubkey != c.SourcePubkey {
+		t.Fatal("source pubkey mismatch")
+	}
+	if decoded.TargetPubkey != c.TargetPubkey {
+		t.Fatal("target pubkey mismatch")
+	}
+}
+
+func TestConsolidationRequest_DecodeInvalidLength(t *testing.T) {
+	_, err := DecodeConsolidationRequest(make([]byte, 50))
+	if err == nil {
+		t.Fatal("expected error for invalid consolidation request length")
+	}
+}
