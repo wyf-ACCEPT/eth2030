@@ -19,6 +19,7 @@ var (
 	ErrMaxCallDepthExceeded  = errors.New("max call depth exceeded")
 	ErrInvalidOpCode         = errors.New("invalid opcode")
 	ErrReturnDataOutOfBounds = errors.New("return data out of bounds")
+	ErrMaxInitCodeSizeExceeded = errors.New("max initcode size exceeded")
 )
 
 // GetHashFunc returns the hash of the block with the given number.
@@ -105,15 +106,16 @@ type Config struct {
 
 // EVM is the Ethereum Virtual Machine execution environment.
 type EVM struct {
-	Context    BlockContext
-	TxContext  TxContext
-	Config     Config
-	StateDB    StateDB
-	chainID    uint64
-	depth      int
-	readOnly   bool
-	jumpTable  JumpTable
-	returnData []byte // return data from the last CALL/CREATE
+	Context     BlockContext
+	TxContext   TxContext
+	Config      Config
+	StateDB     StateDB
+	chainID     uint64
+	depth       int
+	readOnly    bool
+	jumpTable   JumpTable
+	precompiles map[types.Address]PrecompiledContract
+	returnData  []byte // return data from the last CALL/CREATE
 }
 
 // NewEVM creates a new EVM instance.
@@ -142,10 +144,38 @@ func (evm *EVM) SetJumpTable(jt JumpTable) {
 	evm.jumpTable = jt
 }
 
+// SetPrecompiles replaces the EVM's precompile map.
+func (evm *EVM) SetPrecompiles(p map[types.Address]PrecompiledContract) {
+	evm.precompiles = p
+}
+
+// precompile returns the precompiled contract at addr, falling back to the
+// default Cancun precompile set if no custom map has been set.
+func (evm *EVM) precompile(addr types.Address) (PrecompiledContract, bool) {
+	m := evm.precompiles
+	if m == nil {
+		m = PrecompiledContractsCancun
+	}
+	p, ok := m[addr]
+	return p, ok
+}
+
+// runPrecompile executes a precompiled contract and returns the output,
+// remaining gas, and any error.
+func runPrecompile(p PrecompiledContract, input []byte, gas uint64) ([]byte, uint64, error) {
+	gasCost := p.RequiredGas(input)
+	if gas < gasCost {
+		return nil, 0, ErrOutOfGas
+	}
+	output, err := p.Run(input)
+	return output, gas - gasCost, err
+}
+
 // ForkRules mirrors the chain configuration fork flags needed to select
 // the correct jump table. The caller (processor) converts ChainConfig.Rules
 // into this struct to avoid a circular import.
 type ForkRules struct {
+	IsGlamsterdan    bool
 	IsPrague         bool
 	IsCancun         bool
 	IsShanghai       bool
@@ -158,9 +188,19 @@ type ForkRules struct {
 	IsHomestead      bool
 }
 
+// SelectPrecompiles returns the correct precompile map for the given fork rules.
+func SelectPrecompiles(rules ForkRules) map[types.Address]PrecompiledContract {
+	if rules.IsGlamsterdan {
+		return PrecompiledContractsGlamsterdan
+	}
+	return PrecompiledContractsCancun
+}
+
 // SelectJumpTable returns the correct jump table for the given fork rules.
 func SelectJumpTable(rules ForkRules) JumpTable {
 	switch {
+	case rules.IsGlamsterdan:
+		return NewGlamsterdanJumpTable()
 	case rules.IsPrague:
 		return NewPragueJumpTable()
 	case rules.IsCancun:
@@ -281,8 +321,8 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 	}
 
 	// Check for precompiled contract
-	if IsPrecompiledContract(addr) {
-		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+	if p, ok := evm.precompile(addr); ok {
+		ret, gasLeft, err := runPrecompile(p, input, gas)
 		return ret, gasLeft, err
 	}
 
@@ -348,8 +388,8 @@ func (evm *EVM) CallCode(caller types.Address, addr types.Address, input []byte,
 		return nil, gas, ErrMaxCallDepthExceeded
 	}
 
-	if IsPrecompiledContract(addr) {
-		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+	if p, ok := evm.precompile(addr); ok {
+		ret, gasLeft, err := runPrecompile(p, input, gas)
 		return ret, gasLeft, err
 	}
 
@@ -394,8 +434,8 @@ func (evm *EVM) DelegateCall(caller types.Address, addr types.Address, input []b
 		return nil, gas, ErrMaxCallDepthExceeded
 	}
 
-	if IsPrecompiledContract(addr) {
-		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+	if p, ok := evm.precompile(addr); ok {
+		ret, gasLeft, err := runPrecompile(p, input, gas)
 		return ret, gasLeft, err
 	}
 
@@ -438,8 +478,8 @@ func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byt
 		return nil, gas, ErrMaxCallDepthExceeded
 	}
 
-	if IsPrecompiledContract(addr) {
-		ret, gasLeft, err := RunPrecompiledContract(addr, input, gas)
+	if p, ok := evm.precompile(addr); ok {
+		ret, gasLeft, err := runPrecompile(p, input, gas)
 		return ret, gasLeft, err
 	}
 
@@ -654,6 +694,11 @@ func gasEIP2929SlotCheck(evm *EVM, addr types.Address, slot types.Hash) uint64 {
 
 // create is the shared implementation for Create and Create2.
 func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big.Int, contractAddr types.Address) ([]byte, types.Address, uint64, error) {
+	// EIP-3860: max init code size check.
+	if len(code) > MaxInitCodeSize {
+		return nil, types.Address{}, gas, ErrMaxInitCodeSizeExceeded
+	}
+
 	snapshot := evm.StateDB.Snapshot()
 
 	// Create the account
@@ -669,14 +714,28 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 		evm.StateDB.AddBalance(contractAddr, value)
 	}
 
-	// Deduct CREATE gas
+	// Deduct CREATE base gas.
 	if gas < GasCreate {
 		return nil, types.Address{}, 0, ErrOutOfGas
 	}
 	gas -= GasCreate
 
+	// EIP-3860: charge initcode word gas (2 per 32-byte word).
+	if len(code) > 0 {
+		words := toWordSize(uint64(len(code)))
+		initCodeGas := InitCodeWordGas * words
+		if gas < initCodeGas {
+			return nil, types.Address{}, 0, ErrOutOfGas
+		}
+		gas -= initCodeGas
+	}
+
+	// Apply the 63/64 rule (EIP-150) to gas available for init code.
+	callGas := gas - gas/CallGasFraction
+	gas -= callGas
+
 	// Create the contract for init code execution
-	contract := NewContract(caller, contractAddr, value, gas)
+	contract := NewContract(caller, contractAddr, value, callGas)
 	contract.Code = code
 
 	// Execute init code
@@ -684,21 +743,34 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 	ret, err := evm.Run(contract, nil)
 	evm.depth--
 
-	gasLeft := contract.Gas
+	// Return unused gas from subcall.
+	gas += contract.Gas
 
 	if err != nil {
 		// On any error, revert state and return
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if !errors.Is(err, ErrExecutionReverted) {
-			gasLeft = 0
+			// On non-revert error, all gas sent to subcall is consumed.
+			gas += 0 // contract.Gas already added above, but subcall failed
 		}
-		return ret, types.Address{}, gasLeft, err
+		return ret, types.Address{}, gas, err
 	}
 
-	// Store the returned bytecode as the contract's code
+	// Code deposit cost: 200 per byte of deployed code.
 	if len(ret) > 0 {
+		// EIP-170: max contract code size.
+		if len(ret) > MaxCodeSize {
+			evm.StateDB.RevertToSnapshot(snapshot)
+			return nil, types.Address{}, 0, errors.New("max code size exceeded")
+		}
+		depositCost := uint64(len(ret)) * CreateDataGas
+		if gas < depositCost {
+			evm.StateDB.RevertToSnapshot(snapshot)
+			return nil, types.Address{}, 0, ErrOutOfGas
+		}
+		gas -= depositCost
 		evm.StateDB.SetCode(contractAddr, ret)
 	}
 
-	return ret, contractAddr, gasLeft, nil
+	return ret, contractAddr, gas, nil
 }

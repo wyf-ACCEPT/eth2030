@@ -10,8 +10,23 @@ import (
 	"github.com/eth2028/eth2028/crypto"
 )
 
-// priceBumpPercent is the minimum gas price bump required for replace-by-fee.
-const priceBumpPercent = 10
+// Pool constants.
+const (
+	// PriceBump is the minimum gas price bump percentage for replace-by-fee.
+	PriceBump = 10
+
+	// MaxPoolSize is the maximum number of transactions the pool holds.
+	MaxPoolSize = 4096
+
+	// MaxPerSender is the maximum number of transactions per sender.
+	MaxPerSender = 16
+
+	// MaxTxSize is the maximum allowed transaction data size (128KB).
+	MaxTxSize = 128 * 1024
+
+	// priceBumpPercent is kept for internal use (same as PriceBump).
+	priceBumpPercent = PriceBump
+)
 
 // Error codes for transaction validation.
 var (
@@ -26,6 +41,10 @@ var (
 	ErrOversizedData          = errors.New("oversized data")
 	ErrUnderpriced            = errors.New("transaction underpriced")
 	ErrReplacementUnderpriced = errors.New("replacement transaction underpriced")
+	ErrSenderLimitExceeded    = errors.New("per-sender transaction limit exceeded")
+	ErrFeeCapBelowTip         = errors.New("max fee per gas less than max priority fee per gas")
+	ErrBlobTxMissingHashes    = errors.New("blob transaction missing versioned hashes")
+	ErrNegativeGasPrice       = errors.New("negative gas price or fee cap")
 )
 
 // Config holds TxPool configuration.
@@ -39,8 +58,8 @@ type Config struct {
 // DefaultConfig returns sensible defaults for the pool.
 func DefaultConfig() Config {
 	return Config{
-		MaxSize:       4096,
-		MaxPerSender:  64,
+		MaxSize:       MaxPoolSize,
+		MaxPerSender:  MaxPerSender,
 		MinGasPrice:   big.NewInt(1), // 1 wei minimum
 		BlockGasLimit: 30_000_000,
 	}
@@ -200,6 +219,15 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 		return err
 	}
 
+	// Per-sender limit: count all txs from this sender across pending + queue.
+	// Replacements don't increase the count, so skip the check if replacing.
+	if !replaced {
+		senderCount := pool.senderTxCount(from)
+		if senderCount >= pool.config.MaxPerSender {
+			return ErrSenderLimitExceeded
+		}
+	}
+
 	// If pool is full and this isn't a replacement, try eviction.
 	if !replaced && pool.lookup.Count() >= pool.config.MaxSize {
 		evicted := pool.evictLowest(pool.baseFee)
@@ -223,6 +251,19 @@ func (pool *TxPool) add(tx *types.Transaction) error {
 	pool.promoteQueue(from)
 
 	return nil
+}
+
+// senderTxCount returns the total number of transactions from a sender
+// across both pending and queued lists.
+func (pool *TxPool) senderTxCount(from types.Address) int {
+	count := 0
+	if list, ok := pool.pending[from]; ok {
+		count += list.Len()
+	}
+	if list, ok := pool.queue[from]; ok {
+		count += list.Len()
+	}
+	return count
 }
 
 // checkReplacement handles replace-by-fee logic. If an existing tx with the same
@@ -266,11 +307,19 @@ func (pool *TxPool) hasSufficientBump(oldTx, newTx *types.Transaction) bool {
 	return newPrice.Cmp(threshold) >= 0
 }
 
-// validateTx performs basic validation of a transaction.
+// validateTx performs comprehensive validation of a transaction.
 func (pool *TxPool) validateTx(tx *types.Transaction) error {
 	// Reject negative values.
 	if tx.Value() != nil && tx.Value().Sign() < 0 {
 		return ErrNegativeValue
+	}
+
+	// Gas price / fee cap must be non-negative.
+	if gp := tx.GasPrice(); gp != nil && gp.Sign() < 0 {
+		return ErrNegativeGasPrice
+	}
+	if fc := tx.GasFeeCap(); fc != nil && fc.Sign() < 0 {
+		return ErrNegativeGasPrice
 	}
 
 	// Gas limit check.
@@ -293,11 +342,59 @@ func (pool *TxPool) validateTx(tx *types.Transaction) error {
 	}
 
 	// Data size check (max 128KB).
-	if len(tx.Data()) > 128*1024 {
+	if len(tx.Data()) > MaxTxSize {
 		return ErrOversizedData
 	}
 
+	// EIP-1559 (type 2): maxFeePerGas must be >= maxPriorityFeePerGas.
+	if tx.Type() == types.DynamicFeeTxType || tx.Type() == types.BlobTxType || tx.Type() == types.SetCodeTxType {
+		feeCap := tx.GasFeeCap()
+		tipCap := tx.GasTipCap()
+		if feeCap != nil && tipCap != nil && feeCap.Cmp(tipCap) < 0 {
+			return ErrFeeCapBelowTip
+		}
+	}
+
+	// Blob transaction (type 3) validation.
+	if tx.Type() == types.BlobTxType {
+		if len(tx.BlobHashes()) == 0 {
+			return ErrBlobTxMissingHashes
+		}
+	}
+
+	// Balance check: sender must have enough for value + gas * gasPrice.
+	from := pool.senderOf(tx)
+	balance := pool.state.GetBalance(from)
+	if balance != nil {
+		cost := pool.txCost(tx)
+		if balance.Cmp(cost) < 0 {
+			return ErrInsufficientFunds
+		}
+	}
+
 	return nil
+}
+
+// txCost returns the maximum cost a transaction could incur:
+// gas * gasPrice + value (+ blobGas * blobFeeCap for blob txs).
+func (pool *TxPool) txCost(tx *types.Transaction) *big.Int {
+	gasPrice := tx.GasPrice()
+	if gasPrice == nil {
+		gasPrice = new(big.Int)
+	}
+	cost := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(tx.Gas()))
+	if v := tx.Value(); v != nil {
+		cost.Add(cost, v)
+	}
+	// For blob txs, add blob gas cost.
+	if tx.Type() == types.BlobTxType {
+		blobFeeCap := tx.BlobGasFeeCap()
+		if blobFeeCap != nil {
+			blobCost := new(big.Int).Mul(blobFeeCap, new(big.Int).SetUint64(tx.BlobGas()))
+			cost.Add(cost, blobCost)
+		}
+	}
+	return cost
 }
 
 func (pool *TxPool) addPending(from types.Address, tx *types.Transaction) {
@@ -393,6 +490,7 @@ func (pool *TxPool) Get(hash types.Hash) *types.Transaction {
 }
 
 // Remove removes a transaction from the pool (e.g., after inclusion in a block).
+// After removal, queued transactions are promoted if their nonces become sequential.
 func (pool *TxPool) Remove(hash types.Hash) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
@@ -404,9 +502,12 @@ func (pool *TxPool) Remove(hash types.Hash) {
 	pool.lookup.Remove(hash)
 
 	from := pool.senderOf(tx)
+	wasPending := false
 
 	if list, ok := pool.pending[from]; ok {
-		list.Remove(tx.Nonce())
+		if list.Remove(tx.Nonce()) {
+			wasPending = true
+		}
 		if list.Len() == 0 {
 			delete(pool.pending, from)
 		}
@@ -416,6 +517,11 @@ func (pool *TxPool) Remove(hash types.Hash) {
 		if list.Len() == 0 {
 			delete(pool.queue, from)
 		}
+	}
+
+	// If a pending tx was removed, try to promote queued txs to fill the gap.
+	if wasPending {
+		pool.promoteQueue(from)
 	}
 }
 

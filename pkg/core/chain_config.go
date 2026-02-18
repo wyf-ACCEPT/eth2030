@@ -26,10 +26,11 @@ type ChainConfig struct {
 	TerminalTotalDifficulty *big.Int
 
 	// Timestamp-based forks (post-merge)
-	ShanghaiTime  *uint64
-	CancunTime    *uint64
-	PragueTime    *uint64
-	AmsterdamTime *uint64
+	ShanghaiTime    *uint64
+	CancunTime      *uint64
+	PragueTime      *uint64
+	AmsterdamTime   *uint64
+	GlamsterdanTime *uint64
 }
 
 // Block-number fork checks
@@ -122,6 +123,12 @@ func (c *ChainConfig) IsAmsterdam(time uint64) bool {
 	return isTimestampForked(c.AmsterdamTime, time)
 }
 
+// IsGlamsterdan returns whether the given block time is at or past Glamsterdan.
+// Glamsterdan includes EIP-7904 (compute gas cost increase).
+func (c *ChainConfig) IsGlamsterdan(time uint64) bool {
+	return isTimestampForked(c.GlamsterdanTime, time)
+}
+
 // Merge check
 
 // IsMerge returns whether terminal total difficulty has been set,
@@ -184,6 +191,8 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsPrague:         isMerge && c.IsPrague(timestamp),
 		IsEIP7702:        isMerge && c.IsPrague(timestamp),
 		IsAmsterdam:      isMerge && c.IsAmsterdam(timestamp),
+		IsGlamsterdan:    isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7904:        isMerge && c.IsGlamsterdan(timestamp),
 	}
 }
 
@@ -199,6 +208,7 @@ type Rules struct {
 	IsCancun, IsEIP4844                                     bool
 	IsPrague, IsEIP7702                                     bool
 	IsAmsterdam                                             bool
+	IsGlamsterdan, IsEIP7904                                bool
 }
 
 func newUint64(v uint64) *uint64 { return &v }
@@ -227,6 +237,7 @@ var MainnetConfig = &ChainConfig{
 	CancunTime:              newUint64(1710338135),
 	PragueTime:              nil, // not yet scheduled
 	AmsterdamTime:           nil, // not yet scheduled
+	GlamsterdanTime:         nil, // not yet scheduled
 }
 
 // SepoliaConfig is the chain config for the Sepolia test network.
@@ -248,6 +259,7 @@ var SepoliaConfig = &ChainConfig{
 	CancunTime:              newUint64(1706655072),
 	PragueTime:              newUint64(1741159776),
 	AmsterdamTime:           nil,
+	GlamsterdanTime:         nil,
 }
 
 // HoleskyConfig is the chain config for the Holesky test network.
@@ -268,6 +280,7 @@ var HoleskyConfig = &ChainConfig{
 	CancunTime:              newUint64(1707305664),
 	PragueTime:              newUint64(1740434112),
 	AmsterdamTime:           nil,
+	GlamsterdanTime:         nil,
 }
 
 // TestConfig is a chain config with all forks active at genesis (time 0).
@@ -289,4 +302,5 @@ var TestConfig = &ChainConfig{
 	CancunTime:              newUint64(0),
 	PragueTime:              newUint64(0),
 	AmsterdamTime:           newUint64(0),
+	GlamsterdanTime:         newUint64(0),
 }

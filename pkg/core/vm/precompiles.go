@@ -533,3 +533,53 @@ func bytesEqual(a, b []byte) bool {
 	}
 	return true
 }
+
+// --- EIP-7904: Glamsterdan precompile gas repricing ---
+
+// bn256AddGlamsterdan wraps bn256Add with the updated gas cost.
+type bn256AddGlamsterdan struct{ bn256Add }
+
+func (c *bn256AddGlamsterdan) RequiredGas(input []byte) uint64 {
+	return GasECADDGlamsterdan // 314 (was 150)
+}
+
+// blake2FGlamsterdan wraps blake2F with the updated gas cost.
+type blake2FGlamsterdan struct{ blake2F }
+
+func (c *blake2FGlamsterdan) RequiredGas(input []byte) uint64 {
+	if len(input) < 4 {
+		return 0
+	}
+	rounds := uint64(binary.BigEndian.Uint32(input[:4]))
+	return GasBlake2fConstGlamsterdan + rounds*GasBlake2fPerRoundGlamsterdan
+}
+
+// kzgPointEvaluationGlamsterdan wraps kzgPointEvaluation with the updated gas cost.
+type kzgPointEvaluationGlamsterdan struct{ kzgPointEvaluation }
+
+func (c *kzgPointEvaluationGlamsterdan) RequiredGas(input []byte) uint64 {
+	return GasPointEvalGlamsterdan // 89363 (was 50000)
+}
+
+// bn256PairingGlamsterdan wraps bn256Pairing with the updated gas cost.
+type bn256PairingGlamsterdan struct{ bn256Pairing }
+
+func (c *bn256PairingGlamsterdan) RequiredGas(input []byte) uint64 {
+	k := uint64(len(input)) / 192
+	return GasECPairingConstGlamsterdan + GasECPairingPerPairGlamsterdan*k
+}
+
+// PrecompiledContractsGlamsterdan contains the precompiled contracts with
+// EIP-7904 gas repricing applied.
+var PrecompiledContractsGlamsterdan = map[types.Address]PrecompiledContract{
+	types.BytesToAddress([]byte{1}):    &ecrecover{},
+	types.BytesToAddress([]byte{2}):    &sha256hash{},
+	types.BytesToAddress([]byte{3}):    &ripemd160hash{},
+	types.BytesToAddress([]byte{4}):    &dataCopy{},
+	types.BytesToAddress([]byte{5}):    &bigModExp{},
+	types.BytesToAddress([]byte{6}):    &bn256AddGlamsterdan{},
+	types.BytesToAddress([]byte{7}):    &bn256ScalarMul{},
+	types.BytesToAddress([]byte{8}):    &bn256PairingGlamsterdan{},
+	types.BytesToAddress([]byte{9}):    &blake2FGlamsterdan{},
+	types.BytesToAddress([]byte{0x0a}): &kzgPointEvaluationGlamsterdan{},
+}

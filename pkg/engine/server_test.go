@@ -15,14 +15,27 @@ import (
 
 // mockBackend is a test implementation of the Backend interface.
 type mockBackend struct {
-	processBlockFn     func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error)
-	forkchoiceUpdFn    func(state ForkchoiceStateV1, attrs *PayloadAttributesV3) (ForkchoiceUpdatedResult, error)
-	getPayloadByIDFn   func(id PayloadID) (*GetPayloadResponse, error)
+	processBlockFn      func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error)
+	processBlockV5Fn    func(payload *ExecutionPayloadV5, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
+	forkchoiceUpdFn     func(state ForkchoiceStateV1, attrs *PayloadAttributesV3) (ForkchoiceUpdatedResult, error)
+	forkchoiceUpdV4Fn   func(state ForkchoiceStateV1, attrs *PayloadAttributesV4) (ForkchoiceUpdatedResult, error)
+	getPayloadByIDFn    func(id PayloadID) (*GetPayloadResponse, error)
+	getPayloadV4ByIDFn  func(id PayloadID) (*GetPayloadV4Response, error)
+	getPayloadV6ByIDFn  func(id PayloadID) (*GetPayloadV6Response, error)
+	isPragueFn          func(timestamp uint64) bool
+	isAmsterdamFn       func(timestamp uint64) bool
 }
 
 func (m *mockBackend) ProcessBlock(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error) {
 	if m.processBlockFn != nil {
 		return m.processBlockFn(payload, hashes, root)
+	}
+	return PayloadStatusV1{Status: StatusValid}, nil
+}
+
+func (m *mockBackend) ProcessBlockV5(payload *ExecutionPayloadV5, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error) {
+	if m.processBlockV5Fn != nil {
+		return m.processBlockV5Fn(payload, hashes, root, requests)
 	}
 	return PayloadStatusV1{Status: StatusValid}, nil
 }
@@ -36,11 +49,48 @@ func (m *mockBackend) ForkchoiceUpdated(state ForkchoiceStateV1, attrs *PayloadA
 	}, nil
 }
 
+func (m *mockBackend) ForkchoiceUpdatedV4(state ForkchoiceStateV1, attrs *PayloadAttributesV4) (ForkchoiceUpdatedResult, error) {
+	if m.forkchoiceUpdV4Fn != nil {
+		return m.forkchoiceUpdV4Fn(state, attrs)
+	}
+	return ForkchoiceUpdatedResult{
+		PayloadStatus: PayloadStatusV1{Status: StatusValid},
+	}, nil
+}
+
 func (m *mockBackend) GetPayloadByID(id PayloadID) (*GetPayloadResponse, error) {
 	if m.getPayloadByIDFn != nil {
 		return m.getPayloadByIDFn(id)
 	}
 	return nil, ErrUnknownPayload
+}
+
+func (m *mockBackend) GetPayloadV4ByID(id PayloadID) (*GetPayloadV4Response, error) {
+	if m.getPayloadV4ByIDFn != nil {
+		return m.getPayloadV4ByIDFn(id)
+	}
+	return nil, ErrUnknownPayload
+}
+
+func (m *mockBackend) GetPayloadV6ByID(id PayloadID) (*GetPayloadV6Response, error) {
+	if m.getPayloadV6ByIDFn != nil {
+		return m.getPayloadV6ByIDFn(id)
+	}
+	return nil, ErrUnknownPayload
+}
+
+func (m *mockBackend) IsPrague(timestamp uint64) bool {
+	if m.isPragueFn != nil {
+		return m.isPragueFn(timestamp)
+	}
+	return true
+}
+
+func (m *mockBackend) IsAmsterdam(timestamp uint64) bool {
+	if m.isAmsterdamFn != nil {
+		return m.isAmsterdamFn(timestamp)
+	}
+	return true
 }
 
 // --- Test NewPayloadV3 ---
@@ -787,7 +837,7 @@ func TestExchangeCapabilities(t *testing.T) {
 	for _, c := range capabilities {
 		found[c] = true
 	}
-	for _, want := range []string{"engine_newPayloadV3", "engine_newPayloadV4", "engine_forkchoiceUpdatedV3"} {
+	for _, want := range []string{"engine_newPayloadV3", "engine_newPayloadV4", "engine_newPayloadV5", "engine_forkchoiceUpdatedV3", "engine_forkchoiceUpdatedV4", "engine_getPayloadV4", "engine_getPayloadV6"} {
 		if !found[want] {
 			t.Errorf("expected capability %q in response", want)
 		}

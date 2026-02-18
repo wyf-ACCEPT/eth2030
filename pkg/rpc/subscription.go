@@ -45,21 +45,24 @@ type installedFilter struct {
 	lastBlock uint64         // last scanned block (for incremental polls)
 }
 
-// SubscriptionManager tracks installed filters and provides incremental
-// polling (eth_getFilterChanges) and one-shot queries (eth_getLogs).
+// SubscriptionManager tracks installed filters and WebSocket subscriptions,
+// providing incremental polling (eth_getFilterChanges), one-shot queries
+// (eth_getLogs), and push-based notifications (eth_subscribe).
 type SubscriptionManager struct {
-	mu      sync.Mutex
-	filters map[string]*installedFilter
-	backend Backend
-	nextSeq uint64 // monotonic counter to make IDs unique
+	mu            sync.Mutex
+	filters       map[string]*installedFilter
+	subscriptions map[string]*Subscription
+	backend       Backend
+	nextSeq       uint64 // monotonic counter to make IDs unique
 }
 
 // NewSubscriptionManager creates a new subscription manager backed by
 // the given chain backend.
 func NewSubscriptionManager(backend Backend) *SubscriptionManager {
 	return &SubscriptionManager{
-		filters: make(map[string]*installedFilter),
-		backend: backend,
+		filters:       make(map[string]*installedFilter),
+		subscriptions: make(map[string]*Subscription),
+		backend:       backend,
 	}
 }
 

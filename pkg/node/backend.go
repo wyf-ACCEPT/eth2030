@@ -377,6 +377,64 @@ func (b *engineBackend) ForkchoiceUpdated(
 	}, nil
 }
 
+func (b *engineBackend) ProcessBlockV5(
+	payload *engine.ExecutionPayloadV5,
+	expectedBlobVersionedHashes []types.Hash,
+	parentBeaconBlockRoot types.Hash,
+	executionRequests [][]byte,
+) (engine.PayloadStatusV1, error) {
+	// Delegate to V3 processing for the base payload.
+	return b.ProcessBlock(&payload.ExecutionPayloadV3, expectedBlobVersionedHashes, parentBeaconBlockRoot)
+}
+
+func (b *engineBackend) ForkchoiceUpdatedV4(
+	state engine.ForkchoiceStateV1,
+	payloadAttributes *engine.PayloadAttributesV4,
+) (engine.ForkchoiceUpdatedResult, error) {
+	// Promote V4 attributes to V3 and delegate.
+	var v3Attrs *engine.PayloadAttributesV3
+	if payloadAttributes != nil {
+		v3Attrs = &payloadAttributes.PayloadAttributesV3
+	}
+	return b.ForkchoiceUpdated(state, v3Attrs)
+}
+
+func (b *engineBackend) GetPayloadV4ByID(id engine.PayloadID) (*engine.GetPayloadV4Response, error) {
+	resp, err := b.GetPayloadByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &engine.GetPayloadV4Response{
+		ExecutionPayload:  &resp.ExecutionPayload.ExecutionPayloadV3,
+		BlockValue:        resp.BlockValue,
+		BlobsBundle:       resp.BlobsBundle,
+		ExecutionRequests: [][]byte{},
+	}, nil
+}
+
+func (b *engineBackend) GetPayloadV6ByID(id engine.PayloadID) (*engine.GetPayloadV6Response, error) {
+	resp, err := b.GetPayloadByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &engine.GetPayloadV6Response{
+		ExecutionPayload: &engine.ExecutionPayloadV5{
+			ExecutionPayloadV4: *resp.ExecutionPayload,
+		},
+		BlockValue:        resp.BlockValue,
+		BlobsBundle:       resp.BlobsBundle,
+		ExecutionRequests: [][]byte{},
+	}, nil
+}
+
+func (b *engineBackend) IsPrague(timestamp uint64) bool {
+	return b.node.blockchain.Config().IsPrague(timestamp)
+}
+
+func (b *engineBackend) IsAmsterdam(timestamp uint64) bool {
+	return b.node.blockchain.Config().IsAmsterdam(timestamp)
+}
+
 func (b *engineBackend) GetPayloadByID(id engine.PayloadID) (*engine.GetPayloadResponse, error) {
 	b.mu.Lock()
 	payload, ok := b.payloads[id]

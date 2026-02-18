@@ -416,3 +416,22 @@ func NewPragueJumpTable() JumpTable {
 	// Prague includes EIP-7702, EIP-7685, and other enhancements.
 	return tbl
 }
+
+// NewGlamsterdanJumpTable returns the Glamsterdan fork jump table.
+// EIP-7904: compute gas cost increases for underpriced opcodes.
+func NewGlamsterdanJumpTable() JumpTable {
+	tbl := NewPragueJumpTable()
+
+	// EIP-7904: DIV 5 -> 15
+	tbl[DIV] = &operation{execute: opDiv, constantGas: GasDivGlamsterdan, minStack: 2, maxStack: 1024}
+	// EIP-7904: SDIV 5 -> 20
+	tbl[SDIV] = &operation{execute: opSdiv, constantGas: GasSdivGlamsterdan, minStack: 2, maxStack: 1024}
+	// EIP-7904: MOD 5 -> 12
+	tbl[MOD] = &operation{execute: opMod, constantGas: GasModGlamsterdan, minStack: 2, maxStack: 1024}
+	// EIP-7904: MULMOD 8 -> 11
+	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMulmodGlamsterdan, minStack: 3, maxStack: 1024}
+	// EIP-7904: KECCAK256 constant 30 -> 45 (dynamic gas unchanged)
+	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256Glamsterdan, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
+
+	return tbl
+}

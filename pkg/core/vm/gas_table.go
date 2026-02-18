@@ -21,6 +21,11 @@ const (
 	// EIP-3529: max gas refund is gasUsed/5 (was gasUsed/2 before London).
 	MaxRefundQuotient uint64 = 5
 
+	// EIP-3529: SSTORE_CLEARS_SCHEDULE refund = SSTORE_RESET_GAS + ACCESS_LIST_STORAGE_KEY_COST.
+	// SSTORE_RESET_GAS = 5000 - COLD_SLOAD_COST = 2900
+	// ACCESS_LIST_STORAGE_KEY_COST = 1900
+	SstoreClearsScheduleRefund uint64 = 4800
+
 	// SELFDESTRUCT gas.
 	SelfdestructGas          uint64 = 5000
 	CreateBySelfdestructGas  uint64 = 25000 // sending to a new account
@@ -81,51 +86,53 @@ func CallGas(availableGas, requestedGas uint64) uint64 {
 //   - If current != new:
 //     - If original == current: SstoreSet (20000) or SstoreReset (2900)
 //     - If original != current: WarmStorageReadCost (100)
-//   - Refund logic handled separately.
+//   - Refund logic per EIP-3529 (SstoreClearsScheduleRefund = 4800).
 func SstoreGas(original, current, newVal [32]byte, cold bool) (gas uint64, refund int64) {
 	if cold {
 		gas += ColdSloadCost
 	}
 
 	if current == newVal {
-		// No-op.
+		// No-op: current value equals new value.
 		gas += WarmStorageReadCost
 		return gas, 0
 	}
 
 	if original == current {
 		if isZero(original) {
-			// 0 -> non-zero.
+			// Create slot: 0 -> non-zero.
 			gas += GasSstoreSet
 			return gas, 0
 		}
-		// non-zero -> non-zero (different value).
+		// Update slot: original == current != new.
 		gas += GasSstoreReset
 		if isZero(newVal) {
-			// non-zero -> zero: refund.
-			refund = int64(GasSstoreReset) + int64(ColdSloadCost)
+			// Delete slot: non-zero -> zero. Refund per EIP-3529.
+			refund = int64(SstoreClearsScheduleRefund)
 		}
 		return gas, refund
 	}
 
-	// original != current (already dirty slot).
+	// Dirty slot: original != current (already modified in this transaction).
 	gas += WarmStorageReadCost
 
-	// Calculate refund adjustments.
+	// Calculate refund adjustments for dirty slots.
 	if !isZero(original) {
 		if isZero(current) && !isZero(newVal) {
-			// Undid a previous clear.
-			refund -= int64(GasSstoreReset) + int64(ColdSloadCost)
+			// Undo a previous clear: subtract the refund that was previously given.
+			refund -= int64(SstoreClearsScheduleRefund)
 		} else if !isZero(current) && isZero(newVal) {
-			// Clearing a dirty slot.
-			refund += int64(GasSstoreReset) + int64(ColdSloadCost)
+			// Clear a dirty non-zero slot: add refund.
+			refund += int64(SstoreClearsScheduleRefund)
 		}
 	}
 	if original == newVal {
 		// Restoring to original value.
 		if isZero(original) {
+			// Was 0, set to X, now back to 0: refund the set cost minus the warm read.
 			refund += int64(GasSstoreSet) - int64(WarmStorageReadCost)
 		} else {
+			// Was X, changed to Y, now back to X: refund the reset cost minus the warm read.
 			refund += int64(GasSstoreReset) - int64(WarmStorageReadCost)
 		}
 	}

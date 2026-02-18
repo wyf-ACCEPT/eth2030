@@ -9,6 +9,9 @@ import (
 	"github.com/eth2028/eth2028/crypto"
 )
 
+// defaultPriorityFee is 1 Gwei, the suggested default max priority fee.
+var defaultPriorityFee = big.NewInt(1_000_000_000)
+
 // EthAPI implements the eth_, net_, and web3_ namespace JSON-RPC methods.
 type EthAPI struct {
 	backend Backend
@@ -58,6 +61,18 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 		return api.getLogs(req)
 	case "eth_getBlockReceipts":
 		return api.getBlockReceipts(req)
+	case "eth_maxPriorityFeePerGas":
+		return api.maxPriorityFeePerGas(req)
+	case "eth_feeHistory":
+		return api.feeHistory(req)
+	case "eth_syncing":
+		return api.syncing(req)
+	case "eth_createAccessList":
+		return api.createAccessList(req)
+	case "eth_subscribe":
+		return api.ethSubscribe(req)
+	case "eth_unsubscribe":
+		return api.ethUnsubscribe(req)
 	case "eth_newFilter":
 		return api.newFilter(req)
 	case "eth_newBlockFilter":
@@ -108,9 +123,22 @@ func (api *EthAPI) getBlockByNumber(req *Request) *Response {
 		return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
 	}
 
+	// Parse the optional fullTx boolean (second param).
+	fullTx := false
+	if len(req.Params) > 1 {
+		_ = json.Unmarshal(req.Params[1], &fullTx)
+	}
+
 	header := api.backend.HeaderByNumber(bn)
 	if header == nil {
 		return successResponse(req.ID, nil)
+	}
+
+	if fullTx {
+		block := api.backend.BlockByNumber(bn)
+		if block != nil {
+			return successResponse(req.ID, FormatBlock(block, true))
+		}
 	}
 	return successResponse(req.ID, FormatHeader(header))
 }
@@ -125,10 +153,23 @@ func (api *EthAPI) getBlockByHash(req *Request) *Response {
 		return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
 	}
 
+	// Parse the optional fullTx boolean (second param).
+	fullTx := false
+	if len(req.Params) > 1 {
+		_ = json.Unmarshal(req.Params[1], &fullTx)
+	}
+
 	hash := types.HexToHash(hashHex)
 	header := api.backend.HeaderByHash(hash)
 	if header == nil {
 		return successResponse(req.ID, nil)
+	}
+
+	if fullTx {
+		block := api.backend.BlockByHash(hash)
+		if block != nil {
+			return successResponse(req.ID, FormatBlock(block, true))
+		}
 	}
 	return successResponse(req.ID, FormatHeader(header))
 }
@@ -295,6 +336,215 @@ func (api *EthAPI) web3Sha3(req *Request) *Response {
 	data := fromHexBytes(dataHex)
 	hash := crypto.Keccak256Hash(data)
 	return successResponse(req.ID, encodeHash(hash))
+}
+
+// maxPriorityFeePerGas returns the suggested priority fee (1 Gwei default).
+func (api *EthAPI) maxPriorityFeePerGas(req *Request) *Response {
+	return successResponse(req.ID, encodeBigInt(defaultPriorityFee))
+}
+
+// FeeHistoryResult is the response for eth_feeHistory.
+type FeeHistoryResult struct {
+	OldestBlock  string     `json:"oldestBlock"`
+	BaseFeePerGas []string  `json:"baseFeePerGas"`
+	GasUsedRatio []float64  `json:"gasUsedRatio"`
+	Reward       [][]string `json:"reward,omitempty"`
+}
+
+// feeHistory returns base fee and gas usage history over a range of blocks.
+func (api *EthAPI) feeHistory(req *Request) *Response {
+	if len(req.Params) < 2 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "missing blockCount or newestBlock")
+	}
+
+	// Parse block count (hex or decimal)
+	var blockCountHex string
+	if err := json.Unmarshal(req.Params[0], &blockCountHex); err != nil {
+		// Try as integer
+		var blockCount int
+		if err2 := json.Unmarshal(req.Params[0], &blockCount); err2 != nil {
+			return errorResponse(req.ID, ErrCodeInvalidParams, "invalid blockCount: "+err.Error())
+		}
+		blockCountHex = fmt.Sprintf("0x%x", blockCount)
+	}
+	blockCount := parseHexUint64(blockCountHex)
+	if blockCount == 0 || blockCount > 1024 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "blockCount must be 1..1024")
+	}
+
+	var newestBN BlockNumber
+	if err := json.Unmarshal(req.Params[1], &newestBN); err != nil {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "invalid newestBlock: "+err.Error())
+	}
+
+	// Parse optional reward percentiles
+	var rewardPercentiles []float64
+	if len(req.Params) > 2 {
+		if err := json.Unmarshal(req.Params[2], &rewardPercentiles); err != nil {
+			return errorResponse(req.ID, ErrCodeInvalidParams, "invalid rewardPercentiles: "+err.Error())
+		}
+	}
+
+	// Resolve newest block
+	newestHeader := api.backend.HeaderByNumber(newestBN)
+	if newestHeader == nil {
+		return errorResponse(req.ID, ErrCodeInternal, "block not found")
+	}
+	newestNum := newestHeader.Number.Uint64()
+
+	// Calculate block range
+	oldest := uint64(0)
+	if newestNum+1 >= blockCount {
+		oldest = newestNum + 1 - blockCount
+	}
+
+	result := &FeeHistoryResult{
+		OldestBlock: encodeUint64(oldest),
+	}
+
+	// Collect baseFeePerGas and gasUsedRatio for each block in range,
+	// plus the baseFee of the next block (blockCount + 1 entries total).
+	for i := oldest; i <= newestNum+1; i++ {
+		header := api.backend.HeaderByNumber(BlockNumber(i))
+		if header != nil && header.BaseFee != nil {
+			result.BaseFeePerGas = append(result.BaseFeePerGas, encodeBigInt(header.BaseFee))
+		} else {
+			result.BaseFeePerGas = append(result.BaseFeePerGas, "0x0")
+		}
+
+		// gasUsedRatio only for blocks in the range (not the extra entry).
+		if i <= newestNum {
+			if header != nil && header.GasLimit > 0 {
+				ratio := float64(header.GasUsed) / float64(header.GasLimit)
+				result.GasUsedRatio = append(result.GasUsedRatio, ratio)
+			} else {
+				result.GasUsedRatio = append(result.GasUsedRatio, 0)
+			}
+		}
+	}
+
+	// If reward percentiles are requested, return default priority fee for each.
+	if len(rewardPercentiles) > 0 {
+		for i := oldest; i <= newestNum; i++ {
+			rewards := make([]string, len(rewardPercentiles))
+			for j := range rewardPercentiles {
+				rewards[j] = encodeBigInt(defaultPriorityFee)
+			}
+			result.Reward = append(result.Reward, rewards)
+		}
+	}
+
+	return successResponse(req.ID, result)
+}
+
+// SyncStatus is the response for eth_syncing when the node is syncing.
+type SyncStatus struct {
+	StartingBlock string `json:"startingBlock"`
+	CurrentBlock  string `json:"currentBlock"`
+	HighestBlock  string `json:"highestBlock"`
+}
+
+// syncing returns the sync status. Returns false when fully synced.
+func (api *EthAPI) syncing(req *Request) *Response {
+	// For now, we report as fully synced.
+	return successResponse(req.ID, false)
+}
+
+// AccessListResult is the response for eth_createAccessList.
+type AccessListResult struct {
+	AccessList []AccessListEntry `json:"accessList"`
+	GasUsed    string            `json:"gasUsed"`
+}
+
+// AccessListEntry is a single entry in an access list result.
+type AccessListEntry struct {
+	Address     string   `json:"address"`
+	StorageKeys []string `json:"storageKeys"`
+}
+
+// createAccessList simulates a tx and returns an access list.
+func (api *EthAPI) createAccessList(req *Request) *Response {
+	if len(req.Params) < 1 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "missing call arguments")
+	}
+
+	var args CallArgs
+	if err := json.Unmarshal(req.Params[0], &args); err != nil {
+		return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
+	}
+
+	bn := LatestBlockNumber
+	if len(req.Params) > 1 {
+		if err := json.Unmarshal(req.Params[1], &bn); err != nil {
+			return errorResponse(req.ID, ErrCodeInvalidParams, "invalid block number: "+err.Error())
+		}
+	}
+
+	from, to, gas, value, data := parseCallArgs(&args)
+
+	// Execute the call to determine gas usage.
+	_, gasUsed, err := api.backend.EVMCall(from, to, data, gas, value, bn)
+	if err != nil {
+		return errorResponse(req.ID, ErrCodeInternal, "execution error: "+err.Error())
+	}
+
+	// A full implementation would trace storage accesses during execution.
+	// For now, return an empty access list with the gas used.
+	result := &AccessListResult{
+		AccessList: []AccessListEntry{},
+		GasUsed:    encodeUint64(gasUsed),
+	}
+
+	return successResponse(req.ID, result)
+}
+
+// ethSubscribe creates a new subscription (WebSocket-oriented).
+func (api *EthAPI) ethSubscribe(req *Request) *Response {
+	if len(req.Params) < 1 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "missing subscription type")
+	}
+
+	var subType string
+	if err := json.Unmarshal(req.Params[0], &subType); err != nil {
+		return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
+	}
+
+	switch subType {
+	case "newHeads":
+		id := api.subs.Subscribe(SubNewHeads, FilterQuery{})
+		return successResponse(req.ID, id)
+	case "logs":
+		var query FilterQuery
+		if len(req.Params) > 1 {
+			var criteria FilterCriteria
+			if err := json.Unmarshal(req.Params[1], &criteria); err != nil {
+				return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
+			}
+			query = criteriaToQuery(criteria, api.backend)
+		}
+		id := api.subs.Subscribe(SubLogs, query)
+		return successResponse(req.ID, id)
+	case "newPendingTransactions":
+		id := api.subs.Subscribe(SubPendingTx, FilterQuery{})
+		return successResponse(req.ID, id)
+	default:
+		return errorResponse(req.ID, ErrCodeInvalidParams, fmt.Sprintf("unsupported subscription type: %q", subType))
+	}
+}
+
+// ethUnsubscribe removes a subscription by ID.
+func (api *EthAPI) ethUnsubscribe(req *Request) *Response {
+	if len(req.Params) < 1 {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "missing subscription ID")
+	}
+
+	var subID string
+	if err := json.Unmarshal(req.Params[0], &subID); err != nil {
+		return errorResponse(req.ID, ErrCodeInvalidParams, err.Error())
+	}
+
+	ok := api.subs.Unsubscribe(subID)
+	return successResponse(req.ID, ok)
 }
 
 // newFilter creates a log filter and returns its filter ID.

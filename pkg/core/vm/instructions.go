@@ -714,16 +714,25 @@ func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Sta
 	// Get input data from memory
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	// Use provided gas, capped at available gas
-	callGas := gasVal.Uint64()
-	if callGas > contract.Gas {
-		callGas = contract.Gas
-	}
+	// Apply the 63/64 rule (EIP-150): subcall gets min(requested, available - available/64).
+	requestedGas := gasVal.Uint64()
+	callGas := CallGas(contract.Gas, requestedGas)
 	contract.Gas -= callGas
+
+	// Add stipend for value transfer (free gas, not charged from caller).
+	transfersValue := value != nil && value.Sign() > 0
+	if transfersValue {
+		callGas += CallStipend
+	}
 
 	ret, returnGas, err := evm.Call(contract.Address, addr, args, callGas, value)
 
-	// Return unused gas
+	// Return unused gas, minus the stipend that was added for free.
+	if transfersValue && returnGas >= CallStipend {
+		returnGas -= CallStipend
+	} else if transfersValue {
+		returnGas = 0
+	}
 	contract.Gas += returnGas
 
 	// Store return data
@@ -759,15 +768,27 @@ func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack 
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	callGas := gasVal.Uint64()
-	if callGas > contract.Gas {
-		callGas = contract.Gas
-	}
+	// Apply the 63/64 rule (EIP-150).
+	requestedGas := gasVal.Uint64()
+	callGas := CallGas(contract.Gas, requestedGas)
 	contract.Gas -= callGas
+
+	// Add stipend for value transfer (free gas, not charged from caller).
+	transfersValue := value != nil && value.Sign() > 0
+	if transfersValue {
+		callGas += CallStipend
+	}
 
 	ret, returnGas, err := evm.CallCode(contract.Address, addr, args, callGas, value)
 
+	// Return unused gas, minus the stipend that was added for free.
+	if transfersValue && returnGas >= CallStipend {
+		returnGas -= CallStipend
+	} else if transfersValue {
+		returnGas = 0
+	}
 	contract.Gas += returnGas
+
 	evm.returnData = ret
 
 	if retSize.Uint64() > 0 && len(ret) > 0 {
@@ -797,10 +818,9 @@ func opDelegateCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	callGas := gasVal.Uint64()
-	if callGas > contract.Gas {
-		callGas = contract.Gas
-	}
+	// Apply the 63/64 rule (EIP-150). No value transfer, so no stipend.
+	requestedGas := gasVal.Uint64()
+	callGas := CallGas(contract.Gas, requestedGas)
 	contract.Gas -= callGas
 
 	ret, returnGas, err := evm.DelegateCall(contract.CallerAddress, addr, args, callGas)
@@ -835,10 +855,9 @@ func opStaticCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stac
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	callGas := gasVal.Uint64()
-	if callGas > contract.Gas {
-		callGas = contract.Gas
-	}
+	// Apply the 63/64 rule (EIP-150). No value transfer, so no stipend.
+	requestedGas := gasVal.Uint64()
+	callGas := CallGas(contract.Gas, requestedGas)
 	contract.Gas -= callGas
 
 	ret, returnGas, err := evm.StaticCall(contract.Address, addr, args, callGas)
@@ -877,10 +896,12 @@ func opCreate(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	// Get init code from memory
 	initCode := memory.Get(int64(offset.Uint64()), int64(size.Uint64()))
 
-	callGas := contract.Gas
+	// Pass all remaining gas to create; the create() method handles the 63/64
+	// rule and base gas deductions internally.
+	gas := contract.Gas
 	contract.Gas = 0
 
-	ret, addr, returnGas, err := evm.Create(contract.Address, initCode, callGas, value)
+	ret, addr, returnGas, err := evm.Create(contract.Address, initCode, gas, value)
 
 	contract.Gas += returnGas
 	evm.returnData = ret
@@ -907,10 +928,12 @@ func opCreate2(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *
 
 	initCode := memory.Get(int64(offset.Uint64()), int64(size.Uint64()))
 
-	callGas := contract.Gas
+	// Pass all remaining gas to create; the create() method handles the 63/64
+	// rule and base gas deductions internally.
+	gas := contract.Gas
 	contract.Gas = 0
 
-	ret, addr, returnGas, err := evm.Create2(contract.Address, initCode, callGas, value, salt)
+	ret, addr, returnGas, err := evm.Create2(contract.Address, initCode, gas, value, salt)
 
 	contract.Gas += returnGas
 	evm.returnData = ret

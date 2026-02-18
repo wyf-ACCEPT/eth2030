@@ -94,6 +94,30 @@ type PayloadAttributesV3 struct {
 	ParentBeaconBlockRoot types.Hash `json:"parentBeaconBlockRoot"`
 }
 
+// PayloadAttributesV4 extends V3 with slot number (Amsterdam).
+type PayloadAttributesV4 struct {
+	PayloadAttributesV3
+	SlotNumber uint64 `json:"slotNumber"`
+}
+
+// GetPayloadV4Response is the response for engine_getPayloadV4 (Prague).
+type GetPayloadV4Response struct {
+	ExecutionPayload  *ExecutionPayloadV3 `json:"executionPayload"`
+	BlockValue        *big.Int            `json:"blockValue"`
+	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle,omitempty"`
+	Override          bool                `json:"shouldOverrideBuilder"`
+	ExecutionRequests [][]byte            `json:"executionRequests"`
+}
+
+// GetPayloadV6Response is the response for engine_getPayloadV6 (Amsterdam).
+type GetPayloadV6Response struct {
+	ExecutionPayload  *ExecutionPayloadV5 `json:"executionPayload"`
+	BlockValue        *big.Int            `json:"blockValue"`
+	BlobsBundle       *BlobsBundleV1      `json:"blobsBundle,omitempty"`
+	Override          bool                `json:"shouldOverrideBuilder"`
+	ExecutionRequests [][]byte            `json:"executionRequests"`
+}
+
 // PayloadStatus values.
 const (
 	StatusValid   = "VALID"

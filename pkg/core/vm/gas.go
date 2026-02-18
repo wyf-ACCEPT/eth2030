@@ -58,4 +58,19 @@ const (
 	GasBlobHash    uint64 = 3   // EIP-4844: BLOBHASH
 	GasBlobBaseFee uint64 = 2   // EIP-7516: BLOBBASEFEE
 	GasMcopyBase   uint64 = 3   // EIP-5656: MCOPY base cost
+
+	// EIP-7904: Glamsterdan compute gas cost increases.
+	GasDivGlamsterdan       uint64 = 15 // DIV (was 5)
+	GasSdivGlamsterdan      uint64 = 20 // SDIV (was 5)
+	GasModGlamsterdan       uint64 = 12 // MOD (was 5)
+	GasMulmodGlamsterdan    uint64 = 11 // MULMOD (was 8)
+	GasKeccak256Glamsterdan uint64 = 45 // KECCAK256 constant (was 30)
+
+	// EIP-7904: Precompile gas cost increases.
+	GasECADDGlamsterdan           uint64 = 314   // bn256Add (was 150)
+	GasBlake2fConstGlamsterdan    uint64 = 170   // blake2F constant (was 0)
+	GasBlake2fPerRoundGlamsterdan uint64 = 2     // blake2F per round (was 1)
+	GasPointEvalGlamsterdan       uint64 = 89363 // KZG point evaluation (was 50000)
+	GasECPairingConstGlamsterdan  uint64 = 45000 // bn256Pairing constant (unchanged)
+	GasECPairingPerPairGlamsterdan uint64 = 34103 // bn256Pairing per pair (was 34000)
 )

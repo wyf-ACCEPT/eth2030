@@ -485,7 +485,8 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	// Select the correct jump table based on fork rules.
 	if config != nil {
 		rules := config.Rules(header.Number, config.IsMerge(), header.Time)
-		evm.SetJumpTable(vm.SelectJumpTable(vm.ForkRules{
+		forkRules := vm.ForkRules{
+			IsGlamsterdan:    rules.IsGlamsterdan,
 			IsPrague:         rules.IsPrague,
 			IsCancun:         rules.IsCancun,
 			IsShanghai:       rules.IsShanghai,
@@ -496,7 +497,9 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 			IsConstantinople: rules.IsConstantinople,
 			IsByzantium:      rules.IsByzantium,
 			IsHomestead:      rules.IsHomestead,
-		}))
+		}
+		evm.SetJumpTable(vm.SelectJumpTable(forkRules))
+		evm.SetPrecompiles(vm.SelectPrecompiles(forkRules))
 	}
 
 	// Pre-warm EIP-2930 access list: mark sender, destination, and precompiles as warm.

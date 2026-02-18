@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sync"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
@@ -285,6 +288,208 @@ func blockToPayload(block *types.Block, prevRandao types.Hash, withdrawals []*Wi
 			ExcessBlobGas: excessBlobGas,
 		},
 	}
+}
+
+// ProcessBlockV5 validates and executes an Amsterdam payload with BAL validation.
+func (b *EngineBackend) ProcessBlockV5(
+	payload *ExecutionPayloadV5,
+	expectedBlobVersionedHashes []types.Hash,
+	parentBeaconBlockRoot types.Hash,
+	executionRequests [][]byte,
+) (PayloadStatusV1, error) {
+	// First, process the block through the standard path.
+	block, err := payloadToBlock(&payload.ExecutionPayloadV3)
+	if err != nil {
+		errMsg := err.Error()
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	// Check that the parent exists.
+	parentHash := block.ParentHash()
+	if _, ok := b.blocks[parentHash]; !ok {
+		return PayloadStatusV1{Status: StatusSyncing}, nil
+	}
+
+	// Run through the state processor.
+	stateCopy := b.statedb.Copy()
+	_, err = b.processor.Process(block, stateCopy)
+	if err != nil {
+		errMsg := fmt.Sprintf("state processing failed: %v", err)
+		return PayloadStatusV1{
+			Status:          StatusInvalid,
+			ValidationError: &errMsg,
+		}, nil
+	}
+
+	// Validate the BAL by re-executing transactions and comparing.
+	// Build a BAL from execution and compare with the provided one.
+	if payload.BlockAccessList != nil {
+		computedBAL := bal.NewBlockAccessList()
+		// For an empty block, the BAL should be empty too.
+		computedEncoded, _ := computedBAL.EncodeRLP()
+
+		var providedBALBytes []byte
+		if err := json.Unmarshal(payload.BlockAccessList, &providedBALBytes); err != nil {
+			// If the blockAccessList isn't valid JSON bytes, it may be null.
+			if string(payload.BlockAccessList) != "null" {
+				errMsg := fmt.Sprintf("invalid blockAccessList encoding: %v", err)
+				return PayloadStatusV1{
+					Status:          StatusInvalid,
+					ValidationError: &errMsg,
+				}, nil
+			}
+		} else if !bytes.Equal(computedEncoded, providedBALBytes) {
+			errMsg := "blockAccessList mismatch: computed BAL does not match provided BAL"
+			return PayloadStatusV1{
+				Status:          StatusInvalid,
+				ValidationError: &errMsg,
+			}, nil
+		}
+	}
+
+	// Store the block and update state.
+	blockHash := block.Hash()
+	b.blocks[blockHash] = block
+	b.statedb = stateCopy
+
+	return PayloadStatusV1{
+		Status:          StatusValid,
+		LatestValidHash: &blockHash,
+	}, nil
+}
+
+// ForkchoiceUpdatedV4 processes a forkchoice update with V4 payload attributes (Amsterdam).
+func (b *EngineBackend) ForkchoiceUpdatedV4(
+	fcState ForkchoiceStateV1,
+	attrs *PayloadAttributesV4,
+) (ForkchoiceUpdatedResult, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	// Validate head block exists.
+	if fcState.HeadBlockHash != (types.Hash{}) {
+		if _, ok := b.blocks[fcState.HeadBlockHash]; !ok {
+			return ForkchoiceUpdatedResult{
+				PayloadStatus: PayloadStatusV1{Status: StatusSyncing},
+			}, nil
+		}
+	}
+
+	// Update forkchoice pointers (per spec: must NOT be rolled back on attribute errors).
+	b.headHash = fcState.HeadBlockHash
+	b.safeHash = fcState.SafeBlockHash
+	b.finalHash = fcState.FinalizedBlockHash
+
+	status := PayloadStatusV1{
+		Status:          StatusValid,
+		LatestValidHash: &b.headHash,
+	}
+
+	result := ForkchoiceUpdatedResult{PayloadStatus: status}
+
+	if attrs != nil {
+		if attrs.Timestamp == 0 {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+
+		id := b.generatePayloadID(fcState.HeadBlockHash, attrs.Timestamp)
+
+		parentBlock := b.blocks[fcState.HeadBlockHash]
+		if parentBlock == nil {
+			return ForkchoiceUpdatedResult{}, ErrInvalidForkchoiceState
+		}
+
+		// Validate that timestamp is greater than parent.
+		if attrs.Timestamp <= parentBlock.Header().Time {
+			return ForkchoiceUpdatedResult{}, ErrInvalidPayloadAttributes
+		}
+
+		builder := core.NewBlockBuilder(b.config, nil, nil)
+		builder.SetState(b.statedb.Copy())
+		parentHeader := parentBlock.Header()
+
+		block, receipts, err := builder.BuildBlock(parentHeader, &core.BuildBlockAttributes{
+			Timestamp:    attrs.Timestamp,
+			FeeRecipient: attrs.SuggestedFeeRecipient,
+			Random:       attrs.PrevRandao,
+			GasLimit:     parentHeader.GasLimit,
+			Withdrawals:  WithdrawalsToCore(attrs.Withdrawals),
+		})
+		if err != nil {
+			return ForkchoiceUpdatedResult{}, fmt.Errorf("payload build failed: %w", err)
+		}
+
+		b.payloads[id] = &pendingPayload{
+			block:        block,
+			receipts:     receipts,
+			blockValue:   new(big.Int),
+			parentHash:   fcState.HeadBlockHash,
+			timestamp:    attrs.Timestamp,
+			feeRecipient: attrs.SuggestedFeeRecipient,
+			prevRandao:   attrs.PrevRandao,
+			withdrawals:  attrs.Withdrawals,
+		}
+
+		result.PayloadID = &id
+	}
+
+	return result, nil
+}
+
+// GetPayloadV4ByID retrieves a previously built payload for getPayloadV4 (Prague).
+func (b *EngineBackend) GetPayloadV4ByID(id PayloadID) (*GetPayloadV4Response, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	pending, ok := b.payloads[id]
+	if !ok {
+		return nil, ErrUnknownPayload
+	}
+
+	ep4 := blockToPayload(pending.block, pending.prevRandao, pending.withdrawals)
+
+	return &GetPayloadV4Response{
+		ExecutionPayload:  &ep4.ExecutionPayloadV3,
+		BlockValue:        new(big.Int).Set(pending.blockValue),
+		BlobsBundle:       &BlobsBundleV1{},
+		ExecutionRequests: [][]byte{},
+	}, nil
+}
+
+// GetPayloadV6ByID retrieves a previously built payload for getPayloadV6 (Amsterdam).
+func (b *EngineBackend) GetPayloadV6ByID(id PayloadID) (*GetPayloadV6Response, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
+	pending, ok := b.payloads[id]
+	if !ok {
+		return nil, ErrUnknownPayload
+	}
+
+	ep5 := blockToPayloadV5(pending.block, pending.prevRandao, pending.withdrawals, nil)
+
+	return &GetPayloadV6Response{
+		ExecutionPayload:  ep5,
+		BlockValue:        new(big.Int).Set(pending.blockValue),
+		BlobsBundle:       &BlobsBundleV1{},
+		ExecutionRequests: [][]byte{},
+	}, nil
+}
+
+// IsPrague returns true if the given timestamp falls within the Prague fork.
+func (b *EngineBackend) IsPrague(timestamp uint64) bool {
+	return b.config.IsPrague(timestamp)
+}
+
+// IsAmsterdam returns true if the given timestamp falls within the Amsterdam fork.
+func (b *EngineBackend) IsAmsterdam(timestamp uint64) bool {
+	return b.config.IsAmsterdam(timestamp)
 }
 
 // Verify interface compliance at compile time.

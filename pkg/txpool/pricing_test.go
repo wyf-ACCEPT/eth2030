@@ -116,6 +116,9 @@ func TestPendingSorted(t *testing.T) {
 		types.BytesToAddress([]byte{0x30}),
 		types.BytesToAddress([]byte{0x40}),
 	}
+	for _, s := range senders {
+		state.balances[s] = new(big.Int).Set(richBalance)
+	}
 
 	prices := []int64{100, 5000, 300, 2000}
 	for i, s := range senders {
@@ -148,6 +151,9 @@ func TestPendingSorted_EIP1559(t *testing.T) {
 	s1 := types.BytesToAddress([]byte{0x10})
 	s2 := types.BytesToAddress([]byte{0x20})
 	s3 := types.BytesToAddress([]byte{0x30})
+	state.balances[s1] = new(big.Int).Set(richBalance)
+	state.balances[s2] = new(big.Int).Set(richBalance)
+	state.balances[s3] = new(big.Int).Set(richBalance)
 
 	// Legacy tx: gasPrice 500 -> effective 500
 	pool.AddLocal(makeTxFrom(s1, 0, 500, 21000))
@@ -174,6 +180,7 @@ func TestPendingSorted_EIP1559(t *testing.T) {
 
 func TestReplaceByFee_Accept(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	// Add tx with gas price 1000.
@@ -215,6 +222,7 @@ func TestReplaceByFee_Accept(t *testing.T) {
 
 func TestReplaceByFee_AcceptLargerBump(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	tx1 := makeTx(0, 1000, 21000)
@@ -232,6 +240,7 @@ func TestReplaceByFee_AcceptLargerBump(t *testing.T) {
 
 func TestReplaceByFee_Reject(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	// Add tx with gas price 1000.
@@ -258,6 +267,7 @@ func TestReplaceByFee_Reject(t *testing.T) {
 
 func TestReplaceByFee_ExactThreshold(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	tx1 := makeTx(0, 1000, 21000)
@@ -275,6 +285,7 @@ func TestReplaceByFee_ExactThreshold(t *testing.T) {
 
 func TestReplaceByFee_JustBelow(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	tx1 := makeTx(0, 1000, 21000)
@@ -290,6 +301,7 @@ func TestReplaceByFee_JustBelow(t *testing.T) {
 
 func TestReplaceByFee_QueuedTx(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	// Nonce 5 goes to queue (state nonce is 0).
@@ -317,6 +329,7 @@ func TestEviction(t *testing.T) {
 	config.MaxSize = 3
 
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(config, state)
 
 	// Add 3 txs from same sender with increasing nonces and different prices.
@@ -330,6 +343,7 @@ func TestEviction(t *testing.T) {
 
 	// Add a 4th tx from different sender with high price. Should evict the cheapest.
 	sender2 := types.BytesToAddress([]byte{0xaa})
+	state.balances[sender2] = new(big.Int).Set(richBalance)
 	tx4 := makeTxFrom(sender2, 0, 3000, 21000)
 	if err := pool.AddLocal(tx4); err != nil {
 		t.Fatalf("AddLocal with eviction failed: %v", err)
@@ -358,11 +372,14 @@ func TestEviction_ProtectsOnlyTxPerSender(t *testing.T) {
 	// Two senders, each with one tx (protected).
 	s1 := types.BytesToAddress([]byte{0x10})
 	s2 := types.BytesToAddress([]byte{0x20})
+	state.balances[s1] = new(big.Int).Set(richBalance)
+	state.balances[s2] = new(big.Int).Set(richBalance)
 	pool.AddLocal(makeTxFrom(s1, 0, 100, 21000))
 	pool.AddLocal(makeTxFrom(s2, 0, 200, 21000))
 
 	// Adding a 3rd tx should fail because both existing txs are protected.
 	s3 := types.BytesToAddress([]byte{0x30})
+	state.balances[s3] = new(big.Int).Set(richBalance)
 	err := pool.AddLocal(makeTxFrom(s3, 0, 5000, 21000))
 	if err != ErrTxPoolFull {
 		t.Errorf("expected ErrTxPoolFull, got: %v", err)
@@ -374,6 +391,7 @@ func TestEviction_EvictsQueuedFirst(t *testing.T) {
 	config.MaxSize = 2
 
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(config, state)
 
 	// One pending tx (nonce 0) and one queued tx (nonce 5) from the same sender.
@@ -386,6 +404,7 @@ func TestEviction_EvictsQueuedFirst(t *testing.T) {
 
 	// Add a new tx from a different sender. The queued tx should be evicted.
 	s2 := types.BytesToAddress([]byte{0xbb})
+	state.balances[s2] = new(big.Int).Set(richBalance)
 	if err := pool.AddLocal(makeTxFrom(s2, 0, 1000, 21000)); err != nil {
 		t.Fatalf("AddLocal with queued eviction failed: %v", err)
 	}
@@ -405,6 +424,9 @@ func TestSetBaseFee(t *testing.T) {
 	s1 := types.BytesToAddress([]byte{0x10})
 	s2 := types.BytesToAddress([]byte{0x20})
 	s3 := types.BytesToAddress([]byte{0x30})
+	state.balances[s1] = new(big.Int).Set(richBalance)
+	state.balances[s2] = new(big.Int).Set(richBalance)
+	state.balances[s3] = new(big.Int).Set(richBalance)
 
 	// Add EIP-1559 txs with different fee caps.
 	// tx1: feeCap=500, tipCap=100
@@ -439,6 +461,8 @@ func TestSetBaseFee_AllDemoted(t *testing.T) {
 
 	s1 := types.BytesToAddress([]byte{0x10})
 	s2 := types.BytesToAddress([]byte{0x20})
+	state.balances[s1] = new(big.Int).Set(richBalance)
+	state.balances[s2] = new(big.Int).Set(richBalance)
 
 	pool.AddLocal(makeDynTxFrom(s1, 0, 10, 100, 21000))
 	pool.AddLocal(makeDynTxFrom(s2, 0, 20, 200, 21000))
@@ -460,6 +484,7 @@ func TestSetBaseFee_AllDemoted(t *testing.T) {
 
 func TestSetBaseFee_LegacyTxDemoted(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	// Legacy tx with gasPrice=500. If baseFee goes above 500, it should be demoted.
@@ -481,6 +506,7 @@ func TestSetBaseFee_LegacyTxDemoted(t *testing.T) {
 
 func TestSetBaseFee_NoDemotionWhenAffordable(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 
 	pool.AddLocal(makeTx(0, 5000, 21000))
@@ -508,6 +534,7 @@ func TestPendingSorted_EmptyPool(t *testing.T) {
 
 func TestReplaceByFee_EIP1559(t *testing.T) {
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(DefaultConfig(), state)
 	pool.SetBaseFee(big.NewInt(100))
 
@@ -534,6 +561,7 @@ func TestEvictLowest_Direct(t *testing.T) {
 	config.MaxSize = 100 // large, so no auto-eviction during add
 
 	state := newMockState()
+	state.balances[testSender] = new(big.Int).Set(richBalance)
 	pool := New(config, state)
 
 	// Add txs from same sender with different prices.

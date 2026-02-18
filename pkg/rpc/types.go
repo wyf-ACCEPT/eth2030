@@ -175,6 +175,59 @@ type FilterCriteria struct {
 	Topics    [][]string   `json:"topics"`
 }
 
+// RPCBlockWithTxs is the JSON representation of a block with full transaction objects.
+type RPCBlockWithTxs struct {
+	Number        string             `json:"number"`
+	Hash          string             `json:"hash"`
+	ParentHash    string             `json:"parentHash"`
+	Timestamp     string             `json:"timestamp"`
+	GasLimit      string             `json:"gasLimit"`
+	GasUsed       string             `json:"gasUsed"`
+	Miner         string             `json:"miner"`
+	BaseFeePerGas *string            `json:"baseFeePerGas,omitempty"`
+	StateRoot     string             `json:"stateRoot"`
+	TxRoot        string             `json:"transactionsRoot"`
+	ReceiptsRoot  string             `json:"receiptsRoot"`
+	Transactions  []*RPCTransaction  `json:"transactions"`
+}
+
+// FormatBlock converts a block to its JSON-RPC representation.
+// If fullTx is true, returns full transaction objects; otherwise returns tx hashes.
+func FormatBlock(block *types.Block, fullTx bool) interface{} {
+	header := block.Header()
+	if !fullTx {
+		return FormatHeader(header)
+	}
+
+	result := &RPCBlockWithTxs{
+		Number:       encodeUint64(header.Number.Uint64()),
+		Hash:         encodeHash(header.Hash()),
+		ParentHash:   encodeHash(header.ParentHash),
+		Timestamp:    encodeUint64(header.Time),
+		GasLimit:     encodeUint64(header.GasLimit),
+		GasUsed:      encodeUint64(header.GasUsed),
+		Miner:        encodeAddress(header.Coinbase),
+		StateRoot:    encodeHash(header.Root),
+		TxRoot:       encodeHash(header.TxHash),
+		ReceiptsRoot: encodeHash(header.ReceiptHash),
+	}
+	if header.BaseFee != nil {
+		s := encodeBigInt(header.BaseFee)
+		result.BaseFeePerGas = &s
+	}
+
+	txs := block.Transactions()
+	result.Transactions = make([]*RPCTransaction, len(txs))
+	blockHash := block.Hash()
+	blockNum := block.NumberU64()
+	for i, tx := range txs {
+		idx := uint64(i)
+		result.Transactions[i] = FormatTransaction(tx, &blockHash, &blockNum, &idx)
+	}
+
+	return result
+}
+
 // FormatHeader converts a header to JSON-RPC representation.
 func FormatHeader(h *types.Header) *RPCBlock {
 	block := &RPCBlock{

@@ -100,10 +100,18 @@ func (api *EngineAPI) dispatch(method string, params []json.RawMessage) (any, *j
 		return api.handleNewPayloadV3(params)
 	case "engine_newPayloadV4":
 		return api.handleNewPayloadV4(params)
+	case "engine_newPayloadV5":
+		return api.handleNewPayloadV5(params)
 	case "engine_forkchoiceUpdatedV3":
 		return api.handleForkchoiceUpdatedV3(params)
+	case "engine_forkchoiceUpdatedV4":
+		return api.handleForkchoiceUpdatedV4(params)
 	case "engine_getPayloadV3":
 		return api.handleGetPayloadV3(params)
+	case "engine_getPayloadV4":
+		return api.handleGetPayloadV4(params)
+	case "engine_getPayloadV6":
+		return api.handleGetPayloadV6(params)
 	case "engine_exchangeCapabilities":
 		return api.handleExchangeCapabilities(params)
 	case "engine_getClientVersionV1":
@@ -260,6 +268,139 @@ func (api *EngineAPI) handleNewPayloadV4(params []json.RawMessage) (any, *jsonrp
 	}
 
 	result, err := api.NewPayloadV4(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot, executionRequests)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleNewPayloadV5 processes an engine_newPayloadV5 request (Amsterdam).
+func (api *EngineAPI) handleNewPayloadV5(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 4 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 4 params, got %d", len(params)),
+		}
+	}
+
+	var payload ExecutionPayloadV5
+	if err := json.Unmarshal(params[0], &payload); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload: %v", err),
+		}
+	}
+
+	var expectedBlobVersionedHashes []types.Hash
+	if err := json.Unmarshal(params[1], &expectedBlobVersionedHashes); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid expectedBlobVersionedHashes: %v", err),
+		}
+	}
+
+	var parentBeaconBlockRoot types.Hash
+	if err := json.Unmarshal(params[2], &parentBeaconBlockRoot); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid parentBeaconBlockRoot: %v", err),
+		}
+	}
+
+	var executionRequests [][]byte
+	if err := json.Unmarshal(params[3], &executionRequests); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid executionRequests: %v", err),
+		}
+	}
+
+	result, err := api.NewPayloadV5(payload, expectedBlobVersionedHashes, parentBeaconBlockRoot, executionRequests)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleGetPayloadV4 processes an engine_getPayloadV4 request (Prague).
+func (api *EngineAPI) handleGetPayloadV4(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 1 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 1 param, got %d", len(params)),
+		}
+	}
+
+	var payloadID PayloadID
+	if err := json.Unmarshal(params[0], &payloadID); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload ID: %v", err),
+		}
+	}
+
+	result, err := api.GetPayloadV4(payloadID)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleGetPayloadV6 processes an engine_getPayloadV6 request (Amsterdam).
+func (api *EngineAPI) handleGetPayloadV6(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) != 1 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 1 param, got %d", len(params)),
+		}
+	}
+
+	var payloadID PayloadID
+	if err := json.Unmarshal(params[0], &payloadID); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid payload ID: %v", err),
+		}
+	}
+
+	result, err := api.GetPayloadV6(payloadID)
+	if err != nil {
+		return nil, engineErrorToRPC(err)
+	}
+	return result, nil
+}
+
+// handleForkchoiceUpdatedV4 processes an engine_forkchoiceUpdatedV4 request (Amsterdam).
+func (api *EngineAPI) handleForkchoiceUpdatedV4(params []json.RawMessage) (any, *jsonrpcError) {
+	if len(params) < 1 || len(params) > 2 {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("expected 1-2 params, got %d", len(params)),
+		}
+	}
+
+	var state ForkchoiceStateV1
+	if err := json.Unmarshal(params[0], &state); err != nil {
+		return nil, &jsonrpcError{
+			Code:    InvalidParamsCode,
+			Message: fmt.Sprintf("invalid forkchoice state: %v", err),
+		}
+	}
+
+	var payloadAttributes *PayloadAttributesV4
+	if len(params) == 2 {
+		if string(params[1]) != "null" {
+			payloadAttributes = new(PayloadAttributesV4)
+			if err := json.Unmarshal(params[1], payloadAttributes); err != nil {
+				return nil, &jsonrpcError{
+					Code:    InvalidParamsCode,
+					Message: fmt.Sprintf("invalid payload attributes: %v", err),
+				}
+			}
+		}
+	}
+
+	result, err := api.ForkchoiceUpdatedV4(state, payloadAttributes)
 	if err != nil {
 		return nil, engineErrorToRPC(err)
 	}
