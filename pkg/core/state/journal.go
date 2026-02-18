@@ -28,6 +28,10 @@ func (j *journal) append(entry journalEntry) {
 	j.entries = append(j.entries, entry)
 }
 
+func (j *journal) length() int {
+	return len(j.entries)
+}
+
 func (j *journal) snapshot() int {
 	id := j.nextID
 	j.nextID++
@@ -58,10 +62,15 @@ func (j *journal) revertToSnapshot(id int, s *MemoryStateDB) {
 
 type createAccountChange struct {
 	addr types.Address
+	prev *stateObject // nil if the account didn't exist before
 }
 
 func (ch createAccountChange) revert(s *MemoryStateDB) {
-	delete(s.stateObjects, ch.addr)
+	if ch.prev == nil {
+		delete(s.stateObjects, ch.addr)
+	} else {
+		s.stateObjects[ch.addr] = ch.prev
+	}
 }
 
 type balanceChange struct {
@@ -100,14 +109,21 @@ func (ch codeChange) revert(s *MemoryStateDB) {
 }
 
 type storageChange struct {
-	addr types.Address
-	key  types.Hash
-	prev types.Hash
+	addr       types.Address
+	key        types.Hash
+	prev       types.Hash
+	prevExists bool // true if the key was present in dirtyStorage before
 }
 
 func (ch storageChange) revert(s *MemoryStateDB) {
 	if obj := s.getStateObject(ch.addr); obj != nil {
-		obj.dirtyStorage[ch.key] = ch.prev
+		if ch.prevExists {
+			obj.dirtyStorage[ch.key] = ch.prev
+		} else {
+			// The slot was not in dirtyStorage before this write;
+			// remove it so committed storage is visible again.
+			delete(obj.dirtyStorage, ch.key)
+		}
 	}
 }
 

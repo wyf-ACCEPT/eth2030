@@ -68,7 +68,8 @@ func (s *MemoryStateDB) getOrNewStateObject(addr types.Address) *stateObject {
 // --- Account operations ---
 
 func (s *MemoryStateDB) CreateAccount(addr types.Address) {
-	s.journal.append(createAccountChange{addr: addr})
+	prev := s.stateObjects[addr] // may be nil
+	s.journal.append(createAccountChange{addr: addr, prev: prev})
 	s.stateObjects[addr] = newStateObject()
 }
 
@@ -172,8 +173,14 @@ func (s *MemoryStateDB) GetState(addr types.Address, key types.Hash) types.Hash 
 
 func (s *MemoryStateDB) SetState(addr types.Address, key types.Hash, value types.Hash) {
 	obj := s.getOrNewStateObject(addr)
-	prev := s.GetState(addr, key)
-	s.journal.append(storageChange{addr: addr, key: key, prev: prev})
+	prevDirty, prevExists := obj.dirtyStorage[key]
+	var prev types.Hash
+	if prevExists {
+		prev = prevDirty
+	} else {
+		prev = obj.committedStorage[key]
+	}
+	s.journal.append(storageChange{addr: addr, key: key, prev: prev, prevExists: prevExists})
 	obj.dirtyStorage[key] = value
 }
 

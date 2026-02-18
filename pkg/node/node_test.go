@@ -172,6 +172,132 @@ func TestNode_StartStop(t *testing.T) {
 	}
 }
 
+func TestNode_StopWithoutStart(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.P2PPort = 0
+	cfg.RPCPort = 0
+	cfg.EnginePort = 0
+
+	n, err := New(&cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	// Stop on a node that was never started should be a no-op.
+	if err := n.Stop(); err != nil {
+		t.Fatalf("Stop() on non-started node should not error: %v", err)
+	}
+}
+
+func TestNode_DoubleStop(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.P2PPort = 0
+	cfg.RPCPort = 0
+	cfg.EnginePort = 0
+
+	n, err := New(&cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	if err := n.Start(); err != nil {
+		t.Fatalf("Start() error: %v", err)
+	}
+
+	if err := n.Stop(); err != nil {
+		t.Fatalf("first Stop() error: %v", err)
+	}
+
+	// Second stop should be a no-op (not panic on closed channel).
+	if err := n.Stop(); err != nil {
+		t.Fatalf("second Stop() should not error: %v", err)
+	}
+}
+
+func TestNode_Running(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.P2PPort = 0
+	cfg.RPCPort = 0
+	cfg.EnginePort = 0
+
+	n, err := New(&cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	if n.Running() {
+		t.Error("node should not be running before Start()")
+	}
+
+	if err := n.Start(); err != nil {
+		t.Fatalf("Start() error: %v", err)
+	}
+
+	if !n.Running() {
+		t.Error("node should be running after Start()")
+	}
+
+	if err := n.Stop(); err != nil {
+		t.Fatalf("Stop() error: %v", err)
+	}
+
+	if n.Running() {
+		t.Error("node should not be running after Stop()")
+	}
+}
+
+func TestNode_Lifecycle(t *testing.T) {
+	// Full lifecycle test: create, start, verify subsystems, stop.
+	cfg := DefaultConfig()
+	cfg.P2PPort = 0
+	cfg.RPCPort = 0
+	cfg.EnginePort = 0
+
+	n, err := New(&cfg)
+	if err != nil {
+		t.Fatalf("New() error: %v", err)
+	}
+
+	// Verify subsystems are initialized before start.
+	if n.Blockchain() == nil {
+		t.Fatal("blockchain should be initialized after New()")
+	}
+	if n.TxPool() == nil {
+		t.Fatal("txpool should be initialized after New()")
+	}
+	if n.Config() == nil {
+		t.Fatal("config should be initialized after New()")
+	}
+
+	// Genesis should be accessible.
+	genesis := n.Blockchain().Genesis()
+	if genesis == nil {
+		t.Fatal("genesis block should exist")
+	}
+	if genesis.NumberU64() != 0 {
+		t.Errorf("genesis block number = %d, want 0", genesis.NumberU64())
+	}
+
+	// Start the node.
+	if err := n.Start(); err != nil {
+		t.Fatalf("Start() error: %v", err)
+	}
+
+	// Verify it is running.
+	if !n.Running() {
+		t.Error("node should be running after Start()")
+	}
+
+	// Stop the node.
+	if err := n.Stop(); err != nil {
+		t.Fatalf("Stop() error: %v", err)
+	}
+
+	if n.Running() {
+		t.Error("node should not be running after Stop()")
+	}
+}
+
 func TestNode_Backend(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.P2PPort = 0

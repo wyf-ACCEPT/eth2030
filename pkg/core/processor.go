@@ -84,6 +84,8 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 		blockBAL = bal.NewBlockAccessList()
 	}
 
+	var cumulativeGasUsed uint64
+
 	for i, tx := range block.Transactions() {
 		statedb.SetTxContext(tx.Hash(), i)
 
@@ -96,10 +98,21 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 			preBalances, preNonces = capturePreState(statedb, tx)
 		}
 
-		receipt, _, err := applyTransaction(p.config, p.getHash, statedb, header, tx, gasPool)
+		receipt, usedGas, err := applyTransaction(p.config, p.getHash, statedb, header, tx, gasPool)
 		if err != nil {
 			return nil, fmt.Errorf("could not apply tx %d [%v]: %w", i, tx, err)
 		}
+
+		// Track cumulative gas across all transactions in the block.
+		cumulativeGasUsed += usedGas
+		receipt.CumulativeGasUsed = cumulativeGasUsed
+		receipt.TransactionIndex = uint(i)
+		receipt.BlockHash = block.Hash()
+		receipt.BlockNumber = new(big.Int).Set(header.Number)
+
+		// Set log context fields (BlockNumber, BlockHash, Index).
+		setLogContext(receipt, header, block.Hash())
+
 		receipts = append(receipts, receipt)
 
 		// After successful tx, record state changes in the BAL.
@@ -110,6 +123,16 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 			for _, entry := range txBAL.Entries {
 				blockBAL.AddEntry(entry)
 			}
+		}
+	}
+
+	// Assign global log indices across all receipts so that each log
+	// in the block has a unique, sequential Index value.
+	var logIndex uint
+	for _, receipt := range receipts {
+		for _, log := range receipt.Logs {
+			log.Index = logIndex
+			logIndex++
 		}
 	}
 
@@ -358,7 +381,9 @@ func applyTransaction(config *ChainConfig, getHash vm.GetHashFunc, statedb state
 		return nil, 0, err
 	}
 
-	// Create receipt
+	// Create receipt. CumulativeGasUsed is set to this transaction's gas
+	// usage as a placeholder; the caller (Process/ProcessWithBAL) is
+	// responsible for accumulating it across all transactions in the block.
 	var receiptStatus uint64
 	if result.Failed() {
 		receiptStatus = types.ReceiptStatusFailed
@@ -366,7 +391,7 @@ func applyTransaction(config *ChainConfig, getHash vm.GetHashFunc, statedb state
 		receiptStatus = types.ReceiptStatusSuccessful
 	}
 
-	receipt := types.NewReceipt(receiptStatus, header.GasUsed+result.UsedGas)
+	receipt := types.NewReceipt(receiptStatus, result.UsedGas)
 	receipt.TxHash = tx.Hash()
 	receipt.GasUsed = result.UsedGas
 	receipt.EffectiveGasPrice = msgEffectiveGasPrice(&msg, header.BaseFee)
@@ -390,6 +415,16 @@ func applyTransaction(config *ChainConfig, getHash vm.GetHashFunc, statedb state
 	receipt.Bloom = types.LogsBloom(receipt.Logs)
 
 	return receipt, result.UsedGas, nil
+}
+
+// setLogContext populates block-level context fields on each log in the
+// receipt: BlockNumber, BlockHash, and the global Index (log position within
+// the block). The TxHash and TxIndex are already set by StateDB.AddLog.
+func setLogContext(receipt *types.Receipt, header *types.Header, blockHash types.Hash) {
+	for _, log := range receipt.Logs {
+		log.BlockNumber = header.Number.Uint64()
+		log.BlockHash = blockHash
+	}
 }
 
 // intrinsicGas computes the base gas cost of a transaction before EVM execution.

@@ -41,3 +41,38 @@ func NewReceipt(status uint64, cumulativeGasUsed uint64) *Receipt {
 		CumulativeGasUsed: cumulativeGasUsed,
 	}
 }
+
+// Succeeded returns true if the receipt indicates a successful transaction
+// (post-Byzantium status field equals 1).
+func (r *Receipt) Succeeded() bool {
+	return r.Status == ReceiptStatusSuccessful
+}
+
+// DeriveReceiptFields populates the derived fields on a list of receipts
+// after block processing. It sets the cumulative gas, block context fields,
+// and per-log indices for each receipt in the block.
+func DeriveReceiptFields(receipts []*Receipt, blockHash Hash, blockNumber uint64, baseFee *big.Int, txs []*Transaction) {
+	var logIndex uint
+
+	for i, receipt := range receipts {
+		receipt.BlockHash = blockHash
+		receipt.BlockNumber = new(big.Int).SetUint64(blockNumber)
+		receipt.TransactionIndex = uint(i)
+
+		if i < len(txs) {
+			receipt.TxHash = txs[i].Hash()
+		}
+
+		// Populate log context fields and assign global log indices.
+		for _, log := range receipt.Logs {
+			log.BlockHash = blockHash
+			log.BlockNumber = blockNumber
+			log.TxIndex = uint(i)
+			log.Index = logIndex
+			if i < len(txs) {
+				log.TxHash = txs[i].Hash()
+			}
+			logIndex++
+		}
+	}
+}

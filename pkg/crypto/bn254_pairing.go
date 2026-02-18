@@ -217,13 +217,13 @@ func finalExpHard(f *fp12) *fp12 {
 	fu3p := fp12Frob(fu3)
 	fu2p2 := fp12FrobSq(fu2)
 
-	y0 := fp12Mul(fp12Mul(fp1, fp12Sqr(fp2_)), fp3)
+	y0 := fp12Mul(fp12Mul(fp1, fp2_), fp3)
 	y1 := fp12Conj(f)
 	y2 := fu2p2
 	y3 := fp12Conj(fup)
 	y4 := fp12Mul(fp12Conj(fu), fp12Conj(fu2p))
 	y5 := fp12Conj(fu2)
-	y6 := fp12Mul(fu3, fu3p)
+	y6 := fp12Conj(fp12Mul(fu3, fu3p))
 
 	t0 := fp12Mul(fp12Mul(fp12Sqr(y6), y4), y5)
 	t1 := fp12Mul(fp12Mul(y3, y5), t0)

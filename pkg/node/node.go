@@ -186,6 +186,13 @@ func (n *Node) Config() *Config {
 	return n.config
 }
 
+// Running reports whether the node is currently running.
+func (n *Node) Running() bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.running
+}
+
 // chainConfigForNetwork returns the chain config for the given network name.
 func chainConfigForNetwork(network string) *core.ChainConfig {
 	switch network {

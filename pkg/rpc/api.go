@@ -85,6 +85,38 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 		return api.getFilterLogs(req)
 	case "eth_uninstallFilter":
 		return api.uninstallFilter(req)
+	case "eth_getProof":
+		return api.getProof(req)
+	case "eth_getHeaderByNumber":
+		return api.getHeaderByNumber(req)
+	case "eth_getHeaderByHash":
+		return api.getHeaderByHash(req)
+	case "eth_getTransactionByBlockHashAndIndex":
+		return api.getTransactionByBlockHashAndIndex(req)
+	case "eth_getTransactionByBlockNumberAndIndex":
+		return api.getTransactionByBlockNumberAndIndex(req)
+	case "eth_getBlockTransactionCountByHash":
+		return api.getBlockTransactionCountByHash(req)
+	case "eth_getBlockTransactionCountByNumber":
+		return api.getBlockTransactionCountByNumber(req)
+	case "eth_accounts":
+		return api.accounts(req)
+	case "eth_coinbase":
+		return api.coinbase(req)
+	case "eth_mining":
+		return api.mining(req)
+	case "eth_hashrate":
+		return api.hashrate(req)
+	case "eth_protocolVersion":
+		return api.protocolVersion(req)
+	case "eth_getUncleCountByBlockHash":
+		return api.getUncleCountByBlockHash(req)
+	case "eth_getUncleCountByBlockNumber":
+		return api.getUncleCountByBlockNumber(req)
+	case "eth_blobBaseFee":
+		return api.getBlobBaseFee(req)
+	case "debug_traceTransaction":
+		return api.debugTraceTransaction(req)
 	case "web3_clientVersion":
 		return api.clientVersion(req)
 	case "web3_sha3":
