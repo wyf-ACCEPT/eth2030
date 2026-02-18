@@ -6,6 +6,8 @@ import (
 
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2028/eth2028/trie"
 )
 
 // TxPoolReader is an interface for reading pending transactions from a pool.
@@ -117,6 +119,7 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 	// Filter out transactions that don't meet the base fee requirement.
 	// A tx must have gasFeeCap >= baseFee to be included.
 
+	txIndex := 0
 	for _, tx := range sorted {
 		// Check if transaction meets base fee requirement.
 		if header.BaseFee != nil && tx.GasFeeCap() != nil {
@@ -130,6 +133,9 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 			continue
 		}
 
+		// Set tx context so logs are keyed correctly.
+		statedb.SetTxContext(tx.Hash(), txIndex)
+
 		// Try to apply the transaction.
 		snap := statedb.Snapshot()
 		receipt, used, err := ApplyTransaction(b.config, statedb, header, tx, gasPool)
@@ -142,9 +148,17 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		txs = append(txs, tx)
 		receipts = append(receipts, receipt)
 		gasUsed += used
+		txIndex++
 	}
 
 	header.GasUsed = gasUsed
+
+	// Compute block-level bloom filter from all receipts.
+	header.Bloom = types.CreateBloom(receipts)
+
+	// Compute transaction and receipt roots.
+	header.TxHash = deriveTxsRoot(txs)
+	header.ReceiptHash = deriveReceiptsRoot(receipts)
 
 	// Compute state root after applying all transactions.
 	header.Root = statedb.GetRoot()
@@ -157,6 +171,9 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 
 	// Process withdrawals: credit each withdrawal recipient.
 	if attrs.Withdrawals != nil {
+		wHash := deriveWithdrawalsRoot(attrs.Withdrawals)
+		header.WithdrawalsHash = &wHash
+
 		for _, w := range attrs.Withdrawals {
 			// Withdrawal amount is in Gwei; convert to wei.
 			amount := new(big.Int).SetUint64(w.Amount)
@@ -214,11 +231,15 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 
 	snapshot := statedb.Snapshot()
 
+	txIndex := 0
 	for _, tx := range sorted {
 		// Skip if not enough gas left for this tx.
 		if gasPool.Gas() < tx.Gas() {
 			continue
 		}
+
+		// Set tx context so logs are keyed correctly.
+		statedb.SetTxContext(tx.Hash(), txIndex)
 
 		// Try to apply the transaction.
 		snap := statedb.Snapshot()
@@ -232,14 +253,22 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 		txs = append(txs, tx)
 		receipts = append(receipts, receipt)
 		gasUsed += used
+		txIndex++
 	}
 
 	header.GasUsed = gasUsed
+
+	// Compute block-level bloom filter from all receipts.
+	header.Bloom = types.CreateBloom(receipts)
 
 	// If no transactions were included, revert to the parent state.
 	if len(txs) == 0 {
 		statedb.RevertToSnapshot(snapshot)
 	}
+
+	// Compute transaction and receipt roots.
+	header.TxHash = deriveTxsRoot(txs)
+	header.ReceiptHash = deriveReceiptsRoot(receipts)
 
 	// Compute state root.
 	header.Root = statedb.GetRoot()
@@ -296,4 +325,55 @@ func calcGasLimit(parentGasLimit, parentGasUsed uint64) uint64 {
 		return newLimit
 	}
 	return parentGasLimit
+}
+
+// deriveTxsRoot computes the transactions root using a Merkle Patricia Trie.
+// Key: RLP(index), Value: RLP-encoded transaction.
+func deriveTxsRoot(txs []*types.Transaction) types.Hash {
+	if len(txs) == 0 {
+		return types.EmptyRootHash
+	}
+	t := trie.New()
+	for i, tx := range txs {
+		key, _ := rlp.EncodeToBytes(uint64(i))
+		val, err := tx.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		t.Put(key, val)
+	}
+	return t.Hash()
+}
+
+// deriveReceiptsRoot computes the receipts root using a Merkle Patricia Trie.
+// Key: RLP(index), Value: RLP-encoded receipt.
+func deriveReceiptsRoot(receipts []*types.Receipt) types.Hash {
+	if len(receipts) == 0 {
+		return types.EmptyRootHash
+	}
+	t := trie.New()
+	for i, receipt := range receipts {
+		key, _ := rlp.EncodeToBytes(uint64(i))
+		val, err := receipt.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		t.Put(key, val)
+	}
+	return t.Hash()
+}
+
+// deriveWithdrawalsRoot computes the withdrawals root using a Merkle Patricia Trie.
+func deriveWithdrawalsRoot(ws []*types.Withdrawal) types.Hash {
+	if len(ws) == 0 {
+		return types.EmptyRootHash
+	}
+	t := trie.New()
+	for i, w := range ws {
+		key, _ := rlp.EncodeToBytes(uint64(i))
+		// RLP-encode withdrawal as [index, validatorIndex, address, amount].
+		val, _ := rlp.EncodeToBytes([]interface{}{w.Index, w.ValidatorIndex, w.Address, w.Amount})
+		t.Put(key, val)
+	}
+	return t.Hash()
 }

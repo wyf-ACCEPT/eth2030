@@ -1,10 +1,13 @@
 package core
 
+import "github.com/eth2028/eth2028/core/types"
+
 // ExecutionResult holds the outcome of a transaction execution.
 type ExecutionResult struct {
-	UsedGas    uint64
-	Err        error
-	ReturnData []byte
+	UsedGas         uint64
+	Err             error
+	ReturnData      []byte
+	ContractAddress types.Address // set for contract creation
 }
 
 // Unwrap returns the execution error, if any.

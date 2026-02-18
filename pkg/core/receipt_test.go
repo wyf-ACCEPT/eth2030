@@ -207,17 +207,30 @@ func TestGetLogsWithContract(t *testing.T) {
 		t.Fatalf("NewBlockchain: %v", err)
 	}
 
-	// Call the contract.
+	// Call the contract. Gas price must be >= base fee (7 wei minimum).
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(100),
 		Gas:      100000,
 		To:       &contractAddr,
 		Value:    big.NewInt(0),
 	})
 	tx.SetSender(sender)
 
-	block := makeBlock(bc.Genesis(), []*types.Transaction{tx})
+	// Use BlockBuilder to construct the block so the bloom filter is computed
+	// correctly from the receipts' logs.
+	pool := &mockTxPool{txs: []*types.Transaction{tx}}
+	builder := NewBlockBuilder(TestConfig, bc, pool)
+	attrs := &BuildBlockAttributes{
+		Timestamp:    genesis.Time() + 12,
+		FeeRecipient: types.HexToAddress("0xfee"),
+		GasLimit:     30_000_000,
+	}
+	block, _, err := builder.BuildBlock(genesis.Header(), attrs)
+	if err != nil {
+		t.Fatalf("BuildBlock: %v", err)
+	}
+
 	if err := bc.InsertBlock(block); err != nil {
 		t.Fatalf("InsertBlock: %v", err)
 	}
@@ -252,6 +265,12 @@ func TestGetLogsWithContract(t *testing.T) {
 	}
 	if len(receipts[0].Logs) != 1 {
 		t.Fatalf("expected 1 log in receipt, got %d", len(receipts[0].Logs))
+	}
+
+	// Verify the bloom filter in the block header contains the contract address.
+	blockBloom := block.Bloom()
+	if !types.BloomContains(blockBloom, contractAddr.Bytes()) {
+		t.Error("block bloom should contain the contract address from LOG0")
 	}
 }
 

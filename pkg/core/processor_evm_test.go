@@ -56,7 +56,7 @@ func applyTx(t *testing.T, statedb *state.MemoryStateDB, sender types.Address, t
 	gp := new(GasPool).AddGas(header.GasLimit)
 
 	snapshot := statedb.Snapshot()
-	result, err := applyMessage(TestConfig, statedb, header, &msg, gp)
+	result, err := applyMessage(TestConfig, nil, statedb, header, &msg, gp)
 	if err != nil {
 		statedb.RevertToSnapshot(snapshot)
 		t.Fatalf("applyMessage protocol error: %v", err)

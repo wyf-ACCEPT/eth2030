@@ -410,7 +410,7 @@ func (b *engineBackend) GetPayloadByID(id engine.PayloadID) (*engine.GetPayloadR
 					ExtraData:     header.Extra,
 					BaseFeePerGas: header.BaseFee,
 					BlockHash:     block.Hash(),
-					Transactions:  nil, // Transaction encoding left for later.
+					Transactions:  encodeTxsRLP(block.Transactions()),
 				},
 			},
 		},
@@ -464,4 +464,21 @@ func generatePayloadID(parentHash types.Hash, attrs *core.BuildBlockAttributes) 
 	}
 
 	return id
+}
+
+// encodeTxsRLP encodes a list of transactions to RLP byte slices
+// for inclusion in an Engine API ExecutionPayload.
+func encodeTxsRLP(txs []*types.Transaction) [][]byte {
+	if len(txs) == 0 {
+		return nil
+	}
+	encoded := make([][]byte, len(txs))
+	for i, tx := range txs {
+		raw, err := tx.EncodeRLP()
+		if err != nil {
+			continue
+		}
+		encoded[i] = raw
+	}
+	return encoded
 }

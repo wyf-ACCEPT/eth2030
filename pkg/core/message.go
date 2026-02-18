@@ -33,6 +33,7 @@ func TransactionToMessage(tx *types.Transaction) Message {
 		GasTipCap:  tx.GasTipCap(),
 		Data:       tx.Data(),
 		AccessList: tx.AccessList(),
+		BlobHashes: tx.BlobHashes(),
 	}
 	if sender := tx.Sender(); sender != nil {
 		msg.From = *sender

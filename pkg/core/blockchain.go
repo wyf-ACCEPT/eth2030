@@ -73,10 +73,11 @@ func NewBlockchain(config *ChainConfig, genesis *types.Block, statedb *state.Mem
 		return nil, ErrNoGenesis
 	}
 
+	proc := NewStateProcessor(config)
 	bc := &Blockchain{
 		config:       config,
 		db:           db,
-		processor:    NewStateProcessor(config),
+		processor:    proc,
 		validator:    NewBlockValidator(config),
 		blockCache:   make(map[types.Hash]*types.Block),
 		canonCache:   make(map[uint64]types.Hash),
@@ -88,6 +89,9 @@ func NewBlockchain(config *ChainConfig, genesis *types.Block, statedb *state.Mem
 		genesis:      genesis,
 		currentBlock: genesis,
 	}
+
+	// Wire up GetHash for BLOCKHASH opcode support.
+	proc.SetGetHash(bc.GetHashFn())
 
 	// Create HeaderChain from genesis header.
 	bc.hc = NewHeaderChain(config, genesis.Header())
@@ -151,6 +155,13 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 	receipts, err := bc.processor.Process(block, statedb)
 	if err != nil {
 		return fmt.Errorf("process block %d: %w", block.NumberU64(), err)
+	}
+
+	// Validate block bloom: the bloom in the header must match the computed
+	// bloom from all receipt logs.
+	blockBloom := types.CreateBloom(receipts)
+	if header.Bloom != blockBloom {
+		return fmt.Errorf("invalid bloom (remote: %x local: %x)", header.Bloom, blockBloom)
 	}
 
 	// Store in block cache.

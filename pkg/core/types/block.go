@@ -176,10 +176,21 @@ func (b *Block) Size() uint64 {
 
 // copyHeader creates a deep copy of a header.
 func copyHeader(h *Header) *Header {
-	cpy := *h
-	// Reset cached values.
-	cpy.hash = atomic.Pointer[Hash]{}
-	cpy.size = atomic.Uint64{}
+	// Copy field-by-field to avoid copying atomic fields (hash, size).
+	cpy := Header{
+		ParentHash:  h.ParentHash,
+		UncleHash:   h.UncleHash,
+		Coinbase:    h.Coinbase,
+		Root:        h.Root,
+		TxHash:      h.TxHash,
+		ReceiptHash: h.ReceiptHash,
+		Bloom:       h.Bloom,
+		GasLimit:    h.GasLimit,
+		GasUsed:     h.GasUsed,
+		Time:        h.Time,
+		MixDigest: h.MixDigest,
+		Nonce:     h.Nonce,
+	}
 
 	if h.Difficulty != nil {
 		cpy.Difficulty = new(big.Int).Set(h.Difficulty)

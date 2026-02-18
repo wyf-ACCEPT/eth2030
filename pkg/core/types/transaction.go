@@ -419,6 +419,31 @@ func (tx *Transaction) Nonce() uint64 { return tx.inner.nonce() }
 // To returns the recipient address, or nil for contract creation.
 func (tx *Transaction) To() *Address { return tx.inner.to() }
 
+// BlobGasFeeCap returns the blob gas fee cap for EIP-4844 blob transactions.
+func (tx *Transaction) BlobGasFeeCap() *big.Int {
+	if blob, ok := tx.inner.(*BlobTx); ok {
+		return blob.BlobFeeCap
+	}
+	return nil
+}
+
+// BlobHashes returns the versioned hashes for EIP-4844 blob transactions.
+func (tx *Transaction) BlobHashes() []Hash {
+	if blob, ok := tx.inner.(*BlobTx); ok {
+		return blob.BlobHashes
+	}
+	return nil
+}
+
+// BlobGas returns the blob gas used by an EIP-4844 blob transaction.
+// Each blob uses 131072 gas (2^17).
+func (tx *Transaction) BlobGas() uint64 {
+	if blob, ok := tx.inner.(*BlobTx); ok {
+		return uint64(len(blob.BlobHashes)) * 131072
+	}
+	return 0
+}
+
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 func (tx *Transaction) RawSignatureValues() (v, r, s *big.Int) {
 	switch t := tx.inner.(type) {

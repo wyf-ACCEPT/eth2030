@@ -67,6 +67,11 @@ func NewBlockValidator(config *ChainConfig) *BlockValidator {
 // ValidateHeader checks whether a header conforms to the consensus rules.
 // The parent header must be provided for validation.
 func (v *BlockValidator) ValidateHeader(header, parent *types.Header) error {
+	// Verify parent hash matches.
+	if header.ParentHash != parent.Hash() {
+		return fmt.Errorf("%w: want %v, got %v", ErrUnknownParent, parent.Hash(), header.ParentHash)
+	}
+
 	// Verify extra data length.
 	if len(header.Extra) > MaxExtraDataSize {
 		return fmt.Errorf("%w: %d > %d", ErrExtraDataTooLong, len(header.Extra), MaxExtraDataSize)
