@@ -198,10 +198,26 @@ func chainConfigForNetwork(network string) *core.ChainConfig {
 	switch network {
 	case "mainnet":
 		return core.MainnetConfig
+	case "sepolia":
+		return core.SepoliaConfig
+	case "holesky":
+		return core.HoleskyConfig
 	default:
-		// Use mainnet config as default for now;
-		// sepolia/holesky will be added later.
 		return core.MainnetConfig
+	}
+}
+
+// genesisForNetwork returns the genesis specification for the given network.
+func genesisForNetwork(network string) *core.Genesis {
+	switch network {
+	case "mainnet":
+		return core.DefaultGenesisBlock()
+	case "sepolia":
+		return core.DefaultSepoliaGenesisBlock()
+	case "holesky":
+		return core.DefaultHoleskyGenesisBlock()
+	default:
+		return core.DefaultGenesisBlock()
 	}
 }
 

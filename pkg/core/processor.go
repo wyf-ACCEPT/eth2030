@@ -491,6 +491,41 @@ func intrinsicGas(data []byte, isCreate bool, authCount, emptyAuthCount uint64) 
 	return gas
 }
 
+// EIP-7623: calldata gas cost floor constants.
+// These define a higher floor cost for calldata to incentivize blob usage.
+const (
+	// TotalCostFloorPerToken is the floor gas cost per non-zero calldata byte
+	// under EIP-7623. The actual gas charged is max(standard_cost, floor_cost).
+	TotalCostFloorPerToken uint64 = 10
+
+	// StandardTokenCost is the standard EIP-2028 calldata cost for non-zero bytes.
+	StandardTokenCost uint64 = 16
+
+	// FloorTokenCost is the EIP-7623 floor cost applied after execution.
+	// floorDataGas = tokens * TOTAL_COST_FLOOR_PER_TOKEN
+	// where tokens = zero_bytes * 1 + nonzero_bytes * 4
+	FloorTokenCost uint64 = 10
+)
+
+// calldataFloorGas computes the EIP-7623 calldata floor gas cost.
+// tokens = zero_bytes * 1 + nonzero_bytes * 4
+// floor_gas = 21000 + tokens * TOTAL_COST_FLOOR_PER_TOKEN
+func calldataFloorGas(data []byte, isCreate bool) uint64 {
+	var tokens uint64
+	for _, b := range data {
+		if b == 0 {
+			tokens += 1
+		} else {
+			tokens += 4
+		}
+	}
+	floor := TxGas + tokens*TotalCostFloorPerToken
+	if isCreate {
+		floor += TxCreateGas
+	}
+	return floor
+}
+
 // accessListGas computes the gas cost for an EIP-2930 access list.
 // Per EIP-2930: 2400 gas per address, 1900 gas per storage key.
 func accessListGas(accessList types.AccessList) uint64 {

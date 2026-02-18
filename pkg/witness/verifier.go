@@ -216,6 +216,10 @@ func (s *WitnessStateDB) SetTransientState(addr types.Address, key types.Hash, v
 	s.transientStorage[addr][key] = value
 }
 
+func (s *WitnessStateDB) ClearTransientStorage() {
+	s.transientStorage = make(map[types.Address]map[types.Hash]types.Hash)
+}
+
 // --- Self-destruct ---
 
 func (s *WitnessStateDB) SelfDestruct(addr types.Address) {

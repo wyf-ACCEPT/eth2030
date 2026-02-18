@@ -589,6 +589,7 @@ func (m *accessListStateDB) GetCommittedState(addr types.Address, key types.Hash
 }
 func (m *accessListStateDB) GetTransientState(types.Address, types.Hash) types.Hash  { return types.Hash{} }
 func (m *accessListStateDB) SetTransientState(types.Address, types.Hash, types.Hash) {}
+func (m *accessListStateDB) ClearTransientStorage()                                  {}
 func (m *accessListStateDB) SelfDestruct(types.Address)                              {}
 func (m *accessListStateDB) HasSelfDestructed(types.Address) bool                    { return false }
 func (m *accessListStateDB) Empty(addr types.Address) bool                           { return !m.exists[addr] }

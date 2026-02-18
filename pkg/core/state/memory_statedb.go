@@ -298,6 +298,12 @@ func (s *MemoryStateDB) SetTransientState(addr types.Address, key types.Hash, va
 	s.transientStorage[addr][key] = value
 }
 
+// ClearTransientStorage resets all transient storage. Per EIP-1153, transient
+// storage is cleared at the end of each transaction.
+func (s *MemoryStateDB) ClearTransientStorage() {
+	s.transientStorage = make(map[types.Address]map[types.Hash]types.Hash)
+}
+
 // --- Commit ---
 
 // rlpAccount is the RLP-serializable form of an Ethereum account (Yellow Paper).

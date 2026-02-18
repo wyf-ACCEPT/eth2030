@@ -204,6 +204,44 @@ func TestTransientStorage(t *testing.T) {
 	}
 }
 
+func TestClearTransientStorage(t *testing.T) {
+	db := NewMemoryStateDB()
+	addr1 := types.HexToAddress("0x08")
+	addr2 := types.HexToAddress("0x09")
+	key1 := types.HexToHash("0x01")
+	key2 := types.HexToHash("0x02")
+
+	// Set transient storage for multiple addresses and keys.
+	db.SetTransientState(addr1, key1, types.HexToHash("0xaa"))
+	db.SetTransientState(addr1, key2, types.HexToHash("0xbb"))
+	db.SetTransientState(addr2, key1, types.HexToHash("0xcc"))
+
+	// Verify values are set.
+	if db.GetTransientState(addr1, key1) != types.HexToHash("0xaa") {
+		t.Fatal("expected transient value 0xaa")
+	}
+
+	// Clear all transient storage.
+	db.ClearTransientStorage()
+
+	// All transient storage should be empty after clearing.
+	if db.GetTransientState(addr1, key1) != (types.Hash{}) {
+		t.Fatal("transient storage for addr1/key1 should be empty after clear")
+	}
+	if db.GetTransientState(addr1, key2) != (types.Hash{}) {
+		t.Fatal("transient storage for addr1/key2 should be empty after clear")
+	}
+	if db.GetTransientState(addr2, key1) != (types.Hash{}) {
+		t.Fatal("transient storage for addr2/key1 should be empty after clear")
+	}
+
+	// Should be able to set new values after clearing.
+	db.SetTransientState(addr1, key1, types.HexToHash("0xdd"))
+	if db.GetTransientState(addr1, key1) != types.HexToHash("0xdd") {
+		t.Fatal("expected new transient value 0xdd after clear and re-set")
+	}
+}
+
 func TestSelfDestruct(t *testing.T) {
 	db := NewMemoryStateDB()
 	addr := types.HexToAddress("0x0a")

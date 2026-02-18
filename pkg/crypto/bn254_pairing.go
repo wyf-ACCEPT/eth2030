@@ -13,10 +13,7 @@ package crypto
 
 import "math/big"
 
-// ateLoopCount is |6u+2| for BN254: 29793968203157093288.
-var ateLoopCount, _ = new(big.Int).SetString("29793968203157093288", 10)
-
-// BN parameter u. This is the BN254 curve parameter such that p = 36u^4 + 36u^3 + 24u^2 + 6u + 1
+// bn254U is the BN parameter u such that p = 36u^4 + 36u^3 + 24u^2 + 6u + 1
 // and the ate loop count = |6u+2| = 29793968203157093288.
 var bn254U, _ = new(big.Int).SetString("4965661367192848881", 10)
 
@@ -59,11 +56,6 @@ func bn254MultiPairing(g1Points []*G1Point, g2Points []*G2Point) bool {
 // twist point in Jacobian coordinates for the Miller loop.
 type twistPointJ struct {
 	x, y, z, t *fp2 // t = z^2
-}
-
-func newTwistPointJ(x, y, z *fp2) *twistPointJ {
-	t := fp2Sqr(z)
-	return &twistPointJ{x: x, y: y, z: z, t: t}
 }
 
 // lineFunctionDouble computes the tangent line at R (Jacobian), updates R to 2R,
@@ -300,7 +292,6 @@ func frobeniusEndomorphism(qx, qy *fp2) (*fp2, *fp2) {
 
 var (
 	frobSqXa0, _ = new(big.Int).SetString("21888242871839275220042445260109153167277707414472061641714758635765020556616", 10)
-	frobSqYa0, _ = new(big.Int).SetString("21888242871839275222246405745257275088696311157297823662689037894645226208582", 10)
 )
 
 // finalExp computes f^((p^12-1)/n).

@@ -76,6 +76,10 @@ func (m *mockStateDB) SetTransientState(addr types.Address, key types.Hash, valu
 	m.transient[addr][key] = value
 }
 
+func (m *mockStateDB) ClearTransientStorage() {
+	m.transient = make(map[types.Address]map[types.Hash]types.Hash)
+}
+
 // setupTestWithState creates an EVM with a mock StateDB.
 func setupTestWithState() (*EVM, *Contract, *Memory, *Stack) {
 	mock := newMockStateDB()
@@ -482,6 +486,214 @@ func TestOpTloadNoStateDB(t *testing.T) {
 
 	if st.Peek().Sign() != 0 {
 		t.Errorf("TLOAD without StateDB = %s, want 0", st.Peek().String())
+	}
+}
+
+func TestOpTstoreOverwrite(t *testing.T) {
+	evm, contract, mem, st := setupTestWithState()
+	pc := uint64(0)
+
+	// TSTORE value 0x11 at key 0x01.
+	st.Push(big.NewInt(0x11))
+	st.Push(big.NewInt(0x01))
+	opTstore(&pc, evm, contract, mem, st)
+
+	// TSTORE value 0x22 at same key 0x01 (overwrite).
+	st.Push(big.NewInt(0x22))
+	st.Push(big.NewInt(0x01))
+	opTstore(&pc, evm, contract, mem, st)
+
+	// TLOAD should return the latest value.
+	st.Push(big.NewInt(0x01))
+	opTload(&pc, evm, contract, mem, st)
+
+	if st.Peek().Int64() != 0x22 {
+		t.Errorf("TLOAD after overwrite = 0x%x, want 0x22", st.Peek().Int64())
+	}
+}
+
+func TestOpTstoreAddressIsolation(t *testing.T) {
+	mock := newMockStateDB()
+	addr1 := types.Address{0x01}
+	addr2 := types.Address{0x02}
+	evm := NewEVM(BlockContext{}, TxContext{}, Config{})
+	evm.StateDB = mock
+	mem := NewMemory()
+	pc := uint64(0)
+
+	// TSTORE as contract at addr1.
+	contract1 := NewContract(types.Address{}, addr1, big.NewInt(0), 1000000)
+	st := NewStack()
+	st.Push(big.NewInt(0xFF))
+	st.Push(big.NewInt(0x01))
+	opTstore(&pc, evm, contract1, mem, st)
+
+	// TLOAD from addr2 at same key should return zero.
+	contract2 := NewContract(types.Address{}, addr2, big.NewInt(0), 1000000)
+	st2 := NewStack()
+	st2.Push(big.NewInt(0x01))
+	opTload(&pc, evm, contract2, mem, st2)
+
+	if st2.Peek().Sign() != 0 {
+		t.Errorf("TLOAD from different address = %s, want 0", st2.Peek().String())
+	}
+
+	// TLOAD from addr1 at same key should return 0xFF.
+	st3 := NewStack()
+	st3.Push(big.NewInt(0x01))
+	opTload(&pc, evm, contract1, mem, st3)
+
+	if st3.Peek().Int64() != 0xFF {
+		t.Errorf("TLOAD from original address = 0x%x, want 0xFF", st3.Peek().Int64())
+	}
+}
+
+func TestOpTstoreDoesNotAffectPersistentStorage(t *testing.T) {
+	mock := newMockStateDB()
+	addr := types.Address{0x01}
+	evm := NewEVM(BlockContext{}, TxContext{}, Config{})
+	evm.StateDB = mock
+	contract := NewContract(types.Address{}, addr, big.NewInt(0), 1000000)
+	mem := NewMemory()
+	st := NewStack()
+	pc := uint64(0)
+
+	// TSTORE value at key 0x01.
+	st.Push(big.NewInt(0xBB))
+	st.Push(big.NewInt(0x01))
+	opTstore(&pc, evm, contract, mem, st)
+
+	// SLOAD at same key should return zero (persistent storage is separate).
+	st.Push(big.NewInt(0x01))
+	opSload(&pc, evm, contract, mem, st)
+
+	if st.Peek().Sign() != 0 {
+		t.Errorf("SLOAD after TSTORE = %s, want 0 (transient != persistent)", st.Peek().String())
+	}
+}
+
+func TestOpTstoreClearTransientStorage(t *testing.T) {
+	mock := newMockStateDB()
+	addr := types.Address{0x01}
+	evm := NewEVM(BlockContext{}, TxContext{}, Config{})
+	evm.StateDB = mock
+	contract := NewContract(types.Address{}, addr, big.NewInt(0), 1000000)
+	mem := NewMemory()
+	st := NewStack()
+	pc := uint64(0)
+
+	// TSTORE a value.
+	st.Push(big.NewInt(0xCC))
+	st.Push(big.NewInt(0x01))
+	opTstore(&pc, evm, contract, mem, st)
+
+	// Clear transient storage (simulates end of transaction).
+	mock.ClearTransientStorage()
+
+	// TLOAD should now return zero.
+	st.Push(big.NewInt(0x01))
+	opTload(&pc, evm, contract, mem, st)
+
+	if st.Peek().Sign() != 0 {
+		t.Errorf("TLOAD after clear = %s, want 0", st.Peek().String())
+	}
+}
+
+func TestOpTstoreNoStateDB(t *testing.T) {
+	evm, contract, mem, st := setupTest() // no StateDB
+	pc := uint64(0)
+
+	// TSTORE without StateDB should be a no-op (no panic).
+	st.Push(big.NewInt(0xAA))
+	st.Push(big.NewInt(0x01))
+	_, err := opTstore(&pc, evm, contract, mem, st)
+	if err != nil {
+		t.Errorf("TSTORE without StateDB should not error, got: %v", err)
+	}
+}
+
+func TestTloadTstoreGasCost(t *testing.T) {
+	tbl := NewCancunJumpTable()
+
+	// TLOAD gas should be WarmStorageReadCost (100).
+	if tbl[TLOAD].constantGas != 100 {
+		t.Errorf("TLOAD gas = %d, want 100", tbl[TLOAD].constantGas)
+	}
+
+	// TSTORE gas should be WarmStorageReadCost (100).
+	if tbl[TSTORE].constantGas != 100 {
+		t.Errorf("TSTORE gas = %d, want 100", tbl[TSTORE].constantGas)
+	}
+
+	// TLOAD should have no dynamic gas.
+	if tbl[TLOAD].dynamicGas != nil {
+		t.Error("TLOAD should have nil dynamicGas")
+	}
+
+	// TSTORE should have no dynamic gas.
+	if tbl[TSTORE].dynamicGas != nil {
+		t.Error("TSTORE should have nil dynamicGas")
+	}
+}
+
+func TestTstoreMarkedAsWrite(t *testing.T) {
+	tbl := NewCancunJumpTable()
+
+	if !tbl[TSTORE].writes {
+		t.Error("TSTORE should be marked as a write operation")
+	}
+}
+
+func TestTloadTstorePreCancunInvalid(t *testing.T) {
+	// TLOAD and TSTORE should not be available in Shanghai (pre-Cancun).
+	tbl := NewShanghaiJumpTable()
+
+	if tbl[TLOAD] != nil {
+		t.Error("TLOAD should not be available in Shanghai jump table")
+	}
+	if tbl[TSTORE] != nil {
+		t.Error("TSTORE should not be available in Shanghai jump table")
+	}
+}
+
+// TestTloadTstoreEVMRun exercises TLOAD/TSTORE through the interpreter loop.
+func TestTloadTstoreEVMRun(t *testing.T) {
+	mock := newMockStateDB()
+	addr := types.Address{0x42}
+
+	evm := NewEVM(BlockContext{}, TxContext{}, Config{})
+	evm.StateDB = mock
+
+	// Bytecode: PUSH1 0xBE, PUSH1 0x01, TSTORE, PUSH1 0x01, TLOAD, PUSH1 0x00, MSTORE, PUSH1 0x20, PUSH1 0x00, RETURN
+	// This stores 0xBE at transient key 1, loads it back, writes to memory, and returns it.
+	code := []byte{
+		byte(PUSH1), 0xBE, // push value
+		byte(PUSH1), 0x01, // push key
+		byte(TSTORE),      // tstore(key=1, value=0xBE)
+		byte(PUSH1), 0x01, // push key
+		byte(TLOAD),       // tload(key=1) -> 0xBE on stack
+		byte(PUSH1), 0x00, // push memory offset
+		byte(MSTORE),      // mstore(0, 0xBE)
+		byte(PUSH1), 0x20, // push 32 (return size)
+		byte(PUSH1), 0x00, // push 0 (return offset)
+		byte(RETURN),      // return memory[0:32]
+	}
+
+	contract := NewContract(types.Address{}, addr, big.NewInt(0), 100000)
+	contract.Code = code
+
+	ret, err := evm.Run(contract, nil)
+	if err != nil {
+		t.Fatalf("EVM Run error: %v", err)
+	}
+
+	if len(ret) != 32 {
+		t.Fatalf("return data length = %d, want 32", len(ret))
+	}
+
+	// The value 0xBE should be at the last byte of the 32-byte return (big-endian).
+	if ret[31] != 0xBE {
+		t.Errorf("return data[31] = 0x%x, want 0xBE", ret[31])
 	}
 }
 

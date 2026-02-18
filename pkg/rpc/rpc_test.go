@@ -19,6 +19,7 @@ var errCallFailed = errors.New("execution reverted")
 type mockBackend struct {
 	chainID      *big.Int
 	headers      map[uint64]*types.Header
+	blocks       map[uint64]*types.Block
 	statedb      *state.MemoryStateDB
 	transactions map[types.Hash]*mockTxInfo
 	receipts     map[types.Hash][]*types.Receipt
@@ -54,6 +55,7 @@ func newMockBackend() *mockBackend {
 	return &mockBackend{
 		chainID:      big.NewInt(1337),
 		headers:      map[uint64]*types.Header{42: header},
+		blocks:       make(map[uint64]*types.Block),
 		statedb:      sdb,
 		transactions: make(map[types.Hash]*mockTxInfo),
 		receipts:     make(map[types.Hash][]*types.Receipt),
@@ -77,8 +79,25 @@ func (b *mockBackend) HeaderByHash(hash types.Hash) *types.Header {
 	return nil
 }
 
-func (b *mockBackend) BlockByNumber(number BlockNumber) *types.Block { return nil }
-func (b *mockBackend) BlockByHash(hash types.Hash) *types.Block      { return nil }
+func (b *mockBackend) BlockByNumber(number BlockNumber) *types.Block {
+	if number == LatestBlockNumber {
+		// Find the latest block number from headers.
+		if h := b.headers[42]; h != nil {
+			return b.blocks[42]
+		}
+		return nil
+	}
+	return b.blocks[uint64(number)]
+}
+
+func (b *mockBackend) BlockByHash(hash types.Hash) *types.Block {
+	for _, block := range b.blocks {
+		if block != nil && block.Hash() == hash {
+			return block
+		}
+	}
+	return nil
+}
 
 func (b *mockBackend) CurrentHeader() *types.Header {
 	return b.headers[42]

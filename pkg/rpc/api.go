@@ -117,6 +117,10 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 		return api.getBlobBaseFee(req)
 	case "debug_traceTransaction":
 		return api.debugTraceTransaction(req)
+	case "debug_traceBlockByNumber":
+		return api.debugTraceBlockByNumber(req)
+	case "debug_traceBlockByHash":
+		return api.debugTraceBlockByHash(req)
 	case "web3_clientVersion":
 		return api.clientVersion(req)
 	case "web3_sha3":

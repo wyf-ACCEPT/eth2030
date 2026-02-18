@@ -56,6 +56,7 @@ type StateDB interface {
 	// Transient storage (EIP-1153)
 	GetTransientState(addr types.Address, key types.Hash) types.Hash
 	SetTransientState(addr types.Address, key types.Hash, value types.Hash)
+	ClearTransientStorage()
 
 	// Root computation
 	GetRoot() types.Hash

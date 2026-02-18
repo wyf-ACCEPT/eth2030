@@ -118,18 +118,24 @@ type RPCTransaction struct {
 
 // RPCReceipt is the JSON representation of a transaction receipt.
 type RPCReceipt struct {
-	TransactionHash   string   `json:"transactionHash"`
-	TransactionIndex  string   `json:"transactionIndex"`
-	BlockHash         string   `json:"blockHash"`
-	BlockNumber       string   `json:"blockNumber"`
-	From              string   `json:"from"`
-	To                *string  `json:"to"`
-	GasUsed           string   `json:"gasUsed"`
-	CumulativeGasUsed string   `json:"cumulativeGasUsed"`
-	ContractAddress   *string  `json:"contractAddress"`
+	TransactionHash   string    `json:"transactionHash"`
+	TransactionIndex  string    `json:"transactionIndex"`
+	BlockHash         string    `json:"blockHash"`
+	BlockNumber       string    `json:"blockNumber"`
+	From              string    `json:"from"`
+	To                *string   `json:"to"`
+	GasUsed           string    `json:"gasUsed"`
+	CumulativeGasUsed string    `json:"cumulativeGasUsed"`
+	ContractAddress   *string   `json:"contractAddress"`
 	Logs              []*RPCLog `json:"logs"`
-	Status            string   `json:"status"`
-	LogsBloom         string   `json:"logsBloom"`
+	Status            string    `json:"status"`
+	LogsBloom         string    `json:"logsBloom"`
+	Type              string    `json:"type"`
+	EffectiveGasPrice string    `json:"effectiveGasPrice"`
+
+	// EIP-4844 blob transaction fields (only present for blob txs).
+	BlobGasUsed  *string `json:"blobGasUsed,omitempty"`
+	BlobGasPrice *string `json:"blobGasPrice,omitempty"`
 }
 
 // RPCLog is the JSON representation of a contract log event.
@@ -379,9 +385,17 @@ func FormatReceipt(receipt *types.Receipt, tx *types.Transaction) *RPCReceipt {
 		CumulativeGasUsed: encodeUint64(receipt.CumulativeGasUsed),
 		Status:            encodeUint64(receipt.Status),
 		LogsBloom:         encodeBloom(receipt.Bloom),
+		Type:              encodeUint64(uint64(receipt.Type)),
 	}
 
-	// From
+	// EffectiveGasPrice
+	if receipt.EffectiveGasPrice != nil {
+		rpcReceipt.EffectiveGasPrice = encodeBigInt(receipt.EffectiveGasPrice)
+	} else {
+		rpcReceipt.EffectiveGasPrice = "0x0"
+	}
+
+	// From and To
 	if tx != nil {
 		if sender := tx.Sender(); sender != nil {
 			rpcReceipt.From = encodeAddress(*sender)
@@ -405,6 +419,16 @@ func FormatReceipt(receipt *types.Receipt, tx *types.Transaction) *RPCReceipt {
 	}
 	if rpcReceipt.Logs == nil {
 		rpcReceipt.Logs = []*RPCLog{}
+	}
+
+	// EIP-4844 blob transaction fields
+	if receipt.BlobGasUsed > 0 {
+		bgu := encodeUint64(receipt.BlobGasUsed)
+		rpcReceipt.BlobGasUsed = &bgu
+	}
+	if receipt.BlobGasPrice != nil {
+		bgp := encodeBigInt(receipt.BlobGasPrice)
+		rpcReceipt.BlobGasPrice = &bgp
 	}
 
 	return rpcReceipt

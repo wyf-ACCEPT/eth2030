@@ -157,6 +157,10 @@ func (w *WitnessCollector) SetTransientState(addr types.Address, key types.Hash,
 	w.inner.SetTransientState(addr, key, value)
 }
 
+func (w *WitnessCollector) ClearTransientStorage() {
+	w.inner.ClearTransientStorage()
+}
+
 // --- Snapshot / Revert ---
 
 func (w *WitnessCollector) Snapshot() int {
