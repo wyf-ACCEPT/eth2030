@@ -3,8 +3,84 @@
 package witness
 
 import (
+	"math/big"
+
 	"github.com/eth2028/eth2028/core/types"
 )
+
+// --- Stateless block validation witness types ---
+
+// BlockWitness captures all state data needed to verify a block without
+// having the full state trie. It records pre-state values for every account
+// and storage slot accessed during block execution.
+type BlockWitness struct {
+	// State contains pre-state values for all accessed accounts, keyed by address.
+	State map[types.Address]*AccountWitness
+
+	// Codes maps code hashes to their bytecode for all contracts read during
+	// execution.
+	Codes map[types.Hash][]byte
+
+	// Headers contains ancestor block headers needed for the BLOCKHASH opcode,
+	// keyed by block number.
+	Headers map[uint64]*types.Header
+}
+
+// AccountWitness stores the pre-state of an account and its accessed storage
+// slots. It records values at the time they were first read during execution.
+type AccountWitness struct {
+	// Balance is the account balance before execution.
+	Balance *big.Int
+	// Nonce is the account nonce before execution.
+	Nonce uint64
+	// CodeHash is the code hash before execution.
+	CodeHash types.Hash
+	// Storage maps storage slots to their pre-state values.
+	Storage map[types.Hash]types.Hash
+	// Exists records whether the account existed in state before execution.
+	Exists bool
+}
+
+// NewBlockWitness creates an empty block witness.
+func NewBlockWitness() *BlockWitness {
+	return &BlockWitness{
+		State:   make(map[types.Address]*AccountWitness),
+		Codes:   make(map[types.Hash][]byte),
+		Headers: make(map[uint64]*types.Header),
+	}
+}
+
+// TouchAccount ensures an AccountWitness entry exists for the given address.
+// Returns the existing or newly created entry.
+func (w *BlockWitness) TouchAccount(addr types.Address) *AccountWitness {
+	if aw, ok := w.State[addr]; ok {
+		return aw
+	}
+	aw := &AccountWitness{
+		Balance: new(big.Int),
+		Storage: make(map[types.Hash]types.Hash),
+	}
+	w.State[addr] = aw
+	return aw
+}
+
+// AddCode stores bytecode in the witness, keyed by its hash.
+func (w *BlockWitness) AddCode(codeHash types.Hash, code []byte) {
+	if _, ok := w.Codes[codeHash]; ok {
+		return
+	}
+	cp := make([]byte, len(code))
+	copy(cp, code)
+	w.Codes[codeHash] = cp
+}
+
+// AddHeader stores an ancestor block header in the witness.
+func (w *BlockWitness) AddHeader(num uint64, header *types.Header) {
+	if _, ok := w.Headers[num]; ok {
+		return
+	}
+	w.Headers[num] = header
+}
 
 // ExecutionWitness contains all data needed for stateless block validation.
 // It captures the state accessed during block execution, enabling a node
