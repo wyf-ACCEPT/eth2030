@@ -50,7 +50,7 @@ func TestReceiptPersistence(t *testing.T) {
 	tx1 := makeTx(0, sender, receiver, 100)
 	tx2 := makeTx(1, sender, receiver, 200)
 
-	block := makeBlock(bc.Genesis(), []*types.Transaction{tx1, tx2})
+	block := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx1, tx2}, bc.State())
 	if err := bc.InsertBlock(block); err != nil {
 		t.Fatalf("InsertBlock: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestTransactionLookup(t *testing.T) {
 	tx1 := makeTx(0, sender, receiver, 100)
 	tx2 := makeTx(1, sender, receiver, 200)
 
-	block := makeBlock(bc.Genesis(), []*types.Transaction{tx1, tx2})
+	block := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx1, tx2}, bc.State())
 	if err := bc.InsertBlock(block); err != nil {
 		t.Fatalf("InsertBlock: %v", err)
 	}
@@ -151,13 +151,13 @@ func TestGetLogs(t *testing.T) {
 
 	// Insert two blocks with transactions.
 	tx1 := makeTx(0, sender, receiver, 100)
-	block1 := makeBlock(bc.Genesis(), []*types.Transaction{tx1})
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx1}, bc.State())
 	if err := bc.InsertBlock(block1); err != nil {
 		t.Fatalf("InsertBlock(1): %v", err)
 	}
 
 	tx2 := makeTx(1, sender, receiver, 200)
-	block2 := makeBlock(block1, []*types.Transaction{tx2})
+	block2 := makeBlockWithState(block1, []*types.Transaction{tx2}, bc.State())
 	if err := bc.InsertBlock(block2); err != nil {
 		t.Fatalf("InsertBlock(2): %v", err)
 	}
@@ -344,7 +344,7 @@ func TestReceiptMultipleBlocks(t *testing.T) {
 
 	// Insert block 1 with one tx.
 	tx1 := makeTx(0, sender, receiver, 100)
-	block1 := makeBlock(bc.Genesis(), []*types.Transaction{tx1})
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx1}, bc.State())
 	if err := bc.InsertBlock(block1); err != nil {
 		t.Fatalf("InsertBlock(1): %v", err)
 	}
@@ -352,7 +352,7 @@ func TestReceiptMultipleBlocks(t *testing.T) {
 	// Insert block 2 with two txs.
 	tx2 := makeTx(1, sender, receiver, 200)
 	tx3 := makeTx(2, sender, receiver, 300)
-	block2 := makeBlock(block1, []*types.Transaction{tx2, tx3})
+	block2 := makeBlockWithState(block1, []*types.Transaction{tx2, tx3}, bc.State())
 	if err := bc.InsertBlock(block2); err != nil {
 		t.Fatalf("InsertBlock(2): %v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/types"
 )
 
@@ -265,16 +266,18 @@ func TestInsertBlock_BloomMismatchRejected(t *testing.T) {
 
 	// Build a block with a modified bloom (wrong bloom).
 	parent := bc.Genesis()
+	emptyBALHash := bal.NewBlockAccessList().Hash()
 	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     big.NewInt(1),
-		GasLimit:   parent.GasLimit(),
-		GasUsed:    0,
-		Time:       parent.Time() + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(parent.Header()),
-		UncleHash:  EmptyUncleHash,
-		Bloom:      types.Bloom{0xff}, // intentionally wrong bloom
+		ParentHash:           parent.Hash(),
+		Number:               big.NewInt(1),
+		GasLimit:             parent.GasLimit(),
+		GasUsed:              0,
+		Time:                 parent.Time() + 12,
+		Difficulty:           new(big.Int),
+		BaseFee:              CalcBaseFee(parent.Header()),
+		UncleHash:            EmptyUncleHash,
+		Bloom:                types.Bloom{0xff}, // intentionally wrong bloom
+		BlockAccessListHash:  &emptyBALHash,
 	}
 	block := types.NewBlock(header, nil)
 
@@ -289,15 +292,17 @@ func TestInsertBlock_CorrectBloomAccepted(t *testing.T) {
 
 	// Build a valid empty block (bloom should be all zeros).
 	parent := bc.Genesis()
+	emptyBALHash := bal.NewBlockAccessList().Hash()
 	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     big.NewInt(1),
-		GasLimit:   parent.GasLimit(),
-		GasUsed:    0,
-		Time:       parent.Time() + 12,
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(parent.Header()),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:           parent.Hash(),
+		Number:               big.NewInt(1),
+		GasLimit:             parent.GasLimit(),
+		GasUsed:              0,
+		Time:                 parent.Time() + 12,
+		Difficulty:           new(big.Int),
+		BaseFee:              CalcBaseFee(parent.Header()),
+		UncleHash:            EmptyUncleHash,
+		BlockAccessListHash:  &emptyBALHash,
 		// Bloom is zero by default (correct for empty block)
 	}
 	block := types.NewBlock(header, nil)

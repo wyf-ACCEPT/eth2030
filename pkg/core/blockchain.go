@@ -151,17 +151,28 @@ func (bc *Blockchain) insertBlock(block *types.Block) error {
 		return fmt.Errorf("state at parent %d: %w", parent.NumberU64(), err)
 	}
 
-	// Execute transactions.
-	receipts, err := bc.processor.Process(block, statedb)
+	// Execute transactions (with BAL tracking when Amsterdam is active).
+	result, err := bc.processor.ProcessWithBAL(block, statedb)
 	if err != nil {
 		return fmt.Errorf("process block %d: %w", block.NumberU64(), err)
 	}
+	receipts := result.Receipts
 
 	// Validate block bloom: the bloom in the header must match the computed
 	// bloom from all receipt logs.
 	blockBloom := types.CreateBloom(receipts)
 	if header.Bloom != blockBloom {
 		return fmt.Errorf("invalid bloom (remote: %x local: %x)", header.Bloom, blockBloom)
+	}
+
+	// Validate Block Access List hash (EIP-7928).
+	var computedBALHash *types.Hash
+	if result.BlockAccessList != nil {
+		h := result.BlockAccessList.Hash()
+		computedBALHash = &h
+	}
+	if err := bc.validator.ValidateBlockAccessList(header, computedBALHash); err != nil {
+		return err
 	}
 
 	// Store in block cache.

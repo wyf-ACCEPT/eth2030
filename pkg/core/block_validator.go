@@ -11,17 +11,20 @@ import (
 
 // Block validation errors.
 var (
-	ErrUnknownParent     = errors.New("unknown parent")
-	ErrFutureBlock       = errors.New("block in the future")
-	ErrInvalidNumber     = errors.New("invalid block number")
-	ErrInvalidGasLimit   = errors.New("invalid gas limit")
-	ErrInvalidGasUsed    = errors.New("gas used exceeds gas limit")
-	ErrInvalidTimestamp   = errors.New("timestamp not greater than parent")
-	ErrExtraDataTooLong  = errors.New("extra data too long")
-	ErrInvalidBaseFee    = errors.New("invalid base fee")
-	ErrInvalidDifficulty = errors.New("invalid difficulty for post-merge block")
-	ErrInvalidUncleHash  = errors.New("invalid uncle hash for post-merge block")
-	ErrInvalidNonce      = errors.New("invalid nonce for post-merge block")
+	ErrUnknownParent      = errors.New("unknown parent")
+	ErrFutureBlock        = errors.New("block in the future")
+	ErrInvalidNumber      = errors.New("invalid block number")
+	ErrInvalidGasLimit    = errors.New("invalid gas limit")
+	ErrInvalidGasUsed     = errors.New("gas used exceeds gas limit")
+	ErrInvalidTimestamp    = errors.New("timestamp not greater than parent")
+	ErrExtraDataTooLong   = errors.New("extra data too long")
+	ErrInvalidBaseFee     = errors.New("invalid base fee")
+	ErrInvalidDifficulty  = errors.New("invalid difficulty for post-merge block")
+	ErrInvalidUncleHash   = errors.New("invalid uncle hash for post-merge block")
+	ErrInvalidNonce       = errors.New("invalid nonce for post-merge block")
+	ErrInvalidRequestHash       = errors.New("invalid requests hash")
+	ErrInvalidBlockAccessList   = errors.New("invalid block access list hash")
+	ErrMissingBlockAccessList   = errors.New("missing block access list hash")
 )
 
 const (
@@ -120,6 +123,68 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 	if len(block.Uncles()) > 0 {
 		return ErrInvalidUncleHash
 	}
+	return nil
+}
+
+// ValidateRequests verifies the requests_hash field in a post-Prague block
+// header matches the computed hash from the provided requests. This should
+// be called after ProcessRequests has collected all execution layer requests.
+//
+// Per EIP-7685:
+//   - Post-Prague blocks MUST include a requests_hash in the header.
+//   - The hash must match SHA-256 commitment over all typed requests.
+//   - Pre-Prague blocks must NOT have a requests_hash.
+func (v *BlockValidator) ValidateRequests(header *types.Header, requests types.Requests) error {
+	isPrague := v.config != nil && v.config.IsPrague(header.Time)
+
+	if !isPrague {
+		// Pre-Prague: requests_hash must not be present.
+		if header.RequestsHash != nil {
+			return fmt.Errorf("%w: pre-Prague block has requests_hash", ErrInvalidRequestHash)
+		}
+		return nil
+	}
+
+	// Post-Prague: requests_hash must be present.
+	if header.RequestsHash == nil {
+		return fmt.Errorf("%w: post-Prague block missing requests_hash", ErrInvalidRequestHash)
+	}
+
+	return types.ValidateRequestsHash(header, requests)
+}
+
+// ValidateBlockAccessList verifies the Block Access List (BAL) hash in the
+// header. Per EIP-7928:
+//   - Post-Amsterdam blocks MUST include a BlockAccessListHash.
+//   - The hash must match the computed hash from re-executing the block.
+//   - Pre-Amsterdam blocks must NOT have a BlockAccessListHash.
+func (v *BlockValidator) ValidateBlockAccessList(header *types.Header, computedBALHash *types.Hash) error {
+	isAmsterdam := v.config != nil && v.config.IsAmsterdam(header.Time)
+
+	if !isAmsterdam {
+		// Pre-Amsterdam: BlockAccessListHash must not be present.
+		if header.BlockAccessListHash != nil {
+			return fmt.Errorf("%w: pre-Amsterdam block has BlockAccessListHash", ErrInvalidBlockAccessList)
+		}
+		return nil
+	}
+
+	// Post-Amsterdam: BlockAccessListHash must be present.
+	if header.BlockAccessListHash == nil {
+		return fmt.Errorf("%w: post-Amsterdam block missing BlockAccessListHash", ErrMissingBlockAccessList)
+	}
+
+	// If no computed hash is provided (e.g. empty block), use empty BAL hash.
+	if computedBALHash == nil {
+		return fmt.Errorf("%w: no computed BAL hash available for comparison", ErrInvalidBlockAccessList)
+	}
+
+	// Verify the hash matches.
+	if *header.BlockAccessListHash != *computedBALHash {
+		return fmt.Errorf("%w: header=%s computed=%s", ErrInvalidBlockAccessList,
+			header.BlockAccessListHash.Hex(), computedBALHash.Hex())
+	}
+
 	return nil
 }
 

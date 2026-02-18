@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
@@ -23,6 +24,7 @@ func testChain(t *testing.T) (*Blockchain, *state.MemoryStateDB) {
 }
 
 // makeBlock builds a valid child block of parent with the given transactions.
+// It sets the BlockAccessListHash for Amsterdam-compatible blocks (TestConfig).
 func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
 	parentHeader := parent.Header()
 	header := &types.Header{
@@ -35,10 +37,72 @@ func makeBlock(parent *types.Block, txs []*types.Transaction) *types.Block {
 		BaseFee:    CalcBaseFee(parentHeader),
 		UncleHash:  EmptyUncleHash,
 	}
+
+	// Compute BAL hash for Amsterdam blocks. For test blocks built with
+	// makeBlock, we construct a BAL from the transaction senders/recipients.
+	if TestConfig.IsAmsterdam(header.Time) {
+		blockBAL := bal.NewBlockAccessList()
+		// For blocks with transactions, add entries for each tx's sender/recipient.
+		// The actual balance/nonce changes will be computed during execution, but we
+		// need a deterministic BAL hash that matches what ProcessWithBAL computes.
+		// Since makeBlock doesn't execute transactions, we use a simple approach:
+		// set the BAL hash to the hash of an empty BAL for empty blocks. For blocks
+		// with transactions, the caller must ensure the BAL hash is correct.
+		h := blockBAL.Hash()
+		header.BlockAccessListHash = &h
+	}
+
 	var body *types.Body
 	if len(txs) > 0 {
 		body = &types.Body{Transactions: txs}
 	}
+	return types.NewBlock(header, body)
+}
+
+// makeBlockWithState builds a valid child block and computes the correct BAL
+// hash by executing the transactions against the provided state. Use this for
+// blocks that contain transactions when Amsterdam fork is active.
+func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *state.MemoryStateDB) *types.Block {
+	parentHeader := parent.Header()
+	header := &types.Header{
+		ParentHash: parent.Hash(),
+		Number:     new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:   parentHeader.GasLimit,
+		Time:       parentHeader.Time + 12,
+		Difficulty: new(big.Int),
+		BaseFee:    CalcBaseFee(parentHeader),
+		UncleHash:  EmptyUncleHash,
+	}
+
+	var body *types.Body
+	if len(txs) > 0 {
+		body = &types.Body{Transactions: txs}
+	}
+
+	block := types.NewBlock(header, body)
+
+	// Execute transactions on a copy to compute gas used and BAL hash.
+	tmpState := statedb.Copy()
+	proc := NewStateProcessor(TestConfig)
+	result, err := proc.ProcessWithBAL(block, tmpState)
+	if err == nil {
+		// Compute gas used from receipts.
+		var gasUsed uint64
+		for _, r := range result.Receipts {
+			gasUsed += r.GasUsed
+		}
+		header.GasUsed = gasUsed
+
+		// Set BAL hash.
+		if result.BlockAccessList != nil {
+			h := result.BlockAccessList.Hash()
+			header.BlockAccessListHash = &h
+		}
+
+		// Set bloom from receipts.
+		header.Bloom = types.CreateBloom(result.Receipts)
+	}
+
 	return types.NewBlock(header, body)
 }
 
@@ -133,7 +197,7 @@ func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block1 := makeBlock(bc.Genesis(), []*types.Transaction{tx})
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb)
 	err = bc.InsertBlock(block1)
 	if err != nil {
 		t.Fatalf("InsertBlock with tx: %v", err)
@@ -145,9 +209,9 @@ func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 
 	// Verify state was updated.
 	st := bc.State()
-	bal := st.GetBalance(receiver)
-	if bal.Cmp(big.NewInt(100)) != 0 {
-		t.Errorf("receiver balance = %s, want 100", bal)
+	recBal := st.GetBalance(receiver)
+	if recBal.Cmp(big.NewInt(100)) != 0 {
+		t.Errorf("receiver balance = %s, want 100", recBal)
 	}
 }
 
@@ -473,7 +537,7 @@ func TestBlockchain_WriteReadBlock_WithTransactions(t *testing.T) {
 	})
 	tx.SetSender(sender)
 
-	block1 := makeBlock(bc.Genesis(), []*types.Transaction{tx})
+	block1 := makeBlockWithState(bc.Genesis(), []*types.Transaction{tx}, statedb)
 	if err := bc.InsertBlock(block1); err != nil {
 		t.Fatalf("InsertBlock with tx: %v", err)
 	}
@@ -617,7 +681,7 @@ func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
 			Value:    big.NewInt(1),
 		})
 		tx.SetSender(sender)
-		b := makeBlock(parent, []*types.Transaction{tx})
+		b := makeBlockWithState(parent, []*types.Transaction{tx}, bc.State())
 		if err := bc.InsertBlock(b); err != nil {
 			t.Fatalf("InsertBlock %d: %v", i+1, err)
 		}
@@ -646,10 +710,10 @@ func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
 
 	// Verify the state reflects all processed transactions.
 	memSt := st.(*state.MemoryStateDB)
-	bal := memSt.GetBalance(receiver)
+	recBal := memSt.GetBalance(receiver)
 	expectedBal := big.NewInt(int64(stateSnapshotInterval) + 1) // 1 per block
-	if bal.Cmp(expectedBal) != 0 {
-		t.Errorf("receiver balance = %s, want %s", bal, expectedBal)
+	if recBal.Cmp(expectedBal) != 0 {
+		t.Errorf("receiver balance = %s, want %s", recBal, expectedBal)
 	}
 }
 

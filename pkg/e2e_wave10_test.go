@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
@@ -64,6 +65,12 @@ func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB,
 	}
 	_ = receipts
 	header.GasUsed = gasUsed
+
+	// Set Block Access List hash for Amsterdam-active blocks.
+	if core.TestConfig.IsAmsterdam(header.Time) {
+		emptyBALHash := bal.NewBlockAccessList().Hash()
+		header.BlockAccessListHash = &emptyBALHash
+	}
 
 	return types.NewBlock(header, &types.Body{Transactions: txs})
 }

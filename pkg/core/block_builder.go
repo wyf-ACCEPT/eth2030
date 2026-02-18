@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
 	"github.com/eth2028/eth2028/rlp"
@@ -95,6 +96,13 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 
 	gasPool := new(GasPool).AddGas(header.GasLimit)
 
+	// Determine if BAL tracking is active for this block.
+	balActive := b.config != nil && b.config.IsAmsterdam(header.Time)
+	var blockBAL *bal.BlockAccessList
+	if balActive {
+		blockBAL = bal.NewBlockAccessList()
+	}
+
 	var (
 		txs      []*types.Transaction
 		receipts []*types.Receipt
@@ -136,6 +144,15 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		// Set tx context so logs are keyed correctly.
 		statedb.SetTxContext(tx.Hash(), txIndex)
 
+		// Capture pre-state for BAL tracking.
+		var (
+			preBalances map[types.Address]*big.Int
+			preNonces   map[types.Address]uint64
+		)
+		if balActive {
+			preBalances, preNonces = capturePreState(statedb, tx)
+		}
+
 		// Try to apply the transaction.
 		snap := statedb.Snapshot()
 		receipt, used, err := ApplyTransaction(b.config, statedb, header, tx, gasPool)
@@ -148,6 +165,17 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		txs = append(txs, tx)
 		receipts = append(receipts, receipt)
 		gasUsed += used
+
+		// Record state changes in the BAL.
+		if balActive {
+			tracker := bal.NewTracker()
+			populateTracker(tracker, statedb, preBalances, preNonces)
+			txBAL := tracker.Build(uint64(txIndex + 1))
+			for _, entry := range txBAL.Entries {
+				blockBAL.AddEntry(entry)
+			}
+		}
+
 		txIndex++
 	}
 
@@ -184,6 +212,12 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		header.Root = statedb.GetRoot()
 	}
 
+	// Set Block Access List hash (EIP-7928) when Amsterdam is active.
+	if balActive && blockBAL != nil {
+		h := blockBAL.Hash()
+		header.BlockAccessListHash = &h
+	}
+
 	block := types.NewBlock(header, body)
 
 	return block, receipts, nil
@@ -214,6 +248,13 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 
 	gasPool := new(GasPool).AddGas(header.GasLimit)
 
+	// Determine if BAL tracking is active for this block.
+	balActive := b.config != nil && b.config.IsAmsterdam(header.Time)
+	var blockBAL *bal.BlockAccessList
+	if balActive {
+		blockBAL = bal.NewBlockAccessList()
+	}
+
 	var (
 		txs      []*types.Transaction
 		receipts []*types.Receipt
@@ -241,6 +282,15 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 		// Set tx context so logs are keyed correctly.
 		statedb.SetTxContext(tx.Hash(), txIndex)
 
+		// Capture pre-state for BAL tracking.
+		var (
+			preBalances map[types.Address]*big.Int
+			preNonces   map[types.Address]uint64
+		)
+		if balActive {
+			preBalances, preNonces = capturePreState(statedb, tx)
+		}
+
 		// Try to apply the transaction.
 		snap := statedb.Snapshot()
 		receipt, used, err := ApplyTransaction(b.config, statedb, header, tx, gasPool)
@@ -253,6 +303,17 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 		txs = append(txs, tx)
 		receipts = append(receipts, receipt)
 		gasUsed += used
+
+		// Record state changes in the BAL.
+		if balActive {
+			tracker := bal.NewTracker()
+			populateTracker(tracker, statedb, preBalances, preNonces)
+			txBAL := tracker.Build(uint64(txIndex + 1))
+			for _, entry := range txBAL.Entries {
+				blockBAL.AddEntry(entry)
+			}
+		}
+
 		txIndex++
 	}
 
@@ -272,6 +333,12 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 
 	// Compute state root.
 	header.Root = statedb.GetRoot()
+
+	// Set Block Access List hash (EIP-7928) when Amsterdam is active.
+	if balActive && blockBAL != nil {
+		h := blockBAL.Hash()
+		header.BlockAccessListHash = &h
+	}
 
 	block := types.NewBlock(header, &types.Body{
 		Transactions: txs,

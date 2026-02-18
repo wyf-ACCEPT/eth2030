@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/eth2028/eth2028/bal"
 	"github.com/eth2028/eth2028/core/rawdb"
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
@@ -540,15 +541,17 @@ func TestReorg_Simple(t *testing.T) {
 
 	// Build fork chain: genesis -> B1 -> B2 -> B3 (longer)
 	// B1 needs different timestamp to get different hash.
+	emptyBALHash := bal.NewBlockAccessList().Hash()
 	b1Header := &types.Header{
-		ParentHash: genesis.Hash(),
-		Number:     big.NewInt(1),
-		GasLimit:   genesis.GasLimit(),
-		GasUsed:    0,
-		Time:       genesis.Time() + 6, // different timestamp
-		Difficulty: new(big.Int),
-		BaseFee:    CalcBaseFee(genesis.Header()),
-		UncleHash:  EmptyUncleHash,
+		ParentHash:          genesis.Hash(),
+		Number:              big.NewInt(1),
+		GasLimit:            genesis.GasLimit(),
+		GasUsed:             0,
+		Time:                genesis.Time() + 6, // different timestamp
+		Difficulty:          new(big.Int),
+		BaseFee:             CalcBaseFee(genesis.Header()),
+		UncleHash:           EmptyUncleHash,
+		BlockAccessListHash: &emptyBALHash,
 	}
 	b1 := types.NewBlock(b1Header, nil)
 	b2 := makeBlock(b1, nil)
