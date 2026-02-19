@@ -31,6 +31,7 @@ type ChainConfig struct {
 	PragueTime      *uint64
 	AmsterdamTime   *uint64
 	GlamsterdanTime *uint64
+	HogotaTime      *uint64
 }
 
 // Block-number fork checks
@@ -129,6 +130,12 @@ func (c *ChainConfig) IsGlamsterdan(time uint64) bool {
 	return isTimestampForked(c.GlamsterdanTime, time)
 }
 
+// IsHogota returns whether the given block time is at or past Hogota.
+// Hogota includes multidimensional gas pricing (EIP-7706/7999).
+func (c *ChainConfig) IsHogota(time uint64) bool {
+	return isTimestampForked(c.HogotaTime, time)
+}
+
 // Merge check
 
 // IsMerge returns whether terminal total difficulty has been set,
@@ -199,6 +206,11 @@ func (c *ChainConfig) IsEIP8038(time uint64) bool {
 	return c.IsGlamsterdan(time)
 }
 
+// IsEIP7999 returns whether EIP-7999 (unified multidimensional fee market) is active. Activated with Hogota.
+func (c *ChainConfig) IsEIP7999(time uint64) bool {
+	return c.IsHogota(time)
+}
+
 // Rules returns a Rules struct for the given block number and timestamp,
 // providing boolean flags for quick fork checks.
 func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules {
@@ -237,6 +249,8 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsEIP7981:        isMerge && c.IsGlamsterdan(timestamp),
 		IsEIP8037:        isMerge && c.IsGlamsterdan(timestamp),
 		IsEIP8038:        isMerge && c.IsGlamsterdan(timestamp),
+		IsHogota:         isMerge && c.IsHogota(timestamp),
+		IsEIP7999:        isMerge && c.IsHogota(timestamp),
 	}
 }
 
@@ -256,6 +270,7 @@ type Rules struct {
 	IsEIP7954                                               bool
 	IsEIP7778, IsEIP2780, IsEIP7976, IsEIP7981              bool
 	IsEIP8037, IsEIP8038                                    bool
+	IsHogota, IsEIP7999                                     bool
 }
 
 func newUint64(v uint64) *uint64 { return &v }
@@ -285,6 +300,7 @@ var MainnetConfig = &ChainConfig{
 	PragueTime:              nil, // not yet scheduled
 	AmsterdamTime:           nil, // not yet scheduled
 	GlamsterdanTime:         nil, // not yet scheduled
+	HogotaTime:              nil, // not yet scheduled
 }
 
 // SepoliaConfig is the chain config for the Sepolia test network.
@@ -307,6 +323,7 @@ var SepoliaConfig = &ChainConfig{
 	PragueTime:              newUint64(1741159776),
 	AmsterdamTime:           nil,
 	GlamsterdanTime:         nil,
+	HogotaTime:              nil,
 }
 
 // HoleskyConfig is the chain config for the Holesky test network.
@@ -328,6 +345,7 @@ var HoleskyConfig = &ChainConfig{
 	PragueTime:              newUint64(1740434112),
 	AmsterdamTime:           nil,
 	GlamsterdanTime:         nil,
+	HogotaTime:              nil,
 }
 
 // TestConfig is a chain config with forks up to Amsterdam active at genesis.
@@ -351,6 +369,7 @@ var TestConfig = &ChainConfig{
 	PragueTime:              newUint64(0),
 	AmsterdamTime:           newUint64(0),
 	GlamsterdanTime:         nil,
+	HogotaTime:              nil,
 }
 
 // TestConfigGlamsterdan is a chain config with all forks including Glamsterdam active.
@@ -374,4 +393,29 @@ var TestConfigGlamsterdan = &ChainConfig{
 	PragueTime:              newUint64(0),
 	AmsterdamTime:           newUint64(0),
 	GlamsterdanTime:         newUint64(0),
+	HogotaTime:              nil,
+}
+
+// TestConfigHogota is a chain config with all forks including Hogota active.
+// Use this for tests that exercise multidimensional gas pricing.
+var TestConfigHogota = &ChainConfig{
+	ChainID:                 big.NewInt(1337),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	MuirGlacierBlock:        big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(0),
+	ShanghaiTime:            newUint64(0),
+	CancunTime:              newUint64(0),
+	PragueTime:              newUint64(0),
+	AmsterdamTime:           newUint64(0),
+	GlamsterdanTime:         newUint64(0),
+	HogotaTime:              newUint64(0),
 }

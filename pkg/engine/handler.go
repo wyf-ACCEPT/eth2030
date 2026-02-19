@@ -122,6 +122,10 @@ func (api *EngineAPI) dispatch(method string, params []json.RawMessage) (any, *j
 		return api.handleNewInclusionListV1(params)
 	case "engine_getInclusionListV1":
 		return api.handleGetInclusionListV1(params)
+	case "engine_getPayloadHeaderV1":
+		return api.handleGetPayloadHeaderV1(params)
+	case "engine_submitBlindedBlockV1":
+		return api.handleSubmitBlindedBlockV1(params)
 	default:
 		return nil, &jsonrpcError{
 			Code:    methodNotFoundCode,

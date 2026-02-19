@@ -283,6 +283,8 @@ func (api *EngineAPI) ExchangeCapabilities(requested []string) []string {
 		"engine_getBuilderBidsV1",
 		"engine_newInclusionListV1",
 		"engine_getInclusionListV1",
+		"engine_getPayloadHeaderV1",
+		"engine_submitBlindedBlockV1",
 	}
 	return supported
 }
