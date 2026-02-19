@@ -41,11 +41,11 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 ## Project Structure & Module Organization
 
 - `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
-  - `core/types/` - Core types: Header, Transaction (7 types incl. FrameTx, AATx), Receipt, Block, Account, SSZ encoding (EIP-6404/7807), SetCode auth (EIP-7702), tx assertions, EL requests (EIP-7685), log index (EIP-7745)
+  - `core/types/` - Core types: Header, Transaction (7 types incl. FrameTx, AATx), Receipt, Block, Account, SSZ encoding (EIP-6404/7807), SetCode auth (EIP-7702), tx assertions, EL requests (EIP-7685), log index (EIP-7745), EIP-4844 blob tx utilities, EIP-4895 withdrawals
   - `core/state/` - StateDB interface, in-memory and trie-backed implementations, access events (EIP-4762), stateless StateDB (witness-backed), state prefetcher
   - `core/vm/` - EVM interpreter, 164+ opcodes (incl. CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, CURRENT_ROLE, ACCEPT_ROLE, EOF: EXTCALL/EXTDELEGATECALL/EXTSTATICCALL/RETURNDATALOAD/DATALOAD/DATALOADN/DATASIZE/DATACOPY/EOFCREATE/RETURNCONTRACT), 24 precompiles (incl. 9 BLS12-381, NTT, NII: modexp/field-mul/field-inv/batch-verify), gas tables, EIP-4762 statelessness gas, EIP-7708 ETH transfer logs, EIP-8141 frame opcodes, EIP-7701 AA opcodes, EOF container (EIP-3540)
   - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage, EIP-4444 history expiry
-  - `core/` - State transition, gas repricing (18 EIPs), multidim gas (EIP-7706/7999), blob gas (BPO1/BPO2 + EIP-7918 base fee floor), gas limit schedule, payload chunking, block-in-blobs, frame execution (EIP-8141), EIP-6110 deposits, EIP-7002 withdrawals, EIP-7825 gas cap, EIP-7691 blob schedule, gas futures market (contracts + settlement), gigagas infrastructure, MEV protection (commit-reveal ordering)
+  - `core/` - State transition, gas repricing (18 EIPs), multidim gas (EIP-7706/7999), blob gas (BPO1/BPO2 + EIP-7918 base fee floor), gas limit schedule, payload chunking, block-in-blobs, frame execution (EIP-8141), EIP-6110 deposits, EIP-7002 withdrawals, EIP-7825 gas cap, EIP-7691 blob schedule, gas futures market (contracts + settlement), gigagas infrastructure, MEV protection (commit-reveal ordering), chain config extensions (fork ordering, validation, rules)
   - `core/state/snapshot/` - State snapshots: layered diff/disk architecture, account/storage iterators, pruner
   - `core/state/pruner/` - State pruner with bloom filter reachability
   - `core/vops/` - Validity-Only Partial Statelessness: partial executor, validator, witness integration, complete VOPS validator (access lists, storage proofs)
@@ -54,7 +54,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `ssz/` - SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList
   - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381, Banderwagon, IPA proofs, VDF (Wesolowski), shielded transfers (Pedersen commitments), threshold crypto (Shamir SSS, Feldman VSS, ElGamal encryption)
   - `crypto/pqc/` - Post-quantum crypto: Dilithium3 (keypair, sign, verify), Falcon512, SPHINCS+SHA256, hybrid signer, lattice-based blob commitments
-  - `engine/` - Engine API server (V3-V6), forkchoice, payload building, ePBS builder API, EIP-7898 uncoupled payload, distributed block builder (registration, bids, auctions)
+  - `engine/` - Engine API server (V3-V7), forkchoice, payload building, ePBS builder API, EIP-7898 uncoupled payload, distributed block builder (registration, bids, auctions), Vickrey builder auction (second-price sealed-bid, slashing)
   - `trie/` - Binary Merkle tree (EIP-7864), SHA-256 hashing, proofs, MPT migration
   - `trie/bintrie/` - Binary Merkle trie (from go-ethereum), Get/Put/Delete/Hash/Commit, proofs
   - `bal/` - Block Access Lists (EIP-7928) for parallel execution
@@ -65,11 +65,11 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `das/erasure/` - Reed-Solomon erasure coding for blob reconstruction
   - `rollup/` - Native rollups (EIP-8079): EXECUTE precompile, anchor contract
   - `zkvm/` - zkVM framework: guest programs, verification keys, prover backend, canonical guest (RISC-V execution, guest registry, precompile), STF framework (state transition proofs for zkISA)
-  - `proofs/` - Proof aggregation framework: ZKSNARK, ZKSTARK, IPA, KZG registry and aggregator
+  - `proofs/` - Proof aggregation framework: ZKSNARK, ZKSTARK, IPA, KZG registry and aggregator, mandatory 3-of-5 proof system (prover assignment, submission, verification, penalties)
   - `light/` - Light client: header sync, checkpoint store, verification, proof cache (LRU), sync committee verification, CL proof generator (state root, validator, balance proofs)
   - `txpool/` - Transaction pool with validation, replace-by-fee, eviction, EIP-8070 sparse blobpool (custody, WAL, price eviction), sharded mempool (consistent hashing)
   - `txpool/encrypted/` - Encrypted mempool: commit-reveal scheme, threshold decryption ordering
-  - `p2p/` - P2P peer management, ETH wire protocol, discovery (V5 Kademlia DHT), ENR, enode, DNS discovery, Snap/1 protocol, Portal network (content DHT, Kademlia routing, history)
+  - `p2p/` - P2P peer management, ETH wire protocol, discovery (V5 Kademlia DHT), ENR, enode, DNS discovery, Snap/1 protocol, Portal network (content DHT, Kademlia routing, history, state), gossip protocol (pub/sub, peer scoring, banning, deduplication)
   - `sync/` - Full sync + snap sync pipeline, beam sync (stateless), trie sync (concurrent healing)
   - `rpc/` - JSON-RPC server, 50+ methods, filters, subscriptions, WebSocket, Beacon API (16 endpoints)
   - `eth/` - ETH protocol handler and codec, EIP-8077 announce nonce (ETH/72)
