@@ -7,10 +7,11 @@
 package verkle
 
 import (
-	"crypto/sha256"
 	"errors"
+	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/crypto"
 )
 
 // Tree width: each node has 256 children (1 byte per level).
@@ -104,25 +105,26 @@ func (n *InternalNode) ChildCount() int {
 	return count
 }
 
-// Commit computes the Pedersen commitment over child commitments.
-// Simplified: uses SHA-256 of concatenated child commitments as placeholder.
+// Commit computes the Pedersen vector commitment over child commitments.
+// C = sum(childHash[i] * G_i) for each child, where childHash is the
+// map-to-field value of the child's commitment point.
 func (n *InternalNode) Commit() Commitment {
 	if !n.dirty {
 		return n.commitment
 	}
 
-	h := sha256.New()
-	h.Write([]byte{byte(InternalNodeType)})
+	values := make([]*big.Int, NodeWidth)
 	for i := 0; i < NodeWidth; i++ {
 		if n.children[i] != nil {
 			c := n.children[i].Commit()
-			h.Write(c[:])
+			values[i] = new(big.Int).SetBytes(c[:])
 		} else {
-			h.Write(make([]byte, CommitSize))
+			values[i] = new(big.Int)
 		}
 	}
 
-	copy(n.commitment[:], h.Sum(nil))
+	point := crypto.PedersenCommit(values)
+	n.commitment = crypto.BanderMapToBytes(point)
 	n.dirty = false
 	return n.commitment
 }
@@ -202,24 +204,28 @@ func (n *LeafNode) ValueCount() int {
 	return count
 }
 
-// Commit computes the leaf commitment.
-// Simplified: SHA-256 of stem + all values as placeholder for Pedersen.
+// Commit computes the leaf Pedersen commitment.
+// The commitment encodes the stem and all stored values:
+//   C = stem_hash * G_0 + sum(value[i] * G_{i+1})
+// where stem_hash maps the stem bytes to a scalar.
 func (n *LeafNode) Commit() Commitment {
 	if !n.dirty {
 		return n.commitment
 	}
 
-	h := sha256.New()
-	h.Write([]byte{byte(LeafNodeType)})
-	h.Write(n.stem[:])
-	for i := 0; i < NodeWidth; i++ {
+	values := make([]*big.Int, NodeWidth)
+	// Slot 0: stem encoded as a scalar (first 31 bytes, big-endian).
+	values[0] = new(big.Int).SetBytes(n.stem[:])
+	for i := 0; i < NodeWidth-1; i++ {
 		if n.values[i] != nil {
-			h.Write([]byte{byte(i)})
-			h.Write(n.values[i][:])
+			values[i+1] = new(big.Int).SetBytes(n.values[i][:])
+		} else {
+			values[i+1] = new(big.Int)
 		}
 	}
 
-	copy(n.commitment[:], h.Sum(nil))
+	point := crypto.PedersenCommit(values)
+	n.commitment = crypto.BanderMapToBytes(point)
 	n.dirty = false
 	return n.commitment
 }

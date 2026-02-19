@@ -1,10 +1,11 @@
 package verkle
 
 import (
-	"crypto/sha256"
 	"encoding/binary"
+	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/crypto"
 )
 
 // EIP-6800 tree key derivation constants.
@@ -94,10 +95,18 @@ func getTreeKey(addr types.Address, suffix byte) [KeySize]byte {
 }
 
 // getAccountStem derives the 31-byte Verkle tree stem for an Ethereum address.
-// In production this uses Pedersen hashing; here we use SHA-256 as placeholder.
-// Per EIP-6800: stem = hash(addr)[0:31]
+// Per EIP-6800: stem = PedersenHash(addr)[0:31], where PedersenHash maps
+// the address bytes through the Pedersen commitment and then to the field.
 func getAccountStem(addr types.Address) [StemSize]byte {
-	h := sha256.Sum256(addr[:])
+	// Encode the address as scalars for the Pedersen commitment.
+	// Split 20-byte address into two 128-bit values for the commitment vector.
+	values := make([]*big.Int, 4)
+	values[0] = big.NewInt(1) // domain separator for account stems
+	values[1] = new(big.Int).SetBytes(addr[:])
+	values[2] = new(big.Int)
+	values[3] = new(big.Int)
+
+	h := crypto.PedersenCommitBytes(values)
 	var stem [StemSize]byte
 	copy(stem[:], h[:StemSize])
 	return stem
@@ -106,14 +115,17 @@ func getAccountStem(addr types.Address) [StemSize]byte {
 // getStorageStem derives the stem for a storage slot beyond the header range.
 // Per EIP-6800: storage keys use a different tree path derived from address + slot.
 func getStorageStem(addr types.Address, slot uint64) [StemSize]byte {
-	h := sha256.New()
-	h.Write(addr[:])
+	values := make([]*big.Int, 4)
+	values[0] = big.NewInt(2) // domain separator for storage stems
+	values[1] = new(big.Int).SetBytes(addr[:])
 	var slotBytes [8]byte
 	binary.BigEndian.PutUint64(slotBytes[:], slot/256)
-	h.Write(slotBytes[:])
+	values[2] = new(big.Int).SetBytes(slotBytes[:])
+	values[3] = new(big.Int)
 
+	h := crypto.PedersenCommitBytes(values)
 	var stem [StemSize]byte
-	copy(stem[:], h.Sum(nil)[:StemSize])
+	copy(stem[:], h[:StemSize])
 	return stem
 }
 
