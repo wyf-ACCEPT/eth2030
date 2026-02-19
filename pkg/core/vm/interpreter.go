@@ -119,6 +119,7 @@ type EVM struct {
 	returnData  []byte // return data from the last CALL/CREATE
 	witnessGas  *WitnessGasTracker // EIP-4762: witness gas tracking (nil if not Verkle)
 	forkRules   ForkRules          // active fork rules for this block
+	FrameCtx    *FrameContext      // EIP-8141: frame transaction approval context (nil if not frame tx)
 }
 
 // NewEVM creates a new EVM instance.

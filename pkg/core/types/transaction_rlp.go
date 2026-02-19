@@ -131,6 +131,8 @@ func (tx *Transaction) EncodeRLP() ([]byte, error) {
 		return encodeTypedTx(BlobTxType, inner)
 	case *SetCodeTx:
 		return encodeTypedTx(SetCodeTxType, inner)
+	case *FrameTx:
+		return EncodeFrameTx(inner)
 	default:
 		return nil, errUnknownTxType
 	}
@@ -302,6 +304,8 @@ func decodeTypedTx(txType byte, payload []byte) (*Transaction, error) {
 		return decodeBlobTx(payload)
 	case SetCodeTxType:
 		return decodeSetCodeTx(payload)
+	case FrameTxType:
+		return decodeFrameTxWrapped(payload)
 	default:
 		return nil, fmt.Errorf("unsupported transaction type: 0x%02x", txType)
 	}
@@ -519,6 +523,8 @@ func (tx *Transaction) SigningHash() Hash {
 		return signingHashBlob(t)
 	case *SetCodeTx:
 		return signingHashSetCode(t)
+	case *FrameTx:
+		return ComputeFrameSigHash(t)
 	default:
 		return Hash{}
 	}
@@ -666,4 +672,13 @@ func encodeAuthListBytes(list []Authorization) []byte {
 		inner = append(inner, rlp.WrapList(item)...)
 	}
 	return rlp.WrapList(inner)
+}
+
+// decodeFrameTxWrapped decodes a FrameTx from RLP payload and wraps it in a Transaction.
+func decodeFrameTxWrapped(data []byte) (*Transaction, error) {
+	inner, err := DecodeFrameTx(data)
+	if err != nil {
+		return nil, err
+	}
+	return NewTransaction(inner), nil
 }

@@ -288,6 +288,8 @@ func TestGlamsterdanJumpTableInheritance(t *testing.T) {
 		SELFDESTRUCT: true,
 		// EIP-7843: SLOTNUM, EIP-7939: CLZ, EIP-8024: DUPN/SWAPN/EXCHANGE (new opcodes).
 		SLOTNUM: true, CLZ: true, DUPN: true, SWAPN: true, EXCHANGE: true,
+		// EIP-8141: Frame transaction opcodes (new in Glamsterdam).
+		APPROVE: true, TXPARAMLOAD: true, TXPARAMSIZE: true, TXPARAMCOPY: true,
 	}
 
 	// Check that non-modified opcodes have identical gas costs.

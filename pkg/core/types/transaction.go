@@ -13,6 +13,7 @@ const (
 	DynamicFeeTxType = 0x02
 	BlobTxType       = 0x03
 	SetCodeTxType    = 0x04
+	// FrameTxType is defined in tx_frame.go as 0x06.
 )
 
 // Transaction represents an Ethereum transaction.
@@ -498,6 +499,9 @@ func (tx *Transaction) RawSignatureValues() (v, r, s *big.Int) {
 		return t.V, t.R, t.S
 	case *SetCodeTx:
 		return t.V, t.R, t.S
+	case *FrameTx:
+		// Frame transactions have no traditional signature fields.
+		return nil, nil, nil
 	default:
 		return nil, nil, nil
 	}

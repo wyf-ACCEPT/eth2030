@@ -502,5 +502,15 @@ func NewGlamsterdanJumpTable() JumpTable {
 	tbl[SWAPN] = &operation{execute: opSwapN, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[EXCHANGE] = &operation{execute: opExchange, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 
+	// EIP-8141: Frame Transaction opcodes.
+	// APPROVE: pops [offset, length, scope], halts like RETURN.
+	tbl[APPROVE] = &operation{execute: opApprove, constantGas: GasLow, minStack: 3, maxStack: 1024, halts: true, memorySize: memoryApprove, dynamicGas: gasMemExpansion}
+	// TXPARAMLOAD: pops [in1, in2], pushes 32-byte value.
+	tbl[TXPARAMLOAD] = &operation{execute: opTxParamLoad, constantGas: GasBase, minStack: 2, maxStack: 1024}
+	// TXPARAMSIZE: pops [in1, in2], pushes size.
+	tbl[TXPARAMSIZE] = &operation{execute: opTxParamSize, constantGas: GasBase, minStack: 2, maxStack: 1024}
+	// TXPARAMCOPY: pops [in1, in2, destOffset, offset, length], copies to memory.
+	tbl[TXPARAMCOPY] = &operation{execute: opTxParamCopy, constantGas: GasVerylow, minStack: 5, maxStack: 1024, memorySize: memoryTxParamCopy, dynamicGas: gasMemExpansion}
+
 	return tbl
 }
