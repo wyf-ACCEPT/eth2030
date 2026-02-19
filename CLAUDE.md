@@ -24,53 +24,53 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 - **Cryptography**: encrypted mempool -> post quantum transactions -> private L1 shielded transfers
 
 ### Upgrade Timeline (implementation status)
-- **Glamsterdam** (2026) ~98%: fast confirmation, ePBS, FOCIL, sparse blobpool, native AA (EIP-7702), BALs (EIP-7928), repricing (18 EIPs), EIP-7708 ETH logs, EIP-7685 requests, EIP-8141 frame transactions (APPROVE, TXPARAM opcodes)
-- **Hogota** (2026-2027) ~65%: BPO blob schedules (BPO1/BPO2), EIP-7742 uncoupled blobs, multidim gas (EIP-7706), gas limit schedule, binary tree, payload chunking, block-in-blobs, tx assertions, NTT precompile, SSZ transactions (EIP-6404), EIP-7807 SSZ blocks, EIP-7745 log index
-- **I+** (2027) ~40%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework, VOPS (partial statelessness), proof aggregation, post-quantum crypto stubs
-- **J+** (2027-2028) ~15%: STF in zkISA stubs, light client, verkle state migration, encrypted mempool
-- **K+** (2028): 6-sec slots, mandatory 3-of-5 proofs, canonical guest, announce nonce
+- **Glamsterdam** (2026) ~99%: fast confirmation, ePBS, FOCIL, sparse blobpool (EIP-8070), native AA (EIP-7702+7701), BALs (EIP-7928), repricing (18 EIPs), EIP-7708 ETH logs, EIP-7685 requests, EIP-8141 frame transactions (APPROVE, TXPARAM opcodes), EIP-7918 blob base fee bound
+- **Hogota** (2026-2027) ~75%: BPO blob schedules (BPO1/BPO2), EIP-7742 uncoupled blobs, EIP-7898 uncoupled execution payload, multidim gas (EIP-7706), gas limit schedule, binary tree, payload chunking, block-in-blobs, tx assertions, NTT precompile, SSZ transactions (EIP-6404), EIP-7807 SSZ blocks, EIP-7745 log index, EIP-7916 SSZ ProgressiveList, EIP-8077 announce nonce
+- **I+** (2027) ~45%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework, VOPS (partial statelessness), proof aggregation, post-quantum crypto stubs, EIP-7251 MAX_EFFECTIVE_BALANCE, validator consolidation
+- **J+** (2027-2028) ~20%: STF in zkISA stubs, light client, verkle state migration, encrypted mempool, variable-size blobs, Reed-Solomon blob reconstruction
+- **K+** (2028) ~30%: 6-sec slots (quick slots framework), 1-epoch finality, mandatory 3-of-5 proofs, canonical guest, announce nonce
 - **L+** (2029): endgame finality, post quantum attestations, BPO blobs increase, validity-only state
 - **M+** (2029+): fast L1 finality in seconds, post quantum L1, gigagas L1, canonical zkVM
 - **Longer term** (2030++): distributed block building, VDF randomness, teragas L2, private L1 shielded transfers
 
 ### EIP Implementation Status
-- **Complete** (38): EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-4844, EIP-4895, EIP-5656, EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7702, EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788, EIP-7706, EIP-7547, EIP-4444, EIP-4762, EIP-7939 (CLZ), EIP-8024 (DUPN/SWAPN/EXCHANGE), EIP-7708 (ETH transfer/burn logs), EIP-7742 (uncoupled blobs), EIP-6404 (SSZ transactions), EIP-7594 (PeerDAS), EIP-8079 (native rollups), EIP-6780 (SELFDESTRUCT restriction), EIP-8141 (Frame Transactions), EIP-7745 (log index), EIP-7807 (SSZ blocks)
+- **Complete** (48): EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-4844, EIP-4895, EIP-5656, EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7702, EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788, EIP-7706, EIP-7547, EIP-4444, EIP-4762, EIP-7939 (CLZ), EIP-8024 (DUPN/SWAPN/EXCHANGE), EIP-7708 (ETH transfer/burn logs), EIP-7742 (uncoupled blobs), EIP-6404 (SSZ transactions), EIP-7594 (PeerDAS), EIP-8079 (native rollups), EIP-6780 (SELFDESTRUCT restriction), EIP-8141 (Frame Transactions), EIP-7745 (log index), EIP-7807 (SSZ blocks), EIP-7251 (MAX_EFFECTIVE_BALANCE), EIP-7701 (Native AA), EIP-7898 (Uncoupled Execution Payload), EIP-7916 (SSZ ProgressiveList), EIP-7918 (Blob Base Fee Bound), EIP-8070 (Sparse Blobpool), EIP-8077 (Announce Nonce)
 - **Substantial** (4): EIP-7732 (ePBS: builder types, registry, bid management, commitment/reveal, API), EIP-6800 (Verkle: Banderwagon curve, IPA proofs, Pedersen commitments, types+keys, state migration, witness generation), EIP-7864 (binary tree: SHA-256, iterator, proofs, MPT migration), EIP-7805 (FOCIL: inclusion lists, validation, compliance)
 - **Partial** (3): EIP-8025 (witness collector + VOPS integration), EIP-7999 (multidim gas framework), PQC (Dilithium3/Falcon512/SPHINCS+ stubs)
-- **Planned**: EIP-7701 (native AA extension)
 
 ## Project Structure & Module Organization
 
 - `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
-  - `core/types/` - Core types: Header, Transaction (6 types incl. FrameTx), Receipt, Block, Account, SSZ encoding (EIP-6404/7807), SetCode auth (EIP-7702), tx assertions, EL requests (EIP-7685), log index (EIP-7745)
+  - `core/types/` - Core types: Header, Transaction (7 types incl. FrameTx, AATx), Receipt, Block, Account, SSZ encoding (EIP-6404/7807), SetCode auth (EIP-7702), tx assertions, EL requests (EIP-7685), log index (EIP-7745)
   - `core/state/` - StateDB interface, in-memory and trie-backed implementations, access events (EIP-4762)
-  - `core/vm/` - EVM interpreter, 149+ opcodes (incl. CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*), 20 precompiles (incl. 9 BLS12-381, NTT), gas tables, EIP-4762 statelessness gas, EIP-7708 ETH transfer logs, EIP-8141 frame opcodes
+  - `core/vm/` - EVM interpreter, 151+ opcodes (incl. CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, CURRENT_ROLE, ACCEPT_ROLE), 20 precompiles (incl. 9 BLS12-381, NTT), gas tables, EIP-4762 statelessness gas, EIP-7708 ETH transfer logs, EIP-8141 frame opcodes, EIP-7701 AA opcodes
   - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage, EIP-4444 history expiry
-  - `core/` - State transition, gas repricing (18 EIPs), multidim gas (EIP-7706/7999), blob gas (BPO1/BPO2), gas limit schedule, payload chunking, block-in-blobs, frame execution (EIP-8141)
+  - `core/` - State transition, gas repricing (18 EIPs), multidim gas (EIP-7706/7999), blob gas (BPO1/BPO2 + EIP-7918 base fee floor), gas limit schedule, payload chunking, block-in-blobs, frame execution (EIP-8141)
   - `core/vops/` - Validity-Only Partial Statelessness: partial executor, validator, witness integration
   - `rlp/` - RLP encoding/decoding
-  - `ssz/` - SSZ encoding/decoding, merkleization
+  - `consensus/` - Consensus layer: quick slots (6s), 1-epoch finality, EIP-7251 validator balance (2048 ETH max EB), consolidation
+  - `ssz/` - SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList
   - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381, Banderwagon, IPA proofs
   - `crypto/pqc/` - Post-quantum crypto stubs: Dilithium3, Falcon512, SPHINCS+SHA256, hybrid signer
-  - `engine/` - Engine API server (V3-V6), forkchoice, payload building, ePBS builder API
+  - `engine/` - Engine API server (V3-V6), forkchoice, payload building, ePBS builder API, EIP-7898 uncoupled payload
   - `trie/` - Binary Merkle tree (EIP-7864), SHA-256 hashing, proofs, MPT migration
   - `trie/bintrie/` - Binary Merkle trie (from go-ethereum), Get/Put/Delete/Hash/Commit, proofs
   - `bal/` - Block Access Lists (EIP-7928) for parallel execution
   - `witness/` - Execution witness (EIP-6800/8025), collector, verifier
   - `epbs/` - Enshrined Proposer-Builder Separation (EIP-7732): BuilderBid, PayloadEnvelope, auctions
   - `focil/` - Fork-Choice Enforced Inclusion Lists (EIP-7805): building, validation, compliance
-  - `das/` - PeerDAS (EIP-7594): DataColumn, ColumnSidecar, sampling, custody, reconstruction
+  - `das/` - PeerDAS (EIP-7594): DataColumn, ColumnSidecar, sampling, custody, reconstruction, BLS12-381 field arithmetic, variable-size blobs, Reed-Solomon Lagrange interpolation
   - `das/erasure/` - Reed-Solomon erasure coding for blob reconstruction
   - `rollup/` - Native rollups (EIP-8079): EXECUTE precompile, anchor contract
   - `zkvm/` - zkVM framework: guest programs, verification keys, prover backend
   - `proofs/` - Proof aggregation framework: ZKSNARK, ZKSTARK, IPA, KZG registry and aggregator
   - `light/` - Light client: header sync, checkpoint store, verification
-  - `txpool/` - Transaction pool with validation, replace-by-fee, eviction
+  - `txpool/` - Transaction pool with validation, replace-by-fee, eviction, EIP-8070 sparse blobpool (custody, WAL, price eviction)
   - `txpool/encrypted/` - Encrypted mempool: commit-reveal scheme, threshold decryption ordering
   - `p2p/` - P2P peer management, ETH wire protocol, discovery
   - `sync/` - Full sync + snap sync pipeline
   - `rpc/` - JSON-RPC server, 50+ methods, filters, subscriptions, WebSocket
-  - `eth/` - ETH protocol handler and codec
+  - `eth/` - ETH protocol handler and codec, EIP-8077 announce nonce (ETH/72)
   - `node/` - Client node: config, lifecycle, subsystem integration
   - `verkle/` - Verkle tree types, key derivation, Pedersen commitments, state migration, StateDB adapter, witness generation
   - `log/` - Structured logging (JSON/text)
@@ -117,6 +117,8 @@ cd pkg && go test ./light/...
 cd pkg && go test ./proofs/...
 cd pkg && go test ./txpool/encrypted/...
 cd pkg && go test ./verkle/...
+cd pkg && go test ./consensus/...
+cd pkg && go test ./ssz/...
 
 # Run tests with verbose output
 cd pkg && go test -v ./...
