@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -12,22 +11,10 @@ import (
 )
 
 const (
-	// delegationPrefix is the EIP-7702 delegation designator prefix (0xef0100).
-	// Code starting with this prefix indicates that the account has delegated
-	// its code execution to the address encoded in the remaining 20 bytes.
-	delegationPrefixLen = 3
-
-	// delegationCodeLen is the total length of a delegation designator:
-	// 3 bytes prefix (0xef0100) + 20 bytes address = 23 bytes.
-	delegationCodeLen = delegationPrefixLen + types.AddressLength
-
 	// EIP-7702 authorization signing magic byte.
 	// The authorization hash is: keccak256(0x05 || rlp([chain_id, address, nonce]))
 	authMagic = 0x05
 )
-
-// delegationPrefix bytes for matching and construction.
-var delegationPrefixBytes = []byte{0xef, 0x01, 0x00}
 
 var (
 	ErrAuthChainID    = errors.New("authorization chain ID mismatch")
@@ -47,8 +34,6 @@ var (
 func ProcessAuthorizations(statedb state.StateDB, authorizations []types.Authorization, chainID *big.Int) error {
 	for i := range authorizations {
 		if err := processOneAuthorization(statedb, &authorizations[i], chainID); err != nil {
-			// Per EIP-7702: invalid authorizations are skipped, not fatal.
-			// In a production implementation, these would be logged.
 			continue
 		}
 	}
@@ -64,22 +49,53 @@ func processOneAuthorization(statedb state.StateDB, auth *types.Authorization, c
 		}
 	}
 
-	// 2. Validate signature values (r, s must be valid, v must be 0 or 1).
+	// 2. Recover the signer address from the authorization signature.
+	signerAddr, err := RecoverAuthority(auth)
+	if err != nil {
+		if errors.Is(err, ErrAuthInvalidSig) {
+			return ErrAuthInvalidSig
+		}
+		return fmt.Errorf("%w: %v", ErrAuthSignature, err)
+	}
+
+	// 3. Verify the nonce matches the signer's current nonce.
+	currentNonce := statedb.GetNonce(signerAddr)
+	if auth.Nonce != currentNonce {
+		return ErrAuthNonce
+	}
+
+	// 4. Set the signer's code to the delegation designator: 0xef0100 || address.
+	delegationCode := types.AddressToDelegation(auth.Address)
+	statedb.SetCode(signerAddr, delegationCode)
+
+	// 5. Increment the signer's nonce.
+	statedb.SetNonce(signerAddr, currentNonce+1)
+
+	return nil
+}
+
+// RecoverAuthority recovers the signer address from an EIP-7702 authorization.
+// It computes keccak256(0x05 || rlp([chain_id, address, nonce])) and uses
+// ecrecover to derive the signer's public key.
+func RecoverAuthority(auth *types.Authorization) (types.Address, error) {
+	// Validate V.
 	v := byte(0)
 	if auth.V != nil {
 		if !auth.V.IsUint64() || auth.V.Uint64() > 1 {
-			return ErrAuthInvalidSig
+			return types.Address{}, ErrAuthInvalidSig
 		}
 		v = byte(auth.V.Uint64())
 	}
+
+	// Validate R, S.
 	if !crypto.ValidateSignatureValues(v, auth.R, auth.S, true) {
-		return ErrAuthInvalidSig
+		return types.Address{}, ErrAuthInvalidSig
 	}
 
-	// 3. Compute the authorization hash and recover the signer.
+	// Compute the authorization hash.
 	authHash := computeAuthorizationHash(auth)
 
-	// Build the 65-byte signature: R (32 bytes) || S (32 bytes) || V (1 byte)
+	// Build the 65-byte signature: R (32 bytes) || S (32 bytes) || V (1 byte).
 	sig := make([]byte, 65)
 	if auth.R != nil {
 		rBytes := auth.R.Bytes()
@@ -93,48 +109,29 @@ func processOneAuthorization(statedb state.StateDB, auth *types.Authorization, c
 
 	pubBytes, err := crypto.Ecrecover(authHash, sig)
 	if err != nil {
-		return fmt.Errorf("%w: %v", ErrAuthSignature, err)
+		return types.Address{}, fmt.Errorf("ecrecover: %w", err)
 	}
 
-	// Derive the signer address from the recovered public key.
-	signerAddr := types.BytesToAddress(crypto.Keccak256(pubBytes[1:])[12:])
-
-	// 4. Verify the nonce matches the signer's current nonce.
-	currentNonce := statedb.GetNonce(signerAddr)
-	if auth.Nonce != currentNonce {
-		return ErrAuthNonce
-	}
-
-	// 5. Set the signer's code to the delegation designator: 0xef0100 || address.
-	delegationCode := makeDelegationCode(auth.Address)
-	statedb.SetCode(signerAddr, delegationCode)
-
-	// 6. Increment the signer's nonce.
-	statedb.SetNonce(signerAddr, currentNonce+1)
-
-	return nil
+	// Derive address from the recovered uncompressed public key.
+	return types.BytesToAddress(crypto.Keccak256(pubBytes[1:])[12:]), nil
 }
 
 // computeAuthorizationHash computes the EIP-7702 authorization signing hash.
-// The hash is: keccak256(0x05 || rlp([chain_id, address, nonce]))
-//
-// We use a simplified RLP encoding here since the structure is fixed.
+// Delegates to types.computeAuthHash via RecoverAuthority for actual signing.
+// This function is kept for test backward compatibility.
 func computeAuthorizationHash(auth *types.Authorization) []byte {
-	// Encode the RLP list: [chain_id, address, nonce]
+	// Re-implement to match the types package implementation exactly.
 	chainIDBytes := encodeBigIntRLP(auth.ChainID)
 	addressBytes := encodeFixedBytesRLP(auth.Address[:])
 	nonceBytes := encodeUint64RLP(auth.Nonce)
 
-	// List payload
 	payload := make([]byte, 0, len(chainIDBytes)+len(addressBytes)+len(nonceBytes))
 	payload = append(payload, chainIDBytes...)
 	payload = append(payload, addressBytes...)
 	payload = append(payload, nonceBytes...)
 
-	// RLP list header
 	listData := encodeListHeaderRLP(payload)
 
-	// Prepend the magic byte
 	msg := make([]byte, 0, 1+len(listData))
 	msg = append(msg, authMagic)
 	msg = append(msg, listData...)
@@ -144,52 +141,31 @@ func computeAuthorizationHash(auth *types.Authorization) []byte {
 
 // makeDelegationCode creates the delegation designator code: 0xef0100 || address.
 func makeDelegationCode(addr types.Address) []byte {
-	code := make([]byte, delegationCodeLen)
-	copy(code, delegationPrefixBytes)
-	copy(code[delegationPrefixLen:], addr[:])
-	return code
+	return types.AddressToDelegation(addr)
 }
 
 // IsDelegated checks if the given code starts with the EIP-7702 delegation
-// designator prefix (0xef0100). Delegated code indicates the account has
-// delegated its execution to another address.
+// designator prefix (0xef0100).
 func IsDelegated(code []byte) bool {
-	if len(code) < delegationPrefixLen {
-		return false
-	}
-	return bytes.HasPrefix(code, delegationPrefixBytes)
+	return types.HasDelegationPrefix(code)
 }
 
 // ResolveDelegation extracts the target address from EIP-7702 delegation code.
-// Returns the delegation target address and true if the code is a valid
-// delegation designator (exactly 23 bytes: 0xef0100 || 20-byte address).
-// Returns zero address and false otherwise.
 func ResolveDelegation(code []byte) (types.Address, bool) {
-	if len(code) != delegationCodeLen {
-		return types.Address{}, false
-	}
-	if !IsDelegated(code) {
-		return types.Address{}, false
-	}
-	var addr types.Address
-	copy(addr[:], code[delegationPrefixLen:])
-	return addr, true
+	return types.ParseDelegation(code)
 }
 
 // --- Simplified RLP encoding helpers ---
 // These implement just enough RLP to encode the EIP-7702 authorization struct.
+// Kept for backward compatibility with tests that use computeAuthorizationHash.
 
-// encodeBigIntRLP encodes a big.Int as RLP.
 func encodeBigIntRLP(i *big.Int) []byte {
 	if i == nil || i.Sign() == 0 {
-		// Zero is encoded as empty byte string (0x80)
 		return []byte{0x80}
 	}
-	b := i.Bytes()
-	return encodeBytesRLP(b)
+	return encodeBytesRLP(i.Bytes())
 }
 
-// encodeUint64RLP encodes a uint64 as RLP.
 func encodeUint64RLP(n uint64) []byte {
 	if n == 0 {
 		return []byte{0x80}
@@ -197,7 +173,6 @@ func encodeUint64RLP(n uint64) []byte {
 	if n < 128 {
 		return []byte{byte(n)}
 	}
-	// Encode as big-endian bytes with no leading zeros
 	b := make([]byte, 8)
 	b[0] = byte(n >> 56)
 	b[1] = byte(n >> 48)
@@ -207,14 +182,12 @@ func encodeUint64RLP(n uint64) []byte {
 	b[5] = byte(n >> 16)
 	b[6] = byte(n >> 8)
 	b[7] = byte(n)
-	// Trim leading zeros
 	for len(b) > 1 && b[0] == 0 {
 		b = b[1:]
 	}
 	return encodeBytesRLP(b)
 }
 
-// encodeBytesRLP encodes a byte slice as RLP.
 func encodeBytesRLP(b []byte) []byte {
 	if len(b) == 1 && b[0] < 128 {
 		return b
@@ -227,12 +200,10 @@ func encodeBytesRLP(b []byte) []byte {
 	return append(header, b...)
 }
 
-// encodeFixedBytesRLP encodes a fixed-length byte slice as RLP string.
 func encodeFixedBytesRLP(b []byte) []byte {
 	return encodeBytesRLP(b)
 }
 
-// encodeListHeaderRLP wraps payload bytes in an RLP list header.
 func encodeListHeaderRLP(payload []byte) []byte {
 	if len(payload) <= 55 {
 		return append([]byte{0xc0 + byte(len(payload))}, payload...)
@@ -242,7 +213,6 @@ func encodeListHeaderRLP(payload []byte) []byte {
 	return append(header, payload...)
 }
 
-// encodeLength encodes a length as big-endian bytes with no leading zeros.
 func encodeLength(n uint64) []byte {
 	if n < 256 {
 		return []byte{byte(n)}

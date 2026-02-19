@@ -32,6 +32,10 @@ type ChainConfig struct {
 	AmsterdamTime   *uint64
 	GlamsterdanTime *uint64
 	HogotaTime      *uint64
+
+	// BPO (Blob Parameter Optimization) fork timestamps for blob schedule upgrades.
+	BPO1Time *uint64
+	BPO2Time *uint64
 }
 
 // Block-number fork checks
@@ -134,6 +138,18 @@ func (c *ChainConfig) IsGlamsterdan(time uint64) bool {
 // Hogota includes multidimensional gas pricing (EIP-7706/7999).
 func (c *ChainConfig) IsHogota(time uint64) bool {
 	return isTimestampForked(c.HogotaTime, time)
+}
+
+// IsBPO1 returns whether the given block time is at or past BPO1.
+// BPO1 increases blob target to 10, max to 15.
+func (c *ChainConfig) IsBPO1(time uint64) bool {
+	return isTimestampForked(c.BPO1Time, time)
+}
+
+// IsBPO2 returns whether the given block time is at or past BPO2.
+// BPO2 increases blob target to 14, max to 21.
+func (c *ChainConfig) IsBPO2(time uint64) bool {
+	return isTimestampForked(c.BPO2Time, time)
 }
 
 // Merge check
@@ -301,6 +317,8 @@ var MainnetConfig = &ChainConfig{
 	AmsterdamTime:           nil, // not yet scheduled
 	GlamsterdanTime:         nil, // not yet scheduled
 	HogotaTime:              nil, // not yet scheduled
+	BPO1Time:                nil, // not yet scheduled
+	BPO2Time:                nil, // not yet scheduled
 }
 
 // SepoliaConfig is the chain config for the Sepolia test network.
@@ -324,6 +342,8 @@ var SepoliaConfig = &ChainConfig{
 	AmsterdamTime:           nil,
 	GlamsterdanTime:         nil,
 	HogotaTime:              nil,
+	BPO1Time:                nil,
+	BPO2Time:                nil,
 }
 
 // HoleskyConfig is the chain config for the Holesky test network.
@@ -346,6 +366,8 @@ var HoleskyConfig = &ChainConfig{
 	AmsterdamTime:           nil,
 	GlamsterdanTime:         nil,
 	HogotaTime:              nil,
+	BPO1Time:                nil,
+	BPO2Time:                nil,
 }
 
 // TestConfig is a chain config with forks up to Amsterdam active at genesis.
@@ -370,6 +392,8 @@ var TestConfig = &ChainConfig{
 	AmsterdamTime:           newUint64(0),
 	GlamsterdanTime:         nil,
 	HogotaTime:              nil,
+	BPO1Time:                nil,
+	BPO2Time:                nil,
 }
 
 // TestConfigGlamsterdan is a chain config with all forks including Glamsterdam active.
@@ -394,6 +418,8 @@ var TestConfigGlamsterdan = &ChainConfig{
 	AmsterdamTime:           newUint64(0),
 	GlamsterdanTime:         newUint64(0),
 	HogotaTime:              nil,
+	BPO1Time:                nil,
+	BPO2Time:                nil,
 }
 
 // TestConfigHogota is a chain config with all forks including Hogota active.
@@ -418,4 +444,32 @@ var TestConfigHogota = &ChainConfig{
 	AmsterdamTime:           newUint64(0),
 	GlamsterdanTime:         newUint64(0),
 	HogotaTime:              newUint64(0),
+	BPO1Time:                nil,
+	BPO2Time:                nil,
+}
+
+// TestConfigBPO2 is a chain config with all forks including BPO2 active.
+// Use this for tests that exercise blob parameter optimization schedules.
+var TestConfigBPO2 = &ChainConfig{
+	ChainID:                 big.NewInt(1337),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	MuirGlacierBlock:        big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(0),
+	ShanghaiTime:            newUint64(0),
+	CancunTime:              newUint64(0),
+	PragueTime:              newUint64(0),
+	AmsterdamTime:           newUint64(0),
+	GlamsterdanTime:         newUint64(0),
+	HogotaTime:              newUint64(0),
+	BPO1Time:                newUint64(0),
+	BPO2Time:                newUint64(0),
 }

@@ -145,15 +145,15 @@ func TestCLZ(t *testing.T) {
 	}
 }
 
-// TestCLZ_GasCost verifies CLZ costs GasVerylow (3).
+// TestCLZ_GasCost verifies CLZ costs GasFastStep (5).
 func TestCLZ_GasCost(t *testing.T) {
 	jt := NewGlamsterdanJumpTable()
 	op := jt[CLZ]
 	if op == nil {
 		t.Fatal("CLZ not defined in Glamsterdan jump table")
 	}
-	if op.constantGas != GasVerylow {
-		t.Errorf("CLZ gas = %d, want %d (GasVerylow)", op.constantGas, GasVerylow)
+	if op.constantGas != GasFastStep {
+		t.Errorf("CLZ gas = %d, want %d (GasFastStep)", op.constantGas, GasFastStep)
 	}
 }
 

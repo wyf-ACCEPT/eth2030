@@ -494,8 +494,8 @@ func NewGlamsterdanJumpTable() JumpTable {
 	// EIP-7843: SLOTNUM opcode - returns the current slot number.
 	tbl[SLOTNUM] = &operation{execute: opSlotNum, constantGas: GasBase, minStack: 0, maxStack: 1023}
 
-	// EIP-7939: CLZ opcode - count leading zero bits.
-	tbl[CLZ] = &operation{execute: opCLZ, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
+	// EIP-7939: CLZ opcode - count leading zero bits (GasFastStep = 5).
+	tbl[CLZ] = &operation{execute: opCLZ, constantGas: GasFastStep, minStack: 1, maxStack: 1024}
 
 	// EIP-8024: DUPN, SWAPN, EXCHANGE - extended stack manipulation with immediate operand.
 	tbl[DUPN] = &operation{execute: opDupN, constantGas: GasVerylow, minStack: 1, maxStack: 1023}

@@ -10,7 +10,7 @@ import (
 
 // EIP-4844 blob transaction constants.
 const (
-	// MaxBlobGasPerBlock is the maximum blob gas allowed in a single block.
+	// MaxBlobGasPerBlock is the maximum blob gas allowed in a single block (Cancun).
 	MaxBlobGasPerBlock = 786432
 
 	// TargetBlobGasPerBlock is the target blob gas per block for the
@@ -23,19 +23,19 @@ const (
 	// BlobTxHashVersion is the required first byte of each versioned blob hash.
 	BlobTxHashVersion = 0x01
 
-	// MaxBlobsPerBlock is the maximum number of blobs per block.
+	// MaxBlobsPerBlock is the maximum number of blobs per block (Cancun default).
 	MaxBlobsPerBlock = 6
 )
 
 var (
-	ErrBlobTxNoBlobHashes     = errors.New("blob transaction must have at least one blob hash")
-	ErrBlobTxTooManyBlobs     = errors.New("blob transaction exceeds maximum blobs per block")
+	ErrBlobTxNoBlobHashes       = errors.New("blob transaction must have at least one blob hash")
+	ErrBlobTxTooManyBlobs       = errors.New("blob transaction exceeds maximum blobs per block")
 	ErrBlobTxInvalidHashVersion = errors.New("blob hash has invalid version byte")
-	ErrBlobFeeCapTooLow       = errors.New("max fee per blob gas too low")
-	ErrBlobGasUsedNil         = errors.New("post-Cancun block missing BlobGasUsed")
-	ErrBlobGasUsedExceeded    = errors.New("block blob gas used exceeds maximum")
-	ErrExcessBlobGasNil       = errors.New("post-Cancun block missing ExcessBlobGas")
-	ErrExcessBlobGasMismatch  = errors.New("block excess blob gas does not match calculated value")
+	ErrBlobFeeCapTooLow         = errors.New("max fee per blob gas too low")
+	ErrBlobGasUsedNil           = errors.New("post-Cancun block missing BlobGasUsed")
+	ErrBlobGasUsedExceeded      = errors.New("block blob gas used exceeds maximum")
+	ErrExcessBlobGasNil         = errors.New("post-Cancun block missing ExcessBlobGas")
+	ErrExcessBlobGasMismatch    = errors.New("block excess blob gas does not match calculated value")
 )
 
 // ValidateBlobTx validates an EIP-4844 blob transaction against protocol rules.
@@ -43,12 +43,17 @@ var (
 // starts with the correct version byte, and the max fee per blob gas is
 // sufficient to cover the current blob base fee.
 func ValidateBlobTx(tx *types.Transaction, excessBlobGas uint64) error {
+	return ValidateBlobTxWithMax(tx, excessBlobGas, MaxBlobsPerBlock)
+}
+
+// ValidateBlobTxWithMax validates a blob transaction with a fork-aware max blob count.
+func ValidateBlobTxWithMax(tx *types.Transaction, excessBlobGas uint64, maxBlobs int) error {
 	hashes := tx.BlobHashes()
 	if len(hashes) == 0 {
 		return ErrBlobTxNoBlobHashes
 	}
-	if len(hashes) > MaxBlobsPerBlock {
-		return fmt.Errorf("%w: have %d, max %d", ErrBlobTxTooManyBlobs, len(hashes), MaxBlobsPerBlock)
+	if len(hashes) > maxBlobs {
+		return fmt.Errorf("%w: have %d, max %d", ErrBlobTxTooManyBlobs, len(hashes), maxBlobs)
 	}
 
 	for i, h := range hashes {
@@ -108,6 +113,33 @@ func ValidateBlockBlobGas(header *types.Header, parentHeader *types.Header) erro
 		parentUsed = *parentHeader.BlobGasUsed
 	}
 	expectedExcess := CalcExcessBlobGas(parentExcess, parentUsed)
+
+	if *header.ExcessBlobGas != expectedExcess {
+		return fmt.Errorf("%w: have %d, want %d", ErrExcessBlobGasMismatch, *header.ExcessBlobGas, expectedExcess)
+	}
+
+	return nil
+}
+
+// ValidateBlockBlobGasWithConfig validates blob gas fields using fork-aware
+// blob schedules. For post-Prague blocks, uses the appropriate BPO schedule.
+func ValidateBlockBlobGasWithConfig(config *ChainConfig, header *types.Header, parentHeader *types.Header) error {
+	if header.BlobGasUsed == nil {
+		return ErrBlobGasUsedNil
+	}
+
+	sched := GetBlobSchedule(config, header.Time)
+	maxBlobGas := sched.Max * GasPerBlob
+
+	if *header.BlobGasUsed > maxBlobGas {
+		return fmt.Errorf("%w: have %d, max %d", ErrBlobGasUsedExceeded, *header.BlobGasUsed, maxBlobGas)
+	}
+
+	if header.ExcessBlobGas == nil {
+		return ErrExcessBlobGasNil
+	}
+
+	expectedExcess := CalcExcessBlobGasV2ForHeader(parentHeader, config, header.Time)
 
 	if *header.ExcessBlobGas != expectedExcess {
 		return fmt.Errorf("%w: have %d, want %d", ErrExcessBlobGasMismatch, *header.ExcessBlobGas, expectedExcess)

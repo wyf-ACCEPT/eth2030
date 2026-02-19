@@ -16,5 +16,7 @@ func Keccak256(data ...[]byte) []byte {
 
 // Keccak256Hash calculates Keccak-256 and returns it as a types.Hash.
 func Keccak256Hash(data ...[]byte) types.Hash {
-	return types.BytesToHash(Keccak256(data...))
+	var h types.Hash
+	copy(h[:], Keccak256(data...))
+	return h
 }

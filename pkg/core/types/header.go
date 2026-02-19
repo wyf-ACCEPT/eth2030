@@ -43,6 +43,9 @@ type Header struct {
 	// EIP-7928: Block-level access list
 	BlockAccessListHash *Hash
 
+	// EIP-7742: Uncoupled blob count (CL-driven target)
+	TargetBlobsPerBlock *uint64
+
 	// EIP-7706: Separate gas type for calldata
 	CalldataGasUsed   *uint64
 	CalldataExcessGas *uint64

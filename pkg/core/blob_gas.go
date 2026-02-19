@@ -1,6 +1,10 @@
 package core
 
-import "math/big"
+import (
+	"math/big"
+
+	"github.com/eth2028/eth2028/core/types"
+)
 
 // Enhanced blob gas constants from EIP-7762, EIP-7918, and EIP-7691
 // for the Fusaka (Fulu+Osaka) upgrade. These exist alongside the
@@ -37,6 +41,54 @@ const (
 	FusakaBlobBaseFeeUpdateFraction = 5376681
 )
 
+// BlobSchedule defines the target and maximum blob counts for a fork.
+type BlobSchedule struct {
+	Target         uint64 // target blobs per block
+	Max            uint64 // maximum blobs per block
+	UpdateFraction uint64 // blob base fee update fraction
+}
+
+// Pre-defined blob schedules for each fork.
+var (
+	// CancunBlobSchedule: EIP-4844 initial blob parameters.
+	CancunBlobSchedule = BlobSchedule{Target: 3, Max: 6, UpdateFraction: 3338477}
+
+	// PragueBlobSchedule: same as Fusaka (Prague/Osaka), EIP-7691.
+	PragueBlobSchedule = BlobSchedule{Target: 6, Max: 9, UpdateFraction: 5376681}
+
+	// BPO1BlobSchedule: first blob parameter optimization.
+	BPO1BlobSchedule = BlobSchedule{Target: 10, Max: 15, UpdateFraction: 8346193}
+
+	// BPO2BlobSchedule: second blob parameter optimization.
+	BPO2BlobSchedule = BlobSchedule{Target: 14, Max: 21, UpdateFraction: 11684671}
+)
+
+// GetBlobSchedule returns the active blob schedule for the given config and time.
+func GetBlobSchedule(config *ChainConfig, time uint64) BlobSchedule {
+	switch {
+	case config.IsBPO2(time):
+		return BPO2BlobSchedule
+	case config.IsBPO1(time):
+		return BPO1BlobSchedule
+	case config.IsPrague(time):
+		return PragueBlobSchedule
+	default:
+		return CancunBlobSchedule
+	}
+}
+
+// MaxBlobsForBlock returns the maximum number of blobs allowed in a block
+// at the given timestamp, based on the active fork schedule.
+func MaxBlobsForBlock(config *ChainConfig, time uint64) uint64 {
+	return GetBlobSchedule(config, time).Max
+}
+
+// TargetBlobsForBlock returns the target number of blobs per block
+// at the given timestamp, based on the active fork schedule.
+func TargetBlobsForBlock(config *ChainConfig, time uint64) uint64 {
+	return GetBlobSchedule(config, time).Target
+}
+
 // CalcBlobBaseFeeV2 calculates the blob base fee from excess blob gas,
 // incorporating the EIP-7762 minimum floor and the EIP-7918 execution
 // cost bound.
@@ -47,11 +99,17 @@ const (
 //
 // Returns the effective blob base fee as max(computed_fee, reserve_price).
 func CalcBlobBaseFeeV2(excessBlobGas uint64, baseFeePerGas *big.Int) *big.Int {
+	return CalcBlobBaseFeeV2WithFraction(excessBlobGas, baseFeePerGas, FusakaBlobBaseFeeUpdateFraction)
+}
+
+// CalcBlobBaseFeeV2WithFraction calculates the blob base fee using a specific
+// update fraction, supporting fork-aware blob fee calculations.
+func CalcBlobBaseFeeV2WithFraction(excessBlobGas uint64, baseFeePerGas *big.Int, updateFraction uint64) *big.Int {
 	// Compute base fee from excess via fake exponential.
 	computedFee := fakeExponentialV2(
 		big.NewInt(MinBaseFeePerBlobGas),
 		new(big.Int).SetUint64(excessBlobGas),
-		big.NewInt(FusakaBlobBaseFeeUpdateFraction),
+		new(big.Int).SetUint64(updateFraction),
 	)
 
 	// Apply EIP-7918 reserve price floor: BLOB_BASE_COST * base_fee_per_gas / GAS_PER_BLOB.
@@ -74,7 +132,13 @@ func CalcBlobBaseFeeV2(excessBlobGas uint64, baseFeePerGas *big.Int) *big.Int {
 // > GAS_PER_BLOB * blob_base_fee), excess increases without subtracting
 // target_blob_gas.
 func CalcExcessBlobGasV2(parentExcessBlobGas, parentBlobGasUsed uint64, parentBaseFeePerGas *big.Int) uint64 {
-	targetBlobGas := uint64(FusakaTargetBlobGasPerBlock)
+	return CalcExcessBlobGasV2WithSchedule(parentExcessBlobGas, parentBlobGasUsed, parentBaseFeePerGas, PragueBlobSchedule)
+}
+
+// CalcExcessBlobGasV2WithSchedule calculates excess blob gas using a specific
+// blob schedule, supporting fork-aware excess calculations.
+func CalcExcessBlobGasV2WithSchedule(parentExcessBlobGas, parentBlobGasUsed uint64, parentBaseFeePerGas *big.Int, sched BlobSchedule) uint64 {
+	targetBlobGas := sched.Target * GasPerBlob
 
 	if parentExcessBlobGas+parentBlobGasUsed < targetBlobGas {
 		return 0
@@ -85,7 +149,7 @@ func CalcExcessBlobGasV2(parentExcessBlobGas, parentBlobGasUsed uint64, parentBa
 		blobBaseFee := fakeExponentialV2(
 			big.NewInt(MinBaseFeePerBlobGas),
 			new(big.Int).SetUint64(parentExcessBlobGas),
-			big.NewInt(FusakaBlobBaseFeeUpdateFraction),
+			new(big.Int).SetUint64(sched.UpdateFraction),
 		)
 
 		// BLOB_BASE_COST * base_fee_per_gas > GAS_PER_BLOB * blob_base_fee
@@ -94,14 +158,35 @@ func CalcExcessBlobGasV2(parentExcessBlobGas, parentBlobGasUsed uint64, parentBa
 
 		if lhs.Cmp(rhs) > 0 {
 			// Execution-fee-led: increase without subtracting target.
-			// excess = parent_excess + blob_gas_used * (max - target) / max
-			increase := parentBlobGasUsed * (FusakaMaxBlobsPerBlock - FusakaTargetBlobsPerBlock) / FusakaMaxBlobsPerBlock
+			increase := parentBlobGasUsed * (sched.Max - sched.Target) / sched.Max
 			return parentExcessBlobGas + increase
 		}
 	}
 
 	// Normal case: subtract target.
 	return parentExcessBlobGas + parentBlobGasUsed - targetBlobGas
+}
+
+// CalcExcessBlobGasV2ForHeader calculates excess blob gas for a new block,
+// using the header's TargetBlobsPerBlock (EIP-7742) if present, otherwise
+// falling back to the fork schedule.
+func CalcExcessBlobGasV2ForHeader(parent *types.Header, config *ChainConfig, headerTime uint64) uint64 {
+	var parentExcess, parentUsed uint64
+	if parent.ExcessBlobGas != nil {
+		parentExcess = *parent.ExcessBlobGas
+	}
+	if parent.BlobGasUsed != nil {
+		parentUsed = *parent.BlobGasUsed
+	}
+
+	sched := GetBlobSchedule(config, headerTime)
+
+	// EIP-7742: if the parent has an explicit target, override the schedule.
+	if parent.TargetBlobsPerBlock != nil {
+		sched.Target = *parent.TargetBlobsPerBlock
+	}
+
+	return CalcExcessBlobGasV2WithSchedule(parentExcess, parentUsed, parent.BaseFee, sched)
 }
 
 // fakeExponentialV2 approximates factor * e^(numerator / denominator)

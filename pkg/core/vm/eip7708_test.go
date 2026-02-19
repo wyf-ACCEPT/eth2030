@@ -322,6 +322,89 @@ func TestAddressToTopic(t *testing.T) {
 	}
 }
 
+// TestBurnEventTopic verifies the Burn event topic matches the
+// keccak256 of the Burn event signature.
+func TestBurnEventTopic(t *testing.T) {
+	// keccak256("Burn(address,uint256)")
+	expected := types.HexToHash("0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5")
+	if BurnEventTopic != expected {
+		t.Errorf("BurnEventTopic = %s, want %s", BurnEventTopic.Hex(), expected.Hex())
+	}
+}
+
+// TestEmitTransferLogLargeAmount verifies correct encoding of a large uint256 amount.
+func TestEmitTransferLogLargeAmount(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+	from := types.HexToAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	to := types.HexToAddress("0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+
+	// 2^200 - a large amount that exercises the full 32-byte encoding.
+	amount := new(big.Int).Lsh(big.NewInt(1), 200)
+
+	EmitTransferLog(statedb, from, to, amount)
+
+	logs := statedb.GetLogs(types.Hash{})
+	if len(logs) != 1 {
+		t.Fatalf("expected 1 log, got %d", len(logs))
+	}
+	log := logs[0]
+	if len(log.Data) != 32 {
+		t.Fatalf("log data length = %d, want 32", len(log.Data))
+	}
+	logAmount := new(big.Int).SetBytes(log.Data)
+	if logAmount.Cmp(amount) != 0 {
+		t.Errorf("log data amount = %s, want %s", logAmount.String(), amount.String())
+	}
+}
+
+// TestEmitBurnLogZeroAmount ensures no log is emitted for zero-value burns.
+func TestEmitBurnLogZeroAmount(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+	addr := types.HexToAddress("0xcccccccccccccccccccccccccccccccccccccccc")
+
+	EmitBurnLog(statedb, addr, big.NewInt(0))
+	EmitBurnLog(statedb, addr, nil)
+
+	logs := statedb.GetLogs(types.Hash{})
+	if len(logs) != 0 {
+		t.Errorf("expected 0 logs for zero/nil burn amount, got %d", len(logs))
+	}
+}
+
+// TestEmitBurnLogNilStateDB ensures EmitBurnLog handles nil StateDB gracefully.
+func TestEmitBurnLogNilStateDB(t *testing.T) {
+	// Should not panic.
+	EmitBurnLog(nil, types.Address{}, big.NewInt(100))
+}
+
+// TestEIP7708CallToSelfEmitsTransferLog verifies that a CALL to self (caller == addr)
+// does NOT emit a transfer log since the task says caller != addr.
+func TestEIP7708CallToSelfEmitsTransferLog(t *testing.T) {
+	statedb := state.NewMemoryStateDB()
+	addr := types.HexToAddress("0x1111111111111111111111111111111111111111")
+
+	statedb.CreateAccount(addr)
+	statedb.AddBalance(addr, big.NewInt(10000))
+
+	evm := NewEVM(BlockContext{}, TxContext{}, Config{})
+	evm.StateDB = statedb
+	evm.forkRules.IsEIP7708 = true
+
+	value := big.NewInt(500)
+	_, _, err := evm.Call(addr, addr, nil, 100000, value)
+	if err != nil {
+		t.Fatalf("Call failed: %v", err)
+	}
+
+	// No transfer log should be emitted for self-calls.
+	logs := statedb.GetLogs(types.Hash{})
+	for _, log := range logs {
+		if log.Address == SystemAddress && len(log.Topics) >= 1 && log.Topics[0] == TransferEventTopic {
+			t.Error("should not emit EIP-7708 transfer log for call to self")
+		}
+	}
+}
+
 // TestEIP7708CreateTransferEmitsLog verifies that EVM.Create emits a transfer
 // log when EIP-7708 is active and value is nonzero.
 func TestEIP7708CreateTransferEmitsLog(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sort"
 )
 
 // Request types defined by EIP-7685.
@@ -183,6 +184,57 @@ func (rs Requests) Encode() [][]byte {
 		result[i] = r.Encode()
 	}
 	return result
+}
+
+// SortRequests sorts requests by type in ascending order, maintaining the
+// relative order of requests of the same type (stable sort).
+func SortRequests(requests Requests) {
+	sort.SliceStable(requests, func(i, j int) bool {
+		return requests[i].Type < requests[j].Type
+	})
+}
+
+// EncodeRequests serializes a list of requests to a flat byte slice.
+// Format: for each request, 4 bytes little-endian length prefix + type + data.
+func EncodeRequests(requests Requests) []byte {
+	var buf []byte
+	for _, r := range requests {
+		encoded := r.Encode() // type || data
+		length := uint32(len(encoded))
+		lenBuf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(lenBuf, length)
+		buf = append(buf, lenBuf...)
+		buf = append(buf, encoded...)
+	}
+	return buf
+}
+
+// DecodeRequests deserializes a flat byte slice into a list of requests.
+// The format matches EncodeRequests: 4 bytes LE length + type + data per request.
+func DecodeRequests(data []byte) (Requests, error) {
+	var requests Requests
+	offset := 0
+	for offset < len(data) {
+		if offset+4 > len(data) {
+			return nil, errors.New("truncated request length prefix")
+		}
+		length := binary.LittleEndian.Uint32(data[offset : offset+4])
+		offset += 4
+		if length == 0 {
+			return nil, errors.New("zero-length request")
+		}
+		end := offset + int(length)
+		if end > len(data) {
+			return nil, fmt.Errorf("request data truncated: need %d bytes at offset %d, have %d", length, offset, len(data)-offset)
+		}
+		r, err := DecodeRequest(data[offset:end])
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, r)
+		offset = end
+	}
+	return requests, nil
 }
 
 // ComputeRequestsHash computes the SHA-256 commitment over all requests.

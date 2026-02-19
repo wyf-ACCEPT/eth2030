@@ -935,6 +935,12 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 			tipPayment := new(big.Int).Mul(tip, new(big.Int).SetUint64(gasUsed))
 			statedb.AddBalance(header.Coinbase, tipPayment)
 		}
+
+		// EIP-7708: emit burn log for base fee portion (baseFee * gasUsed).
+		if evm.GetForkRules().IsEIP7708 {
+			burnAmount := new(big.Int).Mul(header.BaseFee, new(big.Int).SetUint64(gasUsed))
+			vm.EmitBurnLog(statedb, msg.From, burnAmount)
+		}
 	} else {
 		// Pre-EIP-1559: all gas payment goes to coinbase.
 		coinbasePayment := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(gasUsed))
