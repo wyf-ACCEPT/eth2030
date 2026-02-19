@@ -389,3 +389,381 @@ func TestBlobPool_NonceTooLow(t *testing.T) {
 		t.Errorf("expected ErrBlobNonceTooLow, got %v", err)
 	}
 }
+
+// EIP-8070 sparse blobpool tests.
+
+func TestBlobPool_AddBlobTxWithSidecar(t *testing.T) {
+	pool := NewBlobPool(DefaultBlobPoolConfig(), nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 2)
+
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobHashes:  tx.BlobHashes(),
+		BlobData:    [][]byte{make([]byte, 1024), make([]byte, 1024)},
+		Commitments: [][]byte{make([]byte, 48), make([]byte, 48)},
+		Proofs:      [][]byte{make([]byte, 48), make([]byte, 48)},
+		CellIndices: []uint64{0, 1, 2, 3},
+	}
+
+	if err := pool.AddBlobTx(tx, sidecar); err != nil {
+		t.Fatalf("AddBlobTx: %v", err)
+	}
+
+	if pool.Count() != 1 {
+		t.Errorf("Count = %d, want 1", pool.Count())
+	}
+
+	sc, err := pool.GetBlobSidecar(tx.Hash())
+	if err != nil {
+		t.Fatalf("GetBlobSidecar: %v", err)
+	}
+	if sc.TxHash != tx.Hash() {
+		t.Errorf("sidecar TxHash mismatch")
+	}
+}
+
+func TestBlobPool_AddBlobTxNilSidecar(t *testing.T) {
+	pool := NewBlobPool(DefaultBlobPoolConfig(), nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+
+	if err := pool.AddBlobTx(tx, nil); err != nil {
+		t.Fatalf("AddBlobTx with nil sidecar: %v", err)
+	}
+
+	if pool.Count() != 1 {
+		t.Errorf("Count = %d, want 1", pool.Count())
+	}
+
+	// Sidecar should not be found.
+	_, err := pool.GetBlobSidecar(tx.Hash())
+	if err != ErrBlobSidecarNotFound {
+		t.Errorf("expected ErrBlobSidecarNotFound, got %v", err)
+	}
+}
+
+func TestBlobPool_RemoveBlobTx(t *testing.T) {
+	pool := NewBlobPool(DefaultBlobPoolConfig(), nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobHashes:  tx.BlobHashes(),
+		BlobData:    [][]byte{make([]byte, 512)},
+		CellIndices: []uint64{0, 1},
+	}
+
+	pool.AddBlobTx(tx, sidecar)
+	pool.RemoveBlobTx(tx.Hash())
+
+	if pool.Count() != 0 {
+		t.Errorf("Count = %d, want 0", pool.Count())
+	}
+	_, err := pool.GetBlobSidecar(tx.Hash())
+	if err != ErrBlobSidecarNotFound {
+		t.Errorf("expected ErrBlobSidecarNotFound after remove, got %v", err)
+	}
+}
+
+func TestBlobPool_CustodyFilter(t *testing.T) {
+	cfg := CustodyConfig{
+		CustodyColumns:  []uint64{0, 1, 2, 3},
+		CellSampleCount: DefaultCellSampleCount,
+	}
+
+	// Cells 0-3 map to columns 0-3, should be kept.
+	// Cells 4-7 map to columns 4-7, should be filtered out.
+	indices := []uint64{0, 1, 2, 3, 4, 5, 6, 7}
+	kept := cfg.CustodyFilter(indices)
+
+	if len(kept) != 4 {
+		t.Fatalf("CustodyFilter kept %d cells, want 4", len(kept))
+	}
+	for _, idx := range kept {
+		if idx > 3 {
+			t.Errorf("unexpected custody cell index %d", idx)
+		}
+	}
+}
+
+func TestBlobPool_CustodyFilterWraparound(t *testing.T) {
+	cfg := CustodyConfig{
+		CustodyColumns:  []uint64{0, 64},
+		CellSampleCount: 8,
+	}
+
+	// Cell 0 -> col 0 (custodied), Cell 64 -> col 64 (custodied),
+	// Cell 1 -> col 1 (not custodied), Cell 128 -> col 0 (custodied, wraps).
+	indices := []uint64{0, 1, 64, 128}
+	kept := cfg.CustodyFilter(indices)
+
+	if len(kept) != 3 {
+		t.Fatalf("CustodyFilter kept %d cells, want 3", len(kept))
+	}
+}
+
+func TestBlobPool_AddBlobTxWithCustodyFiltering(t *testing.T) {
+	config := DefaultBlobPoolConfig()
+	config.Custody = CustodyConfig{
+		CustodyColumns:  []uint64{0, 1},
+		CellSampleCount: 8,
+	}
+	pool := NewBlobPool(config, nil)
+
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobHashes:  tx.BlobHashes(),
+		BlobData:    [][]byte{[]byte("cell0"), []byte("cell1"), []byte("cell5"), []byte("cell10")},
+		Commitments: [][]byte{[]byte("c0"), []byte("c1"), []byte("c5"), []byte("c10")},
+		Proofs:      [][]byte{[]byte("p0"), []byte("p1"), []byte("p5"), []byte("p10")},
+		CellIndices: []uint64{0, 1, 5, 10},
+	}
+
+	if err := pool.AddBlobTx(tx, sidecar); err != nil {
+		t.Fatalf("AddBlobTx: %v", err)
+	}
+
+	sc, err := pool.GetBlobSidecar(tx.Hash())
+	if err != nil {
+		t.Fatalf("GetBlobSidecar: %v", err)
+	}
+
+	// Only cells 0 and 1 should be kept (columns 0, 1).
+	if len(sc.CellIndices) != 2 {
+		t.Errorf("filtered sidecar has %d cells, want 2", len(sc.CellIndices))
+	}
+}
+
+func TestBlobPool_PruneSidecars(t *testing.T) {
+	config := DefaultBlobPoolConfig()
+	config.Datacap = 500 // very small datacap
+	pool := NewBlobPool(config, nil)
+
+	addr1 := types.BytesToAddress([]byte{0x01})
+	addr2 := types.BytesToAddress([]byte{0x02})
+
+	tx1 := makeBlobPoolTxFrom(0, 100, addr1)
+	tx2 := makeBlobPoolTxFrom(0, 200, addr2)
+
+	sc1 := &BlobSidecar{
+		TxHash:      tx1.Hash(),
+		BlobData:    [][]byte{make([]byte, 300)},
+		CellIndices: []uint64{0},
+	}
+	sc2 := &BlobSidecar{
+		TxHash:      tx2.Hash(),
+		BlobData:    [][]byte{make([]byte, 300)},
+		CellIndices: []uint64{0},
+	}
+
+	pool.AddBlobTx(tx1, sc1)
+	pool.AddBlobTx(tx2, sc2)
+
+	// Total data is 600 > datacap 500. Pruning should evict.
+	pruned := pool.PruneSidecars()
+	if pruned == 0 {
+		t.Error("expected at least one sidecar to be pruned")
+	}
+}
+
+func TestBlobPool_EvictHeapOrdering(t *testing.T) {
+	h := newBlobEvictHeap()
+
+	h.push(types.BytesToHash([]byte{1}), big.NewInt(100))
+	h.push(types.BytesToHash([]byte{2}), big.NewInt(50))
+	h.push(types.BytesToHash([]byte{3}), big.NewInt(200))
+
+	// Peek should return the lowest tip.
+	item := h.peek()
+	if item == nil {
+		t.Fatal("peek returned nil")
+	}
+	if item.effectiveTip.Int64() != 50 {
+		t.Errorf("peek tip = %d, want 50", item.effectiveTip.Int64())
+	}
+
+	// Remove the min and check next.
+	h.remove(types.BytesToHash([]byte{2}))
+	item = h.peek()
+	if item.effectiveTip.Int64() != 100 {
+		t.Errorf("after remove, peek tip = %d, want 100", item.effectiveTip.Int64())
+	}
+}
+
+func TestBlobPool_DataUsed(t *testing.T) {
+	pool := NewBlobPool(DefaultBlobPoolConfig(), nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobData:    [][]byte{make([]byte, 1024)},
+		Commitments: [][]byte{make([]byte, 48)},
+		Proofs:      [][]byte{make([]byte, 48)},
+		CellIndices: []uint64{0},
+	}
+
+	pool.AddBlobTx(tx, sidecar)
+
+	used := pool.DataUsed()
+	if used != 1024+48+48 {
+		t.Errorf("DataUsed = %d, want %d", used, 1024+48+48)
+	}
+
+	pool.RemoveBlobTx(tx.Hash())
+	if pool.DataUsed() != 0 {
+		t.Errorf("DataUsed after remove = %d, want 0", pool.DataUsed())
+	}
+}
+
+func TestBlobPool_JournalPersistence(t *testing.T) {
+	dir := t.TempDir()
+	config := DefaultBlobPoolConfig()
+	config.Datadir = dir
+	config.Custody = CustodyConfig{
+		CustodyColumns:  []uint64{0},
+		CellSampleCount: 1,
+	}
+
+	// Create pool and add a transaction with sidecar.
+	pool := NewBlobPool(config, nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobHashes:  tx.BlobHashes(),
+		BlobData:    [][]byte{[]byte("testdata")},
+		Commitments: [][]byte{[]byte("commit")},
+		Proofs:      [][]byte{[]byte("proof")},
+		CellIndices: []uint64{0},
+	}
+
+	if err := pool.AddBlobTx(tx, sidecar); err != nil {
+		t.Fatalf("AddBlobTx: %v", err)
+	}
+	pool.Close()
+
+	// Create a new pool from the same directory - journal recovery.
+	pool2 := NewBlobPool(config, nil)
+	defer pool2.Close()
+
+	// The sidecar should be recovered from the journal.
+	sc, err := pool2.GetBlobSidecar(tx.Hash())
+	if err != nil {
+		t.Fatalf("recovered GetBlobSidecar: %v", err)
+	}
+	if sc.TxHash != tx.Hash() {
+		t.Errorf("recovered sidecar TxHash mismatch")
+	}
+	if len(sc.BlobData) == 0 {
+		t.Error("recovered sidecar has no blob data")
+	}
+}
+
+func TestBlobPool_JournalRemoveRecovery(t *testing.T) {
+	dir := t.TempDir()
+	config := DefaultBlobPoolConfig()
+	config.Datadir = dir
+
+	pool := NewBlobPool(config, nil)
+	tx := makeBlobPoolTx(0, 100, 1000, 100, 1)
+	sidecar := &BlobSidecar{
+		TxHash:      tx.Hash(),
+		BlobData:    [][]byte{[]byte("data")},
+		CellIndices: []uint64{0},
+	}
+
+	pool.AddBlobTx(tx, sidecar)
+	pool.RemoveBlobTx(tx.Hash())
+	pool.Close()
+
+	// After recovery, the sidecar should not exist.
+	pool2 := NewBlobPool(config, nil)
+	defer pool2.Close()
+
+	_, err := pool2.GetBlobSidecar(tx.Hash())
+	if err != ErrBlobSidecarNotFound {
+		t.Errorf("expected ErrBlobSidecarNotFound after journal recovery with remove, got %v", err)
+	}
+}
+
+func TestBlobPool_DefaultCustodyConfig(t *testing.T) {
+	cfg := DefaultCustodyConfig()
+	if len(cfg.CustodyColumns) != DefaultCustodyColumns {
+		t.Errorf("DefaultCustodyConfig columns = %d, want %d", len(cfg.CustodyColumns), DefaultCustodyColumns)
+	}
+	if cfg.CellSampleCount != DefaultCellSampleCount {
+		t.Errorf("CellSampleCount = %d, want %d", cfg.CellSampleCount, DefaultCellSampleCount)
+	}
+	// Columns should be 0, 1, 2, 3.
+	for i, col := range cfg.CustodyColumns {
+		if col != uint64(i) {
+			t.Errorf("column[%d] = %d, want %d", i, col, i)
+		}
+	}
+}
+
+func TestBlobPool_IsCustodyColumn(t *testing.T) {
+	cfg := CustodyConfig{CustodyColumns: []uint64{0, 5, 10}}
+
+	if !cfg.IsCustodyColumn(0) {
+		t.Error("column 0 should be custodied")
+	}
+	if !cfg.IsCustodyColumn(5) {
+		t.Error("column 5 should be custodied")
+	}
+	if cfg.IsCustodyColumn(3) {
+		t.Error("column 3 should not be custodied")
+	}
+}
+
+func TestBlobPool_BlobEffectiveTip(t *testing.T) {
+	tx := makeBlobPoolTx(0, 200, 1000, 50, 1)
+
+	// With no base fee, tip = tipCap.
+	tip := blobEffectiveTip(tx, nil)
+	if tip.Int64() != 50 {
+		t.Errorf("tip with nil baseFee = %d, want 50", tip.Int64())
+	}
+
+	// With base fee 100, excess = 200 - 100 = 100, min(50, 100) = 50.
+	tip = blobEffectiveTip(tx, big.NewInt(100))
+	if tip.Int64() != 50 {
+		t.Errorf("tip with baseFee=100 = %d, want 50", tip.Int64())
+	}
+
+	// With high base fee 190, excess = 200 - 190 = 10, min(50, 10) = 10.
+	tip = blobEffectiveTip(tx, big.NewInt(190))
+	if tip.Int64() != 10 {
+		t.Errorf("tip with baseFee=190 = %d, want 10", tip.Int64())
+	}
+}
+
+func TestBlobPool_SidecarSize(t *testing.T) {
+	sc := &BlobSidecar{
+		BlobData:    [][]byte{make([]byte, 100), make([]byte, 200)},
+		Commitments: [][]byte{make([]byte, 48)},
+		Proofs:      [][]byte{make([]byte, 48)},
+	}
+	got := sidecarSize(sc)
+	if got != 396 {
+		t.Errorf("sidecarSize = %d, want 396", got)
+	}
+
+	// Nil sidecar.
+	if sidecarSize(nil) != 0 {
+		t.Error("sidecarSize(nil) should be 0")
+	}
+}
+
+func TestBlobPool_Close(t *testing.T) {
+	dir := t.TempDir()
+	config := DefaultBlobPoolConfig()
+	config.Datadir = dir
+
+	pool := NewBlobPool(config, nil)
+	if err := pool.Close(); err != nil {
+		t.Errorf("Close: %v", err)
+	}
+	// Double close should be safe.
+	if err := pool.Close(); err != nil {
+		t.Errorf("double Close: %v", err)
+	}
+}

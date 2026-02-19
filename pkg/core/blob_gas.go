@@ -189,6 +189,63 @@ func CalcExcessBlobGasV2ForHeader(parent *types.Header, config *ChainConfig, hea
 	return CalcExcessBlobGasV2WithSchedule(parentExcess, parentUsed, parent.BaseFee, sched)
 }
 
+// BlobBaseFeeWithFloor enforces the EIP-7918 reserve price floor on a
+// computed blob base fee. Given the raw fee from the exponential and the
+// current execution base fee, it returns max(computedFee, reservePrice)
+// where reservePrice = BLOB_BASE_COST * baseFeePerGas / GAS_PER_BLOB.
+//
+// This can be used independently to retroactively apply the floor to any
+// blob base fee calculation.
+func BlobBaseFeeWithFloor(computedFee *big.Int, baseFeePerGas *big.Int) *big.Int {
+	if baseFeePerGas == nil || baseFeePerGas.Sign() <= 0 {
+		return new(big.Int).Set(computedFee)
+	}
+	reservePrice := new(big.Int).Mul(big.NewInt(BlobBaseCost), baseFeePerGas)
+	reservePrice.Div(reservePrice, big.NewInt(GasPerBlob))
+
+	if reservePrice.Cmp(computedFee) > 0 {
+		return reservePrice
+	}
+	return new(big.Int).Set(computedFee)
+}
+
+// CalcBlobBaseFeeGlamst calculates the blob base fee for the Glamsterdan fork.
+// Glamsterdan activates EIP-7918 (blob base fee bound by execution cost) along
+// with the Fusaka blob schedule. The function computes the exponential fee from
+// excess blob gas, then applies the reserve price floor.
+func CalcBlobBaseFeeGlamst(excessBlobGas uint64, baseFeePerGas *big.Int) *big.Int {
+	computedFee := fakeExponentialV2(
+		big.NewInt(MinBaseFeePerBlobGas),
+		new(big.Int).SetUint64(excessBlobGas),
+		new(big.Int).SetUint64(FusakaBlobBaseFeeUpdateFraction),
+	)
+	return BlobBaseFeeWithFloor(computedFee, baseFeePerGas)
+}
+
+// CalcBlobReservePrice returns the EIP-7918 reserve price for blobs:
+// BLOB_BASE_COST * baseFeePerGas / GAS_PER_BLOB.
+// Returns zero if baseFeePerGas is nil or non-positive.
+func CalcBlobReservePrice(baseFeePerGas *big.Int) *big.Int {
+	if baseFeePerGas == nil || baseFeePerGas.Sign() <= 0 {
+		return new(big.Int)
+	}
+	result := new(big.Int).Mul(big.NewInt(BlobBaseCost), baseFeePerGas)
+	result.Div(result, big.NewInt(GasPerBlob))
+	return result
+}
+
+// IsExecutionFeeLed returns true if the blob base fee is currently in the
+// execution-fee-led pricing regime per EIP-7918:
+// BLOB_BASE_COST * baseFeePerGas > GAS_PER_BLOB * blobBaseFee
+func IsExecutionFeeLed(baseFeePerGas, blobBaseFee *big.Int) bool {
+	if baseFeePerGas == nil || blobBaseFee == nil {
+		return false
+	}
+	lhs := new(big.Int).Mul(big.NewInt(BlobBaseCost), baseFeePerGas)
+	rhs := new(big.Int).Mul(big.NewInt(GasPerBlob), blobBaseFee)
+	return lhs.Cmp(rhs) > 0
+}
+
 // fakeExponentialV2 approximates factor * e^(numerator / denominator)
 // using a Taylor expansion, same algorithm as EIP-4844.
 func fakeExponentialV2(factor, numerator, denominator *big.Int) *big.Int {

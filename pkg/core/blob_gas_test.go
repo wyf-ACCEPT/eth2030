@@ -164,6 +164,142 @@ func TestCalcExcessBlobGasV2MaxBlobs(t *testing.T) {
 	}
 }
 
+// Tests for new EIP-7918 functions.
+
+func TestBlobBaseFeeWithFloor(t *testing.T) {
+	tests := []struct {
+		name        string
+		computedFee int64
+		baseFee     *big.Int
+		wantMin     int64 // fee must be >= this
+	}{
+		{
+			name:        "nil base fee returns computed",
+			computedFee: 1000,
+			baseFee:     nil,
+			wantMin:     1000,
+		},
+		{
+			name:        "zero base fee returns computed",
+			computedFee: 1000,
+			baseFee:     big.NewInt(0),
+			wantMin:     1000,
+		},
+		{
+			name:        "low base fee, computed wins",
+			computedFee: MinBaseFeePerBlobGas,
+			baseFee:     big.NewInt(1),
+			wantMin:     MinBaseFeePerBlobGas,
+		},
+		{
+			name:        "high base fee, reserve wins",
+			computedFee: MinBaseFeePerBlobGas,
+			baseFee:     big.NewInt(30_000_000_000), // 30 gwei
+			wantMin:     1_875_000_000,              // 8192 * 30e9 / 131072
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := BlobBaseFeeWithFloor(big.NewInt(tt.computedFee), tt.baseFee)
+			if got.Cmp(big.NewInt(tt.wantMin)) < 0 {
+				t.Errorf("BlobBaseFeeWithFloor = %s, want >= %d", got, tt.wantMin)
+			}
+		})
+	}
+}
+
+func TestBlobBaseFeeWithFloorHighBaseFeeExact(t *testing.T) {
+	// Reserve = BlobBaseCost * baseFee / GasPerBlob = 8192 * 30e9 / 131072 = 1875000000
+	baseFee := big.NewInt(30_000_000_000)
+	computed := big.NewInt(100) // much lower than reserve
+	got := BlobBaseFeeWithFloor(computed, baseFee)
+
+	expected := new(big.Int).Mul(big.NewInt(BlobBaseCost), baseFee)
+	expected.Div(expected, big.NewInt(GasPerBlob))
+
+	if got.Cmp(expected) != 0 {
+		t.Errorf("BlobBaseFeeWithFloor = %s, want %s", got, expected)
+	}
+}
+
+func TestCalcBlobBaseFeeGlamst(t *testing.T) {
+	// At zero excess with low base fee, should return MinBaseFeePerBlobGas.
+	fee := CalcBlobBaseFeeGlamst(0, big.NewInt(1))
+	if fee.Cmp(big.NewInt(MinBaseFeePerBlobGas)) != 0 {
+		t.Errorf("CalcBlobBaseFeeGlamst(0, 1) = %s, want %d", fee, MinBaseFeePerBlobGas)
+	}
+
+	// At zero excess with high base fee, reserve should dominate.
+	highBaseFee := big.NewInt(30_000_000_000)
+	fee = CalcBlobBaseFeeGlamst(0, highBaseFee)
+	reserve := CalcBlobReservePrice(highBaseFee)
+	if fee.Cmp(reserve) < 0 {
+		t.Errorf("CalcBlobBaseFeeGlamst = %s, should be >= reserve %s", fee, reserve)
+	}
+}
+
+func TestCalcBlobReservePrice(t *testing.T) {
+	// Reserve = BLOB_BASE_COST * baseFee / GAS_PER_BLOB
+	tests := []struct {
+		baseFee *big.Int
+		want    int64
+	}{
+		{nil, 0},
+		{big.NewInt(0), 0},
+		{big.NewInt(-1), 0},
+		{big.NewInt(131072), 8192},                       // 8192 * 131072 / 131072 = 8192
+		{big.NewInt(30_000_000_000), 1_875_000_000},      // 8192 * 30e9 / 131072
+	}
+
+	for _, tt := range tests {
+		got := CalcBlobReservePrice(tt.baseFee)
+		if got.Int64() != tt.want {
+			t.Errorf("CalcBlobReservePrice(%v) = %s, want %d", tt.baseFee, got, tt.want)
+		}
+	}
+}
+
+func TestIsExecutionFeeLed(t *testing.T) {
+	// At zero excess, blob base fee = MinBaseFeePerBlobGas = 2^25.
+	// Reserve > blob fee when: BlobBaseCost * baseFee > GasPerBlob * blobBaseFee
+	// => baseFee > GasPerBlob * blobBaseFee / BlobBaseCost
+	// => baseFee > 131072 * 33554432 / 8192 = 536870912 ~= 0.54 gwei
+
+	blobBaseFee := big.NewInt(MinBaseFeePerBlobGas)
+
+	// Low base fee: not execution-fee-led.
+	if IsExecutionFeeLed(big.NewInt(1), blobBaseFee) {
+		t.Error("should not be execution-fee-led at 1 wei base fee")
+	}
+
+	// High base fee: execution-fee-led.
+	if !IsExecutionFeeLed(big.NewInt(10_000_000_000), blobBaseFee) {
+		t.Error("should be execution-fee-led at 10 gwei base fee")
+	}
+
+	// Nil inputs.
+	if IsExecutionFeeLed(nil, blobBaseFee) {
+		t.Error("should not be execution-fee-led with nil base fee")
+	}
+	if IsExecutionFeeLed(big.NewInt(10_000_000_000), nil) {
+		t.Error("should not be execution-fee-led with nil blob base fee")
+	}
+}
+
+func TestCalcBlobBaseFeeGlamstMonotonic(t *testing.T) {
+	// Fee should increase monotonically with excess blob gas.
+	baseFee := big.NewInt(10_000_000_000)
+	prev := CalcBlobBaseFeeGlamst(0, baseFee)
+	for excess := uint64(GasPerBlob); excess <= uint64(FusakaBlobBaseFeeUpdateFraction)*2; excess += uint64(GasPerBlob) {
+		cur := CalcBlobBaseFeeGlamst(excess, baseFee)
+		if cur.Cmp(prev) < 0 {
+			t.Fatalf("blob fee decreased at excess=%d: %s < %s", excess, cur, prev)
+		}
+		prev = cur
+	}
+}
+
 func TestFakeExponentialV2(t *testing.T) {
 	tests := []struct {
 		factor      int64
