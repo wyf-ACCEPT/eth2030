@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering parallel execution (EIP-7928), ePBS (EIP-7732), Verkle
 state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography.
 
-**Status**: 22 packages, ~37K LOC source, ~69K LOC tests, 2900+ passing tests.
+**Status**: 22 packages, ~37K LOC source, ~75K LOC tests, all passing.
 
 ## Architecture
 
@@ -58,7 +58,7 @@ state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography
 | `pkg/core` | Blockchain, state processor, block builder, validator, fee logic | Complete |
 | `pkg/core/types` | Header, Transaction (5 types), Receipt, Block, Account | Complete |
 | `pkg/core/state` | StateDB interface, in-memory impl, trie-backed state | Complete |
-| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 18 precompiles, gas tables | Complete |
+| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 19 precompiles, gas tables | Complete |
 | `pkg/core/rawdb` | FileDB with WAL, block/receipt/tx storage | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
 | `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, KZG | Complete |
@@ -66,7 +66,7 @@ state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography
 | `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
 | `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier | Framework |
 | `pkg/txpool` | Transaction pool: validation, replace-by-fee, eviction | Complete |
-| `pkg/rpc` | JSON-RPC server, 30+ eth_* methods, filters, subscriptions | Complete |
+| `pkg/rpc` | JSON-RPC server, 50+ eth_* methods, filters, subscriptions | Complete |
 | `pkg/trie` | Merkle Patricia Trie with proofs | Complete |
 | `pkg/verkle` | Verkle tree types, key derivation (EIP-6800) | Stub |
 | `pkg/p2p` | TCP transport, devp2p handshake, peer management, server | In Progress |

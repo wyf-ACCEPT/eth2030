@@ -9,36 +9,41 @@ Source: EF Architecture team (Ansgar, Barnabe, Francesco, Justin), updated Feb 2
 Live at strawmap.org. Three layers, each with sub-tracks:
 
 ### Consensus Layer (CL)
-- **Latency**: fast confirmation -> single-slot finality -> 1-epoch finality -> 4-slot epochs -> 6-sec slots (K+) -> endgame finality in seconds (M+)
-- **Accessibility**: ePBS -> FOCIL -> modernized beacon state -> beacon & blob sync revamp -> 1MiB attestor cap -> KPS -> rich data smart -> LETHE insulation -> post quantum attestations -> 1M subaccounts, distributed block building
-- **Cryptography**: post quantum custody replacer -> post quantum signature share -> real-time CL proofs -> post quantum L1 hash-based (M+) -> VDF, secure prequorum
+- **Latency**: fast confirmation -> quick slots -> 1-epoch finality -> 4-slot epochs -> 6-sec slots (K+) -> endgame finality -> fast L1 finality in seconds (M+)
+- **Accessibility**: ePBS -> FOCIL -> modernized beacon specs -> beacon & lean specs merge -> attester stake cap -> 128K attester cap -> APS -> 1 ETH includers -> tech debt reset -> post quantum attestations -> jeanVM aggregation -> 1M attestations/slot -> 51% attack auto-recovery -> distributed block building
+- **Cryptography**: post quantum pubkey registry -> post quantum available chain -> real-time CL proofs -> post quantum L1 hash-based (M+) -> VDF randomness -> secret proposers
 
 ### Data Layer (DL)
-- **Throughput**: peerDAS -> EIP-7702 precompile -> blob throughput increase -> local blob reconstruction -> 3-RPO slots increase -> L-RPO blob increase -> post quantum blobs -> teradata L2, proof custody
-- **Types**: blob streaming -> short-dated blob futures -> decrease sample size -> post quantum custody -> forward-cast blobs
+- **Throughput**: sparse blobpool -> cell-level messages -> EIP-7702 broadcast -> Hogota BPO blobs increase -> local blob reconstruction -> decrease sample size -> J* BPO blobs increase -> L* BPO blobs increase -> teragas L2 (1 Gbyte/sec)
+- **Types**: blob streaming -> short-dated blob futures -> post quantum blobs -> variable-size blobs -> proofs of custody
 
 ### Execution Layer (EL)
-- **Throughput**: conversion repricing -> natural gas limit -> access gas limit -> multidimensional pricing -> block in blobs -> mandatory 3-of-5 proofs -> canonical guest -> canonical zxVM -> long-dated gas futures -> shared mempools -> gigas L1 (1 Ggas/sec)
-- **Sustainability**: BALS -> Hogota repricing -> payload shrinking -> announce binary tree -> verkle/portal state -> advance state -> native rollups -> exposed ELSA -> proofs
-- **EVM**: native AA -> more precompiles in eWASM -> STF in eRISC -> native rollups -> proof aggregation -> post quantum transactions -> exposed ELSA
-- **Cryptography**: NII precompile(s) -> encrypted mempool
+- **Throughput**: Glamsterdam repricing -> optional proofs -> Hogota repricing -> 3x/year gas limit -> multidimensional pricing -> payload chunking -> block in blobs -> announce nonce -> mandatory 3-of-5 proofs -> canonical guest -> canonical zkVM -> long-dated gas futures -> sharded mempool -> gigagas L1 (1 Ggas/sec)
+- **Sustainability**: BALs -> binary tree -> announce nonce -> validity-only partial state -> endgame state
+- **EVM**: native AA -> misc purges -> transaction assertions -> NTT precompile(s) -> precompiles in zkISA -> STF in zkISA -> native rollups -> proof aggregation -> exposed zkISA -> AA proofs
+- **Cryptography**: encrypted mempool -> post quantum transactions -> private L1 shielded transfers
 
 ### Upgrade Timeline
-- **Glamsterdan** (2026): fast confirmation, ePBS, FOCIL, peerDAS, native AA, BALS
-- **Hogota** (2026-2027): blob throughput, local blob reconstruction, repricing
-- **I+** (2027): 1-epoch finality, post quantum custody
-- **J+** (2027-2028): 4-slot epochs, precompiles in eWASM, STF in eRISC
-- **K+** (2028): 6-sec slots, mandatory proofs, canonical guest
-- **L+** (2029): endgame finality, LETHE insulation, post quantum attestations
-- **M+** (2029+): fast L1 finality in seconds, post quantum L1, gigas L1, canonical zxVM
-- **Longer term** (2030++): distributed block building, VDF, teradata L2, private L1 shielded compute
+- **Glamsterdam** (2026): fast confirmation, ePBS, FOCIL, sparse blobpool, native AA, BALs, repricing, optional proofs
+- **Hogota** (2026-2027): blob throughput increase, local blob reconstruction, repricing, binary tree
+- **I+** (2027): 1-epoch finality, post quantum custody, quick slots
+- **J+** (2027-2028): 4-slot epochs, precompiles in zkISA, STF in zkISA, BPO blobs increase
+- **K+** (2028): 6-sec slots, mandatory 3-of-5 proofs, canonical guest, announce nonce
+- **L+** (2029): endgame finality, post quantum attestations, BPO blobs increase, validity-only state
+- **M+** (2029+): fast L1 finality in seconds, post quantum L1, gigagas L1, canonical zkVM
+- **Longer term** (2030++): distributed block building, VDF randomness, teragas L2, private L1 shielded transfers
+
+### EIP Implementation Status
+- **Complete**: EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-4844, EIP-4895, EIP-5656, EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7702, EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788
+- **Partial**: EIP-7732 (ePBS, Engine API types only), EIP-6800 (Verkle, types+keys only), EIP-8025 (witness collector only)
+- **Planned**: EIP-4762 (statelessness gas), EIP-4444 (history expiry), EIP-8079 (EXECUTE precompile)
 
 ## Project Structure & Module Organization
 
 - `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
   - `core/types/` - Core types: Header, Transaction (5 types), Receipt, Block, Account
   - `core/state/` - StateDB interface, in-memory and trie-backed implementations
-  - `core/vm/` - EVM interpreter, 140+ opcodes, 18 precompiles, gas tables
+  - `core/vm/` - EVM interpreter, 140+ opcodes, 19 precompiles (incl. 9 BLS12-381), gas tables
   - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage
   - `rlp/` - RLP encoding/decoding
   - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381
@@ -48,7 +53,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `txpool/` - Transaction pool with validation, replace-by-fee, eviction
   - `p2p/` - P2P peer management, ETH wire protocol, discovery
   - `sync/` - Full sync + snap sync pipeline
-  - `rpc/` - JSON-RPC server, 30+ methods, filters, subscriptions
+  - `rpc/` - JSON-RPC server, 50+ methods, filters, subscriptions, WebSocket
   - `eth/` - ETH protocol handler and codec
   - `node/` - Client node: config, lifecycle, subsystem integration
   - `verkle/` - Verkle tree types and key derivation (stub)
