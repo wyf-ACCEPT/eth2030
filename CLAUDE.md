@@ -34,20 +34,22 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 - **Longer term** (2030++): distributed block building, VDF randomness, teragas L2, private L1 shielded transfers
 
 ### EIP Implementation Status
-- **Complete**: EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-4844, EIP-4895, EIP-5656, EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7702, EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788
-- **Partial**: EIP-7732 (ePBS, Engine API types only), EIP-6800 (Verkle, types+keys only), EIP-8025 (witness collector only)
-- **Planned**: EIP-4762 (statelessness gas), EIP-4444 (history expiry), EIP-8079 (EXECUTE precompile)
+- **Complete**: EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-4844, EIP-4895, EIP-5656, EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7702, EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788, EIP-7706, EIP-7547, EIP-4444, EIP-4762
+- **Substantial**: EIP-7732 (ePBS: builder types, registry, bid management, commitment/reveal, API), EIP-6800 (Verkle: Banderwagon curve, IPA proofs, Pedersen commitments, types+keys), EIP-7864 (binary tree: SHA-256, iterator, proofs, MPT migration)
+- **Partial**: EIP-8025 (witness collector only)
+- **Planned**: EIP-8079 (EXECUTE precompile), EIP-8007 (Glamsterdam gas repricings), EIP-8037 (state growth/access separation), EIP-7778 (remove gas refunds), EIP-8125 (temporary storage)
 
 ## Project Structure & Module Organization
 
 - `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
   - `core/types/` - Core types: Header, Transaction (5 types), Receipt, Block, Account
   - `core/state/` - StateDB interface, in-memory and trie-backed implementations
-  - `core/vm/` - EVM interpreter, 140+ opcodes, 19 precompiles (incl. 9 BLS12-381), gas tables
-  - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage
+  - `core/vm/` - EVM interpreter, 140+ opcodes, 19 precompiles (incl. 9 BLS12-381), gas tables, EIP-4762 statelessness gas
+  - `core/rawdb/` - FileDB with WAL, block/receipt/tx storage, EIP-4444 history expiry
   - `rlp/` - RLP encoding/decoding
-  - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381
-  - `engine/` - Engine API server (V3-V6), forkchoice, payload building
+  - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381, Banderwagon, IPA proofs
+  - `engine/` - Engine API server (V3-V6), forkchoice, payload building, ePBS builder API
+  - `trie/` - Binary Merkle tree (EIP-7864), SHA-256 hashing, proofs, MPT migration
   - `bal/` - Block Access Lists (EIP-7928) for parallel execution
   - `witness/` - Execution witness (EIP-6800/8025), collector, verifier
   - `txpool/` - Transaction pool with validation, replace-by-fee, eviction

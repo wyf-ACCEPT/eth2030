@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering parallel execution (EIP-7928), ePBS (EIP-7732), Verkle
 state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography.
 
-**Status**: 22 packages, ~37K LOC source, ~75K LOC tests, all passing.
+**Status**: 22 packages, ~41K LOC source, ~79K LOC tests, all passing.
 
 ## Architecture
 
@@ -55,19 +55,19 @@ state (EIP-6800), stateless validation (EIP-8025), and post-quantum cryptography
 
 | Package | Description | Status |
 |---------|-------------|--------|
-| `pkg/core` | Blockchain, state processor, block builder, validator, fee logic | Complete |
-| `pkg/core/types` | Header, Transaction (5 types), Receipt, Block, Account | Complete |
+| `pkg/core` | Blockchain, state processor, block builder, validator, fee logic, FOCIL, calldata gas | Complete |
+| `pkg/core/types` | Header, Transaction (5 types), Receipt, Block, Account, InclusionList | Complete |
 | `pkg/core/state` | StateDB interface, in-memory impl, trie-backed state | Complete |
-| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 19 precompiles, gas tables | Complete |
-| `pkg/core/rawdb` | FileDB with WAL, block/receipt/tx storage | Complete |
+| `pkg/core/vm` | EVM interpreter, 140+ opcodes, 19 precompiles, gas tables, EIP-4762 statelessness gas | Complete |
+| `pkg/core/rawdb` | FileDB with WAL, block/receipt/tx storage, EIP-4444 history expiry | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
-| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, KZG | Complete |
-| `pkg/engine` | Engine API server (V3-V6), forkchoice, payload building | Complete |
+| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, KZG, Banderwagon, IPA proofs | Complete |
+| `pkg/engine` | Engine API server (V3-V6), forkchoice, payload building, ePBS builder API | Complete |
 | `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
 | `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier | Framework |
 | `pkg/txpool` | Transaction pool: validation, replace-by-fee, eviction | Complete |
 | `pkg/rpc` | JSON-RPC server, 50+ eth_* methods, filters, subscriptions | Complete |
-| `pkg/trie` | Merkle Patricia Trie with proofs | Complete |
+| `pkg/trie` | MPT with proofs + Binary Merkle tree (EIP-7864), MPT migration | Complete |
 | `pkg/verkle` | Verkle tree types, key derivation (EIP-6800) | Stub |
 | `pkg/p2p` | TCP transport, devp2p handshake, peer management, server | In Progress |
 | `pkg/sync` | Full sync + snap sync pipeline, header-first strategy | Framework |
@@ -110,22 +110,34 @@ go test ./...
 | 152 | BLAKE2 Precompile | Precompile 0x09 |
 | 196/197 | BN254 Pairing | Precompiles 0x06-0x08 |
 | 4844 | KZG Point Evaluation | BLS12-381 pairing-based verification |
+| 7706 | Multidimensional Gas | Separate calldata gas dimension, header fields, EIP-1559 mechanics |
+| 7547 | FOCIL Inclusion Lists | Inclusion list types, validation, engine API integration |
+| 4444 | History Expiry | Configurable retention window, block body/receipt pruning |
+| 4762 | Statelessness Gas | Witness-aware gas accounting for state access operations |
+
+### Substantially Implemented
+
+| EIP | Name | Details |
+|-----|------|---------|
+| 6800 | Verkle Trees | Banderwagon curve, IPA proofs, Pedersen commitments, types+keys |
+| 7732 | Enshrined PBS | Builder types, registry, bid management, commitment/reveal, API |
+| 7864 | Binary Merkle Tree | SHA-256 hashing, iterator, proofs, verification, MPT migration |
 
 ### Partially Implemented
 
 | EIP | Name | Gap |
 |-----|------|-----|
-| 6800 | Verkle Trees | Placeholder hashes; Banderwagon curve not implemented |
-| 7732 | Enshrined PBS | Engine API types defined; builder consensus partial |
 | 8025 | Execution Proofs | Witness collector complete; verification framework only |
 
 ### Planned
 
 | EIP | Name | Target Phase |
 |-----|------|-------------|
-| 4762 | Statelessness Gas | Hogota |
 | 8079 | EXECUTE Precompile | K+ |
-| 4444 | History Expiry | Hogota |
+| 8007 | Glamsterdam Gas Repricings | Glamsterdam |
+| 8037 | State Growth/Access Separation | Hogota |
+| 7778 | Remove Gas Refunds | Glamsterdam |
+| 8125 | Temporary Storage | Hogota |
 
 ## Engine API
 
