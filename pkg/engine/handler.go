@@ -114,6 +114,14 @@ func (api *EngineAPI) dispatch(method string, params []json.RawMessage) (any, *j
 		return api.handleExchangeCapabilities(params)
 	case "engine_getClientVersionV1":
 		return api.handleGetClientVersionV1(params)
+	case "engine_submitBuilderBidV1":
+		return api.handleSubmitBuilderBidV1(params)
+	case "engine_getBuilderBidsV1":
+		return api.handleGetBuilderBidsV1(params)
+	case "engine_newInclusionListV1":
+		return api.handleNewInclusionListV1(params)
+	case "engine_getInclusionListV1":
+		return api.handleGetInclusionListV1(params)
 	default:
 		return nil, &jsonrpcError{
 			Code:    methodNotFoundCode,

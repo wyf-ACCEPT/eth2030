@@ -32,6 +32,11 @@ type BuildBlockAttributes struct {
 	Withdrawals  []*types.Withdrawal
 	BeaconRoot   *types.Hash
 	GasLimit     uint64
+
+	// InclusionListTxs contains RLP-encoded transactions from inclusion lists
+	// that MUST be included in this block (EIP-7547/7805 FOCIL).
+	// These transactions are applied before pool transactions.
+	InclusionListTxs [][]byte
 }
 
 // BlockBuilder constructs new blocks from pending transactions.
@@ -150,6 +155,22 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		header.BlobGasUsed = &blobGasUsed // updated later
 	}
 
+	// EIP-7706: compute calldata gas fields when Glamsterdan is active.
+	glamActive := b.config != nil && b.config.IsGlamsterdan(header.Time)
+	var calldataGasUsed uint64
+	if glamActive {
+		var pCalldataExcess, pCalldataUsed uint64
+		if parent.CalldataExcessGas != nil {
+			pCalldataExcess = *parent.CalldataExcessGas
+		}
+		if parent.CalldataGasUsed != nil {
+			pCalldataUsed = *parent.CalldataGasUsed
+		}
+		calldataExcessGas := CalcCalldataExcessGas(pCalldataExcess, pCalldataUsed, parent.GasLimit)
+		header.CalldataExcessGas = &calldataExcessGas
+		header.CalldataGasUsed = &calldataGasUsed // updated later
+	}
+
 	// Get state at parent block.
 	statedb := b.state
 	if statedb == nil && b.chain != nil {
@@ -199,6 +220,68 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 		gasUsed  uint64
 	)
 
+	txIndex := 0
+
+	// EIP-7547/7805 FOCIL: process inclusion list transactions first.
+	// These MUST be included before any pool transactions.
+	ilTxHashes := make(map[types.Hash]struct{})
+	if len(attrs.InclusionListTxs) > 0 {
+		for _, ilTxBytes := range attrs.InclusionListTxs {
+			ilTx, err := types.DecodeTxRLP(ilTxBytes)
+			if err != nil {
+				continue
+			}
+			ilTxHashes[ilTx.Hash()] = struct{}{}
+
+			// Check gas pool.
+			if gasPool.Gas() < ilTx.Gas() {
+				continue
+			}
+			// Check base fee.
+			if header.BaseFee != nil && ilTx.GasFeeCap() != nil {
+				if ilTx.GasFeeCap().Cmp(header.BaseFee) < 0 {
+					continue
+				}
+			}
+
+			statedb.SetTxContext(ilTx.Hash(), txIndex)
+
+			var (
+				preBalances map[types.Address]*big.Int
+				preNonces   map[types.Address]uint64
+			)
+			if balActive {
+				preBalances, preNonces = capturePreState(statedb, ilTx)
+			}
+
+			snap := statedb.Snapshot()
+			receipt, used, applyErr := ApplyTransaction(b.config, statedb, header, ilTx, gasPool)
+			if applyErr != nil {
+				statedb.RevertToSnapshot(snap)
+				continue
+			}
+
+			txs = append(txs, ilTx)
+			receipts = append(receipts, receipt)
+			gasUsed += used
+
+			if ilTx.Type() == types.BlobTxType && cancunActive {
+				blobGasUsed += ilTx.BlobGas()
+			}
+
+			if balActive {
+				tracker := bal.NewTracker()
+				populateTracker(tracker, statedb, preBalances, preNonces)
+				txBAL := tracker.Build(uint64(txIndex + 1))
+				for _, entry := range txBAL.Entries {
+					blockBAL.AddEntry(entry)
+				}
+			}
+
+			txIndex++
+		}
+	}
+
 	// Collect pending transactions from pool.
 	var pendingTxs []*types.Transaction
 	if b.txPool != nil {
@@ -211,8 +294,11 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 	// Process regular transactions followed by blob transactions.
 	allSorted := append(regularTxs, blobTxs...)
 
-	txIndex := 0
 	for _, tx := range allSorted {
+		// Skip transactions already included from the inclusion list.
+		if _, isIL := ilTxHashes[tx.Hash()]; isIL {
+			continue
+		}
 		// Check if transaction meets base fee requirement.
 		if header.BaseFee != nil && tx.GasFeeCap() != nil {
 			if tx.GasFeeCap().Cmp(header.BaseFee) < 0 {
@@ -290,6 +376,14 @@ func (b *BlockBuilder) BuildBlock(parent *types.Header, attrs *BuildBlockAttribu
 	// EIP-4844: set blob gas used in header.
 	if cancunActive {
 		header.BlobGasUsed = &blobGasUsed
+	}
+
+	// EIP-7706: compute and set calldata gas used in header.
+	if glamActive {
+		for _, tx := range txs {
+			calldataGasUsed += tx.CalldataGas()
+		}
+		header.CalldataGasUsed = &calldataGasUsed
 	}
 
 	// Compute block-level bloom filter from all receipts.
@@ -417,6 +511,22 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 		header.BlobGasUsed = &blobGasUsed
 	}
 
+	// EIP-7706: compute calldata gas fields when Glamsterdan is active.
+	glamActiveLegacy := b.config != nil && b.config.IsGlamsterdan(header.Time)
+	var calldataGasUsedLegacy uint64
+	if glamActiveLegacy {
+		var pCalldataExcess, pCalldataUsed uint64
+		if parent.CalldataExcessGas != nil {
+			pCalldataExcess = *parent.CalldataExcessGas
+		}
+		if parent.CalldataGasUsed != nil {
+			pCalldataUsed = *parent.CalldataGasUsed
+		}
+		calldataExcessGas := CalcCalldataExcessGas(pCalldataExcess, pCalldataUsed, parent.GasLimit)
+		header.CalldataExcessGas = &calldataExcessGas
+		header.CalldataGasUsed = &calldataGasUsedLegacy
+	}
+
 	var (
 		txs      []*types.Transaction
 		receipts []*types.Receipt
@@ -500,6 +610,14 @@ func (b *BlockBuilder) BuildBlockLegacy(parent *types.Header, txsByPrice []*type
 	header.GasUsed = gasUsed
 	if cancunActive {
 		header.BlobGasUsed = &blobGasUsed
+	}
+
+	// EIP-7706: compute and set calldata gas used in header.
+	if glamActiveLegacy {
+		for _, tx := range txs {
+			calldataGasUsedLegacy += tx.CalldataGas()
+		}
+		header.CalldataGasUsed = &calldataGasUsedLegacy
 	}
 
 	// Compute block-level bloom filter from all receipts.

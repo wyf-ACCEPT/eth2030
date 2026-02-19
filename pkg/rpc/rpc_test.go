@@ -19,17 +19,18 @@ var errCallFailed = errors.New("execution reverted")
 
 // mockBackend implements Backend for testing.
 type mockBackend struct {
-	chainID      *big.Int
-	headers      map[uint64]*types.Header
-	blocks       map[uint64]*types.Block
-	statedb      *state.MemoryStateDB
-	transactions map[types.Hash]*mockTxInfo
-	receipts     map[types.Hash][]*types.Receipt
-	logs         map[types.Hash][]*types.Log
-	sentTxs      []*types.Transaction
-	callResult   []byte
-	callGasUsed  uint64
-	callErr      error
+	chainID       *big.Int
+	headers       map[uint64]*types.Header
+	blocks        map[uint64]*types.Block
+	statedb       *state.MemoryStateDB
+	transactions  map[types.Hash]*mockTxInfo
+	receipts      map[types.Hash][]*types.Receipt
+	logs          map[types.Hash][]*types.Log
+	sentTxs       []*types.Transaction
+	callResult    []byte
+	callGasUsed   uint64
+	callErr       error
+	historyOldest uint64
 }
 
 type mockTxInfo struct {
@@ -157,6 +158,10 @@ func (b *mockBackend) GetProof(addr types.Address, storageKeys []types.Hash, blo
 func (b *mockBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error) {
 	// Return an empty tracer for mock purposes.
 	return vm.NewStructLogTracer(), nil
+}
+
+func (b *mockBackend) HistoryOldestBlock() uint64 {
+	return b.historyOldest
 }
 
 func callRPC(t *testing.T, api *EthAPI, method string, params ...interface{}) *Response {

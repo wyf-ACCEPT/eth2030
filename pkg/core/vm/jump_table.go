@@ -417,6 +417,39 @@ func NewPragueJumpTable() JumpTable {
 	return tbl
 }
 
+// NewVerkleJumpTable returns the Verkle fork jump table.
+// EIP-4762: statelessness gas cost changes, replacing EIP-2929 warm/cold
+// with witness-based gas accounting.
+func NewVerkleJumpTable() JumpTable {
+	tbl := NewGlamsterdanJumpTable()
+
+	// EIP-4762: replace EIP-2929 gas with witness-based gas for state access.
+	// SLOAD: charge witness access gas (branch + chunk) instead of warm/cold.
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: 0, dynamicGas: gasSloadEIP4762, minStack: 1, maxStack: 1024}
+	// SSTORE: charge witness access + write gas (no EIP-2200 schedule).
+	tbl[SSTORE] = &operation{execute: opSstore, constantGas: 0, dynamicGas: gasSstoreEIP4762, minStack: 2, maxStack: 1024, writes: true}
+	// BALANCE: witness access to basic data leaf.
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: 0, dynamicGas: gasBalanceEIP4762, minStack: 1, maxStack: 1024}
+	// EXTCODESIZE: witness access to basic data leaf.
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: 0, dynamicGas: gasExtCodeSizeEIP4762, minStack: 1, maxStack: 1024}
+	// EXTCODECOPY: witness access + code chunk access.
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: 0, dynamicGas: gasExtCodeCopyEIP4762, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy}
+	// EXTCODEHASH: witness access to code hash leaf.
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: 0, dynamicGas: gasExtCodeHashEIP4762, minStack: 1, maxStack: 1024}
+	// CALL: witness access + write for value transfers.
+	tbl[CALL] = &operation{execute: opCall, constantGas: 0, dynamicGas: gasCallEIP4762, minStack: 7, maxStack: 1024, memorySize: memoryCall}
+	// CALLCODE: witness access (value sending costs removed).
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: 0, dynamicGas: gasCallCodeEIP4762, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
+	// DELEGATECALL: witness access.
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: 0, dynamicGas: gasDelegateCallEIP4762, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
+	// STATICCALL: witness access.
+	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: 0, dynamicGas: gasStaticCallEIP4762, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
+	// SELFDESTRUCT: witness access + write.
+	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: 0, dynamicGas: gasSelfdestructEIP4762, minStack: 1, maxStack: 1024, halts: true, writes: true}
+
+	return tbl
+}
+
 // NewGlamsterdanJumpTable returns the Glamsterdan fork jump table.
 // EIP-7904: compute gas cost increases for underpriced opcodes.
 func NewGlamsterdanJumpTable() JumpTable {

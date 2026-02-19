@@ -44,4 +44,9 @@ type Backend interface {
 
 	// Tracing
 	TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error)
+
+	// History availability (EIP-4444)
+	// HistoryOldestBlock returns the oldest block number for which bodies
+	// and receipts are still available. Returns 0 if no pruning occurred.
+	HistoryOldestBlock() uint64
 }

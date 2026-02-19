@@ -28,6 +28,10 @@ type Receipt struct {
 	BlobGasUsed  uint64
 	BlobGasPrice *big.Int
 
+	// EIP-7706 calldata gas fields
+	CalldataGasUsed  uint64
+	CalldataGasPrice *big.Int
+
 	// Inclusion information
 	BlockHash        Hash
 	BlockNumber      *big.Int

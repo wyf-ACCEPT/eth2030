@@ -142,6 +142,13 @@ func (api *EthAPI) HandleRequest(req *Request) *Response {
 	}
 }
 
+// historyPruned returns true if the given block number's body/receipt data
+// has been pruned per EIP-4444.
+func (api *EthAPI) historyPruned(blockNum uint64) bool {
+	oldest := api.backend.HistoryOldestBlock()
+	return oldest > 0 && blockNum < oldest
+}
+
 func (api *EthAPI) chainID(req *Request) *Response {
 	id := api.backend.ChainID()
 	return successResponse(req.ID, encodeBigInt(id))
@@ -177,6 +184,11 @@ func (api *EthAPI) getBlockByNumber(req *Request) *Response {
 	}
 
 	if fullTx {
+		// EIP-4444: check if block body has been pruned.
+		if api.historyPruned(header.Number.Uint64()) {
+			return errorResponse(req.ID, ErrCodeHistoryPruned,
+				"historical block body pruned (EIP-4444)")
+		}
 		block := api.backend.BlockByNumber(bn)
 		if block != nil {
 			return successResponse(req.ID, FormatBlock(block, true))
@@ -208,6 +220,11 @@ func (api *EthAPI) getBlockByHash(req *Request) *Response {
 	}
 
 	if fullTx {
+		// EIP-4444: check if block body has been pruned.
+		if api.historyPruned(header.Number.Uint64()) {
+			return errorResponse(req.ID, ErrCodeHistoryPruned,
+				"historical block body pruned (EIP-4444)")
+		}
 		block := api.backend.BlockByHash(hash)
 		if block != nil {
 			return successResponse(req.ID, FormatBlock(block, true))

@@ -10,17 +10,25 @@ import (
 func genesisHeader() *types.Header {
 	blobGasUsed := uint64(0)
 	excessBlobGas := uint64(0)
+	calldataGasUsed := uint64(0)
+	calldataExcessGas := uint64(0)
 	emptyWHash := types.EmptyRootHash
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
 	return &types.Header{
-		Number:          big.NewInt(0),
-		GasLimit:        30000000,
-		GasUsed:         0,
-		Time:            0,
-		Difficulty:      new(big.Int),
-		BaseFee:         big.NewInt(1000000000),
-		WithdrawalsHash: &emptyWHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		Number:            big.NewInt(0),
+		GasLimit:          30000000,
+		GasUsed:           0,
+		Time:              0,
+		Difficulty:        new(big.Int),
+		BaseFee:           big.NewInt(1000000000),
+		WithdrawalsHash:   &emptyWHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 }
 
@@ -35,17 +43,36 @@ func nextHeader(parent *types.Header) *types.Header {
 	}
 	excessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
 	emptyWHash := types.EmptyRootHash
+
+	// EIP-7706: compute calldata gas fields.
+	calldataGasUsed := uint64(0)
+	var parentCalldataExcess, parentCalldataUsed uint64
+	if parent.CalldataExcessGas != nil {
+		parentCalldataExcess = *parent.CalldataExcessGas
+	}
+	if parent.CalldataGasUsed != nil {
+		parentCalldataUsed = *parent.CalldataGasUsed
+	}
+	calldataExcessGas := CalcCalldataExcessGas(parentCalldataExcess, parentCalldataUsed, parent.GasLimit)
+
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
+
 	return &types.Header{
-		ParentHash:      parent.Hash(),
-		Number:          new(big.Int).Add(parent.Number, big.NewInt(1)),
-		GasLimit:        parent.GasLimit,
-		GasUsed:         parent.GasLimit / 2, // exactly at target
-		Time:            parent.Time + 12,
-		Difficulty:      new(big.Int),
-		BaseFee:         CalcBaseFee(parent),
-		WithdrawalsHash: &emptyWHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		ParentHash:        parent.Hash(),
+		Number:            new(big.Int).Add(parent.Number, big.NewInt(1)),
+		GasLimit:          parent.GasLimit,
+		GasUsed:           parent.GasLimit / 2, // exactly at target
+		Time:              parent.Time + 12,
+		Difficulty:        new(big.Int),
+		BaseFee:           CalcBaseFee(parent),
+		WithdrawalsHash:   &emptyWHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 }
 

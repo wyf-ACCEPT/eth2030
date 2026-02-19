@@ -10,15 +10,23 @@ import (
 func makeValidParent() *types.Header {
 	blobGasUsed := uint64(0)
 	excessBlobGas := uint64(0)
+	calldataGasUsed := uint64(0)
+	calldataExcessGas := uint64(0)
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
 	return &types.Header{
-		Number:        big.NewInt(100),
-		GasLimit:      30000000,
-		GasUsed:       15000000,
-		Time:          1000,
-		Difficulty:    new(big.Int),
-		BaseFee:       big.NewInt(1000000000), // 1 Gwei
-		BlobGasUsed:   &blobGasUsed,
-		ExcessBlobGas: &excessBlobGas,
+		Number:            big.NewInt(100),
+		GasLimit:          30000000,
+		GasUsed:           15000000,
+		Time:              1000,
+		Difficulty:        new(big.Int),
+		BaseFee:           big.NewInt(1000000000), // 1 Gwei
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 }
 
@@ -33,16 +41,35 @@ func makeValidChild(parent *types.Header) *types.Header {
 		parentUsed = *parent.BlobGasUsed
 	}
 	excessBlobGas := CalcExcessBlobGas(parentExcess, parentUsed)
+
+	// EIP-7706: calldata gas fields.
+	calldataGasUsed := uint64(0)
+	var pCalldataExcess, pCalldataUsed uint64
+	if parent.CalldataExcessGas != nil {
+		pCalldataExcess = *parent.CalldataExcessGas
+	}
+	if parent.CalldataGasUsed != nil {
+		pCalldataUsed = *parent.CalldataGasUsed
+	}
+	calldataExcessGas := CalcCalldataExcessGas(pCalldataExcess, pCalldataUsed, parent.GasLimit)
+
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
+
 	return &types.Header{
-		ParentHash:    parent.Hash(),
-		Number:        new(big.Int).Add(parent.Number, big.NewInt(1)),
-		GasLimit:      parent.GasLimit, // same gas limit (within bounds)
-		GasUsed:       10000000,
-		Time:          parent.Time + 12,
-		Difficulty:    new(big.Int),
-		BaseFee:       CalcBaseFee(parent),
-		BlobGasUsed:   &blobGasUsed,
-		ExcessBlobGas: &excessBlobGas,
+		ParentHash:        parent.Hash(),
+		Number:            new(big.Int).Add(parent.Number, big.NewInt(1)),
+		GasLimit:          parent.GasLimit, // same gas limit (within bounds)
+		GasUsed:           10000000,
+		Time:              parent.Time + 12,
+		Difficulty:        new(big.Int),
+		BaseFee:           CalcBaseFee(parent),
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 }
 

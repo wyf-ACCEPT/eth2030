@@ -96,6 +96,14 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 	}
 
 	var cumulativeGasUsed uint64
+	var cumulativeCalldataGasUsed uint64
+
+	// EIP-7706: compute calldata gas limit for this block.
+	calldataGasActive := p.config != nil && p.config.IsGlamsterdan(header.Time) && header.CalldataExcessGas != nil
+	var calldataGasLimit uint64
+	if calldataGasActive {
+		calldataGasLimit = CalcCalldataGasLimit(header.GasLimit)
+	}
 
 	for i, tx := range block.Transactions() {
 		statedb.SetTxContext(tx.Hash(), i)
@@ -117,6 +125,16 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 		// Track cumulative gas across all transactions in the block.
 		cumulativeGasUsed += usedGas
 		receipt.CumulativeGasUsed = cumulativeGasUsed
+
+		// EIP-7706: track calldata gas and enforce the per-block limit.
+		if calldataGasActive {
+			txCalldataGas := tx.CalldataGas()
+			if cumulativeCalldataGasUsed+txCalldataGas > calldataGasLimit {
+				return nil, fmt.Errorf("calldata gas limit exceeded: used %d + tx %d > limit %d",
+					cumulativeCalldataGasUsed, txCalldataGas, calldataGasLimit)
+			}
+			cumulativeCalldataGasUsed += txCalldataGas
+		}
 		receipt.TransactionIndex = uint(i)
 		receipt.BlockHash = block.Hash()
 		receipt.BlockNumber = new(big.Int).Set(header.Number)
@@ -452,6 +470,12 @@ func applyTransaction(config *ChainConfig, getHash vm.GetHashFunc, statedb state
 		}
 	}
 
+	// Set EIP-7706 calldata gas fields.
+	if calldataGas := tx.CalldataGas(); calldataGas > 0 && header.CalldataExcessGas != nil {
+		receipt.CalldataGasUsed = calldataGas
+		receipt.CalldataGasPrice = CalcCalldataBaseFeeFromHeader(header)
+	}
+
 	// Collect logs from state and compute bloom filter.
 	receipt.Logs = statedb.GetLogs(tx.Hash())
 	receipt.Bloom = types.LogsBloom(receipt.Logs)
@@ -559,16 +583,28 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	gasPrice := msgEffectiveGasPrice(msg, header.BaseFee)
 	gasCost := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(msg.GasLimit))
 
-	// Check total cost: value + gasCost
+	// EIP-7706: compute calldata gas cost separately.
+	var calldataGasCost *big.Int
+	if config != nil && config.IsGlamsterdan(header.Time) && header.CalldataExcessGas != nil {
+		calldataBaseFee := CalcCalldataBaseFeeFromHeader(header)
+		calldataGas := types.CalldataTokenGas(msg.Data)
+		calldataGasCost = CalldataGasCost(calldataGas, calldataBaseFee)
+	} else {
+		calldataGasCost = new(big.Int)
+	}
+
+	// Check total cost: value + gasCost + calldataGasCost
 	totalCost := new(big.Int).Add(msg.Value, gasCost)
+	totalCost.Add(totalCost, calldataGasCost)
 	balance := statedb.GetBalance(msg.From)
 	if balance.Cmp(totalCost) < 0 {
 		gp.AddGas(msg.GasLimit)
 		return nil, fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientBalance, msg.From, balance, totalCost)
 	}
 
-	// Deduct gas cost from sender
-	statedb.SubBalance(msg.From, gasCost)
+	// Deduct gas cost + calldata gas cost from sender
+	deduction := new(big.Int).Add(gasCost, calldataGasCost)
+	statedb.SubBalance(msg.From, deduction)
 
 	isCreate := msg.To == nil
 

@@ -155,6 +155,12 @@ func (api *EthAPI) getLogs(req *Request) *Response {
 		}
 	}
 
+	// EIP-4444: check if the requested range includes pruned blocks.
+	if api.historyPruned(fromBlock) {
+		return errorResponse(req.ID, ErrCodeHistoryPruned,
+			"historical logs pruned (EIP-4444)")
+	}
+
 	for blockNum := fromBlock; blockNum <= toBlock; blockNum++ {
 		header := api.backend.HeaderByNumber(BlockNumber(blockNum))
 		if header == nil {
@@ -192,6 +198,13 @@ func (api *EthAPI) getBlockReceipts(req *Request) *Response {
 	}
 
 	blockNum := header.Number.Uint64()
+
+	// EIP-4444: check if receipts have been pruned.
+	if api.historyPruned(blockNum) {
+		return errorResponse(req.ID, ErrCodeHistoryPruned,
+			"historical receipts pruned (EIP-4444)")
+	}
+
 	receipts := api.backend.GetBlockReceipts(blockNum)
 	if receipts == nil {
 		return successResponse(req.ID, []*RPCReceipt{})

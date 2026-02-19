@@ -839,6 +839,29 @@ func (bc *Blockchain) GetTransactionLookup(txHash types.Hash) (blockHash types.H
 	return entry.BlockHash, entry.BlockNumber, entry.TxIndex, true
 }
 
+// HistoryOldestBlock returns the oldest block number for which block bodies
+// and receipts are available. Returns 0 if no history pruning has occurred.
+// Used by the RPC layer to detect EIP-4444 pruned data.
+func (bc *Blockchain) HistoryOldestBlock() uint64 {
+	oldest, _ := rawdb.ReadHistoryOldest(bc.db)
+	return oldest
+}
+
+// PruneHistory prunes block bodies and receipts older than
+// (head - retention) blocks. Headers are preserved. Returns the number
+// of blocks pruned.
+func (bc *Blockchain) PruneHistory(retention uint64) (uint64, error) {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+
+	if bc.currentBlock == nil {
+		return 0, nil
+	}
+	head := bc.currentBlock.NumberU64()
+	pruned, _, err := rawdb.PruneHistory(bc.db, head, retention)
+	return pruned, err
+}
+
 // writeReceipts encodes and persists receipts for a block.
 func (bc *Blockchain) writeReceipts(number uint64, hash types.Hash, receipts []*types.Receipt) {
 	if len(receipts) == 0 {
@@ -866,18 +889,25 @@ func (bc *Blockchain) writeTxLookups(txs []*types.Transaction, blockNumber uint6
 func makeGenesis(gasLimit uint64, baseFee *big.Int) *types.Block {
 	blobGasUsed := uint64(0)
 	excessBlobGas := uint64(0)
+	calldataGasUsed := uint64(0)
+	calldataExcessGas := uint64(0)
 	emptyWithdrawalsHash := types.EmptyRootHash
+	emptyRoot := types.EmptyRootHash
 	header := &types.Header{
-		Number:          big.NewInt(0),
-		GasLimit:        gasLimit,
-		GasUsed:         0,
-		Time:            0,
-		Difficulty:      new(big.Int),
-		BaseFee:         baseFee,
-		UncleHash:       EmptyUncleHash,
-		WithdrawalsHash: &emptyWithdrawalsHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		Number:            big.NewInt(0),
+		GasLimit:          gasLimit,
+		GasUsed:           0,
+		Time:              0,
+		Difficulty:        new(big.Int),
+		BaseFee:           baseFee,
+		UncleHash:         EmptyUncleHash,
+		WithdrawalsHash:   &emptyWithdrawalsHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyRoot,
+		RequestsHash:      &emptyRoot,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 	return types.NewBlock(header, &types.Body{Withdrawals: []*types.Withdrawal{}})
 }

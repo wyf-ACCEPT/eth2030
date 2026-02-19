@@ -24,18 +24,26 @@ import (
 func makeGenesisBlock() (*types.Block, *state.MemoryStateDB) {
 	blobGasUsed := uint64(0)
 	excessBlobGas := uint64(0)
+	calldataGasUsed := uint64(0)
+	calldataExcessGas := uint64(0)
 	emptyWHash := types.EmptyRootHash
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
 	header := &types.Header{
-		Number:          big.NewInt(0),
-		GasLimit:        30000000,
-		GasUsed:         0,
-		Time:            0,
-		Difficulty:      new(big.Int),
-		BaseFee:         big.NewInt(1000000000),
-		UncleHash:       core.EmptyUncleHash,
-		WithdrawalsHash: &emptyWHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		Number:            big.NewInt(0),
+		GasLimit:          30000000,
+		GasUsed:           0,
+		Time:              0,
+		Difficulty:        new(big.Int),
+		BaseFee:           big.NewInt(1000000000),
+		UncleHash:         core.EmptyUncleHash,
+		WithdrawalsHash:   &emptyWHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 	statedb := state.NewMemoryStateDB()
 	// Fund a sender for transactions.
@@ -56,18 +64,34 @@ func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB,
 		parentUsed = *parentHeader.BlobGasUsed
 	}
 	excessBlobGas := core.CalcExcessBlobGas(parentExcess, parentUsed)
+	// EIP-7706: compute calldata excess gas from parent.
+	var parentCalldataExcess, parentCalldataUsed uint64
+	if parentHeader.CalldataExcessGas != nil {
+		parentCalldataExcess = *parentHeader.CalldataExcessGas
+	}
+	if parentHeader.CalldataGasUsed != nil {
+		parentCalldataUsed = *parentHeader.CalldataGasUsed
+	}
+	calldataExcessGas := core.CalcCalldataExcessGas(parentCalldataExcess, parentCalldataUsed, parentHeader.GasLimit)
+	calldataGasUsed := uint64(0)
 	emptyWHash := types.EmptyRootHash
+	emptyBeaconRoot2 := types.EmptyRootHash
+	emptyRequestsHash2 := types.EmptyRootHash
 	header := &types.Header{
-		ParentHash:      parent.Hash(),
-		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:        parentHeader.GasLimit,
-		Time:            parentHeader.Time + 12,
-		Difficulty:      new(big.Int),
-		BaseFee:         core.CalcBaseFee(parentHeader),
-		UncleHash:       core.EmptyUncleHash,
-		WithdrawalsHash: &emptyWHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		ParentHash:        parent.Hash(),
+		Number:            new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:          parentHeader.GasLimit,
+		Time:              parentHeader.Time + 12,
+		Difficulty:        new(big.Int),
+		BaseFee:           core.CalcBaseFee(parentHeader),
+		UncleHash:         core.EmptyUncleHash,
+		WithdrawalsHash:   &emptyWHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot2,
+		RequestsHash:      &emptyRequestsHash2,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 
 	body := &types.Body{
@@ -86,6 +110,12 @@ func buildBlock(t *testing.T, parent *types.Block, statedb *state.MemoryStateDB,
 			gasUsed += r.GasUsed
 		}
 		header.GasUsed = gasUsed
+		// EIP-7706: compute calldata gas used.
+		var cdGasUsed uint64
+		for _, tx := range txs {
+			cdGasUsed += tx.CalldataGas()
+		}
+		*header.CalldataGasUsed = cdGasUsed
 		header.Bloom = types.CreateBloom(result.Receipts)
 		header.ReceiptHash = core.DeriveReceiptsRoot(result.Receipts)
 		header.Root = statedb.GetRoot()
@@ -337,6 +367,10 @@ func (b *blockchainBackend) GetProof(addr types.Address, storageKeys []types.Has
 
 func (b *blockchainBackend) TraceTransaction(txHash types.Hash) (*vm.StructLogTracer, error) {
 	return nil, fmt.Errorf("not implemented")
+}
+
+func (b *blockchainBackend) HistoryOldestBlock() uint64 {
+	return 0
 }
 
 func TestRPCE2E_BlockchainQueries(t *testing.T) {

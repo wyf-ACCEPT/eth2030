@@ -52,6 +52,12 @@ func (api *EthAPI) getTransactionReceipt(req *Request) *Response {
 		return successResponse(req.ID, nil)
 	}
 
+	// EIP-4444: check if receipt has been pruned.
+	if api.historyPruned(blockNum) {
+		return errorResponse(req.ID, ErrCodeHistoryPruned,
+			"historical receipt pruned (EIP-4444)")
+	}
+
 	// Get the block header for block hash
 	header := api.backend.HeaderByNumber(BlockNumber(blockNum))
 	if header == nil {

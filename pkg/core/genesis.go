@@ -115,6 +115,14 @@ func (g *Genesis) ToBlock() *types.Block {
 		head.RequestsHash = &emptyHash
 	}
 
+	// Glamsterdan / EIP-7706: calldata gas fields.
+	if g.Config != nil && g.Config.IsGlamsterdan(g.Timestamp) {
+		zero := uint64(0)
+		head.CalldataGasUsed = &zero
+		zero2 := uint64(0)
+		head.CalldataExcessGas = &zero2
+	}
+
 	return types.NewBlock(head, nil)
 }
 

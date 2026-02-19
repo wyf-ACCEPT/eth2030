@@ -229,5 +229,13 @@ func copyHeader(h *Header) *Header {
 		bah := *h.BlockAccessListHash
 		cpy.BlockAccessListHash = &bah
 	}
+	if h.CalldataGasUsed != nil {
+		cgu := *h.CalldataGasUsed
+		cpy.CalldataGasUsed = &cgu
+	}
+	if h.CalldataExcessGas != nil {
+		ceg := *h.CalldataExcessGas
+		cpy.CalldataExcessGas = &ceg
+	}
 	return &cpy
 }

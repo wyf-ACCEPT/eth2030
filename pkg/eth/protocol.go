@@ -43,4 +43,9 @@ type StatusInfo struct {
 	Head            types.Hash
 	Genesis         types.Hash
 	ForkID          p2p.ForkID
+
+	// EIP-4444: advertise available history range so peers know what data
+	// this node can serve. OldestBlock is the lowest block number for which
+	// bodies and receipts are available. Zero means no pruning has occurred.
+	OldestBlock uint64
 }

@@ -116,6 +116,7 @@ type EVM struct {
 	jumpTable   JumpTable
 	precompiles map[types.Address]PrecompiledContract
 	returnData  []byte // return data from the last CALL/CREATE
+	witnessGas  *WitnessGasTracker // EIP-4762: witness gas tracking (nil if not Verkle)
 }
 
 // NewEVM creates a new EVM instance.
@@ -149,6 +150,17 @@ func (evm *EVM) SetPrecompiles(p map[types.Address]PrecompiledContract) {
 	evm.precompiles = p
 }
 
+// SetWitnessGasTracker enables EIP-4762 witness gas tracking. When set, the
+// Verkle jump table charges gas based on witness size for state accesses.
+func (evm *EVM) SetWitnessGasTracker(t *WitnessGasTracker) {
+	evm.witnessGas = t
+}
+
+// GetWitnessGasTracker returns the current witness gas tracker (may be nil).
+func (evm *EVM) GetWitnessGasTracker() *WitnessGasTracker {
+	return evm.witnessGas
+}
+
 // precompile returns the precompiled contract at addr, falling back to the
 // default Cancun precompile set if no custom map has been set.
 func (evm *EVM) precompile(addr types.Address) (PrecompiledContract, bool) {
@@ -175,6 +187,7 @@ func runPrecompile(p PrecompiledContract, input []byte, gas uint64) ([]byte, uin
 // the correct jump table. The caller (processor) converts ChainConfig.Rules
 // into this struct to avoid a circular import.
 type ForkRules struct {
+	IsVerkle         bool // EIP-4762: statelessness gas cost changes
 	IsGlamsterdan    bool
 	IsPrague         bool
 	IsCancun         bool
@@ -199,6 +212,8 @@ func SelectPrecompiles(rules ForkRules) map[types.Address]PrecompiledContract {
 // SelectJumpTable returns the correct jump table for the given fork rules.
 func SelectJumpTable(rules ForkRules) JumpTable {
 	switch {
+	case rules.IsVerkle:
+		return NewVerkleJumpTable()
 	case rules.IsGlamsterdan:
 		return NewGlamsterdanJumpTable()
 	case rules.IsPrague:

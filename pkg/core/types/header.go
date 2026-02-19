@@ -43,6 +43,10 @@ type Header struct {
 	// EIP-7928: Block-level access list
 	BlockAccessListHash *Hash
 
+	// EIP-7706: Separate gas type for calldata
+	CalldataGasUsed   *uint64
+	CalldataExcessGas *uint64
+
 	// Cache fields (not serialized).
 	hash atomic.Pointer[Hash]
 	size atomic.Uint64

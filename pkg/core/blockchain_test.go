@@ -60,18 +60,36 @@ func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *
 		pUsed = *parentHeader.BlobGasUsed
 	}
 	excessBlobGas := CalcExcessBlobGas(pExcess, pUsed)
+
+	// EIP-7706: compute calldata gas fields.
+	calldataGasUsed := uint64(0)
+	var pCalldataExcess, pCalldataUsed uint64
+	if parentHeader.CalldataExcessGas != nil {
+		pCalldataExcess = *parentHeader.CalldataExcessGas
+	}
+	if parentHeader.CalldataGasUsed != nil {
+		pCalldataUsed = *parentHeader.CalldataGasUsed
+	}
+	calldataExcessGas := CalcCalldataExcessGas(pCalldataExcess, pCalldataUsed, parentHeader.GasLimit)
+
 	emptyWHash := types.EmptyRootHash
+	emptyBeaconRoot := types.EmptyRootHash
+	emptyRequestsHash := types.EmptyRootHash
 	header := &types.Header{
-		ParentHash:      parent.Hash(),
-		Number:          new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
-		GasLimit:        parentHeader.GasLimit,
-		Time:            parentHeader.Time + 12,
-		Difficulty:      new(big.Int),
-		BaseFee:         CalcBaseFee(parentHeader),
-		UncleHash:       EmptyUncleHash,
-		WithdrawalsHash: &emptyWHash,
-		BlobGasUsed:     &blobGasUsed,
-		ExcessBlobGas:   &excessBlobGas,
+		ParentHash:        parent.Hash(),
+		Number:            new(big.Int).Add(parentHeader.Number, big.NewInt(1)),
+		GasLimit:          parentHeader.GasLimit,
+		Time:              parentHeader.Time + 12,
+		Difficulty:        new(big.Int),
+		BaseFee:           CalcBaseFee(parentHeader),
+		UncleHash:         EmptyUncleHash,
+		WithdrawalsHash:   &emptyWHash,
+		BlobGasUsed:       &blobGasUsed,
+		ExcessBlobGas:     &excessBlobGas,
+		ParentBeaconRoot:  &emptyBeaconRoot,
+		RequestsHash:      &emptyRequestsHash,
+		CalldataGasUsed:   &calldataGasUsed,
+		CalldataExcessGas: &calldataExcessGas,
 	}
 
 	body := &types.Body{
@@ -93,6 +111,13 @@ func makeBlockWithState(parent *types.Block, txs []*types.Transaction, statedb *
 			gasUsed += r.GasUsed
 		}
 		header.GasUsed = gasUsed
+
+		// Compute calldata gas used from transactions.
+		var cdGasUsed uint64
+		for _, tx := range txs {
+			cdGasUsed += tx.CalldataGas()
+		}
+		*header.CalldataGasUsed = cdGasUsed
 
 		// Set BAL hash.
 		if result.BlockAccessList != nil {

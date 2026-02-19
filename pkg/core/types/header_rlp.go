@@ -57,6 +57,13 @@ func (h *Header) EncodeRLP() ([]byte, error) {
 	if h.RequestsHash != nil {
 		items = append(items, *h.RequestsHash)
 	}
+	// EIP-7706: CalldataGasUsed, CalldataExcessGas
+	if h.CalldataGasUsed != nil {
+		items = append(items, *h.CalldataGasUsed)
+	}
+	if h.CalldataExcessGas != nil {
+		items = append(items, *h.CalldataExcessGas)
+	}
 
 	return encodeRLPList(items)
 }
@@ -188,6 +195,21 @@ func DecodeHeaderRLP(data []byte) (*Header, error) {
 			return nil, err
 		}
 		h.RequestsHash = &rh
+	}
+	// EIP-7706: CalldataGasUsed, CalldataExcessGas
+	if !s.AtListEnd() {
+		cgu, err := s.Uint64()
+		if err != nil {
+			return nil, err
+		}
+		h.CalldataGasUsed = &cgu
+	}
+	if !s.AtListEnd() {
+		ceg, err := s.Uint64()
+		if err != nil {
+			return nil, err
+		}
+		h.CalldataExcessGas = &ceg
 	}
 
 	if err := s.ListEnd(); err != nil {

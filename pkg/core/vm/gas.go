@@ -83,4 +83,18 @@ const (
 	GasPointEvalGlamsterdan       uint64 = 89363 // KZG point evaluation (was 50000)
 	GasECPairingConstGlamsterdan  uint64 = 45000 // bn256Pairing constant (unchanged)
 	GasECPairingPerPairGlamsterdan uint64 = 34103 // bn256Pairing per pair (was 34000)
+
+	// EIP-4762: Statelessness gas cost changes (Verkle).
+	// These costs reflect the witness size needed for state access proofs.
+	WitnessBranchCost uint64 = 1900 // accessing a new subtree (branch node)
+	WitnessChunkCost  uint64 = 200  // accessing a new leaf chunk
+	SubtreeEditCost   uint64 = 3000 // first write to a subtree
+	ChunkEditCost     uint64 = 500  // first write to a leaf chunk
+	ChunkFillCost     uint64 = 6200 // writing to a previously-empty leaf
+
+	// EIP-4762: reduced CREATE cost under Verkle.
+	GasCreateVerkle uint64 = 1000
+
+	// EIP-4762: code chunk size for witness gas accounting.
+	CodeChunkSize uint64 = 31
 )

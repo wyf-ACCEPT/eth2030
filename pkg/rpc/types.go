@@ -85,6 +85,10 @@ const (
 	ErrCodeMethodNotFound = -32601
 	ErrCodeInvalidParams  = -32602
 	ErrCodeInternal       = -32603
+
+	// ErrCodeHistoryPruned indicates the requested historical data has been
+	// pruned per EIP-4444.
+	ErrCodeHistoryPruned = -32000
 )
 
 // RPCBlock is the JSON representation of a block.

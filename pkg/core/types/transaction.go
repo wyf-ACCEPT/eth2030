@@ -453,6 +453,38 @@ func (tx *Transaction) BlobGas() uint64 {
 	return 0
 }
 
+// CalldataGas returns the EIP-7706 calldata gas for this transaction.
+// tokens = zero_bytes * 1 + nonzero_bytes * TOKENS_PER_NONZERO_BYTE
+// calldata_gas = tokens * CALLDATA_GAS_PER_TOKEN
+func (tx *Transaction) CalldataGas() uint64 {
+	return CalldataTokenGas(tx.inner.data())
+}
+
+// CalldataTokenGas computes the EIP-7706 calldata gas for raw data bytes.
+// tokens = zero_bytes + nonzero_bytes * 4
+// gas = tokens * 4
+func CalldataTokenGas(data []byte) uint64 {
+	var tokens uint64
+	for _, b := range data {
+		if b == 0 {
+			tokens++
+		} else {
+			tokens += CalldataTokensPerNonZeroByte
+		}
+	}
+	return tokens * CalldataGasPerToken
+}
+
+// EIP-7706 calldata gas constants.
+const (
+	// CalldataGasPerToken is the gas cost per calldata token.
+	CalldataGasPerToken uint64 = 4
+	// CalldataTokensPerNonZeroByte is the number of tokens per nonzero calldata byte.
+	CalldataTokensPerNonZeroByte uint64 = 4
+	// CalldataGasLimitRatio is the divisor for deriving calldata gas limit from execution gas limit.
+	CalldataGasLimitRatio uint64 = 4
+)
+
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 func (tx *Transaction) RawSignatureValues() (v, r, s *big.Int) {
 	switch t := tx.inner.(type) {

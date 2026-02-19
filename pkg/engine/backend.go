@@ -472,11 +472,12 @@ func (b *EngineBackend) ForkchoiceUpdatedV4(
 		parentHeader := parentBlock.Header()
 
 		block, receipts, err := builder.BuildBlock(parentHeader, &core.BuildBlockAttributes{
-			Timestamp:    attrs.Timestamp,
-			FeeRecipient: attrs.SuggestedFeeRecipient,
-			Random:       attrs.PrevRandao,
-			GasLimit:     parentHeader.GasLimit,
-			Withdrawals:  WithdrawalsToCore(attrs.Withdrawals),
+			Timestamp:        attrs.Timestamp,
+			FeeRecipient:     attrs.SuggestedFeeRecipient,
+			Random:           attrs.PrevRandao,
+			GasLimit:         parentHeader.GasLimit,
+			Withdrawals:      WithdrawalsToCore(attrs.Withdrawals),
+			InclusionListTxs: attrs.InclusionListTransactions,
 		})
 		if err != nil {
 			return ForkchoiceUpdatedResult{}, fmt.Errorf("payload build failed: %w", err)

@@ -164,6 +164,11 @@ func (c *ChainConfig) IsEIP7702(time uint64) bool {
 	return c.IsPrague(time)
 }
 
+// IsEIP7706 returns whether EIP-7706 (separate calldata gas) is active. Activated with Glamsterdan.
+func (c *ChainConfig) IsEIP7706(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
 // Rules returns a Rules struct for the given block number and timestamp,
 // providing boolean flags for quick fork checks.
 func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules {
@@ -193,6 +198,7 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsAmsterdam:      isMerge && c.IsAmsterdam(timestamp),
 		IsGlamsterdan:    isMerge && c.IsGlamsterdan(timestamp),
 		IsEIP7904:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7706:        isMerge && c.IsGlamsterdan(timestamp),
 	}
 }
 
@@ -208,7 +214,7 @@ type Rules struct {
 	IsCancun, IsEIP4844                                     bool
 	IsPrague, IsEIP7702                                     bool
 	IsAmsterdam                                             bool
-	IsGlamsterdan, IsEIP7904                                bool
+	IsGlamsterdan, IsEIP7904, IsEIP7706                     bool
 }
 
 func newUint64(v uint64) *uint64 { return &v }

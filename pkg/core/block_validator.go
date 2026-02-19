@@ -31,6 +31,7 @@ var (
 	ErrInvalidReceiptRoot     = errors.New("invalid receipt root")
 	ErrInvalidTxRoot          = errors.New("invalid transaction root")
 	ErrInvalidGasUsedTotal    = errors.New("invalid total gas used")
+	ErrInvalidCalldataGas     = errors.New("invalid calldata gas")
 )
 
 const (
@@ -127,6 +128,13 @@ func (v *BlockValidator) ValidateHeader(header, parent *types.Header) error {
 		}
 	}
 
+	// EIP-7706: verify calldata gas fields for Glamsterdan+ blocks.
+	if v.config != nil && v.config.IsGlamsterdan(header.Time) {
+		if err := ValidateCalldataGas(header, parent); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -155,6 +163,18 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 		}
 		if header.BlobGasUsed != nil && *header.BlobGasUsed != totalBlobGas {
 			return fmt.Errorf("blob gas used mismatch: header %d, computed %d", *header.BlobGasUsed, totalBlobGas)
+		}
+	}
+
+	// EIP-7706: validate calldata gas used matches the sum of calldata gas from transactions.
+	if v.config != nil && v.config.IsGlamsterdan(header.Time) {
+		var totalCalldataGas uint64
+		for _, tx := range block.Transactions() {
+			totalCalldataGas += tx.CalldataGas()
+		}
+		if header.CalldataGasUsed != nil && *header.CalldataGasUsed != totalCalldataGas {
+			return fmt.Errorf("%w: header %d, computed %d", ErrInvalidCalldataGas,
+				*header.CalldataGasUsed, totalCalldataGas)
 		}
 	}
 
@@ -286,6 +306,42 @@ func verifyGasLimit(parentGasLimit, headerGasLimit uint64) error {
 	if diff >= limit {
 		return fmt.Errorf("%w: change %d exceeds limit %d", ErrInvalidGasLimit, diff, limit)
 	}
+	return nil
+}
+
+// ValidateCalldataGas validates the EIP-7706 calldata gas header fields.
+// It checks that CalldataGasUsed and CalldataExcessGas are present and
+// that the excess gas matches the expected value derived from the parent.
+func ValidateCalldataGas(header, parent *types.Header) error {
+	// Post-Glamsterdan: calldata gas fields must be present.
+	if header.CalldataGasUsed == nil {
+		return fmt.Errorf("%w: missing CalldataGasUsed", ErrInvalidCalldataGas)
+	}
+	if header.CalldataExcessGas == nil {
+		return fmt.Errorf("%w: missing CalldataExcessGas", ErrInvalidCalldataGas)
+	}
+
+	// Verify calldata gas used does not exceed the calldata gas limit.
+	calldataGasLimit := CalcCalldataGasLimit(header.GasLimit)
+	if *header.CalldataGasUsed > calldataGasLimit {
+		return fmt.Errorf("%w: used %d > limit %d", ErrInvalidCalldataGas,
+			*header.CalldataGasUsed, calldataGasLimit)
+	}
+
+	// Verify excess calldata gas matches expected.
+	var parentExcess, parentUsed uint64
+	if parent.CalldataExcessGas != nil {
+		parentExcess = *parent.CalldataExcessGas
+	}
+	if parent.CalldataGasUsed != nil {
+		parentUsed = *parent.CalldataGasUsed
+	}
+	expectedExcess := CalcCalldataExcessGas(parentExcess, parentUsed, parent.GasLimit)
+	if *header.CalldataExcessGas != expectedExcess {
+		return fmt.Errorf("%w: excess gas want %d, got %d", ErrInvalidCalldataGas,
+			expectedExcess, *header.CalldataExcessGas)
+	}
+
 	return nil
 }
 

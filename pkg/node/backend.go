@@ -220,6 +220,11 @@ func (b *nodeBackend) EVMCall(from types.Address, to *types.Address, data []byte
 	return ret, gasLeft, err
 }
 
+func (b *nodeBackend) HistoryOldestBlock() uint64 {
+	// Delegate to the blockchain's configured history oldest block.
+	return b.node.blockchain.HistoryOldestBlock()
+}
+
 // TraceTransaction re-executes a transaction with a StructLogTracer attached.
 // It looks up the block containing the transaction, re-processes all prior
 // transactions to build up state, then executes the target tx with tracing.

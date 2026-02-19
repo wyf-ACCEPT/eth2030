@@ -569,6 +569,22 @@ func TestReorg_Simple(t *testing.T) {
 	b1ExcessBlobGas := CalcExcessBlobGas(pExcess, pUsed)
 	b1Header.BlobGasUsed = &zeroBlobGas
 	b1Header.ExcessBlobGas = &b1ExcessBlobGas
+	b1BeaconRoot := types.EmptyRootHash
+	b1Header.ParentBeaconRoot = &b1BeaconRoot
+	b1RequestsHash := types.EmptyRootHash
+	b1Header.RequestsHash = &b1RequestsHash
+	// EIP-7706: calldata gas fields.
+	b1CalldataGasUsed := uint64(0)
+	var pCalldataExcess, pCalldataUsed uint64
+	if genesis.Header().CalldataExcessGas != nil {
+		pCalldataExcess = *genesis.Header().CalldataExcessGas
+	}
+	if genesis.Header().CalldataGasUsed != nil {
+		pCalldataUsed = *genesis.Header().CalldataGasUsed
+	}
+	b1CalldataExcessGas := CalcCalldataExcessGas(pCalldataExcess, pCalldataUsed, genesis.Header().GasLimit)
+	b1Header.CalldataGasUsed = &b1CalldataGasUsed
+	b1Header.CalldataExcessGas = &b1CalldataExcessGas
 	b1Body := &types.Body{Withdrawals: []*types.Withdrawal{}}
 	b1Block := types.NewBlock(b1Header, b1Body)
 

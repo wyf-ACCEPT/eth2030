@@ -94,10 +94,11 @@ type PayloadAttributesV3 struct {
 	ParentBeaconBlockRoot types.Hash `json:"parentBeaconBlockRoot"`
 }
 
-// PayloadAttributesV4 extends V3 with slot number (Amsterdam).
+// PayloadAttributesV4 extends V3 with slot number and inclusion list (Amsterdam/FOCIL).
 type PayloadAttributesV4 struct {
 	PayloadAttributesV3
-	SlotNumber uint64 `json:"slotNumber"`
+	SlotNumber               uint64   `json:"slotNumber"`
+	InclusionListTransactions [][]byte `json:"inclusionListTransactions,omitempty"` // EIP-7805 FOCIL
 }
 
 // GetPayloadV3Response is the response for engine_getPayloadV3 (Cancun).

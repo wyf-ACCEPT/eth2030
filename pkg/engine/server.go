@@ -59,16 +59,18 @@ type Backend interface {
 
 // EngineAPI implements the Engine API JSON-RPC methods.
 type EngineAPI struct {
-	backend  Backend
-	server   *http.Server
-	listener net.Listener
-	mu       sync.Mutex
+	backend         Backend
+	builderRegistry *BuilderRegistry
+	server          *http.Server
+	listener        net.Listener
+	mu              sync.Mutex
 }
 
 // NewEngineAPI creates a new Engine API instance with the given backend.
 func NewEngineAPI(backend Backend) *EngineAPI {
 	return &EngineAPI{
-		backend: backend,
+		backend:         backend,
+		builderRegistry: NewBuilderRegistry(),
 	}
 }
 
@@ -277,6 +279,10 @@ func (api *EngineAPI) ExchangeCapabilities(requested []string) []string {
 		"engine_getPayloadV6",
 		"engine_exchangeCapabilities",
 		"engine_getClientVersionV1",
+		"engine_submitBuilderBidV1",
+		"engine_getBuilderBidsV1",
+		"engine_newInclusionListV1",
+		"engine_getInclusionListV1",
 	}
 	return supported
 }
