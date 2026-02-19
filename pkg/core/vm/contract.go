@@ -16,6 +16,10 @@ type Contract struct {
 	Gas           uint64
 	Value         *big.Int
 	jumpdests     map[uint64]bool // cached JUMPDEST analysis
+
+	// EOF fields (EIP-3540, EIP-7480, EIP-7620)
+	Data          []byte   // EOF data section (EIP-7480: DATALOAD, DATALOADN, DATASIZE, DATACOPY)
+	Subcontainers [][]byte // EOF subcontainers (EIP-7620: EOFCREATE, RETURNCONTRACT)
 }
 
 // NewContract creates a new contract for execution.
