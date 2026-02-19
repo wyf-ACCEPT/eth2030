@@ -621,6 +621,24 @@ func opSstore(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	return nil, nil
 }
 
+// opSstoreGlamst implements SSTORE for Glamsterdam (EIP-7778).
+// Per EIP-7778: no gas refunds are issued for any SSTORE operation.
+// The gas charging is handled by gasSstoreGlamst; this function only
+// performs the state write without tracking refunds.
+func opSstoreGlamst(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	if evm.readOnly {
+		return nil, ErrWriteProtection
+	}
+	loc, val := stack.Pop(), stack.Pop()
+	if evm.StateDB != nil {
+		key := bigToHash(loc)
+		newVal := bigToHash(val)
+		// EIP-7778: no refund tracking. Just write the state.
+		evm.StateDB.SetState(contract.Address, key, newVal)
+	}
+	return nil, nil
+}
+
 func opReturndataSize(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	stack.Push(new(big.Int).SetUint64(uint64(len(evm.returnData))))
 	return nil, nil
@@ -1119,6 +1137,14 @@ func opSelfdestruct(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 	if evm.StateDB != nil {
 		balance := evm.StateDB.GetBalance(contract.Address)
 		if balance.Sign() > 0 {
+			// EIP-7708: emit transfer or burn log for SELFDESTRUCT.
+			if evm.forkRules.IsEIP7708 {
+				if beneficiary != contract.Address {
+					EmitTransferLog(evm.StateDB, contract.Address, beneficiary, balance)
+				} else {
+					EmitBurnLog(evm.StateDB, contract.Address, balance)
+				}
+			}
 			evm.StateDB.AddBalance(beneficiary, balance)
 			evm.StateDB.SubBalance(contract.Address, balance)
 		}
@@ -1127,5 +1153,130 @@ func opSelfdestruct(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 		// contract was created in the same transaction.
 	}
 
+	return nil, nil
+}
+
+// opSlotNum implements the SLOTNUM opcode (EIP-7843).
+// Pushes the current beacon chain slot number onto the stack.
+func opSlotNum(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	stack.Push(new(big.Int).SetUint64(evm.Context.SlotNumber))
+	return nil, nil
+}
+
+// opCLZ implements the CLZ opcode (EIP-7939).
+// Returns the number of leading zero bits in the 256-bit top stack element.
+// If the value is 0, returns 256.
+func opCLZ(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	x := stack.Peek()
+	bitLen := x.BitLen() // 0 for zero value, otherwise position of highest set bit
+	x.SetUint64(uint64(256 - bitLen))
+	return nil, nil
+}
+
+// decodeSingle decodes a single immediate byte for DUPN/SWAPN per EIP-8024.
+// Maps the full byte range [0..255] (excluding 91..127) onto stack depths [17..236].
+func decodeSingle(x byte) int {
+	if x <= 90 {
+		return int(x) + 17
+	}
+	// x >= 128
+	return int(x) - 20
+}
+
+// decodePair decodes a pair immediate byte for EXCHANGE per EIP-8024.
+// Maps the full byte range [0..255] (excluding 80..127) onto two stack depths.
+func decodePair(x byte) (int, int) {
+	var k int
+	if x <= 79 {
+		k = int(x)
+	} else {
+		k = int(x) - 48
+	}
+	q, r := k/16, k%16
+	if q < r {
+		return q + 1, r + 1
+	}
+	return r + 1, 29 - q
+}
+
+// opDupN implements the DUPN opcode (EIP-8024).
+// Reads one immediate byte from code[PC+1], decodes it to a stack depth n,
+// and duplicates the nth stack item onto the top.
+func opDupN(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	var x byte
+	if *pc+1 < uint64(len(contract.Code)) {
+		x = contract.Code[*pc+1]
+	}
+
+	// Range 91..127 is excluded per spec.
+	if x > 90 && x < 128 {
+		return nil, ErrInvalidOpCode
+	}
+	n := decodeSingle(x)
+
+	if stack.Len() < n {
+		return nil, ErrStackUnderflow
+	}
+
+	// Duplicate the nth item (1-indexed from top) onto the stack.
+	stack.Dup(n)
+	*pc += 1
+	return nil, nil
+}
+
+// opSwapN implements the SWAPN opcode (EIP-8024).
+// Reads one immediate byte from code[PC+1], decodes it to a stack depth n,
+// and swaps the top stack item with the (n+1)th item.
+func opSwapN(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	var x byte
+	if *pc+1 < uint64(len(contract.Code)) {
+		x = contract.Code[*pc+1]
+	}
+
+	// Range 91..127 is excluded per spec.
+	if x > 90 && x < 128 {
+		return nil, ErrInvalidOpCode
+	}
+	n := decodeSingle(x)
+
+	if stack.Len() < n+1 {
+		return nil, ErrStackUnderflow
+	}
+
+	// Swap the top with the nth item from top.
+	stack.Swap(n)
+	*pc += 1
+	return nil, nil
+}
+
+// opExchange implements the EXCHANGE opcode (EIP-8024).
+// Reads one immediate byte from code[PC+1], decodes it to two stack depths
+// (n, m), and swaps the nth and mth stack items.
+func opExchange(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	var x byte
+	if *pc+1 < uint64(len(contract.Code)) {
+		x = contract.Code[*pc+1]
+	}
+
+	// Range 80..127 is excluded per spec.
+	if x > 79 && x < 128 {
+		return nil, ErrInvalidOpCode
+	}
+	n, m := decodePair(x)
+	need := n
+	if m > need {
+		need = m
+	}
+	need++ // need at least max(n,m)+1 items
+
+	if stack.Len() < need {
+		return nil, ErrStackUnderflow
+	}
+
+	// Swap the nth and mth items from the top (1-indexed).
+	data := stack.Data()
+	top := len(data) - 1
+	data[top-n], data[top-m] = data[top-m], data[top-n]
+	*pc += 1
 	return nil, nil
 }

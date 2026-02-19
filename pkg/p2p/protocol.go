@@ -10,6 +10,8 @@ import (
 // Protocol version constants.
 const (
 	ETH68 = 68
+	ETH70 = 70 // EIP-7975: Partial Block Receipt Lists
+	ETH71 = 71 // EIP-8159: Block Access List Exchange
 )
 
 // eth/68 protocol message codes.
@@ -27,6 +29,14 @@ const (
 	PooledTransactionsMsg        = 0x0a
 	GetReceiptsMsg               = 0x0f
 	ReceiptsMsg                  = 0x10
+
+	// eth/70 message codes (EIP-7975: Partial Block Receipt Lists).
+	GetPartialReceiptsMsg = 0x11
+	PartialReceiptsMsg    = 0x12
+
+	// eth/71 message codes (EIP-8159: Block Access List Exchange).
+	GetBlockAccessListsMsg = 0x13
+	BlockAccessListsMsg    = 0x14
 )
 
 // StatusData represents the status message exchanged during the eth handshake.
@@ -142,4 +152,49 @@ type GetPooledTransactionsPacket struct {
 type PooledTransactionsPacket struct {
 	RequestID    uint64
 	Transactions []*types.Transaction
+}
+
+// --- eth/70: EIP-7975 Partial Block Receipt Lists ---
+
+// GetPartialReceiptsPacket requests specific transaction receipts by index
+// within a block, avoiding the need to transfer all receipts.
+type GetPartialReceiptsPacket struct {
+	RequestID uint64
+	BlockHash types.Hash
+	TxIndices []uint64 // indices of transactions whose receipts are requested
+}
+
+// PartialReceiptsPacket is the response to GetPartialReceiptsPacket,
+// containing only the requested receipts along with Merkle proofs.
+type PartialReceiptsPacket struct {
+	RequestID uint64
+	Receipts  []*types.Receipt
+	Proofs    [][]byte // Merkle proof nodes for receipt trie verification
+}
+
+// --- eth/71: EIP-8159 Block Access List Exchange ---
+
+// GetBlockAccessListsPacket requests Block Access Lists for the specified blocks.
+type GetBlockAccessListsPacket struct {
+	RequestID   uint64
+	BlockHashes []types.Hash
+}
+
+// BlockAccessListData holds a BAL for a single block.
+type BlockAccessListData struct {
+	BlockHash types.Hash
+	Entries   []AccessEntryData
+}
+
+// AccessEntryData is the wire representation of a single BAL entry.
+type AccessEntryData struct {
+	Address     types.Address
+	AccessIndex uint64
+	StorageKeys []types.Hash // storage slots accessed
+}
+
+// BlockAccessListsPacket is the response to GetBlockAccessListsPacket.
+type BlockAccessListsPacket struct {
+	RequestID   uint64
+	AccessLists []BlockAccessListData
 }

@@ -45,6 +45,8 @@ var PrecompiledContractsCancun = map[types.Address]PrecompiledContract{
 	types.BytesToAddress([]byte{0x11}): &bls12Pairing{},
 	types.BytesToAddress([]byte{0x12}): &bls12MapFpToG1{},
 	types.BytesToAddress([]byte{0x13}): &bls12MapFp2ToG2{},
+	// EIP-7212: P256VERIFY precompile.
+	types.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
 }
 
 // IsPrecompiledContract checks if the given address is a precompiled contract.
@@ -543,6 +545,40 @@ func bytesEqual(a, b []byte) bool {
 	return true
 }
 
+// --- p256Verify (address 0x0100) - EIP-7212 ---
+// P-256 (secp256r1) ECDSA signature verification, enabling passkey/WebAuthn support.
+
+const p256VerifyGas = 6900
+
+type p256Verify struct{}
+
+func (c *p256Verify) RequiredGas(input []byte) uint64 {
+	return p256VerifyGas
+}
+
+func (c *p256Verify) Run(input []byte) ([]byte, error) {
+	const p256VerifyInputLength = 160
+	if len(input) != p256VerifyInputLength {
+		return nil, nil
+	}
+
+	// Extract hash, r, s, x, y from the input.
+	hash := input[0:32]
+	r := new(big.Int).SetBytes(input[32:64])
+	s := new(big.Int).SetBytes(input[64:96])
+	x := new(big.Int).SetBytes(input[96:128])
+	y := new(big.Int).SetBytes(input[128:160])
+
+	// Verify the signature using P-256 curve.
+	if crypto.P256Verify(hash, r, s, x, y) {
+		// Return 1 as 32-byte big-endian.
+		result := make([]byte, 32)
+		result[31] = 1
+		return result, nil
+	}
+	return nil, nil
+}
+
 // --- EIP-7904: Glamsterdan precompile gas repricing ---
 
 // bn256AddGlamsterdan wraps bn256Add with the updated gas cost.
@@ -599,6 +635,9 @@ var PrecompiledContractsGlamsterdan = map[types.Address]PrecompiledContract{
 	types.BytesToAddress([]byte{0x0f}): &bls12G2Mul{},
 	types.BytesToAddress([]byte{0x10}): &bls12G2MSM{},
 	types.BytesToAddress([]byte{0x11}): &bls12Pairing{},
-	types.BytesToAddress([]byte{0x12}): &bls12MapFpToG1{},
+	// EIP-7997: address 0x12 is now the deterministic CREATE2 factory (system contract).
+	// bls12MapFpToG1 removed from precompile set; calls to 0x12 run stored EVM bytecode.
 	types.BytesToAddress([]byte{0x13}): &bls12MapFp2ToG2{},
+	// EIP-7212: P256VERIFY precompile.
+	types.BytesToAddress([]byte{0x01, 0x00}): &p256Verify{},
 }

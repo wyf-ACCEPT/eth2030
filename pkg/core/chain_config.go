@@ -169,6 +169,36 @@ func (c *ChainConfig) IsEIP7706(time uint64) bool {
 	return c.IsGlamsterdan(time)
 }
 
+// IsEIP7778 returns whether EIP-7778 (block gas accounting without refunds) is active.
+func (c *ChainConfig) IsEIP7778(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
+// IsEIP2780 returns whether EIP-2780 (reduced intrinsic transaction gas) is active.
+func (c *ChainConfig) IsEIP2780(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
+// IsEIP7976 returns whether EIP-7976 (increased calldata floor cost) is active.
+func (c *ChainConfig) IsEIP7976(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
+// IsEIP7981 returns whether EIP-7981 (access list floor cost) is active.
+func (c *ChainConfig) IsEIP7981(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
+// IsEIP8037 returns whether EIP-8037 (state creation gas increase) is active.
+func (c *ChainConfig) IsEIP8037(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
+// IsEIP8038 returns whether EIP-8038 (state access gas increase) is active.
+func (c *ChainConfig) IsEIP8038(time uint64) bool {
+	return c.IsGlamsterdan(time)
+}
+
 // Rules returns a Rules struct for the given block number and timestamp,
 // providing boolean flags for quick fork checks.
 func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules {
@@ -199,6 +229,14 @@ func (c *ChainConfig) Rules(num *big.Int, isMerge bool, timestamp uint64) Rules 
 		IsGlamsterdan:    isMerge && c.IsGlamsterdan(timestamp),
 		IsEIP7904:        isMerge && c.IsGlamsterdan(timestamp),
 		IsEIP7706:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7708:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7954:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7778:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP2780:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7976:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP7981:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP8037:        isMerge && c.IsGlamsterdan(timestamp),
+		IsEIP8038:        isMerge && c.IsGlamsterdan(timestamp),
 	}
 }
 
@@ -214,7 +252,10 @@ type Rules struct {
 	IsCancun, IsEIP4844                                     bool
 	IsPrague, IsEIP7702                                     bool
 	IsAmsterdam                                             bool
-	IsGlamsterdan, IsEIP7904, IsEIP7706                     bool
+	IsGlamsterdan, IsEIP7904, IsEIP7706, IsEIP7708          bool
+	IsEIP7954                                               bool
+	IsEIP7778, IsEIP2780, IsEIP7976, IsEIP7981              bool
+	IsEIP8037, IsEIP8038                                    bool
 }
 
 func newUint64(v uint64) *uint64 { return &v }
@@ -289,8 +330,32 @@ var HoleskyConfig = &ChainConfig{
 	GlamsterdanTime:         nil,
 }
 
-// TestConfig is a chain config with all forks active at genesis (time 0).
+// TestConfig is a chain config with forks up to Amsterdam active at genesis.
+// Glamsterdam gas repricing is NOT active, preserving pre-Glamsterdam gas semantics.
 var TestConfig = &ChainConfig{
+	ChainID:                 big.NewInt(1337),
+	HomesteadBlock:          big.NewInt(0),
+	EIP150Block:             big.NewInt(0),
+	EIP155Block:             big.NewInt(0),
+	EIP158Block:             big.NewInt(0),
+	ByzantiumBlock:          big.NewInt(0),
+	ConstantinopleBlock:     big.NewInt(0),
+	PetersburgBlock:         big.NewInt(0),
+	IstanbulBlock:           big.NewInt(0),
+	MuirGlacierBlock:        big.NewInt(0),
+	BerlinBlock:             big.NewInt(0),
+	LondonBlock:             big.NewInt(0),
+	TerminalTotalDifficulty: big.NewInt(0),
+	ShanghaiTime:            newUint64(0),
+	CancunTime:              newUint64(0),
+	PragueTime:              newUint64(0),
+	AmsterdamTime:           newUint64(0),
+	GlamsterdanTime:         nil,
+}
+
+// TestConfigGlamsterdan is a chain config with all forks including Glamsterdam active.
+// Use this for tests that specifically exercise Glamsterdam gas repricing.
+var TestConfigGlamsterdan = &ChainConfig{
 	ChainID:                 big.NewInt(1337),
 	HomesteadBlock:          big.NewInt(0),
 	EIP150Block:             big.NewInt(0),

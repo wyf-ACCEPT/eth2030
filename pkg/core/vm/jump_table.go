@@ -19,6 +19,11 @@ type operation struct {
 	writes      bool // whether this opcode modifies state (SSTORE, LOG, CREATE, etc.)
 }
 
+// GetConstantGas returns the constant gas cost of the operation.
+func (op *operation) GetConstantGas() uint64 {
+	return op.constantGas
+}
+
 // JumpTable maps every possible opcode to its operation definition.
 type JumpTable [256]*operation
 
@@ -452,6 +457,9 @@ func NewVerkleJumpTable() JumpTable {
 
 // NewGlamsterdanJumpTable returns the Glamsterdan fork jump table.
 // EIP-7904: compute gas cost increases for underpriced opcodes.
+// EIP-8038: state access gas cost increases.
+// EIP-7778: SSTORE no longer issues refunds.
+// EIP-2780: CALL value transfer repricing.
 func NewGlamsterdanJumpTable() JumpTable {
 	tbl := NewPragueJumpTable()
 
@@ -465,6 +473,34 @@ func NewGlamsterdanJumpTable() JumpTable {
 	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMulmodGlamsterdan, minStack: 3, maxStack: 1024}
 	// EIP-7904: KECCAK256 constant 30 -> 45 (dynamic gas unchanged)
 	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256Glamsterdan, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
+
+	// EIP-8038: state access gas cost increases.
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: WarmStorageReadGlamst, dynamicGas: gasSloadGlamst, minStack: 1, maxStack: 1024}
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: WarmStorageReadGlamst, dynamicGas: gasBalanceGlamst, minStack: 1, maxStack: 1024}
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeSizeGlamst, minStack: 1, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeCopyGlamst, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy}
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeHashGlamst, minStack: 1, maxStack: 1024}
+
+	// EIP-7778/EIP-8038/EIP-8037: SSTORE with no refunds, increased costs.
+	tbl[SSTORE] = &operation{execute: opSstoreGlamst, constantGas: 0, dynamicGas: gasSstoreGlamst, minStack: 2, maxStack: 1024, writes: true}
+
+	// EIP-8038/EIP-2780: CALL family with increased access costs and repriced value transfer.
+	tbl[CALL] = &operation{execute: opCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasCallGlamst, minStack: 7, maxStack: 1024, memorySize: memoryCall}
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: WarmStorageReadGlamst, dynamicGas: gasCallCodeGlamst, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
+	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasStaticCallGlamst, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasDelegateCallGlamst, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
+	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: GasSelfdestruct, dynamicGas: gasSelfdestructGlamst, minStack: 1, maxStack: 1024, halts: true, writes: true}
+
+	// EIP-7843: SLOTNUM opcode - returns the current slot number.
+	tbl[SLOTNUM] = &operation{execute: opSlotNum, constantGas: GasBase, minStack: 0, maxStack: 1023}
+
+	// EIP-7939: CLZ opcode - count leading zero bits.
+	tbl[CLZ] = &operation{execute: opCLZ, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
+
+	// EIP-8024: DUPN, SWAPN, EXCHANGE - extended stack manipulation with immediate operand.
+	tbl[DUPN] = &operation{execute: opDupN, constantGas: GasVerylow, minStack: 1, maxStack: 1023}
+	tbl[SWAPN] = &operation{execute: opSwapN, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
+	tbl[EXCHANGE] = &operation{execute: opExchange, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 
 	return tbl
 }

@@ -275,9 +275,19 @@ func TestGlamsterdanJumpTableInheritance(t *testing.T) {
 	glamsterdan := NewGlamsterdanJumpTable()
 	prague := NewPragueJumpTable()
 
-	// EIP-7904 modified opcodes.
+	// EIP-7904 modified opcodes + EIP-8038/7778/2780 state access opcodes.
 	modified := map[OpCode]bool{
 		DIV: true, SDIV: true, MOD: true, MULMOD: true, KECCAK256: true,
+		// EIP-8038: increased warm/cold access costs.
+		SLOAD: true, BALANCE: true, EXTCODESIZE: true, EXTCODECOPY: true, EXTCODEHASH: true,
+		// EIP-7778/8038: SSTORE with no refunds and increased costs.
+		SSTORE: true,
+		// EIP-8038/2780: CALL family with repriced access and value transfer.
+		CALL: true, CALLCODE: true, DELEGATECALL: true, STATICCALL: true,
+		// EIP-8038: SELFDESTRUCT with increased costs.
+		SELFDESTRUCT: true,
+		// EIP-7843: SLOTNUM, EIP-7939: CLZ, EIP-8024: DUPN/SWAPN/EXCHANGE (new opcodes).
+		SLOTNUM: true, CLZ: true, DUPN: true, SWAPN: true, EXCHANGE: true,
 	}
 
 	// Check that non-modified opcodes have identical gas costs.
@@ -345,12 +355,14 @@ func TestSelectPrecompilesGlamsterdan(t *testing.T) {
 	}
 }
 
-// TestGlamsterdanPrecompileCount verifies both precompile maps have the same
-// number of entries.
+// TestGlamsterdanPrecompileCount verifies precompile map sizes.
+// EIP-7997 removes 0x12 (bls12MapFpToG1) from the Glamsterdan precompile set
+// because it becomes the deterministic CREATE2 factory system contract.
 func TestGlamsterdanPrecompileCount(t *testing.T) {
-	if len(PrecompiledContractsCancun) != len(PrecompiledContractsGlamsterdan) {
-		t.Errorf("precompile count: Cancun=%d Glamsterdan=%d",
-			len(PrecompiledContractsCancun), len(PrecompiledContractsGlamsterdan))
+	expected := len(PrecompiledContractsCancun) - 1
+	if len(PrecompiledContractsGlamsterdan) != expected {
+		t.Errorf("precompile count: Cancun=%d Glamsterdan=%d, want Glamsterdan=%d",
+			len(PrecompiledContractsCancun), len(PrecompiledContractsGlamsterdan), expected)
 	}
 }
 

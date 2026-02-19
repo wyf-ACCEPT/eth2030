@@ -34,6 +34,7 @@ type BlockContext struct {
 	BaseFee     *big.Int
 	PrevRandao  types.Hash
 	BlobBaseFee *big.Int
+	SlotNumber  uint64 // EIP-7843: beacon chain slot number
 }
 
 // TxContext provides the EVM with transaction-level information.
@@ -117,6 +118,7 @@ type EVM struct {
 	precompiles map[types.Address]PrecompiledContract
 	returnData  []byte // return data from the last CALL/CREATE
 	witnessGas  *WitnessGasTracker // EIP-4762: witness gas tracking (nil if not Verkle)
+	forkRules   ForkRules          // active fork rules for this block
 }
 
 // NewEVM creates a new EVM instance.
@@ -148,6 +150,16 @@ func (evm *EVM) SetJumpTable(jt JumpTable) {
 // SetPrecompiles replaces the EVM's precompile map.
 func (evm *EVM) SetPrecompiles(p map[types.Address]PrecompiledContract) {
 	evm.precompiles = p
+}
+
+// SetForkRules sets the active fork rules for this EVM instance.
+func (evm *EVM) SetForkRules(rules ForkRules) {
+	evm.forkRules = rules
+}
+
+// GetForkRules returns the active fork rules.
+func (evm *EVM) GetForkRules() ForkRules {
+	return evm.forkRules
 }
 
 // SetWitnessGasTracker enables EIP-4762 witness gas tracking. When set, the
@@ -199,6 +211,8 @@ type ForkRules struct {
 	IsConstantinople bool
 	IsByzantium      bool
 	IsHomestead      bool
+	IsEIP7708        bool // EIP-7708: ETH transfers emit a log
+	IsEIP7954        bool // EIP-7954: increased max contract code size
 }
 
 // SelectPrecompiles returns the correct precompile map for the given fork rules.
@@ -387,6 +401,11 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 		}
 		evm.StateDB.SubBalance(caller, value)
 		evm.StateDB.AddBalance(addr, value)
+
+		// EIP-7708: emit transfer log for nonzero-value CALL to a different account.
+		if evm.forkRules.IsEIP7708 && caller != addr {
+			EmitTransferLog(evm.StateDB, caller, addr, value)
+		}
 	}
 
 	// Get the code to execute
@@ -742,8 +761,9 @@ func gasEIP2929SlotCheck(evm *EVM, addr types.Address, slot types.Hash) uint64 {
 
 // create is the shared implementation for Create and Create2.
 func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big.Int, contractAddr types.Address) ([]byte, types.Address, uint64, error) {
-	// EIP-3860: max init code size check.
-	if len(code) > MaxInitCodeSize {
+	// EIP-3860 / EIP-7954: max init code size check.
+	maxInit := MaxInitCodeSizeForFork(evm.forkRules)
+	if len(code) > maxInit {
 		return nil, types.Address{}, gas, ErrMaxInitCodeSizeExceeded
 	}
 
@@ -760,6 +780,11 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 		}
 		evm.StateDB.SubBalance(caller, value)
 		evm.StateDB.AddBalance(contractAddr, value)
+
+		// EIP-7708: emit transfer log for nonzero-value CREATE.
+		if evm.forkRules.IsEIP7708 {
+			EmitTransferLog(evm.StateDB, caller, contractAddr, value)
+		}
 	}
 
 	// Deduct CREATE base gas.
@@ -806,8 +831,9 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 
 	// Code deposit cost: 200 per byte of deployed code.
 	if len(ret) > 0 {
-		// EIP-170: max contract code size.
-		if len(ret) > MaxCodeSize {
+		// EIP-170 / EIP-7954: max contract code size.
+		maxCode := MaxCodeSizeForFork(evm.forkRules)
+		if len(ret) > maxCode {
 			evm.StateDB.RevertToSnapshot(snapshot)
 			return nil, types.Address{}, 0, errors.New("max code size exceeded")
 		}

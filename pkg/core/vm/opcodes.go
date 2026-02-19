@@ -33,6 +33,7 @@ const (
 	SHL    OpCode = 0x1b
 	SHR    OpCode = 0x1c
 	SAR    OpCode = 0x1d
+	CLZ    OpCode = 0x1e // EIP-7939: count leading zeros
 
 	KECCAK256 OpCode = 0x20
 
@@ -64,6 +65,7 @@ const (
 	BASEFEE     OpCode = 0x48
 	BLOBHASH    OpCode = 0x49
 	BLOBBASEFEE OpCode = 0x4a
+	SLOTNUM     OpCode = 0x4b // EIP-7843: slot number
 
 	POP     OpCode = 0x50
 	MLOAD   OpCode = 0x51
@@ -165,6 +167,11 @@ const (
 	REVERT       OpCode = 0xfd
 	INVALID      OpCode = 0xfe
 	SELFDESTRUCT OpCode = 0xff
+
+	// EIP-8024: DUPN, SWAPN, EXCHANGE
+	DUPN     OpCode = 0xe6
+	SWAPN    OpCode = 0xe7
+	EXCHANGE OpCode = 0xe8
 )
 
 var opCodeNames = map[OpCode]string{
@@ -174,7 +181,7 @@ var opCodeNames = map[OpCode]string{
 	LT: "LT", GT: "GT", SLT: "SLT", SGT: "SGT",
 	EQ: "EQ", ISZERO: "ISZERO", AND: "AND", OR: "OR",
 	XOR: "XOR", NOT: "NOT", BYTE: "BYTE",
-	SHL: "SHL", SHR: "SHR", SAR: "SAR",
+	SHL: "SHL", SHR: "SHR", SAR: "SAR", CLZ: "CLZ",
 	KECCAK256: "KECCAK256",
 	ADDRESS: "ADDRESS", BALANCE: "BALANCE", ORIGIN: "ORIGIN",
 	CALLER: "CALLER", CALLVALUE: "CALLVALUE",
@@ -186,7 +193,7 @@ var opCodeNames = map[OpCode]string{
 	BLOCKHASH: "BLOCKHASH", COINBASE: "COINBASE", TIMESTAMP: "TIMESTAMP",
 	NUMBER: "NUMBER", PREVRANDAO: "PREVRANDAO", GASLIMIT: "GASLIMIT",
 	CHAINID: "CHAINID", SELFBALANCE: "SELFBALANCE", BASEFEE: "BASEFEE",
-	BLOBHASH: "BLOBHASH", BLOBBASEFEE: "BLOBBASEFEE",
+	BLOBHASH: "BLOBHASH", BLOBBASEFEE: "BLOBBASEFEE", SLOTNUM: "SLOTNUM",
 	POP: "POP", MLOAD: "MLOAD", MSTORE: "MSTORE", MSTORE8: "MSTORE8",
 	SLOAD: "SLOAD", SSTORE: "SSTORE",
 	JUMP: "JUMP", JUMPI: "JUMPI", PC: "PC", MSIZE: "MSIZE", GAS: "GAS",
@@ -213,6 +220,7 @@ var opCodeNames = map[OpCode]string{
 	DELEGATECALL: "DELEGATECALL", CREATE2: "CREATE2",
 	STATICCALL: "STATICCALL", REVERT: "REVERT",
 	INVALID: "INVALID", SELFDESTRUCT: "SELFDESTRUCT",
+	DUPN: "DUPN", SWAPN: "SWAPN", EXCHANGE: "EXCHANGE",
 }
 
 // String returns the name of the opcode.

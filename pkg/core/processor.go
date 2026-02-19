@@ -95,6 +95,11 @@ func (p *StateProcessor) ProcessWithBAL(block *types.Block, statedb state.StateD
 		ProcessParentBlockHash(statedb, header.Number.Uint64()-1, header.ParentHash)
 	}
 
+	// EIP-7997: deploy the deterministic CREATE2 factory at Glamsterdam activation.
+	if p.config != nil && p.config.IsGlamsterdan(header.Time) {
+		ApplyEIP7997(statedb)
+	}
+
 	var cumulativeGasUsed uint64
 	var cumulativeCalldataGasUsed uint64
 
@@ -531,6 +536,14 @@ const (
 	FloorTokenCost uint64 = 10
 )
 
+// EIP-7976: Glamsterdam calldata floor cost increase.
+// STANDARD_TOKEN_COST stays at 4 (unchanged per non-zero byte in standard path).
+// TOTAL_COST_FLOOR_PER_TOKEN increases from 10 to 16.
+// floor_tokens = (zero_bytes + nonzero_bytes) * 4 (all bytes weighted equally).
+const (
+	TotalCostFloorPerTokenGlamst uint64 = 16
+)
+
 // calldataFloorGas computes the EIP-7623 calldata floor gas cost.
 // tokens = zero_bytes * 1 + nonzero_bytes * 4
 // floor_gas = 21000 + tokens * TOTAL_COST_FLOOR_PER_TOKEN
@@ -550,6 +563,66 @@ func calldataFloorGas(data []byte, isCreate bool) uint64 {
 	return floor
 }
 
+// calldataFloorGasGlamst computes the EIP-7976 calldata floor gas cost for Glamsterdam.
+// Per EIP-7976: floor_tokens = (zero_bytes + nonzero_bytes) * 4
+// floor_gas = TX_BASE_COST + floor_tokens * TOTAL_COST_FLOOR_PER_TOKEN
+// The TX_BASE_COST is the Glamsterdam value from EIP-2780.
+func calldataFloorGasGlamst(data []byte, accessList types.AccessList, isCreate bool) uint64 {
+	// EIP-7976: floor tokens = (zero + nonzero) * 4 = total_bytes * 4
+	calldataFloorTokens := uint64(len(data)) * 4
+
+	// EIP-7981: include access list tokens in the floor calculation.
+	accessListTokens := accessListDataTokens(accessList)
+
+	totalTokens := calldataFloorTokens + accessListTokens
+	floor := vm.TxBaseGlamsterdam + totalTokens*TotalCostFloorPerTokenGlamst
+	if isCreate {
+		floor += TxCreateGas
+	}
+	return floor
+}
+
+// calldataTokens computes calldata tokens for the standard path.
+// tokens = zero_bytes * 1 + nonzero_bytes * 4
+func calldataTokens(data []byte) uint64 {
+	var tokens uint64
+	for _, b := range data {
+		if b == 0 {
+			tokens++
+		} else {
+			tokens += 4
+		}
+	}
+	return tokens
+}
+
+// accessListDataTokens computes data tokens for access list entries per EIP-7981.
+// tokens = zero_bytes + nonzero_bytes * 4 for all addresses and storage keys.
+func accessListDataTokens(accessList types.AccessList) uint64 {
+	var zero, nonzero uint64
+	for _, tuple := range accessList {
+		// Count bytes in address (20 bytes).
+		for _, b := range tuple.Address {
+			if b == 0 {
+				zero++
+			} else {
+				nonzero++
+			}
+		}
+		// Count bytes in each storage key (32 bytes).
+		for _, key := range tuple.StorageKeys {
+			for _, b := range key {
+				if b == 0 {
+					zero++
+				} else {
+					nonzero++
+				}
+			}
+		}
+	}
+	return zero + nonzero*4
+}
+
 // accessListGas computes the gas cost for an EIP-2930 access list.
 // Per EIP-2930: 2400 gas per address, 1900 gas per storage key.
 func accessListGas(accessList types.AccessList) uint64 {
@@ -558,6 +631,47 @@ func accessListGas(accessList types.AccessList) uint64 {
 		gas += 2400 // TxAccessListAddressGas
 		gas += uint64(len(tuple.StorageKeys)) * 1900 // TxAccessListStorageKeyGas
 	}
+	return gas
+}
+
+// accessListGasGlamst computes gas cost for access lists under Glamsterdam.
+// EIP-8038: increased per-entry costs.
+// EIP-7981: adds data token cost (TOTAL_COST_FLOOR_PER_TOKEN * tokens).
+func accessListGasGlamst(accessList types.AccessList) uint64 {
+	var gas uint64
+	for _, tuple := range accessList {
+		gas += vm.AccessListAddressGlamst
+		gas += uint64(len(tuple.StorageKeys)) * vm.AccessListStorageGlamst
+	}
+	// EIP-7981: charge data cost on access list.
+	tokens := accessListDataTokens(accessList)
+	gas += tokens * TotalCostFloorPerTokenGlamst
+	return gas
+}
+
+// intrinsicGasGlamst computes intrinsic gas for Glamsterdam per EIP-2780.
+// TX_BASE_COST = 4500. Calldata pricing unchanged. Access list uses Glamsterdam costs.
+// GAS_NEW_ACCOUNT surcharge when value > 0 to non-existent non-precompile non-create.
+func intrinsicGasGlamst(data []byte, isCreate bool, hasValue bool, toExists bool, authCount, emptyAuthCount uint64) uint64 {
+	gas := vm.TxBaseGlamsterdam
+	if isCreate {
+		gas += TxCreateGas
+	}
+	// Standard calldata pricing (unchanged by EIP-2780).
+	for _, b := range data {
+		if b == 0 {
+			gas += TxDataZeroGas
+		} else {
+			gas += TxDataNonZeroGas
+		}
+	}
+	// EIP-2780: new-account surcharge for value transfers to non-existent accounts.
+	if !isCreate && hasValue && !toExists {
+		gas += vm.GasNewAccount
+	}
+	// EIP-7702: per-authorization gas costs.
+	gas += authCount * PerAuthBaseCost
+	gas += emptyAuthCount * PerEmptyAccountCost
 	return gas
 }
 
@@ -626,13 +740,30 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 
 	// Compute intrinsic gas (includes access list costs per EIP-2930
 	// and EIP-7702 authorization costs).
-	igas := intrinsicGas(msg.Data, isCreate, authCount, emptyAuthCount)
-	igas += accessListGas(msg.AccessList)
+	isGlamsterdan := config != nil && config.IsGlamsterdan(header.Time)
+	var igas uint64
+	if isGlamsterdan {
+		// EIP-2780: reduced intrinsic gas (4500 base).
+		hasValue := msg.Value != nil && msg.Value.Sign() > 0
+		toExists := msg.To != nil && statedb.Exist(*msg.To)
+		igas = intrinsicGasGlamst(msg.Data, isCreate, hasValue, toExists, authCount, emptyAuthCount)
+		// EIP-7981/8038: Glamsterdam access list gas.
+		igas += accessListGasGlamst(msg.AccessList)
+	} else {
+		igas = intrinsicGas(msg.Data, isCreate, authCount, emptyAuthCount)
+		igas += accessListGas(msg.AccessList)
+	}
 
-	// EIP-7623: the gas limit must also cover the calldata floor (Prague+).
+	// EIP-7623/7976: the gas limit must also cover the calldata floor (Prague+).
 	// This prevents post-execution floor adjustment from exceeding gas limit.
 	if config != nil && config.IsPrague(header.Time) {
-		floor := calldataFloorGas(msg.Data, isCreate)
+		var floor uint64
+		if isGlamsterdan {
+			// EIP-7976: increased calldata floor + EIP-7981: access list floor
+			floor = calldataFloorGasGlamst(msg.Data, msg.AccessList, isCreate)
+		} else {
+			floor = calldataFloorGas(msg.Data, isCreate)
+		}
 		if floor > igas {
 			igas = floor
 		}
@@ -682,9 +813,12 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 			IsConstantinople: rules.IsConstantinople,
 			IsByzantium:      rules.IsByzantium,
 			IsHomestead:      rules.IsHomestead,
+			IsEIP7708:        rules.IsEIP7708,
+			IsEIP7954:        rules.IsEIP7954,
 		}
 		evm.SetJumpTable(vm.SelectJumpTable(forkRules))
 		evm.SetPrecompiles(vm.SelectPrecompiles(forkRules))
+		evm.SetForkRules(forkRules)
 	}
 
 	// Pre-warm EIP-2930 access list: mark sender, destination, and precompiles as warm.
@@ -733,13 +867,23 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		if msg.Value.Sign() > 0 {
 			statedb.SubBalance(msg.From, msg.Value)
 			statedb.AddBalance(*msg.To, msg.Value)
+
+			// EIP-7708: emit transfer log for nonzero-value transaction.
+			if evm.GetForkRules().IsEIP7708 && msg.From != *msg.To {
+				vm.EmitTransferLog(statedb, msg.From, *msg.To, msg.Value)
+			}
 		}
 	}
 
 	// Calculate gas used = intrinsic + (gasLeft - gasRemaining)
 	gasUsed := igas + (gasLeft - gasRemaining)
 
+	// EIP-7778: block gas accounting uses pre-refund gas.
+	gasUsedBeforeRefund := gasUsed
+
 	// Apply refund (EIP-3529: max refund = gasUsed / 5)
+	// Under Glamsterdam, SSTORE no longer issues refunds (EIP-7778, handled
+	// by opSstoreGlamst), but other refund sources still apply to user gas.
 	refund := statedb.GetRefund()
 	maxRefund := gasUsed / 5
 	if refund > maxRefund {
@@ -747,13 +891,23 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	}
 	gasUsed -= refund
 
-	// EIP-7623: apply calldata floor gas (Prague+).
+	// EIP-7623/7976: apply calldata floor gas (Prague+).
 	// The floor cost ensures a minimum gas charge for transactions with
 	// significant calldata, incentivizing blob usage over calldata.
 	if config != nil && config.IsPrague(header.Time) {
-		floor := calldataFloorGas(msg.Data, isCreate)
+		var floor uint64
+		if isGlamsterdan {
+			// EIP-7976/7981: Glamsterdam calldata/access-list floor.
+			floor = calldataFloorGasGlamst(msg.Data, msg.AccessList, isCreate)
+		} else {
+			floor = calldataFloorGas(msg.Data, isCreate)
+		}
 		if floor > gasUsed {
 			gasUsed = floor
+		}
+		// EIP-7778: block accounting also uses the floor if higher.
+		if floor > gasUsedBeforeRefund {
+			gasUsedBeforeRefund = floor
 		}
 	}
 
@@ -764,8 +918,15 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		statedb.AddBalance(msg.From, refundAmount)
 	}
 
-	// Return unused gas to the pool
-	gp.AddGas(remainingGas)
+	// Return unused gas to the pool.
+	// EIP-7778: under Glamsterdam, block gas pool uses pre-refund gas
+	// to prevent block gas limit circumvention via refund exploitation.
+	if isGlamsterdan {
+		blockRemainingGas := msg.GasLimit - gasUsedBeforeRefund
+		gp.AddGas(blockRemainingGas)
+	} else {
+		gp.AddGas(remainingGas)
+	}
 
 	// Pay tip to coinbase (EIP-1559: effective_tip * gasUsed goes to block producer).
 	if header.BaseFee != nil && header.BaseFee.Sign() > 0 {
@@ -782,6 +943,7 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 
 	return &ExecutionResult{
 		UsedGas:         gasUsed,
+		BlockGasUsed:    gasUsedBeforeRefund,
 		Err:             execErr,
 		ReturnData:      returnData,
 		ContractAddress: contractAddr,

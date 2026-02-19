@@ -63,7 +63,7 @@ func DecodeMessage(msg Message, val interface{}) error {
 }
 
 // ValidateMessageCode returns an error if the message code is not a known
-// eth/68 protocol message.
+// protocol message (eth/68 through eth/71).
 func ValidateMessageCode(code uint64) error {
 	switch code {
 	case StatusMsg, NewBlockHashesMsg, TransactionsMsg,
@@ -71,7 +71,9 @@ func ValidateMessageCode(code uint64) error {
 		GetBlockBodiesMsg, BlockBodiesMsg,
 		NewBlockMsg, NewPooledTransactionHashesMsg,
 		GetPooledTransactionsMsg, PooledTransactionsMsg,
-		GetReceiptsMsg, ReceiptsMsg:
+		GetReceiptsMsg, ReceiptsMsg,
+		GetPartialReceiptsMsg, PartialReceiptsMsg,
+		GetBlockAccessListsMsg, BlockAccessListsMsg:
 		return nil
 	default:
 		return fmt.Errorf("%w: 0x%02x", ErrInvalidMsgCode, code)
@@ -107,6 +109,14 @@ func MessageName(code uint64) string {
 		return "GetReceipts"
 	case ReceiptsMsg:
 		return "Receipts"
+	case GetPartialReceiptsMsg:
+		return "GetPartialReceipts"
+	case PartialReceiptsMsg:
+		return "PartialReceipts"
+	case GetBlockAccessListsMsg:
+		return "GetBlockAccessLists"
+	case BlockAccessListsMsg:
+		return "BlockAccessLists"
 	default:
 		return fmt.Sprintf("Unknown(0x%02x)", code)
 	}

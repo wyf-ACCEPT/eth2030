@@ -22,7 +22,7 @@ type SyncNotifier interface {
 	OnNewBlock(peerID string, blockNum uint64)
 }
 
-// Handler implements the eth/68 protocol message handling. It connects
+// Handler implements the eth protocol message handling. It connects
 // incoming P2P messages to the blockchain and transaction pool.
 type Handler struct {
 	chain     Blockchain
@@ -36,6 +36,10 @@ type Handler struct {
 	// Optional downloader for responding to header/body requests
 	// received as responses (from sync).
 	downloader *ethsync.Downloader
+
+	// Optional providers for eth/70 and eth/71 message handling.
+	receiptProvider    ReceiptProvider
+	accessListProvider AccessListProvider
 }
 
 // NewHandler creates a new eth protocol handler.
@@ -56,6 +60,16 @@ func (h *Handler) SetSyncNotifier(sn SyncNotifier) {
 // SetDownloader configures the downloader for the handler.
 func (h *Handler) SetDownloader(dl *ethsync.Downloader) {
 	h.downloader = dl
+}
+
+// SetReceiptProvider configures the receipt provider for eth/70 partial receipts.
+func (h *Handler) SetReceiptProvider(rp ReceiptProvider) {
+	h.receiptProvider = rp
+}
+
+// SetAccessListProvider configures the BAL provider for eth/71 access list exchange.
+func (h *Handler) SetAccessListProvider(alp AccessListProvider) {
+	h.accessListProvider = alp
 }
 
 // Peers returns the handler's peer set.
@@ -153,6 +167,18 @@ func (h *Handler) handleMsg(ep *EthPeer, msg p2p.Msg) error {
 
 	case p2p.TransactionsMsg:
 		return h.handleTransactions(ep, msg)
+
+	case p2p.GetPartialReceiptsMsg:
+		return h.handleGetPartialReceipts(ep, msg)
+
+	case p2p.PartialReceiptsMsg:
+		return h.handlePartialReceipts(ep, msg)
+
+	case p2p.GetBlockAccessListsMsg:
+		return h.handleGetBlockAccessLists(ep, msg)
+
+	case p2p.BlockAccessListsMsg:
+		return h.handleBlockAccessLists(ep, msg)
 
 	default:
 		log.Printf("eth: ignoring unknown message code 0x%02x from %s", msg.Code, ep.ID())
@@ -363,6 +389,98 @@ func (h *Handler) handleTransactions(ep *EthPeer, msg p2p.Msg) error {
 			log.Printf("eth: rejected tx %s from %s: %v", tx.Hash().Hex(), ep.ID(), err)
 		}
 	}
+	return nil
+}
+
+// handleGetPartialReceipts responds to a partial receipt request (eth/70).
+func (h *Handler) handleGetPartialReceipts(ep *EthPeer, msg p2p.Msg) error {
+	var req p2p.GetPartialReceiptsPacket
+	if err := decodeMsg(msg, &req); err != nil {
+		return err
+	}
+
+	if h.receiptProvider == nil {
+		// No receipt provider configured; send empty response.
+		return ep.SendPartialReceipts(req.RequestID, nil, nil)
+	}
+
+	allReceipts := h.receiptProvider.GetReceipts(req.BlockHash)
+	if allReceipts == nil {
+		return ep.SendPartialReceipts(req.RequestID, nil, nil)
+	}
+
+	// Collect requested receipts by index, up to MaxPartialReceipts.
+	count := len(req.TxIndices)
+	if count > MaxPartialReceipts {
+		count = MaxPartialReceipts
+	}
+
+	var receipts []*types.Receipt
+	for _, idx := range req.TxIndices[:count] {
+		if int(idx) < len(allReceipts) {
+			receipts = append(receipts, allReceipts[idx])
+		}
+	}
+
+	return ep.SendPartialReceipts(req.RequestID, receipts, nil)
+}
+
+// handlePartialReceipts processes a partial receipts response (eth/70).
+func (h *Handler) handlePartialReceipts(ep *EthPeer, msg p2p.Msg) error {
+	var pkt p2p.PartialReceiptsPacket
+	if err := decodeMsg(msg, &pkt); err != nil {
+		return err
+	}
+	log.Printf("eth: received %d partial receipts from %s (req %d)", len(pkt.Receipts), ep.ID(), pkt.RequestID)
+	return nil
+}
+
+// handleGetBlockAccessLists responds to a BAL request (eth/71).
+func (h *Handler) handleGetBlockAccessLists(ep *EthPeer, msg p2p.Msg) error {
+	var req p2p.GetBlockAccessListsPacket
+	if err := decodeMsg(msg, &req); err != nil {
+		return err
+	}
+
+	if h.accessListProvider == nil {
+		return ep.SendBlockAccessLists(req.RequestID, nil)
+	}
+
+	count := len(req.BlockHashes)
+	if count > MaxAccessLists {
+		count = MaxAccessLists
+	}
+
+	var accessLists []p2p.BlockAccessListData
+	for _, hash := range req.BlockHashes[:count] {
+		entries := h.accessListProvider.GetBlockAccessList(hash)
+		if entries == nil {
+			continue
+		}
+		var wireEntries []p2p.AccessEntryData
+		for _, e := range entries {
+			wireEntries = append(wireEntries, p2p.AccessEntryData{
+				Address:     e.Address,
+				AccessIndex: e.AccessIndex,
+				StorageKeys: e.StorageKeys,
+			})
+		}
+		accessLists = append(accessLists, p2p.BlockAccessListData{
+			BlockHash: hash,
+			Entries:   wireEntries,
+		})
+	}
+
+	return ep.SendBlockAccessLists(req.RequestID, accessLists)
+}
+
+// handleBlockAccessLists processes a BAL response (eth/71).
+func (h *Handler) handleBlockAccessLists(ep *EthPeer, msg p2p.Msg) error {
+	var pkt p2p.BlockAccessListsPacket
+	if err := decodeMsg(msg, &pkt); err != nil {
+		return err
+	}
+	log.Printf("eth: received %d block access lists from %s (req %d)", len(pkt.AccessLists), ep.ID(), pkt.RequestID)
 	return nil
 }
 
