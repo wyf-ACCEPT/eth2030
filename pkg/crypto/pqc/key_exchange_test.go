@@ -103,7 +103,7 @@ func TestNTTInverseNTT(t *testing.T) {
 		poly[i] = int16(i % int(q))
 	}
 
-	// NTT then InverseNTT should recover the original.
+	// NTT then InverseNTT should recover the original polynomial.
 	nttPoly := NTT(poly, q)
 	recovered := InverseNTT(nttPoly, q)
 

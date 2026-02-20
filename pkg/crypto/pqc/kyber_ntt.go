@@ -80,7 +80,7 @@ func InverseNTT(a []int16, q int16) []int16 {
 			for j := start; j < start+length; j++ {
 				t := out[j]
 				out[j] = modQ16(t+out[j+length], q)
-				out[j+length] = mulModQ(zeta, modQ16(t-out[j+length], q), q)
+				out[j+length] = mulModQ(zeta, modQ16(out[j+length]-t, q), q)
 			}
 		}
 	}
