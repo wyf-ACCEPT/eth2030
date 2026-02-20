@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering consensus (SSF, quick slots), data availability (PeerDAS,
 blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 
-**Status**: 47 packages, 803 source files (~241K LOC), 737 test files (~318K LOC), 14,300+ tests, all passing.
+**Status**: 47 packages, 824 source files (~247K LOC), 757 test files (~324K LOC), 14,600+ tests, all passing.
 
 ## Architecture
 
@@ -108,7 +108,7 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 ```bash
 cd pkg
 go build ./...
-go test ./...         # 47 packages, 14,300+ tests
+go test ./...         # 47 packages, 14,600+ tests
 go test -v ./...      # verbose output
 ```
 
@@ -208,23 +208,25 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 |-------|------|--------|------------|
 | Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
 | Hogota | 2026-2027 | **~85%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool, blob streaming |
-| I+ | 2027 | **~70%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, blob futures |
-| J+ | 2027-2028 | **~65%** | Verkle migration, light client, block-in-blobs, Reed-Solomon reconstruction |
-| K+ | 2028 | **~70%** | SSF, 6-sec slots, mandatory 3-of-5 proofs, 128K attester cap |
-| L+ | 2029 | **~70%** | Endgame finality, PQ attestations, APS, custody proofs, distributed builder |
-| M+ | 2029+ | **~60%** | PQ L1 hash-based, gas futures, sharded mempool, real-time CL proofs |
-| 2030++ | Long term | **~55%** | VDF randomness, 51% auto-recovery, AA proofs, shielded transfers (stub) |
+| I+ | 2027 | **~75%** | Native rollups, zkVM (RISC-V CPU), VOPS, proof aggregation, PQ crypto, blob futures |
+| J+ | 2027-2028 | **~70%** | Verkle migration, light client, block-in-blobs, Reed-Solomon reconstruction |
+| K+ | 2028 | **~75%** | SSF, 6-sec slots, mandatory 3-of-5 proofs, 1M attestations (parallel BLS, subnets) |
+| L+ | 2029 | **~75%** | Endgame finality, PQ attestations, APS, custody proofs, distributed builder |
+| M+ | 2029+ | **~70%** | PQ L1 (lattice blobs), gigagas (work-stealing), sharded mempool, real-time CL proofs |
+| 2030++ | Long term | **~65%** | VDF randomness, 51% auto-recovery, AA proofs, shielded transfers (ZK proofs) |
 
 ### Key Gaps (2030++ and beyond)
 
 | Gap | Status | What's Missing |
 |-----|--------|----------------|
-| Canonical zkVM | Partial | RISC-V guest execution engine (types/precompile defined) |
-| zkISA proof generation | Stub | No real zk-SNARK backend; `ProveExecution` not wired |
-| Private L1 / shielded | Stub | Types exist; no zk-proof generation or real encryption |
-| Gigagas L1 (1 Ggas/sec) | Partial | Parallel executor scaffolding; no cross-block rate metering |
-| Teragas L2 (1 Gbyte/sec) | Stub | In-memory manager; no streaming I/O or bandwidth enforcement |
-| 1M attestations/slot | Partial | Pool caps at 16K; needs distributed committee subnets |
+| Canonical zkVM | **Functional** | RV32IM CPU, memory, witness, proof backend; needs gnark integration |
+| zkISA proof generation | Partial | Groth16-style proof structure; needs real curve pairing |
+| Private L1 / shielded | **Functional** | ZK transfer proofs, nullifier accumulator, commitment tree; needs on-chain verifier |
+| Gigagas L1 (1 Ggas/sec) | **Functional** | Work-stealing, sharded state, rate metering; needs production profiling |
+| Teragas L2 (1 Gbyte/sec) | **Functional** | Bandwidth enforcer, streaming pipeline; needs real network I/O |
+| 1M attestations/slot | **Functional** | Parallel BLS, 64 subnets, batch verifier, scaler; needs real BLS pairing |
+| Secret proposers | **Functional** | VRF election, anti-equivocation, reveal protocol; needs Ed25519-VRF binding |
+| PQ blob commitments | **Functional** | MLWE lattice commitments, batch verifier; needs parameter hardening |
 | Exposed zkISA | Stub | eWASM framework started; full ISA exposure pending |
 
 ## Docs
