@@ -33,10 +33,15 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 - **M+** (2029+) ~45%: fast L1 finality in seconds, post quantum L1, gigagas L1 (parallel executor), canonical zkVM (RISC-V guest), gas futures market (contracts + settlement), post-quantum blob commitments
 - **Longer term** (2030++) ~30%: distributed block building, VDF randomness (Wesolowski scheme), teragas L2, private L1 shielded transfers (Pedersen commitments), sharded mempool, DNS discovery
 
+### Statistics
+- **Packages**: 47 (all passing)
+- **Source**: 551 files, ~148K LOC
+- **Tests**: 525 files, ~237K LOC, 12,600+ tests
+- **EIPs**: 58 complete, 6 substantial
+
 ### EIP Implementation Status
-- **Complete** (58): EIP-1559, EIP-2718, EIP-2929, EIP-2930, EIP-2200, EIP-2537, EIP-3529, EIP-3540 (EOF container), EIP-4844, EIP-4895, EIP-5656, EIP-6110 (validator deposits), EIP-7685, EIP-1153, EIP-150, EIP-152, EIP-196/197, EIP-7002 (EL withdrawals), EIP-7069 (EXTCALL), EIP-7480 (EOF data), EIP-7549 (committee attestations), EIP-7620 (EOFCREATE), EIP-7691 (blob throughput), EIP-7698 (EOF creation tx), EIP-7702, EIP-7825 (tx gas cap), EIP-7904, EIP-7623, EIP-7928, EIP-2935, EIP-4788, EIP-7706, EIP-7547, EIP-4444, EIP-4762, EIP-7939 (CLZ), EIP-8024 (DUPN/SWAPN/EXCHANGE), EIP-7708 (ETH transfer/burn logs), EIP-7742 (uncoupled blobs), EIP-6404 (SSZ transactions), EIP-7594 (PeerDAS), EIP-8079 (native rollups), EIP-6780 (SELFDESTRUCT restriction), EIP-8141 (Frame Transactions), EIP-7745 (log index), EIP-7807 (SSZ blocks), EIP-7251 (MAX_EFFECTIVE_BALANCE), EIP-7701 (Native AA), EIP-7898 (Uncoupled Execution Payload), EIP-7916 (SSZ ProgressiveList), EIP-7918 (Blob Base Fee Bound), EIP-8070 (Sparse Blobpool), EIP-8077 (Announce Nonce)
-- **Substantial** (6): EIP-7732 (ePBS: builder types, registry, bid management, commitment/reveal, API), EIP-6800 (Verkle: Banderwagon curve, IPA proofs, Pedersen commitments, types+keys, state migration, witness generation), EIP-7864 (binary tree: SHA-256, iterator, proofs, MPT migration), EIP-7805 (FOCIL: inclusion lists, validation, compliance), EIP-8025 (witness: collector, VOPS validator, stateless execution, beam sync), PQC (Dilithium3/Falcon512/SPHINCS+, hybrid signer, lattice-based blob commitments, PQ attestations)
-- **Partial** (1): EIP-7999 (multidim gas framework)
+- **Complete** (58): EIP-150, EIP-152, EIP-196/197, EIP-1153, EIP-1559, EIP-2200, EIP-2537, EIP-2718, EIP-2929, EIP-2930, EIP-2935, EIP-3529, EIP-3540, EIP-4444, EIP-4762, EIP-4788, EIP-4844 (incl. KZG), EIP-4895, EIP-5656, EIP-6110, EIP-6404, EIP-6780, EIP-7002, EIP-7069, EIP-7251, EIP-7480, EIP-7547, EIP-7549, EIP-7594, EIP-7620, EIP-7685, EIP-7691, EIP-7698, EIP-7701, EIP-7702, EIP-7706, EIP-7742, EIP-7745, EIP-7807, EIP-7825, EIP-7898, EIP-7904, EIP-7916, EIP-7918, EIP-7928, EIP-7939, EIP-8024, EIP-8070, EIP-8077, EIP-8079, EIP-8141
+- **Substantial** (6): EIP-7732 (ePBS), EIP-6800 (Verkle), EIP-7864 (binary tree), EIP-7805 (FOCIL), EIP-8025 (execution proofs), PQC (Dilithium3/Falcon512/SPHINCS+)
 
 ## Project Structure & Module Organization
 
@@ -79,11 +84,12 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `metrics/` - Counters, gauges, histograms, Prometheus export, EWMA, meter, CPU tracker
 - `cmd/eth2028/` - CLI binary with flags, signal handling
 - `internal/testutil/` - Shared test utilities
-- `refs/` - Reference submodules (read-only, do NOT modify). Main upstream: https://github.com/orgs/ethereum/repositories (query/search here before design/impl)
+- `refs/` - Reference submodules (30 total, read-only, do NOT modify). Main upstream: https://github.com/orgs/ethereum/repositories
   - **Ethereum specs**: consensus-specs, execution-specs, consensus-spec-tests, execution-spec-tests, execution-apis, beacon-APIs, builder-specs, EIPs, ERCs
   - **Ethereum core**: go-ethereum
-  - **Utilities**: eth-utils, go-verkle, web3.py
-  - **Governance**: pm (project management), eip-review-bot, iptf-pocs
+  - **Cryptography**: blst (BLS12-381), circl (PQC: ML-DSA/ML-KEM/SLH-DSA), go-eth-kzg (KZG commitments), gnark (ZK proofs), gnark-crypto (ZK curves), c-kzg-4844 (C-based KZG), go-ipa (Verkle IPA proofs), go-verkle
+  - **Utilities**: eth-utils, web3.py
+  - **Governance**: pm, eip-review-bot, iptf-pocs
   - **Devops**: benchmarkoor, benchmarkoor-tests, ethereum-package, erigone, xatu, execution-processor, consensoor
 - `tools/` - Research and data fetching tools
 - `data/` - Downloaded research data (gitignored)

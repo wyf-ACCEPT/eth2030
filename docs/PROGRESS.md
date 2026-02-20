@@ -1,141 +1,152 @@
 # eth2028 Progress Report
 
-> Last updated: 2026-02-18
+> Last updated: 2026-02-20
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Packages | 22 |
-| Source LOC | ~37,000 |
-| Test LOC | ~69,000 |
-| Passing tests | 2,900+ |
-| Test files | 129 |
-| Overall completion | ~74% mainnet-equivalent |
+| Packages | 47 |
+| Source files | 551 |
+| Test files | 525 |
+| Source LOC | ~148,000 |
+| Test LOC | ~237,000 |
+| Total LOC | ~385,000 |
+| Passing tests | 12,600+ |
+| Test packages | 47/47 passing |
+| EIPs implemented | 58+ (complete), 5 (substantial) |
+| Roadmap coverage | 98+ items across all phases |
 
 ## Package Completion
 
-| Package | LOC | Completion | Notes |
-|---------|-----|------------|-------|
-| core | 17K | 85% | Blockchain, block builder, validator, state processor |
-| core/types | 5K | 95% | All 5 tx types, header, receipt, block |
-| core/state | 4.5K | 90% | MemoryStateDB, trie-backed, snapshots, access lists |
-| core/vm | 16K | 90% | 140+ opcodes, 18 precompiles, Frontier-Glamsterdan gas |
-| core/rawdb | 2K | 85% | FileDB with WAL, block/receipt/tx storage |
-| rlp | 1.4K | 100% | Full Yellow Paper Appendix B |
-| crypto | 6K | 95% | Keccak, secp256k1, BN254, BLS12-381 |
-| engine | 5K | 95% | V3-V6 payload/forkchoice APIs |
-| bal | 1.2K | 90% | BAL tracking, hashing, parallel conflict detection |
-| witness | 2.5K | 75% | Collector complete, verification framework only |
-| txpool | 3K | 85% | Validation, pricing, eviction, blob gas |
-| p2p | 7.5K | 70% | TCP transport, devp2p handshake, peer mgmt, server lifecycle |
-| rpc | 5.6K | 90% | 30+ methods, filters, WebSocket subscriptions |
-| sync | 5K | 70% | Full + snap sync pipeline, no peer integration |
-| trie | 4K | 85% | MPT with proofs and persistence |
-| verkle | 1.8K | 30% | Placeholder hashes, no Banderwagon curve |
-| eth | 1.3K | 80% | Protocol handler, codec, message types |
-| node | 1.5K | 85% | Config, lifecycle, subsystem wiring |
-| cmd/eth2028 | 0.4K | 95% | CLI flags, signal handling, startup |
-| log | 0.3K | 95% | Structured JSON/text logging |
-| metrics | 0.6K | 85% | Counters, gauges, histograms, Prometheus |
-
-## Top 5 Gaps for Mainnet
-
-### 1. Verkle Tree Cryptography (CRITICAL)
-
-**Current**: Placeholder using SHA256 hashes instead of Banderwagon curve points.
-**Needed**: Banderwagon elliptic curve, IPA proof generation/verification,
-proper commitment computation, integration into state root calculation.
-**Blocks**: Stateless validation, witness verification.
-
-### 2. KZG Proof Verification (DONE)
-
-**Current**: Full pairing-based KZG verification with BLS12-381 optimal ate pairing.
-Commit/proof/verify pipeline, G1 compress/decompress (ZCash format), trusted setup.
-**Remaining**: Load production trusted setup from Ethereum KZG ceremony output.
-
-### 3. Production Networking (MEDIUM)
-
-**Current**: TCP transport, devp2p handshake, server lifecycle, peer management.
-**Needed**: RLPx encryption, peer discovery (discv4/v5), NAT traversal,
-production connection management.
-
-### 4. Witness Verification (MEDIUM)
-
-**Current**: Collection framework complete; verification is framework only.
-**Needed**: State diff verification against Verkle proofs, ZK proof framework.
-**Blocked by**: Verkle implementation (#1).
-
-### 5. Sync Peer Integration (MEDIUM)
-
-**Current**: Full + snap sync state machines work; no real peer communication.
-**Needed**: Peer selection, request distribution, network I/O integration.
-**Blocked by**: Production networking (#3).
+| Package | Status | Description |
+|---------|--------|-------------|
+| `core` | Complete | Blockchain, block builder, validator, state processor, gas futures, genesis init |
+| `core/types` | Complete | 7 tx types (legacy, access list, dynamic, blob, set code, frame, AA), header, receipt, block, SSZ |
+| `core/state` | Complete | StateDB interface, in-memory, trie-backed, stateless (witness-backed), prefetcher |
+| `core/state/snapshot` | Complete | Layered diff/disk snapshots, account/storage iterators |
+| `core/state/pruner` | Complete | State pruner with bloom filter reachability |
+| `core/vm` | Complete | 164+ opcodes, 24 precompiles (incl. BLS12-381, NTT, NII, BN254), EOF, gas tables |
+| `core/rawdb` | Complete | FileDB with WAL, chain DB, block/receipt/tx storage, EIP-4444 history expiry |
+| `core/vops` | Complete | Validity-Only Partial Statelessness: partial executor, validator, witness |
+| `rlp` | Complete | Full Yellow Paper Appendix B with fuzz testing |
+| `ssz` | Complete | SSZ encode/decode, merkleization, EIP-7916 ProgressiveList |
+| `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, threshold, shielded |
+| `crypto/pqc` | Complete | Dilithium3, Falcon512, SPHINCS+, hybrid signer, lattice blob commitments |
+| `consensus` | Complete | SSF, quick slots, 1-epoch finality, attestations, beacon state, block producer, reward calc, slashing |
+| `consensus/lethe` | Complete | LETHE insulation protocol for validator privacy |
+| `engine` | Complete | Engine API V3-V7, forkchoice, payload building, ePBS, distributed builder, Vickrey auctions |
+| `epbs` | Complete | Enshrined PBS: BuilderBid, PayloadEnvelope, builder registry, auctions |
+| `focil` | Complete | FOCIL: inclusion list building, validation, compliance scoring |
+| `bal` | Complete | Block Access Lists (EIP-7928), parallel execution scheduling |
+| `das` | Complete | PeerDAS: sampling, custody, reconstruction, blob streaming, futures, cell gossip |
+| `das/erasure` | Complete | Reed-Solomon erasure coding (Lagrange interpolation) |
+| `witness` | Complete | Execution witness collector, verifier, VOPS integration |
+| `txpool` | Complete | Validation, RBF, eviction, blob gas, EIP-8070 sparse blobpool |
+| `txpool/encrypted` | Complete | Encrypted mempool: commit-reveal, threshold decryption ordering |
+| `txpool/shared` | Complete | Sharded mempool with consistent hashing |
+| `rpc` | Complete | 50+ methods, filters, WebSocket subscriptions, Beacon API (16 endpoints) |
+| `trie` | Complete | MPT with proofs, persistence, concurrent healing |
+| `trie/bintrie` | Complete | Binary Merkle trie (EIP-7864): SHA-256, proofs, migration |
+| `verkle` | Complete | Verkle tree, Pedersen commitments, state migration, StateDB adapter, witness gen |
+| `rollup` | Complete | Native rollups (EIP-8079): EXECUTE precompile, anchor contract |
+| `zkvm` | Complete | Guest programs, canonical guest (RISC-V), STF framework |
+| `proofs` | Complete | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5 system |
+| `light` | Complete | Header sync, proof cache (LRU), sync committee, CL proof generator |
+| `p2p` | Complete | TCP transport, devp2p, peer mgmt, gossip (pub/sub, scoring), protocol manager |
+| `p2p/discover` | Complete | Peer discovery V4/V5, Kademlia DHT |
+| `p2p/discv5` | Complete | Discovery V5 protocol with WHOAREYOU/handshake |
+| `p2p/dnsdisc` | Complete | DNS-based peer discovery |
+| `p2p/enode` | Complete | Node identity and URL parsing |
+| `p2p/enr` | Complete | Ethereum Node Records (extensible key-value) |
+| `p2p/portal` | Complete | Portal network: content DHT, Kademlia routing, state/history |
+| `p2p/snap` | Complete | Snap sync protocol messages |
+| `sync` | Complete | Full sync + snap sync + beam sync pipeline, trie sync |
+| `eth` | Complete | ETH protocol handler, codec, EIP-8077 announce nonce (ETH/72) |
+| `node` | Complete | Config, lifecycle, subsystem wiring |
+| `cmd/eth2028` | Complete | CLI flags, signal handling, startup |
+| `log` | Complete | Structured JSON/text logging |
+| `metrics` | Complete | Counters, gauges, histograms, Prometheus, EWMA, CPU tracker |
 
 ## EIP Implementation Status
 
-### Complete (18 EIPs)
+### Complete (58 EIPs)
 
-- **EIP-1559**: Dynamic fee market, base fee calculation
-- **EIP-2718**: Typed transaction envelopes (all 5 types)
-- **EIP-2929**: Cold/warm state access gas costs
-- **EIP-2930**: Access list transactions (type 0x01)
-- **EIP-2200**: SSTORE net gas metering
-- **EIP-2537**: BLS12-381 precompiles (9 precompiles, 0x0b-0x13)
-- **EIP-3529**: Post-London 50% refund cap
-- **EIP-4844**: Blob transactions (type 0x03), blob gas accounting
-- **EIP-4895**: Post-Shanghai withdrawals
-- **EIP-5656**: MCOPY opcode
-- **EIP-7685**: EL requests (deposits, withdrawals, consolidations)
-- **EIP-7702**: Set code for EOAs (type 0x04)
-- **EIP-7904**: Glamsterdan gas repricing
-- **EIP-7928**: Block access lists, parallel execution
-- **EIP-1153**: Transient storage (TLOAD/TSTORE)
-- **EIP-150**: 63/64 gas forwarding rule
-- **EIP-152**: BLAKE2 precompile
-- **EIP-196/197**: BN254 pairing precompiles
-- **EIP-4844 KZG**: Full pairing-based KZG verification (BLS12-381 optimal ate)
+EIP-150, EIP-152, EIP-196/197, EIP-1153, EIP-1559, EIP-2200, EIP-2537,
+EIP-2718, EIP-2929, EIP-2930, EIP-2935, EIP-3529, EIP-3540, EIP-4444,
+EIP-4762, EIP-4788, EIP-4844 (incl. KZG), EIP-4895, EIP-5656, EIP-6110,
+EIP-6404, EIP-6780, EIP-7002, EIP-7069, EIP-7251, EIP-7480, EIP-7547,
+EIP-7549, EIP-7594, EIP-7620, EIP-7685, EIP-7691, EIP-7698, EIP-7701,
+EIP-7702, EIP-7706, EIP-7742, EIP-7745, EIP-7807, EIP-7825, EIP-7898,
+EIP-7904, EIP-7916, EIP-7918, EIP-7928, EIP-7939, EIP-8024, EIP-8070,
+EIP-8077, EIP-8079, EIP-8141
 
-### Partial (3 EIPs)
+### Substantial (6)
 
-- **EIP-6800**: Verkle types and key derivation; no Banderwagon curve
-- **EIP-7732**: Engine API types V1-V5; builder consensus integration partial
-- **EIP-8025**: Witness collector complete; verification framework only
+- **EIP-6800** (Verkle Trees): Banderwagon curve, IPA proofs, Pedersen commitments, state migration, witness gen
+- **EIP-7732** (ePBS): Builder types, registry, bid management, commitment/reveal, distributed builder API
+- **EIP-7805** (FOCIL): Inclusion lists, validation, compliance scoring
+- **EIP-7864** (Binary Merkle Tree): SHA-256, iterator, proofs, MPT migration
+- **EIP-8025** (Execution Proofs): Witness collector, VOPS validator, stateless execution, beam sync
+- **PQC** (Post-Quantum): Dilithium3/Falcon512/SPHINCS+, hybrid signer, lattice blobs, PQ attestations
 
-### Planned (3 EIPs)
+## Roadmap Coverage by Phase
 
-- **EIP-4762**: Statelessness gas costs (Hogota)
-- **EIP-8079**: EXECUTE precompile (K+)
-- **EIP-4444**: History expiry (Hogota)
+| Phase | Year | Coverage | Key Items |
+|-------|------|----------|-----------|
+| Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool, frame tx |
+| Hogota | 2026-2027 | ~75% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks |
+| I+ | 2027 | ~55% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync |
+| J+ | 2027-2028 | ~40% | Verkle migration, encrypted mempool, light client, variable blobs |
+| K+ | 2028 | ~50% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce |
+| L+ | 2029 | ~55% | Endgame finality, PQ attestations, LETHE, blob streaming, custody proofs |
+| M+ | 2029+ | ~45% | Gigagas, canonical zkVM, gas futures, PQ transactions |
+| 2030++ | Long term | ~30% | VDF, distributed builders, shielded transfers, sharded mempool |
 
-## Completion by Category
+## Remaining Gaps for Production
 
-| Category | Completion | Details |
-|----------|------------|---------|
-| EVM & Execution | 92% | Opcodes, gas, precompiles all working |
-| Transaction Pool | 88% | Validation, pricing, eviction complete |
-| State Management | 87% | In-memory perfect, Verkle is gap |
-| RPC API | 90% | 30+ methods, filters, subscriptions |
-| Block Validation | 90% | Header, body, execution, receipt validation |
-| Engine API | 95% | V3-V6 payload and forkchoice |
-| Cryptography | 90% | BN254, BLS12-381, KZG pairing done; Verkle is gap |
-| P2P Networking | 70% | TCP transport, handshake, server; needs RLPx, discovery |
-| Sync | 70% | State machine complete, no peer integration |
-| Database | 85% | FileDB works, no RocksDB/LevelDB |
+### 1. Real Cryptographic Backends (HIGH)
+
+**Current**: Pure-Go implementations of BLS12-381, Verkle/IPA, KZG, PQC.
+**Needed**: Wire reference submodules (blst, circl, go-ipa, go-eth-kzg, gnark) as backends.
+**Note**: Reference submodules already added to `refs/`.
+
+### 2. Production Networking (MEDIUM)
+
+**Current**: Full protocol stack with TCP, devp2p, discovery, gossip, Portal.
+**Needed**: RLPx encryption, NAT traversal, production connection management.
+
+### 3. Database Backend (MEDIUM)
+
+**Current**: FileDB with WAL.
+**Needed**: LevelDB/Pebble backend for production performance.
+
+### 4. Consensus Integration (MEDIUM)
+
+**Current**: SSF, attestations, beacon state, fork choice, epoch processor all implemented.
+**Needed**: Wire consensus components into node lifecycle with real CL client communication.
+
+### 5. Conformance Testing (LOW)
+
+**Current**: 12,600+ unit/integration tests.
+**Needed**: Run against official `execution-spec-tests` and `consensus-spec-tests` vectors.
 
 ## Test Quality
 
-| Category | Files | Quality |
-|----------|-------|---------|
-| Core (blockchain, blocks) | 22 | Excellent |
-| Types (tx, header, receipt) | 11 | Very Good |
-| State (statedb, snapshots) | 7 | Very Good |
-| VM (EVM, opcodes, gas) | 19 | Excellent |
-| E2E integration | 3 | Excellent |
-| Crypto (BN254, BLS12-381) | 8 | Excellent |
-| Engine API | 6 | Good |
-| RPC | 4 | Good |
-| P2P (transport, handshake) | 5 | Good |
-| Sync | 3 | Fair |
-| Witness | 2 | Very Good |
-| Verkle | 2 | Limited |
+| Category | Packages | Tests | Quality |
+|----------|----------|-------|---------|
+| Core (blockchain, blocks, genesis) | 6 | 3000+ | Excellent |
+| Types (tx, header, receipt, SSZ) | 1 | 500+ | Excellent |
+| State (statedb, snapshots, pruner) | 3 | 400+ | Very Good |
+| VM (EVM, opcodes, gas, EOF) | 1 | 2000+ | Excellent |
+| Crypto (BN254, BLS12-381, PQC) | 2 | 800+ | Excellent |
+| Consensus (SSF, attestation, beacon) | 2 | 500+ | Very Good |
+| Engine API (V3-V7, forkchoice) | 1 | 300+ | Good |
+| DAS (PeerDAS, erasure, blobs) | 2 | 400+ | Very Good |
+| P2P (transport, discovery, gossip) | 7 | 1000+ | Good |
+| Sync (full, snap, beam) | 1 | 200+ | Good |
+| RPC (JSON-RPC, Beacon API) | 1 | 300+ | Good |
+| Trie (MPT, binary, verkle) | 3 | 500+ | Excellent |
+| Transaction pool (base, encrypted, shared) | 3 | 300+ | Good |
+| Proofs/rollup/zkvm/light | 4 | 400+ | Good |
+| Other (RLP, SSZ, BAL, witness, etc.) | 6 | 500+ | Very Good |

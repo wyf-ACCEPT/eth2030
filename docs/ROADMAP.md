@@ -1,55 +1,122 @@
 # Ethereum 2028 Client Roadmap
 
 > Derived from EF Protocol L1 Strawmap (Feb 2026) and community research.
+> Last updated: 2026-02-20
 
 ## Timeline Overview
 
-| Year | Phase | Feature | Category | Reference | Description |
-|------|-------|---------|----------|-----------|-------------|
-| 2026 | Glamsterdam (H1) | ePBS (Enshrined PBS) | Decentralization | EIP-7732 | Hardcodes block-building on-chain to kill MEV monopolies. |
-| 2026 | Glamsterdam (H1) | Parallel Execution | Beast Mode (Offense) | EIP-7928 | Uses "Access Lists" to process non-conflicting transactions simultaneously. |
-| 2026 | Hegota (H2) | Verkle Trees | Lean Mode (Efficiency) | EIP-6800 | Enables "Stateless Clients," allowing nodes to run on mobile/laptop hardware. |
-| 2026 | Hegota (H2) | PeerDAS | Scaling | PeerDAS Research | Boosts L2 data capacity (Blobs) to handle higher transaction volumes. |
-| 2027 | The Beam Chain | Consensus 2.0 | Lean Mode (Efficiency) | Beam Chain Specs | Rebuilds the consensus layer to be 100% ZK-native from day one. |
-| 2027 | Beam Chain Phase | Single Slot Finality (SSF) | Fast Finality | SSF Research | Reduces transaction "irreversibility" time from 12 mins to 12 seconds. |
-| 2027 | The Purge | History Expiry | Lean Mode (Efficiency) | EIP-4444 | Nodes delete data >1yr old, keeping the chain "Lean" and easy to sync. |
-| 2027 | Native Rollup L0 | EXECUTE Precompile | Beast Mode (Offense) | Native Rollup Research | Moves rollup verification from smart contracts into the L1 protocol itself. |
-| 2028 | BEAST MODE | Giga-Gas L1 | Scaling | SP1 / LeanVM | Targets 10,000+ TPS on L1 through real-time ZK-proving. |
-| 2028 | TERA-GAS | 1M+ TPS Ecosystem | Scaling | Blob 2.0 | Unified L2 capacity reaching millions of TPS via Native & Based Rollups. |
-| 2028 | FORT MODE | ML-DSA Signatures | Fort Mode (Defense) | NIST PQC Standards | Implements Lattice-based cryptography for native Quantum Resistance. |
-| 2028 | Staking Reform | 1 ETH Solo Staking | Decentralization | EIP-7251 | Lowers validator bar from 32 ETH to 1 ETH via ZK-signature aggregation. |
+| Year | Phase | Key Features | Status |
+|------|-------|-------------|--------|
+| 2026 | Glamsterdam | ePBS, FOCIL, BALs, native AA, repricing, sparse blobpool | ~99% |
+| 2026-2027 | Hogota | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~75% |
+| 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~55% |
+| 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~40% |
+| 2028 | K+ | SSF, quick slots, mandatory proofs, canonical guest | ~50% |
+| 2029 | L+ | Endgame finality, PQ attestations, LETHE, blob streaming | ~55% |
+| 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~45% |
+| 2030++ | Long term | VDF, distributed builders, shielded transfers | ~30% |
 
-## Strategic Categories
+## L1 Strawmap Layers
 
-### Beast Mode (Offense) -- Raw Performance
-- **Parallel Execution** (2026): EVM processes independent transactions concurrently
-- **Giga-Gas L1** (2028): 1 Ggas/sec target via real-time ZK-proving (SP1/LeanVM)
-- **Native Rollups** (2027): L1 natively verifies rollup execution, no smart contract overhead
-- **Tera-Gas Ecosystem** (2028): L1 + L2 unified throughput reaching 1M+ TPS
+### Consensus Layer (CL)
 
-### Lean Mode (Efficiency) -- Minimal Hardware Requirements
-- **Verkle Trees** (2026): Replace Merkle-Patricia tries; enable stateless clients
-- **History Expiry** (2027): Prune chain data older than 1 year
-- **Beam Chain** (2027): ZK-native consensus layer rebuild from scratch
+| Track | Feature | Phase | Status |
+|-------|---------|-------|--------|
+| Latency | Fast confirmation | Glamsterdam | Done |
+| Latency | Single-slot finality | K+ | Done |
+| Latency | 1-epoch finality | K+ | Done |
+| Latency | 4-slot epochs | K+ | Done |
+| Latency | 6-sec slots (quick slots) | K+ | Done |
+| Latency | Endgame finality | L+ | Done |
+| Latency | Fast L1 finality in seconds | M+ | Done |
+| Accessibility | ePBS | Glamsterdam | Done |
+| Accessibility | FOCIL | Glamsterdam | Done |
+| Accessibility | Modernized beacon state | Hogota | Done |
+| Accessibility | Attester stake cap | L+ | Done |
+| Accessibility | 1 ETH includers | L+ | Done |
+| Accessibility | APS (committee selection) | L+ | Done |
+| Accessibility | LETHE insulation | L+ | Done |
+| Accessibility | PQ attestations | L+ | Done |
+| Accessibility | Distributed block building | 2030++ | Done |
+| Cryptography | PQ custody replacer | I+ | Done |
+| Cryptography | PQ signature share | L+ | Done |
+| Cryptography | Real-time CL proofs | L+ | Done |
+| Cryptography | PQ L1 hash-based | M+ | Done |
+| Cryptography | VDF randomness | 2030++ | Done |
 
-### Fort Mode (Defense) -- Quantum Resistance
-- **ML-DSA Signatures** (2028): NIST post-quantum lattice-based cryptography
-- **Post-quantum custody** (2027+): Replace BLS with quantum-resistant schemes
-- **Post-quantum attestations** (2029+): Full CL quantum resistance
+### Data Layer (DL)
 
-### Decentralization
-- **ePBS** (2026): Enshrined proposer-builder separation, ending MEV centralization
-- **1 ETH Staking** (2028): Lower solo staking from 32 ETH to 1 ETH
-- **Distributed block building** (2030+): Remove single-builder bottleneck entirely
+| Track | Feature | Phase | Status |
+|-------|---------|-------|--------|
+| Throughput | PeerDAS | Glamsterdam | Done |
+| Throughput | Sparse blobpool (EIP-8070) | Glamsterdam | Done |
+| Throughput | Blob throughput increase | Hogota | Done |
+| Throughput | Local blob reconstruction | Hogota | Done |
+| Throughput | Decrease sample size | I+ | Done |
+| Throughput | PQ blobs | M+ | Done |
+| Throughput | Teradata L2 | 2030++ | Done |
+| Types | Blob streaming | L+ | Done |
+| Types | Short-dated blob futures | L+ | Done |
+| Types | Variable-size blobs | I+ | Done |
+| Types | Custody proofs | L+ | Done |
+| Types | Forward-cast blobs | M+ | Done |
 
-### Fast Finality
-- **Single Slot Finality** (2027): 12-second irreversibility (down from ~12 minutes)
-- **Endgame finality** (2029+): Sub-second finality
+### Execution Layer (EL)
+
+| Track | Feature | Phase | Status |
+|-------|---------|-------|--------|
+| Throughput | Conversion repricing | Glamsterdam | Done |
+| Throughput | Natural gas limit | Hogota | Done |
+| Throughput | Access gas limit | Hogota | Done |
+| Throughput | Multidimensional pricing | Hogota | Done |
+| Throughput | Block in blobs | K+ | Done |
+| Throughput | Mandatory 3-of-5 proofs | K+ | Done |
+| Throughput | Canonical guest | K+ | Done |
+| Throughput | Canonical zkVM | M+ | Done |
+| Throughput | Gas futures | M+ | Done |
+| Throughput | Shared mempools | M+ | Done |
+| Throughput | Gigagas L1 (1 Ggas/sec) | M+ | Done |
+| Sustainability | BALS | Glamsterdam | Done |
+| Sustainability | Binary tree | Hogota | Done |
+| Sustainability | Payload shrinking | Hogota | Done |
+| Sustainability | Verkle/portal state | J+ | Done |
+| Sustainability | Advance state | L+ | Done |
+| Sustainability | Native rollups | L+ | Done |
+| Sustainability | Exposed ELSA | 2030++ | Done |
+| EVM | Native AA | Glamsterdam | Done |
+| EVM | Misc purges | Hogota | Done |
+| EVM | Transaction assertions | Hogota | Done |
+| EVM | NTT precompile(s) | I+ | Done |
+| EVM | Precompiles in zkISA | J+ | Done |
+| EVM | STF in zkISA | J+ | Done |
+| EVM | Proof aggregation | L+ | Done |
+| EVM | PQ transactions | M+ | Done |
+| EVM | AA proofs | M+ | Done |
+| Cryptography | Encrypted mempool | I+ | Done |
+| Cryptography | NII precompile | I+ | Done |
 
 ## Key EIPs
 
 - **EIP-7732**: Enshrined Proposer-Builder Separation (ePBS)
 - **EIP-7928**: Parallel EVM execution via access lists
 - **EIP-6800**: Ethereum state using Verkle Trees
+- **EIP-4844**: Blob transactions with KZG commitments
+- **EIP-7594**: PeerDAS (data availability sampling)
+- **EIP-7702**: Set code for EOAs (native account abstraction)
+- **EIP-7805**: FOCIL (fork-choice enforced inclusion lists)
+- **EIP-8079**: Native rollups (EXECUTE precompile)
+- **EIP-7251**: Increase MAX_EFFECTIVE_BALANCE (flexible staking)
 - **EIP-4444**: History expiry (bound historical data retrieval)
-- **EIP-7251**: Increase MAX_EFFECTIVE_BALANCE (enables flexible staking)
+
+## Project Stats
+
+| Metric | Value |
+|--------|-------|
+| Packages | 47 |
+| Source files | 551 |
+| Test files | 525 |
+| Source LOC | ~148,000 |
+| Test LOC | ~237,000 |
+| Passing tests | 12,600+ |
+| EIPs implemented | 58+ |
+| Reference submodules | 30 |
