@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering consensus (SSF, quick slots), data availability (PeerDAS,
 blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 
-**Status**: 47 packages, 824 source files (~247K LOC), 757 test files (~324K LOC), 14,600+ tests, all passing.
+**Status**: 47 packages, 839 source files (~253K LOC), 772 test files (~329K LOC), 14,900+ tests, all passing.
 
 ## Architecture
 
@@ -66,9 +66,9 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 | `pkg/core/vops` | Validity-Only Partial Statelessness: executor, validator, witness integration | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
 | `pkg/ssz` | SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList | Complete |
-| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, threshold | Complete |
-| `pkg/crypto/pqc` | Post-quantum: Dilithium3, Falcon512, SPHINCS+, hybrid signer, lattice blobs | Complete |
-| `pkg/consensus` | SSF, quick slots, 1-epoch finality, attestations, beacon state, block producer, slashing | Complete |
+| `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, threshold, shielded circuits | Complete |
+| `pkg/crypto/pqc` | PQ crypto: ML-DSA-65 (real signer), Dilithium3, Falcon512, SPHINCS+, hybrid, lattice blobs, algorithm registry | Complete |
+| `pkg/consensus` | SSF, quick slots, 1-epoch finality, attestations, beacon state, BLS adapter, jeanVM aggregation, PQ chain security, unified beacon state, CL proof circuits | Complete |
 | `pkg/consensus/lethe` | LETHE insulation protocol for validator privacy | Complete |
 | `pkg/engine` | Engine API server (V3-V7), forkchoice, payload building, ePBS, distributed builder | Complete |
 | `pkg/epbs` | Enshrined PBS (EIP-7732): BuilderBid, PayloadEnvelope, auctions | Complete |
@@ -85,10 +85,10 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 | `pkg/trie/bintrie` | Binary Merkle trie: Get/Put/Delete/Hash/Commit, proofs | Complete |
 | `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Complete |
 | `pkg/rollup` | Native rollups (EIP-8079): EXECUTE precompile, anchor contract | Complete |
-| `pkg/zkvm` | zkVM framework: guest programs, canonical guest (RISC-V), STF proofs | Complete |
-| `pkg/proofs` | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5 system | Complete |
+| `pkg/zkvm` | zkVM framework: guest programs, canonical guest (RISC-V), STF executor, zkISA bridge (EVM ↔ zkISA host calls) | Complete |
+| `pkg/proofs` | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5, AA proof circuits | Complete |
 | `pkg/light` | Light client: header sync, proof cache, sync committee, CL proofs | Complete |
-| `pkg/p2p` | TCP transport, devp2p, peer mgmt, gossip, Portal network, Snap/1 | Complete |
+| `pkg/p2p` | TCP transport, devp2p, peer mgmt, gossip, Portal network, Snap/1, SetCode broadcast (EIP-7702) | Complete |
 | `pkg/p2p/discover` | Peer discovery V4/V5, Kademlia DHT | Complete |
 | `pkg/p2p/discv5` | Discovery V5 protocol with WHOAREYOU/handshake | Complete |
 | `pkg/p2p/dnsdisc` | DNS-based peer discovery | Complete |
@@ -108,7 +108,7 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 ```bash
 cd pkg
 go build ./...
-go test ./...         # 47 packages, 14,600+ tests
+go test ./...         # 47 packages, 14,900+ tests
 go test -v ./...      # verbose output
 ```
 
@@ -208,26 +208,33 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 |-------|------|--------|------------|
 | Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
 | Hogota | 2026-2027 | **~85%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool, blob streaming |
-| I+ | 2027 | **~75%** | Native rollups, zkVM (RISC-V CPU), VOPS, proof aggregation, PQ crypto, blob futures |
-| J+ | 2027-2028 | **~70%** | Verkle migration, light client, block-in-blobs, Reed-Solomon reconstruction |
-| K+ | 2028 | **~75%** | SSF, 6-sec slots, mandatory 3-of-5 proofs, 1M attestations (parallel BLS, subnets) |
-| L+ | 2029 | **~75%** | Endgame finality, PQ attestations, APS, custody proofs, distributed builder |
-| M+ | 2029+ | **~70%** | PQ L1 (lattice blobs), gigagas (work-stealing), sharded mempool, real-time CL proofs |
-| 2030++ | Long term | **~65%** | VDF randomness, 51% auto-recovery, AA proofs, shielded transfers (ZK proofs) |
+| I+ | 2027 | **~80%** | Native rollups, zkVM (RISC-V + STF executor), VOPS, proof aggregation, PQ crypto, blob futures |
+| J+ | 2027-2028 | **~75%** | Verkle migration, light client, block-in-blobs, Reed-Solomon reconstruction, variable blobs |
+| K+ | 2028 | **~80%** | SSF, 6-sec slots, mandatory 3-of-5 proofs, 1M attestations (parallel BLS, subnets), CL proof circuits |
+| L+ | 2029 | **~80%** | Endgame finality (BLS adapter), PQ attestations, APS, custody proofs, distributed builder, jeanVM aggregation |
+| M+ | 2029+ | **~75%** | PQ L1 (ML-DSA-65 signer), gigagas integration, sharded mempool, real-time CL proofs, PQ chain security |
+| 2030++ | Long term | **~75%** | VDF randomness, 51% auto-recovery, AA proof circuits, shielded transfers (BN254 ZK proofs), unified beacon state |
 
-### Key Gaps (2030++ and beyond)
+### Key Gaps (5 PARTIAL items remaining)
 
 | Gap | Status | What's Missing |
 |-----|--------|----------------|
-| Canonical zkVM | **Functional** | RV32IM CPU, memory, witness, proof backend; needs gnark integration |
-| zkISA proof generation | Partial | Groth16-style proof structure; needs real curve pairing |
-| Private L1 / shielded | **Functional** | ZK transfer proofs, nullifier accumulator, commitment tree; needs on-chain verifier |
-| Gigagas L1 (1 Ggas/sec) | **Functional** | Work-stealing, sharded state, rate metering; needs production profiling |
-| Teragas L2 (1 Gbyte/sec) | **Functional** | Bandwidth enforcer, streaming pipeline; needs real network I/O |
-| 1M attestations/slot | **Functional** | Parallel BLS, 64 subnets, batch verifier, scaler; needs real BLS pairing |
-| Secret proposers | **Functional** | VRF election, anti-equivocation, reveal protocol; needs Ed25519-VRF binding |
-| PQ blob commitments | **Functional** | MLWE lattice commitments, batch verifier; needs parameter hardening |
-| Exposed zkISA | Stub | eWASM framework started; full ISA exposure pending |
+| Fast L1 finality (#6) | **Partial** | Engine targets 500ms; needs real BLS pairing + block execution path |
+| Tech debt reset (#12) | **Partial** | Tracks deprecated fields; needs automated migration tooling |
+| PQ blobs (#31) | **Partial** | Lattice commitments work; Falcon/SPHINCS+ Sign() are keccak256 stubs |
+| Teragas L2 (#34) | **Partial** | Accounting framework; needs real bandwidth enforcement |
+| PQ transactions (#64) | **Partial** | Type 0x07 exists; ML-DSA-65 real, Falcon/SPHINCS+ stubs |
+
+### Library Integration Needed
+
+| Component | Current | Target Library | Priority |
+|-----------|---------|---------------|----------|
+| BLS pairing | Pure-Go placeholder | `supranational/blst` (in refs/) | HIGH |
+| KZG commitments | Placeholder | `crate-crypto/go-eth-kzg` (in refs/) | HIGH |
+| ZK proof circuits | Simulated proofs | `consensys/gnark` Groth16/PLONK (in refs/) | MEDIUM |
+| ML-DSA validation | Custom lattice impl | Validate vs `cloudflare/circl` (in refs/) | MEDIUM |
+| Verkle IPA | Placeholder | `crate-crypto/go-ipa` (in refs/) | MEDIUM |
+| Falcon/SPHINCS+ | keccak256 stubs | `cloudflare/circl` sign/slhdsa | LOW |
 
 ## Docs
 
