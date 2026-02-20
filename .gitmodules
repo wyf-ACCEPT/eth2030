@@ -67,3 +67,24 @@
 [submodule "refs/consensus-spec-tests"]
 	path = refs/consensus-spec-tests
 	url = https://github.com/ethereum/consensus-spec-tests
+[submodule "refs/go-ipa"]
+	path = refs/go-ipa
+	url = https://github.com/crate-crypto/go-ipa
+[submodule "refs/blst"]
+	path = refs/blst
+	url = https://github.com/supranational/blst
+[submodule "refs/circl"]
+	path = refs/circl
+	url = https://github.com/cloudflare/circl
+[submodule "refs/go-eth-kzg"]
+	path = refs/go-eth-kzg
+	url = https://github.com/crate-crypto/go-eth-kzg
+[submodule "refs/gnark"]
+	path = refs/gnark
+	url = https://github.com/Consensys/gnark
+[submodule "refs/gnark-crypto"]
+	path = refs/gnark-crypto
+	url = https://github.com/Consensys/gnark-crypto
+[submodule "refs/c-kzg-4844"]
+	path = refs/c-kzg-4844
+	url = https://github.com/ethereum/c-kzg-4844
