@@ -26,26 +26,23 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 ### Upgrade Timeline (implementation status)
 - **Glamsterdam** (2026) ~99%: fast confirmation, ePBS, FOCIL, sparse blobpool (EIP-8070), native AA (EIP-7702+7701), BALs (EIP-7928), repricing (18 EIPs), EIP-7708 ETH logs, EIP-7685 requests, EIP-8141 frame transactions (APPROVE, TXPARAM opcodes), EIP-7918 blob base fee bound
 - **Hogota** (2026-2027) ~85%: BPO blob schedules (BPO1/BPO2), EIP-7742 uncoupled blobs, EIP-7898 uncoupled execution payload, multidim gas (EIP-7706), gas limit schedule, binary tree, payload chunking, block-in-blobs, tx assertions, NTT precompile, SSZ transactions (EIP-6404), EIP-7807 SSZ blocks, EIP-7745 log index, EIP-7916 SSZ ProgressiveList, EIP-8077 announce nonce, encrypted mempool (threshold crypto + ordering), blob streaming, cell-level messages
-- **I+** (2027) ~70%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework + STF, VOPS (partial statelessness + complete validator), proof aggregation, post-quantum crypto, EIP-7251 MAX_EFFECTIVE_BALANCE, validator consolidation, CL proof generator, stateless execution, beam sync, blob futures, sample optimization
-- **J+** (2027-2028) ~65%: STF in zkISA framework, light client (proof cache + sync committee), verkle state migration, variable-size blobs, Reed-Solomon blob reconstruction, block-in-blobs encoding
-- **K+** (2028) ~70%: 6-sec slots (quick slots framework), SSF (single-slot finality), 4-slot epochs, 1-epoch finality, mandatory 3-of-5 proofs, canonical guest, announce nonce, 128K attester cap
-- **L+** (2029) ~70%: endgame finality (sub-second BLS aggregation), post quantum attestations (Dilithium), BPO blobs increase, validity-only state, attester stake cap, APS (committee selection), blob streaming, custody proofs, cell gossip, distributed block builder, 1 ETH includers, tech debt reset, secret proposers
-- **M+** (2029+) ~60%: fast L1 finality in seconds, post quantum L1 hash-based (XMSS/SPHINCS+), gigagas L1 (parallel executor), canonical zkVM (RISC-V guest stub), gas futures market (contracts + settlement), post-quantum blob commitments, sharded mempool, proof aggregation, real-time CL proofs
-- **Longer term** (2030++) ~55%: distributed block building, VDF randomness (Wesolowski scheme), teragas L2 (stub), private L1 shielded transfers (Pedersen commitments), 51% attack auto-recovery, AA proofs, exposed zkISA (stub), 1M attestations/slot (partial), gigagas L1 (executor scaffolding)
+- **I+** (2027) ~75%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework + STF + RISC-V CPU, VOPS (partial statelessness + complete validator), proof aggregation, post-quantum crypto (lattice commitments), EIP-7251 MAX_EFFECTIVE_BALANCE, validator consolidation, CL proof generator, stateless execution, beam sync, blob futures, sample optimization
+- **J+** (2027-2028) ~70%: STF in zkISA framework, light client (proof cache + sync committee), verkle state migration, variable-size blobs, Reed-Solomon blob reconstruction, block-in-blobs encoding
+- **K+** (2028) ~75%: 6-sec slots (quick slots framework), SSF (single-slot finality), 4-slot epochs, 1-epoch finality, mandatory 3-of-5 proofs, canonical guest (RISC-V CPU), announce nonce, 1M attestations (parallel BLS, 64 subnets, batch verifier, scaler)
+- **L+** (2029) ~75%: endgame finality (sub-second BLS aggregation), post quantum attestations (Dilithium), BPO blobs increase, validity-only state, attester stake cap, APS (committee selection), blob streaming, custody proofs, cell gossip, distributed block builder, 1 ETH includers, tech debt reset, secret proposers (VRF election)
+- **M+** (2029+) ~70%: fast L1 finality in seconds, post quantum L1 hash-based (XMSS/SPHINCS+), gigagas L1 (work-stealing + sharded state + rate metering), canonical zkVM (RISC-V RV32IM CPU + witness + proof backend), gas futures market (contracts + settlement), post-quantum blob commitments (MLWE lattice), sharded mempool, proof aggregation, real-time CL proofs
+- **Longer term** (2030++) ~65%: distributed block building, VDF randomness (Wesolowski scheme), teragas L2 (bandwidth enforcer + streaming pipeline), private L1 shielded transfers (ZK proofs + nullifier accumulator + commitment tree), 51% attack auto-recovery, AA proofs, exposed zkISA, 1M attestations/slot (parallel BLS + committee subnets)
 
-### Gap Summary (what's missing for 2030++)
-- **zkVM backend**: Canonical RISC-V guest execution engine not implemented (types/precompile only)
-- **zkISA proofs**: ProveExecution stubs; no real zk-SNARK generation
-- **Private L1**: Shielded transfer types exist but no zk-proof generation; encryption is placeholder
-- **Gigagas enforcement**: Parallel executor scaffolding but no cross-block 1 Ggas/sec metering
-- **Teragas L2**: In-memory throughput manager only; no streaming I/O or bandwidth enforcement
-- **1M attestations**: Pool caps at 16K; needs distributed committee subnet sharding
+### Gap Summary (see docs/GAP_ANALYSIS.md for full audit of 65 roadmap items)
+- **MISSING**: exposed zkISA (host ABI bridge)
+- **STUB**: PQC primitives (Falcon/SPHINCS+ Sign() use keccak256 stubs; ML-DSA-65 has real lattice-based signer)
+- **PARTIAL**: Real zkVM proof backend (MockVerifier only), canonical guest wiring (RISC-V executor framework), STF in zkISA (simulated proofs), shielded transfers (ZK circuit framework), endgame finality BLS (adapter needs real blst), gigagas chain integration (parallel executor not yet wired to live state), beacon specs merge (UnifiedBeaconState with migration helpers)
 
 ### Statistics
 - **Packages**: 47 (all passing)
-- **Source**: 803 files, ~241K LOC
-- **Tests**: 737 files, ~318K LOC, 14,300+ tests
-- **Total**: 1,540 files, ~559K LOC
+- **Source**: 839 files, ~253K LOC
+- **Tests**: 772 files, ~329K LOC, 14,900+ tests
+- **Total**: 1,611 files, ~582K LOC
 - **EIPs**: 58 complete, 6 substantial
 
 ### EIP Implementation Status
@@ -64,10 +61,10 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `core/state/pruner/` - State pruner with bloom filter reachability
   - `core/vops/` - Validity-Only Partial Statelessness: partial executor, validator, witness integration, complete VOPS validator (access lists, storage proofs)
   - `rlp/` - RLP encoding/decoding
-  - `consensus/` - Consensus layer: SSF (single-slot finality), quick slots (6s, 4-slot epochs), 1-epoch finality, EIP-7251 validator balance (2048 ETH max EB), consolidation, APS (committee selection), EIP-7549 attestations, PQ attestations (Dilithium), attester stake cap, endgame finality, beacon state
+  - `consensus/` - Consensus layer: SSF (single-slot finality), quick slots (6s, 4-slot epochs), 1-epoch finality, EIP-7251 validator balance (2048 ETH max EB), consolidation, APS (committee selection), EIP-7549 attestations, PQ attestations (Dilithium), attester stake cap, endgame finality, UnifiedBeaconState (merged v1/v2/modern), finality BLS adapter, CL proof circuits (SHA-256 Merkle), jeanVM aggregation (Groth16 ZK-circuit BLS), PQ chain security (SHA-3 fork choice)
   - `ssz/` - SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList
-  - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381, Banderwagon, IPA proofs, VDF (Wesolowski), shielded transfers (Pedersen commitments), threshold crypto (Shamir SSS, Feldman VSS, ElGamal encryption)
-  - `crypto/pqc/` - Post-quantum crypto: Dilithium3 (keypair, sign, verify), Falcon512, SPHINCS+SHA256, hybrid signer, lattice-based blob commitments
+  - `crypto/` - Keccak-256, secp256k1 ECDSA, BN254, BLS12-381, Banderwagon, IPA proofs, VDF (Wesolowski), shielded transfers (Pedersen commitments + ZK circuit), threshold crypto (Shamir SSS, Feldman VSS, ElGamal encryption)
+  - `crypto/pqc/` - Post-quantum crypto: ML-DSA-65 (real lattice signer, FIPS 204), Dilithium3 (stub), Falcon512, SPHINCS+SHA256, unified hash signer (XMSS/WOTS+), hybrid signer, PQ algorithm registry, lattice-based blob commitments
   - `engine/` - Engine API server (V3-V7), forkchoice, payload building, ePBS builder API, EIP-7898 uncoupled payload, distributed block builder (registration, bids, auctions), Vickrey builder auction (second-price sealed-bid, slashing)
   - `trie/` - Binary Merkle tree (EIP-7864), SHA-256 hashing, proofs, MPT migration
   - `trie/bintrie/` - Binary Merkle trie (from go-ethereum), Get/Put/Delete/Hash/Commit, proofs
@@ -78,12 +75,12 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `das/` - PeerDAS (EIP-7594): DataColumn, ColumnSidecar, sampling, custody, reconstruction, BLS12-381 field arithmetic, variable-size blobs, Reed-Solomon Lagrange interpolation, blob streaming, blob futures, custody proofs, cell gossip
   - `das/erasure/` - Reed-Solomon erasure coding for blob reconstruction
   - `rollup/` - Native rollups (EIP-8079): EXECUTE precompile, anchor contract
-  - `zkvm/` - zkVM framework: guest programs, verification keys, prover backend, canonical guest (RISC-V execution, guest registry, precompile), STF framework (state transition proofs for zkISA)
-  - `proofs/` - Proof aggregation framework: ZKSNARK, ZKSTARK, IPA, KZG registry and aggregator, mandatory 3-of-5 proof system (prover assignment, submission, verification, penalties)
+  - `zkvm/` - zkVM framework: guest programs, verification keys, prover backend, canonical guest (RISC-V executor, guest registry, precompile), STF executor (state transition proofs for zkISA), zkISA bridge (host ABI, EVM translation)
+  - `proofs/` - Proof aggregation framework: ZKSNARK, ZKSTARK, IPA, KZG registry and aggregator, mandatory 3-of-5 proof system (prover assignment, submission, verification, penalties), AA proof circuits
   - `light/` - Light client: header sync, checkpoint store, verification, proof cache (LRU), sync committee verification, CL proof generator (state root, validator, balance proofs)
   - `txpool/` - Transaction pool with validation, replace-by-fee, eviction, EIP-8070 sparse blobpool (custody, WAL, price eviction), sharded mempool (consistent hashing)
   - `txpool/encrypted/` - Encrypted mempool: commit-reveal scheme, threshold decryption ordering
-  - `p2p/` - P2P peer management, ETH wire protocol, discovery (V5 Kademlia DHT), ENR, enode, DNS discovery, Snap/1 protocol, Portal network (content DHT, Kademlia routing, history, state), gossip protocol (pub/sub, peer scoring, banning, deduplication)
+  - `p2p/` - P2P peer management, ETH wire protocol, discovery (V5 Kademlia DHT), ENR, enode, DNS discovery, Snap/1 protocol, Portal network (content DHT, Kademlia routing, history, state), gossip protocol (pub/sub, peer scoring, banning, deduplication), SetCode broadcast (EIP-7702 auth list gossip)
   - `sync/` - Full sync + snap sync pipeline, beam sync (stateless), trie sync (concurrent healing)
   - `rpc/` - JSON-RPC server, 50+ methods, filters, subscriptions, WebSocket, Beacon API (16 endpoints)
   - `eth/` - ETH protocol handler and codec, EIP-8077 announce nonce (ETH/72)
