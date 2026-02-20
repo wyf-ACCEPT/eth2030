@@ -231,6 +231,7 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 
 ## Docs
 
+- [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) -- Full audit of 65 roadmap items vs codebase (with priority rankings)
 - [docs/PROGRESS.md](docs/PROGRESS.md) -- Gap analysis and completion tracking
 - [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
 - [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
