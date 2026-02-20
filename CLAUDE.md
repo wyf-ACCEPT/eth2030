@@ -171,6 +171,49 @@ NOTE: The go.mod is in pkg/ (not project root) to avoid module conflicts with re
 - Use obviously fake placeholders in docs, tests, and examples.
 - Environment variables for secrets; use cloud secrets managers in production.
 
+## Reusable Libraries (refs/ submodules & ecosystem)
+
+When implementing missing functionality, check these production-grade Go libraries first before writing from scratch. All are in `refs/` or available as Go module dependencies.
+
+### How to find reusable code for missing libs
+1. Check `refs/` submodules first (already cloned, read-only): `ls refs/` then explore relevant dirs
+2. Search GitHub orgs: ethereum, consensys, ethpandaops, prysmaticlabs, cloudflare, supranational
+3. Check go-ethereum's `go.sum` for vetted dependencies: `grep <lib> refs/go-ethereum/go.sum`
+4. Validate license compatibility (Apache-2.0, MIT, BSD-3 are OK; GPL/AGPL are NOT)
+5. Prefer pure-Go (no CGO) when possible for simpler builds
+
+### Tier 1 -- Core (in refs/, production-ready)
+
+| Library | Module | CGO | License | Use for |
+|---------|--------|-----|---------|---------|
+| **blst** | `github.com/supranational/blst` | Yes | Apache-2.0 | BLS12-381 signatures, pairing, aggregate verify |
+| **go-eth-kzg** | `github.com/crate-crypto/go-eth-kzg` | No | Apache-2.0 | KZG commitments (EIP-4844 + EIP-7594 PeerDAS) |
+| **c-kzg-4844** | `github.com/ethereum/c-kzg-4844/v2` | Yes | Apache-2.0 | KZG commitments (C, audited, faster) |
+| **gnark** | `github.com/consensys/gnark` | No | Apache-2.0 | ZK-SNARK circuits (Groth16, PLONK) |
+| **gnark-crypto** | `github.com/consensys/gnark-crypto` | No | Apache-2.0 | BLS12-381/BN254 field arithmetic, curves |
+| **circl** | `github.com/cloudflare/circl` | No | BSD-3 | PQC: ML-DSA (FIPS 204), ML-KEM, SLH-DSA |
+| **go-verkle** | `github.com/ethereum/go-verkle` | No | Unlicense | Verkle tree (Insert/Get/Commit/Prove) |
+| **go-ipa** | `github.com/crate-crypto/go-ipa` | No | MIT/Apache | IPA proofs, Banderwagon, Bandersnatch |
+
+### Tier 2 -- Strong candidates
+
+| Library | Module | CGO | License | Use for |
+|---------|--------|-----|---------|---------|
+| **fastssz** | `github.com/ferranbt/fastssz` | No | MIT | SSZ codec + code generator |
+| **uint256** | `github.com/holiman/uint256` | No | BSD-3 | 256-bit math (replaces big.Int) |
+| **gohashtree** | `github.com/prysmaticlabs/gohashtree` | No | MIT | Fast SHA256 for Merkle trees (2-4x) |
+| **go-libp2p** | `github.com/libp2p/go-libp2p` | No | MIT | CL gossipsub, peer discovery |
+| **go-eth2-client** | `github.com/attestantio/go-eth2-client` | No | Apache-2.0 | Beacon API client |
+| **zrnt** | `github.com/protolambda/zrnt` | No | MIT | Executable consensus spec (reference) |
+| **liboqs-go** | `github.com/open-quantum-safe/liboqs-go` | Yes | MIT | Broader PQC algorithm coverage |
+
+### Current gaps where libs would help
+- **BLS pairing**: pkg/crypto/ uses pure-Go placeholder → replace with `blst` for correct aggregate verify
+- **KZG proofs**: pkg/crypto/kzg.go is placeholder → replace with `go-eth-kzg`
+- **ML-DSA validation**: pkg/crypto/pqc/mldsa_signer.go has custom impl → validate against `circl/sign/mldsa`
+- **ZK circuits**: pkg/zkvm/ has simulated proofs → integrate `gnark` for real Groth16/PLONK
+- **Verkle IPA**: pkg/crypto/ipa.go is placeholder → replace with `go-ipa`
+
 ## Agent-Specific Notes
 
 - When answering questions, respond with high-confidence answers only: verify in code; do not guess.
