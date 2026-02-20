@@ -7,11 +7,11 @@
 | Metric | Value |
 |--------|-------|
 | Packages | 47 |
-| Source files | 664 |
-| Test files | 650 |
-| Source LOC | ~191,000 |
-| Test LOC | ~285,000 |
-| Total LOC | ~476,000 |
+| Source files | 670 |
+| Test files | 655 |
+| Source LOC | ~193,000 |
+| Test LOC | ~287,000 |
+| Total LOC | ~480,000 |
 | Passing tests | 16,000+ |
 | Test packages | 47/47 passing |
 | EIPs implemented | 58+ (complete), 5 (substantial) |
