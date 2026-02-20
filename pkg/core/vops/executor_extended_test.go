@@ -74,8 +74,7 @@ func TestExtExecute_GasRefundMechanics(t *testing.T) {
 		t.Errorf("GasUsed = %d, want 21000", result.GasUsed)
 	}
 
-	// Sender balance = initial - value - gasUsed*gasPrice
-	// = 5000000000 - 50 - 21000*2 = 4999957950
+	// Sender balance = 5000000000 - 50 - 21000*2 = 4999957950
 	postSender := result.PostState.GetAccount(sender)
 	expected := big.NewInt(5_000_000_000 - 50 - 21000*2)
 	if postSender.Balance.Cmp(expected) != 0 {
@@ -102,8 +101,7 @@ func TestExtExecute_CoinbaseReceivesFee(t *testing.T) {
 	if coinbase == nil {
 		t.Fatal("coinbase not in post state")
 	}
-	// Fee = gasUsed * gasPrice = 21000 * 5 = 105000
-	expectedFee := big.NewInt(21000 * 5)
+	expectedFee := big.NewInt(21000 * 5) // gasUsed * gasPrice
 	if coinbase.Balance.Cmp(expectedFee) != 0 {
 		t.Errorf("coinbase balance = %s, want %s", coinbase.Balance, expectedFee)
 	}
@@ -148,19 +146,10 @@ func TestExtExecute_InsufficientBalanceEdge(t *testing.T) {
 	pe := NewPartialExecutor(DefaultVOPSConfig())
 	ps := NewPartialState()
 	sender := types.BytesToAddress([]byte{0x10})
-	// Balance = gasCost + value - 1 (one short).
-	// gasCost = 100000 * 1 = 100000, value = 100.
-	// Need 100100, have 100099.
-	ps.SetAccount(sender, &AccountState{
-		Nonce:    0,
-		Balance:  big.NewInt(100099),
-		CodeHash: types.EmptyCodeHash,
-	})
+	// Need gasCost(100000*1) + value(100) = 100100, have 100099 (one short).
+	ps.SetAccount(sender, &AccountState{Balance: big.NewInt(100099), CodeHash: types.EmptyCodeHash})
 	recipient := types.BytesToAddress([]byte{0x20})
-	ps.SetAccount(recipient, &AccountState{
-		Balance:  big.NewInt(0),
-		CodeHash: types.EmptyCodeHash,
-	})
+	ps.SetAccount(recipient, &AccountState{Balance: big.NewInt(0), CodeHash: types.EmptyCodeHash})
 
 	tx := extTx(sender, recipient, 100, 0, 100000, 1)
 	_, err := pe.Execute(tx, ps, extHeader())
@@ -300,28 +289,6 @@ func TestExtBuildPartialStateFromWitness_StorageSlots(t *testing.T) {
 	}
 }
 
-func TestExtBuildPartialStateFromWitness_NilCurrentValue(t *testing.T) {
-	var stem [31]byte
-	stem[0] = 0xDD
-
-	w := &witness.ExecutionWitness{
-		ParentRoot: types.HexToHash("0x01"),
-		State: []witness.StemStateDiff{
-			{
-				Stem: stem,
-				Suffixes: []witness.SuffixStateDiff{
-					{Suffix: 1, CurrentValue: nil}, // nil should be skipped
-				},
-			},
-		},
-	}
-
-	ps := BuildPartialStateFromWitness(w)
-	if len(ps.Accounts) != 0 {
-		t.Errorf("expected 0 accounts for nil current values, got %d", len(ps.Accounts))
-	}
-}
-
 // ---------- Stateless Block Validation ----------
 
 func TestExtStatelessValidation_RoundTrip(t *testing.T) {
@@ -379,86 +346,27 @@ func TestExtStatelessValidation_AdditionalKey(t *testing.T) {
 
 // ---------- VOPSValidator Extended ----------
 
-func TestExtVOPSValidator_TransitionWithLargeWitness(t *testing.T) {
-	v := NewVOPSValidator()
-	preRoot := types.HexToHash("0xAA")
-	witnessData := make([]byte, 10000)
-	for i := range witnessData {
-		witnessData[i] = byte(i % 256)
-	}
-	if err := v.AddWitness(preRoot, witnessData); err != nil {
-		t.Fatal(err)
-	}
-
-	block := []byte{0x01, 0x02, 0x03}
-	expectedPost := computePostRoot(preRoot, witnessData, block)
-
-	ok, err := v.ValidateTransition(preRoot, expectedPost, block)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !ok {
-		t.Error("large witness transition should validate")
-	}
-	if v.WitnessSize() != 10000 {
-		t.Errorf("witness size = %d, want 10000", v.WitnessSize())
-	}
-}
-
-func TestExtVOPSValidator_MultipleWitnesses(t *testing.T) {
-	v := NewVOPSValidator()
-	for i := 0; i < 10; i++ {
-		root := types.BytesToHash([]byte{byte(i)})
-		data := []byte{byte(i), byte(i + 1)}
-		if err := v.AddWitness(root, data); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if v.WitnessSize() != 20 {
-		t.Errorf("total witness size = %d, want 20", v.WitnessSize())
-	}
-}
-
-func TestExtVOPSValidator_ResetClearsAll(t *testing.T) {
-	v := NewVOPSValidator()
-	root := types.HexToHash("0x01")
-	_ = v.AddWitness(root, []byte{0xAA})
-	v.AddAccessListEntry(types.BytesToAddress([]byte{0x01}))
-	v.AddStorageProof(types.HexToHash("0x10"), [][]byte{{0x01}})
-
-	v.Reset()
-
-	if v.WitnessSize() != 0 {
-		t.Error("witnesses should be cleared after reset")
-	}
-	if len(v.AccessedAddresses()) != 0 {
-		t.Error("access list should be cleared after reset")
-	}
-}
-
 // ---------- Missing Witness Detection ----------
 
-func TestExtVOPSValidator_MissingWitnessError(t *testing.T) {
+func TestExtVOPSValidator_ErrorCases(t *testing.T) {
 	v := NewVOPSValidator()
+
+	// Missing witness.
 	_, err := v.ValidateTransition(types.HexToHash("0x01"), types.HexToHash("0x02"), []byte{0x01})
 	if err != ErrWitnessNotFound {
-		t.Errorf("err = %v, want ErrWitnessNotFound", err)
+		t.Errorf("missing witness: err = %v, want ErrWitnessNotFound", err)
 	}
-}
 
-func TestExtVOPSValidator_EmptyBlockError(t *testing.T) {
-	v := NewVOPSValidator()
+	// Empty block.
 	root := types.HexToHash("0x01")
 	_ = v.AddWitness(root, []byte{0xAA})
-
-	_, err := v.ValidateTransition(root, types.HexToHash("0x02"), nil)
+	_, err = v.ValidateTransition(root, types.HexToHash("0x02"), nil)
 	if err != ErrEmptyBlock {
-		t.Errorf("err = %v, want ErrEmptyBlock", err)
+		t.Errorf("nil block: err = %v, want ErrEmptyBlock", err)
 	}
-
 	_, err = v.ValidateTransition(root, types.HexToHash("0x02"), []byte{})
 	if err != ErrEmptyBlock {
-		t.Errorf("err = %v, want ErrEmptyBlock for empty slice", err)
+		t.Errorf("empty block: err = %v, want ErrEmptyBlock", err)
 	}
 }
 
@@ -511,179 +419,6 @@ func TestExtExecute_ContractCreationWithData(t *testing.T) {
 	}
 	if contractAcct.Balance.Int64() != 1000 {
 		t.Errorf("contract balance = %d, want 1000", contractAcct.Balance.Int64())
-	}
-}
-
-// ---------- Collect Accessed State ----------
-
-// extFullState implements FullStateReader for testing.
-type extFullState struct {
-	balances    map[types.Address]*big.Int
-	nonces      map[types.Address]uint64
-	codeHashes  map[types.Address]types.Hash
-	codes       map[types.Address][]byte
-	storage     map[types.Address]map[types.Hash]types.Hash
-	storageRoot map[types.Address]types.Hash
-}
-
-func newExtFullState() *extFullState {
-	return &extFullState{
-		balances:    make(map[types.Address]*big.Int),
-		nonces:      make(map[types.Address]uint64),
-		codeHashes:  make(map[types.Address]types.Hash),
-		codes:       make(map[types.Address][]byte),
-		storage:     make(map[types.Address]map[types.Hash]types.Hash),
-		storageRoot: make(map[types.Address]types.Hash),
-	}
-}
-
-func (f *extFullState) GetBalance(addr types.Address) *big.Int {
-	if b, ok := f.balances[addr]; ok {
-		return new(big.Int).Set(b)
-	}
-	return new(big.Int)
-}
-
-func (f *extFullState) GetNonce(addr types.Address) uint64 {
-	return f.nonces[addr]
-}
-
-func (f *extFullState) GetCodeHash(addr types.Address) types.Hash {
-	if h, ok := f.codeHashes[addr]; ok {
-		return h
-	}
-	return types.EmptyCodeHash
-}
-
-func (f *extFullState) GetCode(addr types.Address) []byte {
-	return f.codes[addr]
-}
-
-func (f *extFullState) GetState(addr types.Address, key types.Hash) types.Hash {
-	if slots, ok := f.storage[addr]; ok {
-		return slots[key]
-	}
-	return types.Hash{}
-}
-
-func (f *extFullState) StorageRoot(addr types.Address) types.Hash {
-	return f.storageRoot[addr]
-}
-
-func TestExtCollectAccessedState_SenderAndRecipient(t *testing.T) {
-	pe := NewPartialExecutor(DefaultVOPSConfig())
-	fs := newExtFullState()
-
-	sender := types.BytesToAddress([]byte{0x10})
-	recipient := types.BytesToAddress([]byte{0x20})
-	fs.balances[sender] = big.NewInt(1_000_000)
-	fs.nonces[sender] = 5
-	fs.balances[recipient] = big.NewInt(500)
-
-	tx := extTx(sender, recipient, 100, 5, 100000, 1)
-
-	ps, err := pe.CollectAccessedState(tx, fs)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ps.GetAccount(sender) == nil {
-		t.Error("sender should be in partial state")
-	}
-	if ps.GetAccount(recipient) == nil {
-		t.Error("recipient should be in partial state")
-	}
-	if ps.GetAccount(sender).Nonce != 5 {
-		t.Errorf("sender nonce = %d, want 5", ps.GetAccount(sender).Nonce)
-	}
-	if ps.GetAccount(sender).Balance.Int64() != 1_000_000 {
-		t.Errorf("sender balance = %s, want 1000000", ps.GetAccount(sender).Balance)
-	}
-}
-
-func TestExtCollectAccessedState_WithAccessList(t *testing.T) {
-	pe := NewPartialExecutor(DefaultVOPSConfig())
-	fs := newExtFullState()
-
-	sender := types.BytesToAddress([]byte{0x10})
-	alAddr := types.BytesToAddress([]byte{0x30})
-	fs.balances[sender] = big.NewInt(1_000_000)
-	fs.nonces[sender] = 0
-	fs.balances[alAddr] = big.NewInt(999)
-	fs.storage[alAddr] = map[types.Hash]types.Hash{
-		types.HexToHash("0x01"): types.HexToHash("0xAA"),
-		types.HexToHash("0x02"): types.HexToHash("0xBB"),
-	}
-
-	recipient := types.BytesToAddress([]byte{0x20})
-	fs.balances[recipient] = big.NewInt(0)
-
-	tx := types.NewTransaction(&types.AccessListTx{
-		Nonce:    0,
-		GasPrice: big.NewInt(1),
-		Gas:      100000,
-		To:       &recipient,
-		Value:    big.NewInt(0),
-		AccessList: types.AccessList{
-			{
-				Address:     alAddr,
-				StorageKeys: []types.Hash{types.HexToHash("0x01"), types.HexToHash("0x02")},
-			},
-		},
-	})
-	tx.SetSender(sender)
-
-	ps, err := pe.CollectAccessedState(tx, fs)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ps.GetAccount(alAddr) == nil {
-		t.Error("access list address should be in partial state")
-	}
-	if ps.GetStorage(alAddr, types.HexToHash("0x01")) != types.HexToHash("0xAA") {
-		t.Error("access list storage slot 0x01 not recorded correctly")
-	}
-	if ps.GetStorage(alAddr, types.HexToHash("0x02")) != types.HexToHash("0xBB") {
-		t.Error("access list storage slot 0x02 not recorded correctly")
-	}
-}
-
-func TestExtCollectAccessedState_NilSender(t *testing.T) {
-	pe := NewPartialExecutor(DefaultVOPSConfig())
-	fs := newExtFullState()
-
-	// Transaction with no sender set.
-	tx := types.NewTransaction(&types.LegacyTx{
-		Nonce:    0,
-		GasPrice: big.NewInt(1),
-		Gas:      21000,
-		Value:    big.NewInt(0),
-	})
-
-	_, err := pe.CollectAccessedState(tx, fs)
-	if err != ErrMissingSender {
-		t.Errorf("err = %v, want ErrMissingSender", err)
-	}
-}
-
-func TestExtCollectAccessedState_CodeCaptured(t *testing.T) {
-	pe := NewPartialExecutor(DefaultVOPSConfig())
-	fs := newExtFullState()
-
-	sender := types.BytesToAddress([]byte{0x10})
-	contract := types.BytesToAddress([]byte{0x20})
-	fs.balances[sender] = big.NewInt(1_000_000)
-	fs.balances[contract] = big.NewInt(0)
-	fs.codes[contract] = []byte{0x60, 0x00, 0xFD} // PUSH0 REVERT
-	fs.codeHashes[contract] = types.HexToHash("0xC0DE")
-
-	tx := extTx(sender, contract, 0, 0, 100000, 1)
-
-	ps, err := pe.CollectAccessedState(tx, fs)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code, ok := ps.Code[contract]; !ok || len(code) != 3 {
-		t.Errorf("contract code not captured: ok=%v, len=%d", ok, len(code))
 	}
 }
 

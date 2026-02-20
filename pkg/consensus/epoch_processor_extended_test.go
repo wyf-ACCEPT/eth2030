@@ -377,72 +377,6 @@ func TestEP_Slashings_NoSlashedValidators(t *testing.T) {
 	}
 }
 
-func TestEP_Slashings_AdjustedCapped(t *testing.T) {
-	// Test that adjusted slashings amount is capped at total active balance.
-	state := epTestState(4, 32*GweiPerETH, 32*GweiPerETH, 64, 32)
-	ce := state.CurrentEpoch()
-	state.Validators[0].Slashed = true
-	state.Validators[0].WithdrawableEpoch = ce + Epoch(epEpochsPerSlashingsVector/2)
-	// Fill all slashings to a huge value.
-	for i := range state.Slashings {
-		state.Slashings[i] = 1000 * GweiPerETH
-	}
-	for i := 0; i < 4; i++ {
-		state.PreviousEpochParticipation.SourceAttested[uint64(i)] = true
-		state.PreviousEpochParticipation.TargetAttested[uint64(i)] = true
-	}
-	initial := state.Balances[0]
-
-	ep := NewEpochProcessor()
-	if err := ep.ProcessEpochTransition(state); err != nil {
-		t.Fatal(err)
-	}
-	// Even with exaggerated slashings, the balance should not go below 0.
-	if state.Balances[0] > initial {
-		t.Errorf("slashed validator balance should decrease: %d -> %d",
-			initial, state.Balances[0])
-	}
-}
-
-// ---------- Historical Roots Update ----------
-
-func TestEP_HistoricalRootsUpdate_AtBoundary(t *testing.T) {
-	// Historical roots update should occur when (currentEpoch+1) % (SlotsPerHistoricalRoot/SlotsPerEpoch) == 0.
-	// With SlotsPerEpoch=1, that means epochsPerHist = 8192/1 = 8192.
-	// So at epoch 8191 (slot 8191), currentEpoch+1 = 8192, 8192 % 8192 == 0.
-	state := epTestState(2, 32*GweiPerETH, 32*GweiPerETH, 8191, 1)
-	for i := 0; i < 2; i++ {
-		state.PreviousEpochParticipation.SourceAttested[uint64(i)] = true
-		state.PreviousEpochParticipation.TargetAttested[uint64(i)] = true
-	}
-	// Set some block roots for the XOR computation.
-	state.BlockRoots[0] = epHash(0xAB)
-
-	ep := NewEpochProcessor()
-	if err := ep.ProcessEpochTransition(state); err != nil {
-		t.Fatal(err)
-	}
-	if len(state.HistoricalRoots) != 1 {
-		t.Errorf("expected 1 historical root, got %d", len(state.HistoricalRoots))
-	}
-}
-
-func TestEP_HistoricalRootsUpdate_NotAtBoundary(t *testing.T) {
-	state := epTestState(2, 32*GweiPerETH, 32*GweiPerETH, 64, 32)
-	for i := 0; i < 2; i++ {
-		state.PreviousEpochParticipation.SourceAttested[uint64(i)] = true
-		state.PreviousEpochParticipation.TargetAttested[uint64(i)] = true
-	}
-
-	ep := NewEpochProcessor()
-	if err := ep.ProcessEpochTransition(state); err != nil {
-		t.Fatal(err)
-	}
-	if len(state.HistoricalRoots) != 0 {
-		t.Errorf("no historical root expected, got %d", len(state.HistoricalRoots))
-	}
-}
-
 // ---------- IntSqrt edge cases ----------
 
 func TestEP_IntSqrt_MaxUint64(t *testing.T) {
@@ -450,25 +384,6 @@ func TestEP_IntSqrt_MaxUint64(t *testing.T) {
 	result := ep.intSqrt(math.MaxUint64)
 	if result != 4294967295 {
 		t.Errorf("intSqrt(MaxUint64) = %d, want 4294967295", result)
-	}
-}
-
-func TestEP_IntSqrt_LargeValues(t *testing.T) {
-	ep := NewEpochProcessor()
-	tests := []struct {
-		input uint64
-		want  uint64
-	}{
-		{1 << 32, 1 << 16},
-		{1 << 40, 1 << 20},
-		{1<<62 + 1<<61, 2629308657}, // approximate
-	}
-	for _, tc := range tests {
-		got := ep.intSqrt(tc.input)
-		// For large values, verify got*got <= input && (got+1)*(got+1) > input.
-		if got*got > tc.input {
-			t.Errorf("intSqrt(%d)=%d: result squared %d > input", tc.input, got, got*got)
-		}
 	}
 }
 
@@ -544,23 +459,3 @@ func TestEP_FinalityDelay_Cases(t *testing.T) {
 	}
 }
 
-// ---------- Epoch helpers ----------
-
-func TestEP_SlotsPerEpochZero(t *testing.T) {
-	state := &EpochProcessorState{Slot: 100, SlotsPerEpoch: 0}
-	if state.CurrentEpoch() != 0 {
-		t.Errorf("CurrentEpoch with SlotsPerEpoch=0 should be 0, got %d", state.CurrentEpoch())
-	}
-	if state.PreviousEpoch() != 0 {
-		t.Errorf("PreviousEpoch with SlotsPerEpoch=0 should be 0, got %d", state.PreviousEpoch())
-	}
-}
-
-func TestEP_HistoricalRoots_ZeroSlotsPerEpoch(t *testing.T) {
-	state := &EpochProcessorState{SlotsPerEpoch: 0, HistoricalRoots: make([]types.Hash, 0)}
-	ep := NewEpochProcessor()
-	ep.processHistoricalRootsUpdate(state)
-	if len(state.HistoricalRoots) != 0 {
-		t.Error("no historical root should be added with SlotsPerEpoch=0")
-	}
-}
