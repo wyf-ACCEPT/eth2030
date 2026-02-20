@@ -84,8 +84,7 @@ func NewStateProofGenerator(maxDepth int) *StateProofGenerator {
 	}
 }
 
-// GenerateAccountProof generates a Merkle proof for the given account
-// against the specified state root.
+// GenerateAccountProof generates a Merkle proof for an account at the state root.
 func (g *StateProofGenerator) GenerateAccountProof(
 	stateRoot types.Hash,
 	addr types.Address,
@@ -121,8 +120,7 @@ func (g *StateProofGenerator) GenerateAccountProof(
 	}, nil
 }
 
-// GenerateStorageProof generates a Merkle proof for a storage slot against
-// the given storage root.
+// GenerateStorageProof generates a Merkle proof for a storage slot.
 func (g *StateProofGenerator) GenerateStorageProof(
 	storageRoot types.Hash,
 	addr types.Address,
@@ -155,8 +153,8 @@ func (g *StateProofGenerator) GenerateStorageProof(
 	}, nil
 }
 
-// buildProofBranch constructs a deterministic Merkle proof branch.
-// Each node in the branch is derived from the key, depth, and root.
+// buildProofBranch constructs a deterministic Merkle proof branch derived
+// from the key, depth, and root.
 func (g *StateProofGenerator) buildProofBranch(
 	root types.Hash,
 	key types.Hash,
@@ -212,8 +210,7 @@ func (g *StateProofGenerator) GeneratedCount() uint64 {
 	return g.generated
 }
 
-// VerifyAccountProof verifies an account Merkle proof against the state root.
-// It recomputes the root from the proof nodes and checks it matches.
+// VerifyAccountProof verifies an account proof against the state root.
 func VerifyAccountProof(proof *AccountStateProof) bool {
 	if proof == nil || len(proof.ProofNodes) == 0 {
 		return false
@@ -235,9 +232,8 @@ func VerifyStorageProof(proof *StorageStateProof) bool {
 	return verifyProofChain(proof.StorageRoot, proof.SlotHash, proof.ProofNodes)
 }
 
-// verifyProofChain checks that the proof nodes are internally consistent.
-// Each node must hash to its declared hash, and the chain must form a
-// valid path from root toward the leaf key.
+// verifyProofChain checks that proof nodes are internally consistent: each
+// node hashes to its declared hash and forms a valid path from root to leaf.
 func verifyProofChain(root types.Hash, key types.Hash, nodes []StateProofNode) bool {
 	if len(nodes) > MaxStateProofDepth {
 		return false
@@ -272,21 +268,21 @@ func deriveRootFromProof(root types.Hash, key types.Hash, nodes []StateProofNode
 	return types.BytesToHash(rootBinding)
 }
 
-// BatchProofGenerator creates multi-proof batches with shared node deduplication.
+// BatchProofGenerator creates multi-proof batches with node deduplication.
 type BatchProofGenerator struct {
 	inner *StateProofGenerator
 	mu    sync.Mutex
 }
 
-// NewBatchProofGenerator creates a batch generator wrapping a state proof generator.
+// NewBatchProofGenerator creates a batch generator wrapping a proof generator.
 func NewBatchProofGenerator(maxDepth int) *BatchProofGenerator {
 	return &BatchProofGenerator{
 		inner: NewStateProofGenerator(maxDepth),
 	}
 }
 
-// GenerateMultiProof generates proofs for multiple accounts and storage
-// slots, deduplicating shared trie nodes.
+// GenerateMultiProof generates proofs for multiple accounts and storage slots
+// with shared trie node deduplication.
 func (bg *BatchProofGenerator) GenerateMultiProof(
 	stateRoot types.Hash,
 	accounts []types.Address,
@@ -323,7 +319,6 @@ func (bg *BatchProofGenerator) GenerateMultiProof(
 		batch.AccountProofs = append(batch.AccountProofs, *proof)
 	}
 
-	// Generate storage proofs, sorted by address for determinism.
 	sortedAddrs := make([]types.Address, 0, len(storageSlots))
 	for addr := range storageSlots {
 		sortedAddrs = append(sortedAddrs, addr)
@@ -334,8 +329,6 @@ func (bg *BatchProofGenerator) GenerateMultiProof(
 
 	for _, addr := range sortedAddrs {
 		slots := storageSlots[addr]
-		// Use the state root as a proxy for the storage root in this
-		// deterministic simulation.
 		storageRoot := crypto.Keccak256Hash(addr.Bytes(), stateRoot.Bytes())
 		for _, slot := range slots {
 			proof, err := bg.inner.GenerateStorageProof(storageRoot, addr, slot)
@@ -356,8 +349,8 @@ func (bg *BatchProofGenerator) GenerateMultiProof(
 	return batch, nil
 }
 
-// VerifyMultiProof verifies all proofs in a batch. Returns true only if
-// every individual proof is valid.
+// VerifyMultiProof verifies all proofs in a batch, returning true only if
+// every proof is valid.
 func VerifyMultiProof(batch *MultiProofBatch) bool {
 	if batch == nil {
 		return false
@@ -375,24 +368,17 @@ func VerifyMultiProof(batch *MultiProofBatch) bool {
 	return true
 }
 
-// CompressProofBatch compresses a multi-proof batch by replacing full node
-// data with hash references where the data is available in SharedNodes.
-// Returns the compressed byte representation.
+// CompressProofBatch compresses a batch by replacing full node data with hash
+// references. Returns the compressed byte representation.
 func CompressProofBatch(batch *MultiProofBatch) ([]byte, error) {
 	if batch == nil {
 		return nil, ErrStateProofBatchEmpty
 	}
 
-	// Layout: [stateRoot(32)] [numSharedNodes(4)] [nodes...] [numAcctProofs(4)] [proofs...] [numStorageProofs(4)] [proofs...]
 	var buf []byte
-
-	// State root.
 	buf = append(buf, batch.StateRoot[:]...)
 
-	// Shared nodes: [count(4)] then each [hash(32)][dataLen(4)][data(N)].
 	buf = binary.BigEndian.AppendUint32(buf, uint32(len(batch.SharedNodes)))
-
-	// Sort shared nodes by hash for deterministic output.
 	sortedHashes := make([]types.Hash, 0, len(batch.SharedNodes))
 	for h := range batch.SharedNodes {
 		sortedHashes = append(sortedHashes, h)
@@ -408,7 +394,6 @@ func CompressProofBatch(batch *MultiProofBatch) ([]byte, error) {
 		buf = append(buf, data...)
 	}
 
-	// Account proof count.
 	buf = binary.BigEndian.AppendUint32(buf, uint32(len(batch.AccountProofs)))
 	for _, ap := range batch.AccountProofs {
 		buf = append(buf, ap.Address[:]...)
@@ -424,7 +409,6 @@ func CompressProofBatch(batch *MultiProofBatch) ([]byte, error) {
 		}
 	}
 
-	// Storage proof count.
 	buf = binary.BigEndian.AppendUint32(buf, uint32(len(batch.StorageProofs)))
 	for _, sp := range batch.StorageProofs {
 		buf = append(buf, sp.Address[:]...)
