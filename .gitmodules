@@ -61,3 +61,9 @@
 [submodule "refs/execution-spec-tests"]
 	path = refs/execution-spec-tests
 	url = https://github.com/ethereum/execution-spec-tests
+[submodule "refs/execution-specs"]
+	path = refs/execution-specs
+	url = https://github.com/ethereum/execution-specs
+[submodule "refs/consensus-spec-tests"]
+	path = refs/consensus-spec-tests
+	url = https://github.com/ethereum/consensus-spec-tests

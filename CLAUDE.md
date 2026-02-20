@@ -79,8 +79,9 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `metrics/` - Counters, gauges, histograms, Prometheus export, EWMA, meter, CPU tracker
 - `cmd/eth2028/` - CLI binary with flags, signal handling
 - `internal/testutil/` - Shared test utilities
-- `refs/` - Reference submodules (read-only, do NOT modify)
-  - **Ethereum core**: go-ethereum, EIPs, ERCs, consensus-specs, execution-apis, execution-spec-tests, beacon-APIs, builder-specs
+- `refs/` - Reference submodules (read-only, do NOT modify). Main upstream: https://github.com/orgs/ethereum/repositories (query/search here before design/impl)
+  - **Ethereum specs**: consensus-specs, execution-specs, consensus-spec-tests, execution-spec-tests, execution-apis, beacon-APIs, builder-specs, EIPs, ERCs
+  - **Ethereum core**: go-ethereum
   - **Utilities**: eth-utils, go-verkle, web3.py
   - **Governance**: pm (project management), eip-review-bot, iptf-pocs
   - **Devops**: benchmarkoor, benchmarkoor-tests, ethereum-package, erigone, xatu, execution-processor, consensoor
