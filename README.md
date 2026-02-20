@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering consensus (SSF, quick slots), data availability (PeerDAS,
 blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 
-**Status**: 47 packages, ~212K LOC source, ~307K LOC tests, 18,000+ tests, all passing.
+**Status**: 47 packages, 803 source files (~241K LOC), 737 test files (~318K LOC), 14,300+ tests, all passing.
 
 ## Architecture
 
@@ -108,7 +108,7 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 ```bash
 cd pkg
 go build ./...
-go test ./...         # 47 packages, 12,600+ tests
+go test ./...         # 47 packages, 14,300+ tests
 go test -v ./...      # verbose output
 ```
 
@@ -202,18 +202,30 @@ EVM tracing, and MPT proofs.
 
 ## Roadmap Coverage
 
-Full coverage of the EF Protocol L1 Strawmap across all upgrade phases:
+Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phases:
 
 | Phase | Year | Status | Highlights |
 |-------|------|--------|------------|
-| Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing, sparse blobpool |
-| Hogota | 2026-2027 | ~75% | Blob throughput, multidim gas, payload chunking, SSZ |
-| I+ | 2027 | ~55% | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto |
-| J+ | 2027-2028 | ~40% | Verkle migration, encrypted mempool, light client |
-| K+ | 2028 | ~50% | SSF, mandatory proofs, canonical guest, quick slots |
-| L+ | 2029 | ~55% | Endgame finality, PQ attestations, LETHE, blob streaming |
-| M+ | 2029+ | ~45% | Gigagas, canonical zkVM, gas futures, PQ transactions |
-| 2030++ | Long term | ~30% | VDF, distributed builders, shielded transfers |
+| Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
+| Hogota | 2026-2027 | **~85%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool, blob streaming |
+| I+ | 2027 | **~70%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, blob futures |
+| J+ | 2027-2028 | **~65%** | Verkle migration, light client, block-in-blobs, Reed-Solomon reconstruction |
+| K+ | 2028 | **~70%** | SSF, 6-sec slots, mandatory 3-of-5 proofs, 128K attester cap |
+| L+ | 2029 | **~70%** | Endgame finality, PQ attestations, APS, custody proofs, distributed builder |
+| M+ | 2029+ | **~60%** | PQ L1 hash-based, gas futures, sharded mempool, real-time CL proofs |
+| 2030++ | Long term | **~55%** | VDF randomness, 51% auto-recovery, AA proofs, shielded transfers (stub) |
+
+### Key Gaps (2030++ and beyond)
+
+| Gap | Status | What's Missing |
+|-----|--------|----------------|
+| Canonical zkVM | Partial | RISC-V guest execution engine (types/precompile defined) |
+| zkISA proof generation | Stub | No real zk-SNARK backend; `ProveExecution` not wired |
+| Private L1 / shielded | Stub | Types exist; no zk-proof generation or real encryption |
+| Gigagas L1 (1 Ggas/sec) | Partial | Parallel executor scaffolding; no cross-block rate metering |
+| Teragas L2 (1 Gbyte/sec) | Stub | In-memory manager; no streaming I/O or bandwidth enforcement |
+| 1M attestations/slot | Partial | Pool caps at 16K; needs distributed committee subnets |
+| Exposed zkISA | Stub | eWASM framework started; full ISA exposure pending |
 
 ## Docs
 

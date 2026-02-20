@@ -25,18 +25,27 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 
 ### Upgrade Timeline (implementation status)
 - **Glamsterdam** (2026) ~99%: fast confirmation, ePBS, FOCIL, sparse blobpool (EIP-8070), native AA (EIP-7702+7701), BALs (EIP-7928), repricing (18 EIPs), EIP-7708 ETH logs, EIP-7685 requests, EIP-8141 frame transactions (APPROVE, TXPARAM opcodes), EIP-7918 blob base fee bound
-- **Hogota** (2026-2027) ~75%: BPO blob schedules (BPO1/BPO2), EIP-7742 uncoupled blobs, EIP-7898 uncoupled execution payload, multidim gas (EIP-7706), gas limit schedule, binary tree, payload chunking, block-in-blobs, tx assertions, NTT precompile, SSZ transactions (EIP-6404), EIP-7807 SSZ blocks, EIP-7745 log index, EIP-7916 SSZ ProgressiveList, EIP-8077 announce nonce
-- **I+** (2027) ~55%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework + STF, VOPS (partial statelessness + complete validator), proof aggregation, post-quantum crypto, EIP-7251 MAX_EFFECTIVE_BALANCE, validator consolidation, CL proof generator, stateless execution, beam sync
-- **J+** (2027-2028) ~40%: STF in zkISA framework, light client (proof cache + sync committee), verkle state migration, encrypted mempool (threshold crypto + ordering), variable-size blobs, Reed-Solomon blob reconstruction
-- **K+** (2028) ~50%: 6-sec slots (quick slots framework), SSF (single-slot finality), 4-slot epochs, 1-epoch finality, mandatory 3-of-5 proofs, canonical guest, announce nonce
-- **L+** (2029) ~55%: endgame finality (sub-second BLS aggregation), post quantum attestations (Dilithium), BPO blobs increase, validity-only state, attester stake cap, APS (committee selection), blob streaming, custody proofs, cell gossip, distributed block builder
-- **M+** (2029+) ~45%: fast L1 finality in seconds, post quantum L1, gigagas L1 (parallel executor), canonical zkVM (RISC-V guest), gas futures market (contracts + settlement), post-quantum blob commitments
-- **Longer term** (2030++) ~30%: distributed block building, VDF randomness (Wesolowski scheme), teragas L2, private L1 shielded transfers (Pedersen commitments), sharded mempool, DNS discovery
+- **Hogota** (2026-2027) ~85%: BPO blob schedules (BPO1/BPO2), EIP-7742 uncoupled blobs, EIP-7898 uncoupled execution payload, multidim gas (EIP-7706), gas limit schedule, binary tree, payload chunking, block-in-blobs, tx assertions, NTT precompile, SSZ transactions (EIP-6404), EIP-7807 SSZ blocks, EIP-7745 log index, EIP-7916 SSZ ProgressiveList, EIP-8077 announce nonce, encrypted mempool (threshold crypto + ordering), blob streaming, cell-level messages
+- **I+** (2027) ~70%: binary trie, state access events, verkle gas, native rollups (EIP-8079), zkVM framework + STF, VOPS (partial statelessness + complete validator), proof aggregation, post-quantum crypto, EIP-7251 MAX_EFFECTIVE_BALANCE, validator consolidation, CL proof generator, stateless execution, beam sync, blob futures, sample optimization
+- **J+** (2027-2028) ~65%: STF in zkISA framework, light client (proof cache + sync committee), verkle state migration, variable-size blobs, Reed-Solomon blob reconstruction, block-in-blobs encoding
+- **K+** (2028) ~70%: 6-sec slots (quick slots framework), SSF (single-slot finality), 4-slot epochs, 1-epoch finality, mandatory 3-of-5 proofs, canonical guest, announce nonce, 128K attester cap
+- **L+** (2029) ~70%: endgame finality (sub-second BLS aggregation), post quantum attestations (Dilithium), BPO blobs increase, validity-only state, attester stake cap, APS (committee selection), blob streaming, custody proofs, cell gossip, distributed block builder, 1 ETH includers, tech debt reset, secret proposers
+- **M+** (2029+) ~60%: fast L1 finality in seconds, post quantum L1 hash-based (XMSS/SPHINCS+), gigagas L1 (parallel executor), canonical zkVM (RISC-V guest stub), gas futures market (contracts + settlement), post-quantum blob commitments, sharded mempool, proof aggregation, real-time CL proofs
+- **Longer term** (2030++) ~55%: distributed block building, VDF randomness (Wesolowski scheme), teragas L2 (stub), private L1 shielded transfers (Pedersen commitments), 51% attack auto-recovery, AA proofs, exposed zkISA (stub), 1M attestations/slot (partial), gigagas L1 (executor scaffolding)
+
+### Gap Summary (what's missing for 2030++)
+- **zkVM backend**: Canonical RISC-V guest execution engine not implemented (types/precompile only)
+- **zkISA proofs**: ProveExecution stubs; no real zk-SNARK generation
+- **Private L1**: Shielded transfer types exist but no zk-proof generation; encryption is placeholder
+- **Gigagas enforcement**: Parallel executor scaffolding but no cross-block 1 Ggas/sec metering
+- **Teragas L2**: In-memory throughput manager only; no streaming I/O or bandwidth enforcement
+- **1M attestations**: Pool caps at 16K; needs distributed committee subnet sharding
 
 ### Statistics
 - **Packages**: 47 (all passing)
-- **Source**: 551 files, ~148K LOC
-- **Tests**: 525 files, ~237K LOC, 12,600+ tests
+- **Source**: 803 files, ~241K LOC
+- **Tests**: 737 files, ~318K LOC, 14,300+ tests
+- **Total**: 1,540 files, ~559K LOC
 - **EIPs**: 58 complete, 6 substantial
 
 ### EIP Implementation Status
