@@ -7,12 +7,12 @@
 | Metric | Value |
 |--------|-------|
 | Packages | 47 |
-| Source files | 598 |
-| Test files | 619 |
-| Source LOC | ~165,000 |
-| Test LOC | ~272,000 |
-| Total LOC | ~437,000 |
-| Passing tests | 14,500+ |
+| Source files | 618 |
+| Test files | 623 |
+| Source LOC | ~173,000 |
+| Test LOC | ~274,000 |
+| Total LOC | ~447,000 |
+| Passing tests | 15,000+ |
 | Test packages | 47/47 passing |
 | EIPs implemented | 58+ (complete), 5 (substantial) |
 | Roadmap coverage | 98+ items across all phases |
