@@ -208,7 +208,7 @@ func TestBinaryTrie_ProveAndVerify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Prove error: %v", err)
 	}
-	if err := VerifyBinaryProof(root, proof); err != nil {
+	if _, err := VerifyBinaryProof(root, proof); err != nil {
 		t.Fatalf("VerifyBinaryProof error: %v", err)
 	}
 	if string(proof.Value) != "balance:200" {
@@ -238,7 +238,7 @@ func TestBinaryTrie_ProofTampered(t *testing.T) {
 
 	// Tamper with the value.
 	proof.Value = []byte("tampered")
-	if err := VerifyBinaryProof(root, proof); err == nil {
+	if _, err := VerifyBinaryProof(root, proof); err == nil {
 		t.Fatal("tampered proof should fail verification")
 	}
 }
@@ -254,7 +254,7 @@ func TestBinaryTrie_ProofWrongRoot(t *testing.T) {
 	}
 
 	wrongRoot := types.Hash{0xff}
-	if err := VerifyBinaryProof(wrongRoot, proof); err == nil {
+	if _, err := VerifyBinaryProof(wrongRoot, proof); err == nil {
 		t.Fatal("proof with wrong root should fail verification")
 	}
 }
@@ -289,7 +289,7 @@ func TestBinaryTrie_ProveVerifySingleEntry(t *testing.T) {
 	if len(proof.Siblings) != 0 {
 		t.Fatalf("single-entry proof should have 0 siblings, got %d", len(proof.Siblings))
 	}
-	if err := VerifyBinaryProof(root, proof); err != nil {
+	if _, err := VerifyBinaryProof(root, proof); err != nil {
 		t.Fatalf("VerifyBinaryProof error: %v", err)
 	}
 }
@@ -376,7 +376,7 @@ func TestBinaryTrie_LargeDataset(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Prove(%s) error: %v", key, err)
 		}
-		if err := VerifyBinaryProof(root, proof); err != nil {
+		if _, err := VerifyBinaryProof(root, proof); err != nil {
 			t.Fatalf("VerifyBinaryProof(%s) error: %v", key, err)
 		}
 	}
@@ -528,7 +528,7 @@ func TestBinaryTrie_ProofDeepTree(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Prove(%s) error: %v", key, err)
 		}
-		if err := VerifyBinaryProof(root, proof); err != nil {
+		if _, err := VerifyBinaryProof(root, proof); err != nil {
 			t.Fatalf("VerifyBinaryProof(%s) error: %v", key, err)
 		}
 	}
@@ -537,7 +537,7 @@ func TestBinaryTrie_ProofDeepTree(t *testing.T) {
 // -- Verify nil proof --
 
 func TestBinaryTrie_VerifyNilProof(t *testing.T) {
-	if err := VerifyBinaryProof(types.Hash{}, nil); err == nil {
+	if _, err := VerifyBinaryProof(types.Hash{}, nil); err == nil {
 		t.Fatal("nil proof should fail verification")
 	}
 }

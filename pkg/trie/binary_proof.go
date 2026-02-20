@@ -59,9 +59,9 @@ func (t *BinaryTrie) ProveHashed(hk types.Hash) (*BinaryProof, error) {
 	return nil, ErrNotFound
 }
 
-// VerifyBinaryProof verifies that a binary Merkle proof is valid against the
-// given root hash. Returns nil on success, ErrBinaryProofInvalid on failure.
-func VerifyBinaryProof(rootHash types.Hash, proof *BinaryProof) error {
+// verifyBinaryProofSimple verifies that a binary Merkle proof is valid against
+// the given root hash. Returns nil on success, ErrBinaryProofInvalid on failure.
+func verifyBinaryProofSimple(rootHash types.Hash, proof *BinaryProof) error {
 	if proof == nil {
 		return ErrBinaryProofInvalid
 	}

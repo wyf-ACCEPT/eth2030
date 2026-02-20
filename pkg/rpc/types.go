@@ -78,6 +78,11 @@ type RPCError struct {
 	Message string `json:"message"`
 }
 
+// Error implements the error interface.
+func (e *RPCError) Error() string {
+	return e.Message
+}
+
 // Error codes.
 const (
 	ErrCodeParse          = -32700

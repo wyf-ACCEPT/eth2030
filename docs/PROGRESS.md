@@ -7,12 +7,12 @@
 | Metric | Value |
 |--------|-------|
 | Packages | 47 |
-| Source files | 551 |
-| Test files | 525 |
-| Source LOC | ~148,000 |
-| Test LOC | ~237,000 |
-| Total LOC | ~385,000 |
-| Passing tests | 12,600+ |
+| Source files | 574 |
+| Test files | 547 |
+| Source LOC | ~157,000 |
+| Test LOC | ~247,000 |
+| Total LOC | ~404,000 |
+| Passing tests | 13,000+ |
 | Test packages | 47/47 passing |
 | EIPs implemented | 58+ (complete), 5 (substantial) |
 | Roadmap coverage | 98+ items across all phases |
@@ -26,14 +26,14 @@
 | `core/state` | Complete | StateDB interface, in-memory, trie-backed, stateless (witness-backed), prefetcher |
 | `core/state/snapshot` | Complete | Layered diff/disk snapshots, account/storage iterators |
 | `core/state/pruner` | Complete | State pruner with bloom filter reachability |
-| `core/vm` | Complete | 164+ opcodes, 24 precompiles (incl. BLS12-381, NTT, NII, BN254), EOF, gas tables |
+| `core/vm` | Complete | 164+ opcodes, 24 precompiles, EOF, gas tables, parallel executor, eWASM optimizer, shielded crypto |
 | `core/rawdb` | Complete | FileDB with WAL, chain DB, block/receipt/tx storage, EIP-4444 history expiry |
 | `core/vops` | Complete | Validity-Only Partial Statelessness: partial executor, validator, witness |
 | `rlp` | Complete | Full Yellow Paper Appendix B with fuzz testing |
 | `ssz` | Complete | SSZ encode/decode, merkleization, EIP-7916 ProgressiveList |
-| `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, threshold, shielded |
-| `crypto/pqc` | Complete | Dilithium3, Falcon512, SPHINCS+, hybrid signer, lattice blob commitments |
-| `consensus` | Complete | SSF, quick slots, 1-epoch finality, attestations, beacon state, block producer, reward calc, slashing |
+| `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381 (incl. aggregate sigs), Banderwagon, IPA, VDF, threshold, shielded |
+| `crypto/pqc` | Complete | Dilithium3 (real lattice crypto), Falcon512, SPHINCS+ (hash-based), hybrid signer, lattice blob commitments |
+| `consensus` | Complete | SSF, quick slots, Casper FFG finality, committee selection, BLS operations, attestations, beacon state, block producer, reward calc, slashing |
 | `consensus/lethe` | Complete | LETHE insulation protocol for validator privacy |
 | `engine` | Complete | Engine API V3-V7, forkchoice, payload building, ePBS, distributed builder, Vickrey auctions |
 | `epbs` | Complete | Enshrined PBS: BuilderBid, PayloadEnvelope, builder registry, auctions |
@@ -48,10 +48,10 @@
 | `rpc` | Complete | 50+ methods, filters, WebSocket subscriptions, Beacon API (16 endpoints) |
 | `trie` | Complete | MPT with proofs, persistence, concurrent healing |
 | `trie/bintrie` | Complete | Binary Merkle trie (EIP-7864): SHA-256, proofs, migration |
-| `verkle` | Complete | Verkle tree, Pedersen commitments, state migration, StateDB adapter, witness gen |
+| `verkle` | Complete | Verkle tree, IPA commitments/multiproofs, Pedersen commitments, state migration, StateDB adapter, witness gen |
 | `rollup` | Complete | Native rollups (EIP-8079): EXECUTE precompile, anchor contract |
-| `zkvm` | Complete | Guest programs, canonical guest (RISC-V), STF framework |
-| `proofs` | Complete | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5 system |
+| `zkvm` | Complete | Guest programs, canonical guest (RISC-V), STF framework, Poseidon hash, R1CS circuit builder |
+| `proofs` | Complete | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5 system, async proof queue, execution proofs |
 | `light` | Complete | Header sync, proof cache (LRU), sync committee, CL proof generator |
 | `p2p` | Complete | TCP transport, devp2p, peer mgmt, gossip (pub/sub, scoring), protocol manager |
 | `p2p/discover` | Complete | Peer discovery V4/V5, Kademlia DHT |
