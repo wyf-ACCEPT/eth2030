@@ -90,7 +90,7 @@ func (s *MLDSASigner) Sign(key *MLDSAKeyPair, msg []byte) ([]byte, error) {
 	if len(msg) == 0 { return nil, ErrMLDSAEmptyMsg }
 	mu := mldsaSHAKE256(append(key.tr, msg...), 64)
 	rhoPrime := mldsaSHAKE256(append(key.kSeed, mu...), 64)
-	for kappa := 0; kappa < 512; kappa++ {
+	for kappa := 0; kappa < 2048; kappa++ {
 		y := make([]mldsaPoly, mldsaL)
 		for j := 0; j < mldsaL; j++ { y[j] = mldsaSampleGamma1(rhoPrime, uint16(kappa*mldsaL+j)) }
 		w := mldsaMatVecMul(key.aMatrix, y)
