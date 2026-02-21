@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering consensus (SSF, quick slots), data availability (PeerDAS,
 blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 
-**Status**: 47 packages, 970 source files (~305K LOC), 905 test files (~388K LOC), 21,000+ tests, all passing.
+**Status**: 48 packages, 978 source files (~308K LOC), 913 test files (~391K LOC), 21,000+ tests, all passing. EF state test validation: 9,884/36,126 passing (27.4%).
 
 ## Architecture
 
@@ -64,6 +64,7 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 | `pkg/core/vm` | EVM interpreter, 164+ opcodes, 24 precompiles, gas tables, EOF container | Complete |
 | `pkg/core/rawdb` | FileDB with WAL, chain DB, block/receipt/tx storage, EIP-4444 history expiry | Complete |
 | `pkg/core/vops` | Validity-Only Partial Statelessness: executor, validator, witness integration | Complete |
+| `pkg/core/eftest` | EF state test runner: JSON parser, fixture loader, batch execution (9,884/36,126 passing) | Active |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
 | `pkg/ssz` | SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList | Complete |
 | `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, threshold, shielded circuits | Complete |
@@ -108,7 +109,7 @@ blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 ```bash
 cd pkg
 go build ./...
-go test ./...         # 47 packages, 20,800+ tests
+go test ./...         # 48 packages, 21,000+ tests
 go test -v ./...      # verbose output
 ```
 
