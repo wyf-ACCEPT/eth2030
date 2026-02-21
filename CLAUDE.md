@@ -47,9 +47,9 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 
 ### Statistics
 - **Packages**: 47 (all passing)
-- **Source**: 887 files, ~272K LOC
-- **Tests**: 820 files, ~347K LOC, 19,800+ tests
-- **Total**: 1,707 files, ~619K LOC
+- **Source**: 915 files, ~284K LOC
+- **Tests**: 847 files, ~358K LOC, 20,200+ tests
+- **Total**: 1,762 files, ~642K LOC
 - **EIPs**: 58 complete, 6 substantial
 
 ### EIP Implementation Status

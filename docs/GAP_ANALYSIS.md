@@ -1,6 +1,6 @@
 # eth2028 Gap Analysis vs L1 Strawmap Roadmap
 
-Last updated: 2026-02-20
+Last updated: 2026-02-21
 
 ## Summary
 
