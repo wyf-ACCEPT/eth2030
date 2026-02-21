@@ -502,7 +502,7 @@ func setLogContext(receipt *types.Receipt, header *types.Header, blockHash types
 // For EIP-7702 SetCode transactions, authCount is the number of authorization
 // entries, and emptyAuthCount is the number of those entries targeting accounts
 // that do not yet exist in state.
-func intrinsicGas(data []byte, isCreate bool, authCount, emptyAuthCount uint64) uint64 {
+func intrinsicGas(data []byte, isCreate, isShanghai bool, authCount, emptyAuthCount uint64) uint64 {
 	gas := TxGas
 	if isCreate {
 		gas += TxCreateGas
@@ -513,6 +513,11 @@ func intrinsicGas(data []byte, isCreate bool, authCount, emptyAuthCount uint64) 
 		} else {
 			gas += TxDataNonZeroGas
 		}
+	}
+	// EIP-3860: init code word gas for contract creations (Shanghai+).
+	if isCreate && isShanghai {
+		words := (uint64(len(data)) + 31) / 32
+		gas += words * vm.InitCodeWordGas
 	}
 	// EIP-7702: per-authorization gas costs.
 	gas += authCount * PerAuthBaseCost
@@ -750,7 +755,8 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		// EIP-7981/8038: Glamsterdam access list gas.
 		igas += accessListGasGlamst(msg.AccessList)
 	} else {
-		igas = intrinsicGas(msg.Data, isCreate, authCount, emptyAuthCount)
+		isShanghaiForIgas := config != nil && config.IsMerge() && config.IsShanghai(header.Time)
+		igas = intrinsicGas(msg.Data, isCreate, isShanghaiForIgas, authCount, emptyAuthCount)
 		igas += accessListGas(msg.AccessList)
 	}
 
@@ -799,6 +805,7 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	evm := vm.NewEVMWithState(blockCtx, txCtx, vm.Config{}, statedb)
 
 	// Select the correct jump table based on fork rules.
+	var precompileAddrs map[types.Address]vm.PrecompiledContract
 	if config != nil {
 		rules := config.Rules(header.Number, config.IsMerge(), header.Time)
 		forkRules := vm.ForkRules{
@@ -813,18 +820,25 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 			IsConstantinople: rules.IsConstantinople,
 			IsByzantium:      rules.IsByzantium,
 			IsHomestead:      rules.IsHomestead,
+			IsEIP158:         rules.IsEIP158,
 			IsEIP7708:        rules.IsEIP7708,
 			IsEIP7954:        rules.IsEIP7954,
 		}
 		evm.SetJumpTable(vm.SelectJumpTable(forkRules))
-		evm.SetPrecompiles(vm.SelectPrecompiles(forkRules))
+		precompileAddrs = vm.SelectPrecompiles(forkRules)
+		evm.SetPrecompiles(precompileAddrs)
 		evm.SetForkRules(forkRules)
 	}
 
-	// Pre-warm EIP-2930 access list: mark sender, destination, and precompiles as warm.
+	// Pre-warm EIP-2930 access list: mark sender, destination, coinbase, and precompiles as warm.
 	statedb.AddAddressToAccessList(msg.From)
 	if msg.To != nil {
 		statedb.AddAddressToAccessList(*msg.To)
+	}
+	statedb.AddAddressToAccessList(header.Coinbase)
+	// Warm all active precompile addresses per EIP-2929.
+	for addr := range precompileAddrs {
+		statedb.AddAddressToAccessList(addr)
 	}
 	for _, tuple := range msg.AccessList {
 		statedb.AddAddressToAccessList(tuple.Address)
@@ -858,21 +872,11 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		var ret []byte
 		ret, contractAddr, gasRemaining, execErr = evm.Create(msg.From, msg.Data, gasLeft, msg.Value)
 		returnData = ret
-	} else if statedb.GetCodeSize(*msg.To) > 0 {
-		// Contract call: run EVM Call
-		returnData, gasRemaining, execErr = evm.Call(msg.From, *msg.To, msg.Data, gasLeft, msg.Value)
 	} else {
-		// Simple value transfer (no code at destination)
-		gasRemaining = gasLeft
-		if msg.Value.Sign() > 0 {
-			statedb.SubBalance(msg.From, msg.Value)
-			statedb.AddBalance(*msg.To, msg.Value)
-
-			// EIP-7708: emit transfer log for nonzero-value transaction.
-			if evm.GetForkRules().IsEIP7708 && msg.From != *msg.To {
-				vm.EmitTransferLog(statedb, msg.From, *msg.To, msg.Value)
-			}
-		}
+		// Call (handles precompiles, contracts, and simple value transfers).
+		// evm.Call performs value transfer, precompile dispatch, and code
+		// execution internally, matching go-ethereum's behavior.
+		returnData, gasRemaining, execErr = evm.Call(msg.From, *msg.To, msg.Data, gasLeft, msg.Value)
 	}
 
 	// Calculate gas used = intrinsic + (gasLeft - gasRemaining)

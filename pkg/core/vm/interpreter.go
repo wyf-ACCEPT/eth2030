@@ -212,6 +212,7 @@ type ForkRules struct {
 	IsConstantinople bool
 	IsByzantium      bool
 	IsHomestead      bool
+	IsEIP158         bool // EIP-158: empty account cleanup
 	IsEIP7708        bool // EIP-7708: ETH transfers emit a log
 	IsEIP7954        bool // EIP-7954: increased max contract code size
 }
@@ -370,35 +371,44 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 		evm.Config.Tracer.CaptureStart(caller, addr, false, input, gas, value)
 	}
 
-	// Check for precompiled contract
-	if p, ok := evm.precompile(addr); ok {
-		ret, gasLeft, err := runPrecompile(p, input, gas)
-		if debug && evm.depth == 0 {
-			evm.Config.Tracer.CaptureEnd(ret, gas-gasLeft, err)
+	// Check if the callee has sufficient balance for value transfer.
+	transfersValue := value != nil && value.Sign() > 0
+	if transfersValue && evm.StateDB != nil {
+		callerBalance := evm.StateDB.GetBalance(caller)
+		if callerBalance.Cmp(value) < 0 {
+			if debug && evm.depth == 0 {
+				evm.Config.Tracer.CaptureEnd(nil, 0, errors.New("insufficient balance for transfer"))
+			}
+			return nil, gas, errors.New("insufficient balance for transfer")
 		}
-		return ret, gasLeft, err
 	}
 
 	if evm.StateDB == nil {
 		return nil, gas, errors.New("no state database")
 	}
 
-	// Snapshot state for revert on failure
+	// Snapshot state for revert on failure.
 	snapshot := evm.StateDB.Snapshot()
 
-	// Create account if it doesn't exist
+	// Check for precompiled contract.
+	p, isPrecompile := evm.precompile(addr)
+
+	// Handle account creation / EIP-158 empty account rule.
 	if !evm.StateDB.Exist(addr) {
+		if !isPrecompile && evm.forkRules.IsEIP158 && !transfersValue {
+			// EIP-158: do not create empty accounts for zero-value calls.
+			if debug && evm.depth == 0 {
+				evm.Config.Tracer.CaptureEnd(nil, 0, nil)
+			}
+			return nil, gas, nil
+		}
 		evm.StateDB.CreateAccount(addr)
 	}
 
-	// Transfer value
-	if value != nil && value.Sign() > 0 {
+	// Transfer value (before running precompile or code).
+	if transfersValue {
 		if evm.readOnly {
 			return nil, gas, ErrWriteProtection
-		}
-		callerBalance := evm.StateDB.GetBalance(caller)
-		if callerBalance.Cmp(value) < 0 {
-			return nil, gas, errors.New("insufficient balance for transfer")
 		}
 		evm.StateDB.SubBalance(caller, value)
 		evm.StateDB.AddBalance(addr, value)
@@ -409,22 +419,34 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 		}
 	}
 
-	// Get the code to execute
+	// Execute precompile or contract code.
+	if isPrecompile {
+		ret, gasLeft, err := runPrecompile(p, input, gas)
+		if err != nil {
+			evm.StateDB.RevertToSnapshot(snapshot)
+		}
+		if debug && evm.depth == 0 {
+			evm.Config.Tracer.CaptureEnd(ret, gas-gasLeft, err)
+		}
+		return ret, gasLeft, err
+	}
+
+	// Get the code to execute.
 	code := evm.StateDB.GetCode(addr)
 	if len(code) == 0 {
-		// No code to execute, the call succeeds with no return data
+		// No code to execute, the call succeeds with no return data.
 		if debug && evm.depth == 0 {
 			evm.Config.Tracer.CaptureEnd(nil, 0, nil)
 		}
 		return nil, gas, nil
 	}
 
-	// Create the contract for execution
+	// Create the contract for execution.
 	contract := NewContract(caller, addr, value, gas)
 	contract.Code = code
 	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
 
-	// Execute
+	// Execute.
 	evm.depth++
 	ret, err := evm.Run(contract, input)
 	evm.depth--
@@ -432,11 +454,11 @@ func (evm *EVM) Call(caller types.Address, addr types.Address, input []byte, gas
 	gasLeft := contract.Gas
 
 	if err != nil && !errors.Is(err, ErrExecutionReverted) {
-		// On error (not revert), revert state changes and consume all gas
+		// On error (not revert), revert state changes and consume all gas.
 		evm.StateDB.RevertToSnapshot(snapshot)
 		gasLeft = 0
 	} else if errors.Is(err, ErrExecutionReverted) {
-		// On revert, revert state changes but return remaining gas
+		// On revert, revert state changes but return remaining gas.
 		evm.StateDB.RevertToSnapshot(snapshot)
 	}
 
@@ -543,13 +565,19 @@ func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byt
 		return nil, gas, ErrMaxCallDepthExceeded
 	}
 
+	if evm.StateDB == nil {
+		return nil, gas, errors.New("no state database")
+	}
+
+	// Set readOnly mode for the duration of this call.
+	prevReadOnly := evm.readOnly
+	evm.readOnly = true
+	defer func() { evm.readOnly = prevReadOnly }()
+
+	// Check for precompiled contract.
 	if p, ok := evm.precompile(addr); ok {
 		ret, gasLeft, err := runPrecompile(p, input, gas)
 		return ret, gasLeft, err
-	}
-
-	if evm.StateDB == nil {
-		return nil, gas, errors.New("no state database")
 	}
 
 	snapshot := evm.StateDB.Snapshot()
@@ -563,15 +591,9 @@ func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byt
 	contract.Code = code
 	contract.CodeHash = evm.StateDB.GetCodeHash(addr)
 
-	// Set readOnly mode for the duration of this call
-	prevReadOnly := evm.readOnly
-	evm.readOnly = true
-
 	evm.depth++
 	ret, err := evm.Run(contract, input)
 	evm.depth--
-
-	evm.readOnly = prevReadOnly
 
 	gasLeft := contract.Gas
 
