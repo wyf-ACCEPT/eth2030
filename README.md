@@ -6,7 +6,7 @@ Implements the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the
 Giga-Gas era, covering consensus (SSF, quick slots), data availability (PeerDAS,
 blob streaming), execution (parallel EVM, zkVM), and post-quantum cryptography.
 
-**Status**: 47 packages, 968 source files (~304K LOC), 903 test files (~386K LOC), 20,800+ tests, all passing.
+**Status**: 47 packages, 970 source files (~305K LOC), 905 test files (~388K LOC), 21,000+ tests, all passing.
 
 ## Architecture
 
