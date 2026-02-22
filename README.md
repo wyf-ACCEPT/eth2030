@@ -5,9 +5,8 @@
 </p>
 
 <p align="center">
-  <a href=".github/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/alt-research/eth2030/ci.yml?branch=master&label=CI" alt="CI" /></a>
-  <a href="https://github.com/alt-research/eth2030/releases/latest"><img src="https://img.shields.io/github/v/release/alt-research/eth2030?color=%234f46e5" alt="Release" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Proprietary-red" alt="License" /></a>
+  <a href="https://github.com/alt-research/eth2030/actions/workflows/ci.yml"><img src="https://github.com/alt-research/eth2030/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI" /></a>
+  <a href="https://github.com/alt-research/eth2030/releases/latest"><img src="https://github.com/alt-research/eth2030/releases/latest/badge.svg" alt="Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go" alt="Go" />
 </p>
 
