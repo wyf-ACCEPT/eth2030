@@ -392,7 +392,10 @@ func TestMemoryAcceptRole(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(64))                     // offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(AARoleSenderValidation)) // frame_role (Back(0))
 
-	size := memoryAcceptRole(stack)
+	size, overflow := memoryAcceptRole(stack)
+	if overflow {
+		t.Fatal("memoryAcceptRole returned overflow")
+	}
 	// offset(64) + length(32) = 96
 	if size != 96 {
 		t.Errorf("memoryAcceptRole = %d, want 96", size)

@@ -355,7 +355,7 @@ func TestMakeGasLogDynamic(t *testing.T) {
 			st.Push(big.NewInt(0))                         // offset
 
 			gasFn := makeGasLog(tt.numTopics)
-			got := gasFn(evm, contract, st, mem, tt.dataSize)
+			got, _ := gasFn(evm, contract, st, mem, tt.dataSize)
 
 			// Expected: numTopics * GasLogTopic + dataSize * GasLogData + 0 (no mem expansion)
 			want := tt.numTopics*GasLogTopic + tt.dataSize*GasLogData
@@ -882,7 +882,10 @@ func TestMemoryLogFunction(t *testing.T) {
 	st.Push(big.NewInt(100)) // size (will be Back(1))
 	st.Push(big.NewInt(32))  // offset (will be Back(0))
 
-	got := memoryLog(st)
+	got, overflow := memoryLog(st)
+	if overflow {
+		t.Fatalf("memoryLog overflowed unexpectedly")
+	}
 	want := uint64(32 + 100) // offset + size
 	if got != want {
 		t.Errorf("memoryLog = %d, want %d", got, want)
@@ -896,7 +899,10 @@ func TestMemoryLogFunctionZero(t *testing.T) {
 	st.Push(big.NewInt(0))  // size
 	st.Push(big.NewInt(64)) // offset
 
-	got := memoryLog(st)
+	got, overflow := memoryLog(st)
+	if overflow {
+		t.Fatalf("memoryLog overflowed unexpectedly")
+	}
 	want := uint64(64) // offset + 0 = 64
 	if got != want {
 		t.Errorf("memoryLog(0 size) = %d, want %d", got, want)

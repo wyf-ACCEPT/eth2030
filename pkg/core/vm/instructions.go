@@ -722,8 +722,12 @@ func bigToAddress(b *big.Int) types.Address {
 // opCall implements the CALL opcode.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
 // Pushes 1 on success, 0 on failure.
+// The call gas is pre-computed by the dynamic gas function and stored in
+// evm.callGasTemp. The gas value on the stack is popped but not used
+// directly (the 63/64 rule is applied in the dynamic gas function).
 func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	gasVal := stack.Pop()
+	// Pop gas from stack (already accounted for by dynamic gas function).
+	_ = stack.Pop()
 	addr := bigToAddress(stack.Pop())
 	value := stack.Pop()
 	inOffset, inSize := stack.Pop(), stack.Pop()
@@ -732,10 +736,9 @@ func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Sta
 	// Get input data from memory
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	// Apply the 63/64 rule (EIP-150): subcall gets min(requested, available - available/64).
-	requestedGas := gasVal.Uint64()
-	callGas := CallGas(contract.Gas, requestedGas)
-	contract.Gas -= callGas
+	// Use the pre-computed call gas from dynamic gas function.
+	// The Run loop already deducted callGasTemp from contract.Gas (as part of dynamic gas).
+	callGas := evm.callGasTemp
 
 	// Add stipend for value transfer (free gas, not charged from caller).
 	transfersValue := value != nil && value.Sign() > 0
@@ -778,7 +781,8 @@ func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Sta
 // opCallCode implements the CALLCODE opcode.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
 func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	gasVal := stack.Pop()
+	// Pop gas from stack (already accounted for by dynamic gas function).
+	_ = stack.Pop()
 	addr := bigToAddress(stack.Pop())
 	value := stack.Pop()
 	inOffset, inSize := stack.Pop(), stack.Pop()
@@ -786,10 +790,9 @@ func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack 
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	// Apply the 63/64 rule (EIP-150).
-	requestedGas := gasVal.Uint64()
-	callGas := CallGas(contract.Gas, requestedGas)
-	contract.Gas -= callGas
+	// Use the pre-computed call gas from dynamic gas function.
+	// The Run loop already deducted callGasTemp from contract.Gas (as part of dynamic gas).
+	callGas := evm.callGasTemp
 
 	// Add stipend for value transfer (free gas, not charged from caller).
 	transfersValue := value != nil && value.Sign() > 0
@@ -829,17 +832,17 @@ func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack 
 // opDelegateCall implements the DELEGATECALL opcode.
 // Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
 func opDelegateCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	gasVal := stack.Pop()
+	// Pop gas from stack (already accounted for by dynamic gas function).
+	_ = stack.Pop()
 	addr := bigToAddress(stack.Pop())
 	inOffset, inSize := stack.Pop(), stack.Pop()
 	retOffset, retSize := stack.Pop(), stack.Pop()
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	// Apply the 63/64 rule (EIP-150). No value transfer, so no stipend.
-	requestedGas := gasVal.Uint64()
-	callGas := CallGas(contract.Gas, requestedGas)
-	contract.Gas -= callGas
+	// Use the pre-computed call gas from dynamic gas function. No value transfer, so no stipend.
+	// The Run loop already deducted callGasTemp from contract.Gas (as part of dynamic gas).
+	callGas := evm.callGasTemp
 
 	ret, returnGas, err := evm.DelegateCall(contract.CallerAddress, addr, args, callGas)
 
@@ -866,17 +869,17 @@ func opDelegateCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 // opStaticCall implements the STATICCALL opcode.
 // Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
 func opStaticCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	gasVal := stack.Pop()
+	// Pop gas from stack (already accounted for by dynamic gas function).
+	_ = stack.Pop()
 	addr := bigToAddress(stack.Pop())
 	inOffset, inSize := stack.Pop(), stack.Pop()
 	retOffset, retSize := stack.Pop(), stack.Pop()
 
 	args := memory.Get(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	// Apply the 63/64 rule (EIP-150). No value transfer, so no stipend.
-	requestedGas := gasVal.Uint64()
-	callGas := CallGas(contract.Gas, requestedGas)
-	contract.Gas -= callGas
+	// Use the pre-computed call gas from dynamic gas function. No value transfer, so no stipend.
+	// The Run loop already deducted callGasTemp from contract.Gas (as part of dynamic gas).
+	callGas := evm.callGasTemp
 
 	ret, returnGas, err := evm.StaticCall(contract.Address, addr, args, callGas)
 

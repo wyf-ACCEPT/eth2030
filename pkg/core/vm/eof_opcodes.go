@@ -481,7 +481,7 @@ func opReturncontract(pc *uint64, evm *EVM, contract *Contract, memory *Memory, 
 
 // gasExtcall calculates dynamic gas for EXTCALL.
 // Stack: target_address, input_offset, input_size, value
-func gasExtcall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtcall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 
@@ -498,14 +498,18 @@ func gasExtcall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memoryS
 	gas = safeAdd(gas, gasEIP2929AccountCheck(evm, addr))
 
 	// Memory expansion.
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
 
-	return gas
+	return gas, nil
 }
 
 // gasExtdelegatecall calculates dynamic gas for EXTDELEGATECALL.
 // Stack: target_address, input_offset, input_size
-func gasExtdelegatecall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtdelegatecall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 
@@ -513,94 +517,136 @@ func gasExtdelegatecall(evm *EVM, contract *Contract, stack *Stack, mem *Memory,
 	gas = safeAdd(gas, gasEIP2929AccountCheck(evm, addr))
 
 	// Memory expansion.
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
 
-	return gas
+	return gas, nil
 }
 
 // gasExtstaticcall calculates dynamic gas for EXTSTATICCALL.
 // Stack: target_address, input_offset, input_size
-func gasExtstaticcall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtstaticcall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	return gasExtdelegatecall(evm, contract, stack, mem, memorySize)
 }
 
 // gasDatacopy calculates dynamic gas for DATACOPY.
 // Gas: 3 * word_count + memory expansion.
-func gasDatacopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasDatacopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(GasCopy, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasEofcreate calculates dynamic gas for EOFCREATE.
 // Charges initcode hashing + memory expansion.
-func gasEofcreate(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasEofcreate(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	// Stack after immediate: value, salt, input_offset, input_size
 	// input_size is at stack position 3 (Back(3)).
 	size := stack.Back(3).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(GasKeccak256Word, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // --- Memory size functions ---
 
 // memoryExtcall returns memory needed for EXTCALL.
 // Stack: target_address, input_offset, input_size, value
-func memoryExtcall(stack *Stack) uint64 {
-	inOffset := stack.Back(1).Uint64()
-	inSize := stack.Back(2).Uint64()
-	if inSize == 0 {
-		return 0
+func memoryExtcall(stack *Stack) (uint64, bool) {
+	inOffset, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
 	}
-	return inOffset + inSize
+	inSize, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	if inSize == 0 {
+		return 0, false
+	}
+	return safeAddU_val(inOffset, inSize)
 }
 
 // memoryExtdelegatecall returns memory needed for EXTDELEGATECALL / EXTSTATICCALL.
 // Stack: target_address, input_offset, input_size
-func memoryExtdelegatecall(stack *Stack) uint64 {
-	inOffset := stack.Back(1).Uint64()
-	inSize := stack.Back(2).Uint64()
-	if inSize == 0 {
-		return 0
+func memoryExtdelegatecall(stack *Stack) (uint64, bool) {
+	inOffset, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
 	}
-	return inOffset + inSize
+	inSize, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	if inSize == 0 {
+		return 0, false
+	}
+	return safeAddU_val(inOffset, inSize)
 }
 
 // memoryDatacopy returns memory needed for DATACOPY.
 // Stack: mem_offset, offset, size
-func memoryDatacopy(stack *Stack) uint64 {
-	memOffset := stack.Back(0).Uint64()
-	size := stack.Back(2).Uint64()
-	if size == 0 {
-		return 0
+func memoryDatacopy(stack *Stack) (uint64, bool) {
+	memOffset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
 	}
-	return memOffset + size
+	size, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	if size == 0 {
+		return 0, false
+	}
+	return safeAddU_val(memOffset, size)
 }
 
 // memoryEofcreate returns memory needed for EOFCREATE.
 // Stack (after immediate): value, salt, input_offset, input_size
-func memoryEofcreate(stack *Stack) uint64 {
-	inOffset := stack.Back(2).Uint64()
-	inSize := stack.Back(3).Uint64()
-	if inSize == 0 {
-		return 0
+func memoryEofcreate(stack *Stack) (uint64, bool) {
+	inOffset, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
 	}
-	return inOffset + inSize
+	inSize, overflow := bigUint64WithOverflow(stack.Back(3))
+	if overflow {
+		return 0, true
+	}
+	if inSize == 0 {
+		return 0, false
+	}
+	return safeAddU_val(inOffset, inSize)
 }
 
 // memoryReturncontract returns memory needed for RETURNCONTRACT.
 // Stack: aux_data_offset, aux_data_size
-func memoryReturncontract(stack *Stack) uint64 {
-	offset := stack.Back(0).Uint64()
-	size := stack.Back(1).Uint64()
-	if size == 0 {
-		return 0
+func memoryReturncontract(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
 	}
-	return offset + size
+	size, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	if size == 0 {
+		return 0, false
+	}
+	return safeAddU_val(offset, size)
 }
 
 // EOFOperations returns the operation definitions for all EOF opcodes.

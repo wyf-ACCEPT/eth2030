@@ -1158,7 +1158,10 @@ func TestGasDatacopy_DynamicGas(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0))  // mem_offset (Back(0))
 
 	// memorySize = mem_offset + size = 0 + 64 = 64
-	gas := gasDatacopy(evm, contract, stack, mem, 64)
+	gas, err := gasDatacopy(evm, contract, stack, mem, 64)
+	if err != nil {
+		t.Fatalf("gasDatacopy returned error: %v", err)
+	}
 
 	// Expected: GasCopy(3) * word_count(2) + memory expansion for 64 bytes.
 	// Memory expansion: words=2, cost = 2*3 + (2*2)/512 = 6.
@@ -1182,7 +1185,10 @@ func TestGasDatacopy_ZeroSize(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0)) // data_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(0)) // mem_offset (Back(0))
 
-	gas := gasDatacopy(evm, contract, stack, mem, 0)
+	gas, err := gasDatacopy(evm, contract, stack, mem, 0)
+	if err != nil {
+		t.Fatalf("gasDatacopy returned error: %v", err)
+	}
 	if gas != 0 {
 		t.Fatalf("gasDatacopy with zero size = %d, want 0", gas)
 	}
@@ -1199,7 +1205,10 @@ func TestMemoryExtcall(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0))  // input_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(0))  // target_address (Back(0))
 
-	size := memoryExtcall(stack)
+	size, overflow := memoryExtcall(stack)
+	if overflow {
+		t.Fatalf("memoryExtcall overflowed unexpectedly")
+	}
 	// input_offset(0) + input_size(64) = 64
 	if size != 64 {
 		t.Fatalf("memoryExtcall = %d, want 64", size)
@@ -1214,7 +1223,10 @@ func TestMemoryExtcall_ZeroInputSize(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0)) // input_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(0)) // target_address (Back(0))
 
-	size := memoryExtcall(stack)
+	size, overflow := memoryExtcall(stack)
+	if overflow {
+		t.Fatalf("memoryExtcall overflowed unexpectedly")
+	}
 	if size != 0 {
 		t.Fatalf("memoryExtcall zero input = %d, want 0", size)
 	}
@@ -1228,7 +1240,10 @@ func TestMemoryExtdelegatecall(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(32))  // input_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(0))   // target_address (Back(0))
 
-	size := memoryExtdelegatecall(stack)
+	size, overflow := memoryExtdelegatecall(stack)
+	if overflow {
+		t.Fatalf("memoryExtdelegatecall overflowed unexpectedly")
+	}
 	if size != 132 { // 32 + 100
 		t.Fatalf("memoryExtdelegatecall = %d, want 132", size)
 	}
@@ -1242,7 +1257,10 @@ func TestMemoryDatacopy(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0))  // data_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(10)) // mem_offset (Back(0))
 
-	size := memoryDatacopy(stack)
+	size, overflow := memoryDatacopy(stack)
+	if overflow {
+		t.Fatalf("memoryDatacopy overflowed unexpectedly")
+	}
 	if size != 60 { // 10 + 50
 		t.Fatalf("memoryDatacopy = %d, want 60", size)
 	}
@@ -1255,7 +1273,10 @@ func TestMemoryDatacopy_ZeroSize(t *testing.T) {
 	stack.Push(new(big.Int).SetUint64(0))  // data_offset (Back(1))
 	stack.Push(new(big.Int).SetUint64(10)) // mem_offset (Back(0))
 
-	size := memoryDatacopy(stack)
+	size, overflow := memoryDatacopy(stack)
+	if overflow {
+		t.Fatalf("memoryDatacopy overflowed unexpectedly")
+	}
 	if size != 0 {
 		t.Fatalf("memoryDatacopy zero size = %d, want 0", size)
 	}

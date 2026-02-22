@@ -1,11 +1,65 @@
 package vm
 
 import (
+	"errors"
 	"math"
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
 )
+
+// ErrGasUintOverflow is returned when calculating gas and the result overflows.
+var ErrGasUintOverflow = errors.New("gas uint64 overflow")
+
+// safeMulU returns a * b and true if the result overflows uint64.
+func safeMulU(a, b uint64) (uint64, bool) {
+	if a == 0 || b == 0 {
+		return 0, false
+	}
+	if a > math.MaxUint64/b {
+		return 0, true
+	}
+	return a * b, false
+}
+
+// safeAddU returns a + b and true if the result overflows uint64.
+func safeAddU(a, b uint64) (uint64, bool) {
+	sum := a + b
+	if sum < a {
+		return 0, true
+	}
+	return sum, false
+}
+
+// bigUint64Safe extracts a uint64 from a *big.Int, returning (value, true)
+// on success or (0, false) if the value does not fit in 64 bits.
+func bigUint64Safe(v *big.Int) (uint64, bool) {
+	if !v.IsUint64() {
+		return 0, false
+	}
+	return v.Uint64(), true
+}
+
+// callGas computes the gas available for a CALL-family opcode per the
+// 63/64 rule (EIP-150). Given the base gas cost already consumed and
+// the requested gas from the stack, it returns the actual gas to send
+// to the callee. isEip150 should be true for forks >= Tangerine Whistle.
+func callGas(isEip150 bool, availableGas, base uint64, callCost *big.Int) uint64 {
+	if isEip150 {
+		availableGas = availableGas - base
+		gas := availableGas - availableGas/64
+		// If the bit length exceeds 64, the requested gas is unreasonably
+		// large. Use the available gas after the 63/64 rule.
+		if !callCost.IsUint64() || gas < callCost.Uint64() {
+			return gas
+		}
+		return callCost.Uint64()
+	}
+	if !callCost.IsUint64() {
+		return availableGas // pre-150 behavior
+	}
+	return callCost.Uint64()
+}
 
 // Gas cost constants for EIP-2929 (cold/warm access), EIP-3529 (reduced refunds),
 // and EIP-1559 gas metering.
@@ -109,6 +163,27 @@ func MemoryGasCost(memSize uint64) uint64 {
 	return linear + quadratic
 }
 
+// memoryGasCostWithLastCost calculates the quadratic memory expansion cost
+// using the incremental lastGasCost pattern from go-ethereum. It computes
+// cost = GasMemory*words + words^2/512 and returns the incremental cost
+// since the last expansion. Returns (0, ErrGasUintOverflow) on overflow.
+func memoryGasCostWithLastCost(mem *Memory, newMemSize uint64) (uint64, error) {
+	if newMemSize == 0 {
+		return 0, nil
+	}
+	if newMemSize > MaxMemorySize {
+		return 0, ErrGasUintOverflow
+	}
+	newMemSizeWords := toWordSize(newMemSize)
+	newCost := newMemSizeWords*GasMemory + (newMemSizeWords*newMemSizeWords)/512
+	if newCost < mem.lastGasCost {
+		return 0, nil
+	}
+	fee := newCost - mem.lastGasCost
+	mem.lastGasCost = newCost
+	return fee, nil
+}
+
 // MemoryExpansionGas returns the gas cost for expanding memory from oldSize to newSize.
 func MemoryExpansionGas(oldSize, newSize uint64) uint64 {
 	if newSize <= oldSize {
@@ -133,6 +208,23 @@ func toWordSize(size uint64) uint64 {
 // The caller gets to keep 1/64 of its remaining gas.
 func CallGas(availableGas, requestedGas uint64) uint64 {
 	maxGas := availableGas - availableGas/CallGasFraction
+	if requestedGas > maxGas {
+		return maxGas
+	}
+	return requestedGas
+}
+
+// callGasEIP150 computes the gas available for a subcall per EIP-150.
+// contractGas is the caller's remaining gas (after constant gas was charged).
+// baseGas is the dynamic gas cost already computed (value transfer, memory, etc.).
+// requestedGas is the gas value from the stack (the first CALL argument).
+// Returns min(requestedGas, (contractGas - baseGas) * 63/64).
+func callGasEIP150(contractGas, baseGas, requestedGas uint64) uint64 {
+	if contractGas < baseGas {
+		return 0
+	}
+	available := contractGas - baseGas
+	maxGas := available - available/CallGasFraction
 	if requestedGas > maxGas {
 		return maxGas
 	}
@@ -260,80 +352,104 @@ func safeMul(a, b uint64) uint64 {
 // --- Dynamic gas functions for opcodes ---
 
 // gasSha3 calculates dynamic gas for SHA3/KECCAK256: 6 per word + memory expansion.
-func gasSha3(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSha3(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	size := stack.Back(1).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(words, GasKeccak256Word)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasExp calculates dynamic gas for EXP: 50 * byte_length(exponent).
 // The constant gas (GasSlowStep = 10) is charged separately.
-func gasExp(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExp(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	exp := stack.Back(1)
 	if exp.Sign() == 0 {
-		return 0
+		return 0, nil
 	}
 	byteLen := uint64((exp.BitLen() + 7) / 8)
-	return 50 * byteLen
+	return 50 * byteLen, nil
 }
 
 // gasCopy calculates dynamic gas for copy opcodes (CALLDATACOPY, CODECOPY, RETURNDATACOPY).
 // Charges GasCopy (3) per word of data copied, plus memory expansion.
 // The size is at stack position 2 for these opcodes.
-func gasCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(GasCopy, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasExtCodeCopyCopy calculates dynamic gas for EXTCODECOPY (pre-Berlin).
 // Charges GasCopy per word + memory expansion. Size is at stack position 3.
-func gasExtCodeCopyCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeCopyCopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	size := stack.Back(3).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(GasCopy, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // makeGasLog returns a dynamic gas function for LOG0-LOG4.
 // Charges GasLogTopic per topic + GasLogData per data byte + memory expansion.
 // The constant gas (GasLog = 375) is charged separately.
 func makeGasLog(n uint64) dynamicGasFunc {
-	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+	return func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 		dataSize := stack.Back(1).Uint64()
 		gas := safeMul(n, GasLogTopic)
 		gas = safeAdd(gas, safeMul(dataSize, GasLogData))
-		gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-		return gas
+		memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+		if err != nil {
+			return 0, err
+		}
+		gas = safeAdd(gas, memGas)
+		return gas, nil
 	}
 }
 
 // gasCreateDynamic calculates dynamic gas for CREATE (EIP-3860).
 // Charges InitCodeWordGas per word of init code + memory expansion.
-func gasCreateDynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCreateDynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	// Stack: value, offset, length
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
 	gas := safeMul(InitCodeWordGas, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasCreate2Dynamic calculates dynamic gas for CREATE2 (EIP-3860).
 // Charges InitCodeWordGas + Keccak256WordGas per word (for hashing) + memory expansion.
-func gasCreate2Dynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCreate2Dynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	// Stack: value, offset, length, salt
 	size := stack.Back(2).Uint64()
 	words := toWordSize(size)
 	// CREATE2 hashes the init code, so pay for keccak words + initcode words.
 	gas := safeMul(InitCodeWordGas+GasKeccak256Word, words)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasSstoreEIP2929 charges warm/cold gas for SSTORE.
@@ -344,7 +460,7 @@ func gasCreate2Dynamic(evm *EVM, contract *Contract, stack *Stack, mem *Memory, 
 // Then proceed with EIP-2200 gas calculation. Unlike SLOAD (where the constant
 // gas covers WarmStorageReadCost), SSTORE's constant gas is 0, so the full
 // ColdSloadCost is charged here as the cold penalty.
-func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.Back(0)
 	slot := bigToHash(loc)
 
@@ -360,7 +476,7 @@ func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	}
 
 	if evm.StateDB == nil {
-		return WarmStorageReadCost + coldGas
+		return WarmStorageReadCost + coldGas, nil
 	}
 
 	key := bigToHash(loc)
@@ -374,12 +490,12 @@ func gasSstoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 	copy(newBytes[:], val[:])
 
 	gas, _ := SstoreGas(originalBytes, currentBytes, newBytes, false)
-	return gas + coldGas
+	return gas + coldGas, nil
 }
 
 // gasSelfdestructEIP2929 charges gas for SELFDESTRUCT with EIP-2929 cold access.
 // Post-London (EIP-3529): no refund is given for SELFDESTRUCT.
-func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 
@@ -393,7 +509,7 @@ func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 		}
 	}
 
-	return gas
+	return gas, nil
 }
 
 // --- Pre-Berlin dynamic gas functions for CALL-family opcodes ---
@@ -402,7 +518,7 @@ func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 // Charges memory expansion + value transfer gas (9000) when value > 0,
 // plus new account gas (25000) when sending value to a non-existent account.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func gasCallFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	transfersValue := stack.Back(2).Sign() != 0
 	if transfersValue {
@@ -413,33 +529,47 @@ func gasCallFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 			gas = safeAdd(gas, CallNewAccountGas)
 		}
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasCallCodeFrontier calculates dynamic gas for CALLCODE in pre-Berlin forks.
 // Charges memory expansion + value transfer gas (9000) when value > 0.
 // CALLCODE does NOT charge new account gas since it runs in the caller's context.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func gasCallCodeFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallCodeFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	if stack.Back(2).Sign() != 0 {
 		gas = safeAdd(gas, CallValueTransferGas)
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasSelfdestructFrontier calculates dynamic gas for SELFDESTRUCT in pre-Berlin forks.
 // Charges CreateBySelfdestructGas (25000) when sending balance to a non-existent account.
-func gasSelfdestructFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSelfdestructFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	if evm.StateDB != nil {
 		if !evm.StateDB.Exist(addr) && evm.StateDB.GetBalance(contract.Address).Sign() != 0 {
-			return CreateBySelfdestructGas
+			return CreateBySelfdestructGas, nil
 		}
 	}
-	return 0
+	return 0, nil
 }
 
 // --- EIP-2929 dynamic gas functions ---
@@ -447,46 +577,50 @@ func gasSelfdestructFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Me
 // gasSloadEIP2929 charges warm/cold gas for SLOAD.
 // The constant gas for the opcode is WarmStorageReadCost (100).
 // If the slot is cold, this function adds the extra (ColdSloadCost - WarmStorageReadCost).
-func gasSloadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSloadEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.Back(0)
 	slot := bigToHash(loc)
-	return gasEIP2929SlotCheck(evm, contract.Address, slot)
+	return gasEIP2929SlotCheck(evm, contract.Address, slot), nil
 }
 
 // gasBalanceEIP2929 charges warm/cold gas for BALANCE.
 // The constant gas is WarmStorageReadCost (100).
 // If the address is cold, this adds (ColdAccountAccessCost - WarmStorageReadCost).
-func gasBalanceEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasBalanceEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasEIP2929AccountCheck(evm, addr)
+	return gasEIP2929AccountCheck(evm, addr), nil
 }
 
 // gasExtCodeSizeEIP2929 charges warm/cold gas for EXTCODESIZE.
-func gasExtCodeSizeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeSizeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasEIP2929AccountCheck(evm, addr)
+	return gasEIP2929AccountCheck(evm, addr), nil
 }
 
 // gasExtCodeCopyEIP2929 charges warm/cold gas for EXTCODECOPY, plus copy gas + memory expansion.
-func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
 	// Copy gas: 3 per word. Size is at stack position 3.
 	size := stack.Back(3).Uint64()
 	gas = safeAdd(gas, safeMul(GasCopy, toWordSize(size)))
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasExtCodeHashEIP2929 charges warm/cold gas for EXTCODEHASH.
-func gasExtCodeHashEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeHashEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasEIP2929AccountCheck(evm, addr)
+	return gasEIP2929AccountCheck(evm, addr), nil
 }
 
 // gasCallEIP2929 charges warm/cold gas for CALL, plus value transfer, new account, and memory expansion.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func gasCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
 	// Value transfer gas.
@@ -498,39 +632,67 @@ func gasCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 			gas = safeAdd(gas, CallNewAccountGas)
 		}
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasCallCodeEIP2929 charges warm/cold gas for CALLCODE, plus value transfer and memory expansion.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func gasCallCodeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallCodeEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
 	// Value transfer gas (CALLCODE doesn't create new accounts).
 	if stack.Back(2).Sign() != 0 {
 		gas = safeAdd(gas, CallValueTransferGas)
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasDelegateCallEIP2929 charges warm/cold gas for DELEGATECALL, plus memory expansion.
 // Stack: gas, addr, argsOffset, argsLength, retOffset, retLength
-func gasDelegateCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasDelegateCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasStaticCallEIP2929 charges warm/cold gas for STATICCALL, plus memory expansion.
 // Stack: gas, addr, argsOffset, argsLength, retOffset, retLength
-func gasStaticCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasStaticCallEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP2929AccountCheck(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // --- Glamsterdam gas functions (EIP-8038, EIP-2780, EIP-7778) ---
@@ -563,31 +725,31 @@ func gasEIP8038SlotCheck(evm *EVM, addr types.Address, slot types.Hash) uint64 {
 }
 
 // gasSloadGlamst charges warm/cold gas for SLOAD under Glamsterdam (EIP-8038).
-func gasSloadGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSloadGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.Back(0)
 	slot := bigToHash(loc)
-	return gasEIP8038SlotCheck(evm, contract.Address, slot)
+	return gasEIP8038SlotCheck(evm, contract.Address, slot), nil
 }
 
 // gasBalanceGlamst charges warm/cold gas for BALANCE under Glamsterdam (EIP-8038).
-func gasBalanceGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasBalanceGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasEIP8038AccountCheck(evm, addr)
+	return gasEIP8038AccountCheck(evm, addr), nil
 }
 
 // gasExtCodeSizeGlamst charges warm/cold gas for EXTCODESIZE under Glamsterdam.
 // Per EIP-8038: adds extra WarmStorageReadGlamst for second DB read (code size).
-func gasExtCodeSizeGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeSizeGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
 	// EIP-8038: second read for code size costs warm access
 	gas = safeAdd(gas, WarmStorageReadGlamst)
-	return gas
+	return gas, nil
 }
 
 // gasExtCodeCopyGlamst charges warm/cold gas for EXTCODECOPY under Glamsterdam.
 // Per EIP-8038: adds extra WarmStorageReadGlamst for second DB read (code).
-func gasExtCodeCopyGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeCopyGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
 	// EIP-8038: second read for code costs warm access
@@ -595,21 +757,25 @@ func gasExtCodeCopyGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memor
 	// Copy gas: 3 per word. Size is at stack position 3.
 	size := stack.Back(3).Uint64()
 	gas = safeAdd(gas, safeMul(GasCopy, toWordSize(size)))
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	return gas, nil
 }
 
 // gasExtCodeHashGlamst charges warm/cold gas for EXTCODEHASH under Glamsterdam.
-func gasExtCodeHashGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeHashGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasEIP8038AccountCheck(evm, addr)
+	return gasEIP8038AccountCheck(evm, addr), nil
 }
 
 // gasSstoreGlamst charges gas for SSTORE under Glamsterdam.
 // EIP-7778: no refunds are issued (refund is always 0).
 // EIP-8038: increased cold/warm costs.
 // EIP-8037: increased storage set cost.
-func gasSstoreGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSstoreGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	loc := stack.Back(0)
 	slot := bigToHash(loc)
 
@@ -624,7 +790,7 @@ func gasSstoreGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	}
 
 	if evm.StateDB == nil {
-		return WarmStorageReadGlamst + coldGas
+		return WarmStorageReadGlamst + coldGas, nil
 	}
 
 	key := bigToHash(loc)
@@ -634,7 +800,7 @@ func gasSstoreGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 
 	if current == val {
 		// No-op.
-		return WarmStorageReadGlamst + coldGas
+		return WarmStorageReadGlamst + coldGas, nil
 	}
 
 	var currentBytes, originalBytes [32]byte
@@ -644,19 +810,19 @@ func gasSstoreGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	if originalBytes == currentBytes {
 		if isZero(originalBytes) {
 			// Create slot: 0 -> non-zero. EIP-8037 increased cost.
-			return GasSstoreSetGlamsterdam + coldGas
+			return GasSstoreSetGlamsterdam + coldGas, nil
 		}
 		// Update slot: non-zero -> different non-zero.
-		return GasSstoreReset + coldGas
+		return GasSstoreReset + coldGas, nil
 	}
 
 	// Dirty slot: original != current.
 	// EIP-7778: no refunds, so just charge warm read.
-	return WarmStorageReadGlamst + coldGas
+	return WarmStorageReadGlamst + coldGas, nil
 }
 
 // gasCallGlamst charges gas for CALL under Glamsterdam (EIP-8038/2780).
-func gasCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
 	transfersValue := stack.Back(2).Sign() != 0
@@ -668,39 +834,67 @@ func gasCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 			gas = safeAdd(gas, CallNewAccountGlamst)
 		}
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasCallCodeGlamst charges gas for CALLCODE under Glamsterdam.
-func gasCallCodeGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallCodeGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
 	if stack.Back(2).Sign() != 0 {
 		gas = safeAdd(gas, CallValueTransferGlamst)
 	}
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasDelegateCallGlamst charges gas for DELEGATECALL under Glamsterdam.
-func gasDelegateCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasDelegateCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasStaticCallGlamst charges gas for STATICCALL under Glamsterdam.
-func gasStaticCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasStaticCallGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasEIP8038AccountCheck(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasSelfdestructGlamst charges gas for SELFDESTRUCT under Glamsterdam.
-func gasSelfdestructGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSelfdestructGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	gas = safeAdd(gas, gasEIP8038AccountCheck(evm, addr))
@@ -709,5 +903,5 @@ func gasSelfdestructGlamst(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 			gas = safeAdd(gas, CreateBySelfdestructGas)
 		}
 	}
-	return gas
+	return gas, nil
 }

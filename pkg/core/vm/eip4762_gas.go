@@ -150,24 +150,24 @@ func gasCodeHashAccessEIP4762(evm *EVM, addr types.Address) uint64 {
 }
 
 // gasSloadEIP4762 calculates witness-based gas for SLOAD under EIP-4762.
-func gasSloadEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSloadEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	if evm.witnessGas == nil {
-		return 0
+		return 0, nil
 	}
 	loc := stack.Back(0)
 	storageKey := loc.Uint64()
 	treeKey, subKey := GetStorageSlotTreeKeys(storageKey)
-	return evm.witnessGas.TouchAccessEvent(contract.Address, treeKey, subKey)
+	return evm.witnessGas.TouchAccessEvent(contract.Address, treeKey, subKey), nil
 }
 
 // gasSstoreEIP4762 calculates witness-based gas for SSTORE under EIP-4762.
 // Per the EIP, we remove the EIP-2200 SSTORE gas schedule and charge only
 // SLOAD_GAS (WarmStorageReadCost) plus witness access + write costs.
-func gasSstoreEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSstoreEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	gas := WarmStorageReadCost // base SLOAD_GAS
 
 	if evm.witnessGas == nil {
-		return gas
+		return gas, nil
 	}
 
 	loc := stack.Back(0)
@@ -187,30 +187,30 @@ func gasSstoreEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 
 	// Write event.
 	gas = safeAdd(gas, evm.witnessGas.TouchWriteEvent(contract.Address, treeKey, subKey, fill))
-	return gas
+	return gas, nil
 }
 
 // gasBalanceEIP4762 charges witness gas for BALANCE under EIP-4762.
-func gasBalanceEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasBalanceEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasAccountAccessEIP4762(evm, addr)
+	return gasAccountAccessEIP4762(evm, addr), nil
 }
 
 // gasExtCodeSizeEIP4762 charges witness gas for EXTCODESIZE under EIP-4762.
-func gasExtCodeSizeEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeSizeEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasAccountAccessEIP4762(evm, addr)
+	return gasAccountAccessEIP4762(evm, addr), nil
 }
 
 // gasExtCodeHashEIP4762 charges witness gas for EXTCODEHASH under EIP-4762.
-func gasExtCodeHashEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeHashEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
-	return gasCodeHashAccessEIP4762(evm, addr)
+	return gasCodeHashAccessEIP4762(evm, addr), nil
 }
 
 // gasExtCodeCopyEIP4762 charges witness gas for EXTCODECOPY under EIP-4762.
 // Charges per code chunk accessed plus copy + memory expansion.
-func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 
 	// Account header access.
@@ -219,7 +219,11 @@ func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 	// Copy gas: 3 per word. Size is at stack position 3.
 	size := stack.Back(3).Uint64()
 	gas = safeAdd(gas, safeMul(GasCopy, toWordSize(size)))
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
 
 	// Charge per code chunk accessed.
 	if evm.witnessGas != nil && size > 0 {
@@ -233,12 +237,12 @@ func gasExtCodeCopyEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 		}
 	}
 
-	return gas
+	return gas, nil
 }
 
 // gasCallEIP4762 charges witness gas for CALL under EIP-4762.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func gasCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasAccountAccessEIP4762(evm, addr)
 
@@ -262,39 +266,67 @@ func gasCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 		}
 	}
 
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasCallCodeEIP4762 charges witness gas for CALLCODE under EIP-4762.
-func gasCallCodeEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasCallCodeEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasAccountAccessEIP4762(evm, addr)
 
 	// Under EIP-4762, CALLCODE value-sending costs are removed.
 	// Witness access is still charged.
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasDelegateCallEIP4762 charges witness gas for DELEGATECALL under EIP-4762.
-func gasDelegateCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasDelegateCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasAccountAccessEIP4762(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasStaticCallEIP4762 charges witness gas for STATICCALL under EIP-4762.
-func gasStaticCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasStaticCallEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(1).Bytes())
 	gas := gasAccountAccessEIP4762(evm, addr)
-	gas = safeAdd(gas, gasMemExpansion(evm, contract, stack, mem, memorySize))
-	return gas
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	gas = safeAdd(gas, memGas)
+	// Compute call gas via 63/64 rule and store in evm.callGasTemp.
+	evm.callGasTemp = callGasEIP150(contract.Gas, gas, stack.Back(0).Uint64())
+	gas = safeAdd(gas, evm.callGasTemp)
+	return gas, nil
 }
 
 // gasSelfdestructEIP4762 charges witness gas for SELFDESTRUCT under EIP-4762.
-func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	addr := types.BytesToAddress(stack.Back(0).Bytes())
 	gas := gasAccountAccessEIP4762(evm, addr)
 
@@ -308,7 +340,7 @@ func gasSelfdestructEIP4762(evm *EVM, contract *Contract, stack *Stack, mem *Mem
 		gas = safeAdd(gas, gasAccountWriteEIP4762(evm, addr, calleeFill))
 	}
 
-	return gas
+	return gas, nil
 }
 
 // gasCodeChunksAccess charges witness gas for accessing code chunks in range

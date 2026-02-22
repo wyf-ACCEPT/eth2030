@@ -65,7 +65,7 @@ func TestCalldataFloorGasVsIntrinsicGas(t *testing.T) {
 		data[i] = 0xff // all non-zero
 	}
 
-	standard := intrinsicGas(data, false, 0, 0)
+	standard := intrinsicGas(data, false, false, 0, 0)
 	floor := calldataFloorGas(data, false)
 
 	// Standard: 21000 + 100 * 16 = 22600
@@ -81,7 +81,7 @@ func TestCalldataFloorGasVsIntrinsicGas(t *testing.T) {
 	zeroData := make([]byte, 1000)
 	zeroData[0] = 0xff // one non-zero byte
 
-	standardZero := intrinsicGas(zeroData, false, 0, 0)
+	standardZero := intrinsicGas(zeroData, false, false, 0, 0)
 	floorZero := calldataFloorGas(zeroData, false)
 
 	// Standard: 21000 + 999 * 4 + 1 * 16 = 25012

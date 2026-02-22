@@ -586,7 +586,7 @@ func TestIntrinsicGas_NoAuthorizations(t *testing.T) {
 	data := []byte{0x00, 0x01, 0x00, 0xff}
 	isCreate := false
 
-	gas := intrinsicGas(data, isCreate, 0, 0)
+	gas := intrinsicGas(data, isCreate, false, 0, 0)
 	// TxGas(21000) + 2*TxDataZeroGas(4) + 2*TxDataNonZeroGas(16) = 21040
 	expected := TxGas + 2*TxDataZeroGas + 2*TxDataNonZeroGas
 	if gas != expected {
@@ -599,14 +599,14 @@ func TestIntrinsicGas_WithAuthorizations(t *testing.T) {
 	isCreate := false
 
 	// 3 authorizations, 0 empty accounts
-	gas := intrinsicGas(data, isCreate, 3, 0)
+	gas := intrinsicGas(data, isCreate, false, 3, 0)
 	expected := TxGas + 3*PerAuthBaseCost
 	if gas != expected {
 		t.Errorf("intrinsicGas with 3 auths, 0 empty: got %d, want %d", gas, expected)
 	}
 
 	// 3 authorizations, 2 empty accounts
-	gas = intrinsicGas(data, isCreate, 3, 2)
+	gas = intrinsicGas(data, isCreate, false, 3, 2)
 	expected = TxGas + 3*PerAuthBaseCost + 2*PerEmptyAccountCost
 	if gas != expected {
 		t.Errorf("intrinsicGas with 3 auths, 2 empty: got %d, want %d", gas, expected)
@@ -615,7 +615,7 @@ func TestIntrinsicGas_WithAuthorizations(t *testing.T) {
 
 func TestIntrinsicGas_SingleAuthEmptyAccount(t *testing.T) {
 	data := []byte{}
-	gas := intrinsicGas(data, false, 1, 1)
+	gas := intrinsicGas(data, false, false, 1, 1)
 	// TxGas + PerAuthBaseCost + PerEmptyAccountCost
 	expected := TxGas + PerAuthBaseCost + PerEmptyAccountCost
 	if gas != expected {
@@ -625,7 +625,7 @@ func TestIntrinsicGas_SingleAuthEmptyAccount(t *testing.T) {
 
 func TestIntrinsicGas_AuthWithDataAndCreate(t *testing.T) {
 	data := []byte{0x60, 0x80, 0x60, 0x40} // 4 non-zero bytes
-	gas := intrinsicGas(data, true, 2, 1)
+	gas := intrinsicGas(data, true, false, 2, 1)
 	expected := TxGas + TxCreateGas + 4*TxDataNonZeroGas + 2*PerAuthBaseCost + 1*PerEmptyAccountCost
 	if gas != expected {
 		t.Errorf("intrinsicGas with create+auth: got %d, want %d", gas, expected)

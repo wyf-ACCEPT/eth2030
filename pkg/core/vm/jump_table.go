@@ -1,10 +1,14 @@
 package vm
 
+import "math/big"
+
 // dynamicGasFunc calculates dynamic gas cost for an operation.
-type dynamicGasFunc func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64
+type dynamicGasFunc func(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error)
 
 // memorySizeFunc returns the required memory size for an operation.
-type memorySizeFunc func(stack *Stack) uint64
+// The bool return indicates whether an overflow occurred during calculation.
+// If overflow is true, the caller should treat this as an out-of-gas condition.
+type memorySizeFunc func(stack *Stack) (uint64, bool)
 
 // operation represents a single EVM opcode's execution metadata.
 type operation struct {
@@ -27,144 +31,364 @@ func (op *operation) GetConstantGas() uint64 {
 // JumpTable maps every possible opcode to its operation definition.
 type JumpTable [256]*operation
 
-// Memory size functions for operations that access memory.
+// --- Overflow-safe helpers for memory size calculations ---
 
-func memoryMload(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + 32
+// bigUint64WithOverflow converts a *big.Int to uint64, returning true if it overflows.
+func bigUint64WithOverflow(v *big.Int) (uint64, bool) {
+	if v.Sign() < 0 {
+		return 0, true
+	}
+	if !v.IsUint64() {
+		return 0, true
+	}
+	return v.Uint64(), false
 }
 
-func memoryMstore(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + 32
+// safeAddU_val returns a + b and true if the addition overflows.
+func safeAddU_val(a, b uint64) (uint64, bool) {
+	sum := a + b
+	if sum < a {
+		return 0, true
+	}
+	return sum, false
 }
 
-func memoryMstore8(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + 1
+// --- Memory size functions for operations that access memory ---
+
+func memoryMload(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, 32)
 }
 
-func memoryReturn(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(1).Uint64()
+func memoryMstore(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, 32)
 }
 
-func memoryKeccak256(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(1).Uint64()
+func memoryMstore8(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, 1)
 }
 
-func memoryCalldataCopy(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(2).Uint64()
+func memoryReturn(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	size, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, size)
 }
 
-func memoryCodeCopy(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(2).Uint64()
+func memoryKeccak256(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	size, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, size)
 }
 
-func memoryLog(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(1).Uint64()
+func memoryCalldataCopy(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
 }
 
-func memoryReturndataCopy(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(2).Uint64()
+func memoryCodeCopy(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
+}
+
+func memoryLog(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	size, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, size)
+}
+
+func memoryReturndataCopy(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
 }
 
 // memoryCall returns the required memory size for CALL.
 // Stack: gas, addr, value, argsOffset, argsLength, retOffset, retLength
-func memoryCall(stack *Stack) uint64 {
-	argsEnd := stack.Back(3).Uint64() + stack.Back(4).Uint64()
-	retEnd := stack.Back(5).Uint64() + stack.Back(6).Uint64()
-	if argsEnd > retEnd {
-		return argsEnd
+func memoryCall(stack *Stack) (uint64, bool) {
+	argsOff, overflow := bigUint64WithOverflow(stack.Back(3))
+	if overflow {
+		return 0, true
 	}
-	return retEnd
+	argsLen, overflow := bigUint64WithOverflow(stack.Back(4))
+	if overflow {
+		return 0, true
+	}
+	retOff, overflow := bigUint64WithOverflow(stack.Back(5))
+	if overflow {
+		return 0, true
+	}
+	retLen, overflow := bigUint64WithOverflow(stack.Back(6))
+	if overflow {
+		return 0, true
+	}
+	argsEnd, overflow := safeAddU_val(argsOff, argsLen)
+	if overflow {
+		return 0, true
+	}
+	retEnd, overflow := safeAddU_val(retOff, retLen)
+	if overflow {
+		return 0, true
+	}
+	if argsEnd > retEnd {
+		return argsEnd, false
+	}
+	return retEnd, false
 }
 
 // memoryCallCode returns the required memory size for CALLCODE.
-// Same stack layout as CALL.
-func memoryCallCode(stack *Stack) uint64 {
+func memoryCallCode(stack *Stack) (uint64, bool) {
 	return memoryCall(stack)
 }
 
 // memoryDelegateCall returns the required memory size for DELEGATECALL.
 // Stack: gas, addr, argsOffset, argsLength, retOffset, retLength (no value)
-func memoryDelegateCall(stack *Stack) uint64 {
-	argsEnd := stack.Back(2).Uint64() + stack.Back(3).Uint64()
-	retEnd := stack.Back(4).Uint64() + stack.Back(5).Uint64()
-	if argsEnd > retEnd {
-		return argsEnd
+func memoryDelegateCall(stack *Stack) (uint64, bool) {
+	argsOff, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
 	}
-	return retEnd
+	argsLen, overflow := bigUint64WithOverflow(stack.Back(3))
+	if overflow {
+		return 0, true
+	}
+	retOff, overflow := bigUint64WithOverflow(stack.Back(4))
+	if overflow {
+		return 0, true
+	}
+	retLen, overflow := bigUint64WithOverflow(stack.Back(5))
+	if overflow {
+		return 0, true
+	}
+	argsEnd, overflow := safeAddU_val(argsOff, argsLen)
+	if overflow {
+		return 0, true
+	}
+	retEnd, overflow := safeAddU_val(retOff, retLen)
+	if overflow {
+		return 0, true
+	}
+	if argsEnd > retEnd {
+		return argsEnd, false
+	}
+	return retEnd, false
 }
 
 // memoryStaticCall returns the required memory size for STATICCALL.
-// Same stack layout as DELEGATECALL.
-func memoryStaticCall(stack *Stack) uint64 {
+func memoryStaticCall(stack *Stack) (uint64, bool) {
 	return memoryDelegateCall(stack)
 }
 
 // memoryExtcodecopy returns the required memory size for EXTCODECOPY.
 // Stack: addr, memOffset, codeOffset, length
-func memoryExtcodecopy(stack *Stack) uint64 {
-	return stack.Back(1).Uint64() + stack.Back(3).Uint64()
+func memoryExtcodecopy(stack *Stack) (uint64, bool) {
+	memOff, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(3))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(memOff, length)
 }
 
 // memoryCreate returns the required memory size for CREATE.
 // Stack: value, offset, length
-func memoryCreate(stack *Stack) uint64 {
-	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+func memoryCreate(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
 }
 
 // memoryCreate2 returns the required memory size for CREATE2.
 // Stack: value, offset, length, salt
-func memoryCreate2(stack *Stack) uint64 {
-	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+func memoryCreate2(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
 }
 
 // memoryMcopy returns the required memory size for MCOPY.
 // Stack: dest, src, size. We need max(dest+size, src+size).
-func memoryMcopy(stack *Stack) uint64 {
-	dest := stack.Back(0).Uint64()
-	src := stack.Back(1).Uint64()
-	size := stack.Back(2).Uint64()
+func memoryMcopy(stack *Stack) (uint64, bool) {
+	dest, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	src, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	size, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
 	if size == 0 {
-		return 0
+		return 0, false
 	}
-	destEnd := dest + size
-	srcEnd := src + size
+	destEnd, overflow := safeAddU_val(dest, size)
+	if overflow {
+		return 0, true
+	}
+	srcEnd, overflow := safeAddU_val(src, size)
+	if overflow {
+		return 0, true
+	}
 	if destEnd > srcEnd {
-		return destEnd
+		return destEnd, false
 	}
-	return srcEnd
+	return srcEnd, false
+}
+
+// memoryApprove returns the required memory size for APPROVE (EIP-8141).
+// Stack: [offset, length, scope] (top-0 = offset, top-1 = length)
+func memoryApprove(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(0))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
+}
+
+// memoryTxParamCopy returns the required memory size for TXPARAMCOPY (EIP-8141).
+// Stack: [in1, in2, destOffset, offset, length]
+func memoryTxParamCopy(stack *Stack) (uint64, bool) {
+	destOffset, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(4))
+	if overflow {
+		return 0, true
+	}
+	if length == 0 {
+		return 0, false
+	}
+	return safeAddU_val(destOffset, length)
 }
 
 // gasMcopy calculates dynamic gas for MCOPY: 3 * wordSize + memory expansion.
-func gasMcopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasMcopy(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	size := stack.Back(2).Uint64()
 	words := (size + 31) / 32
 	copyGas := safeMul(GasCopy, words)
-	return safeAdd(copyGas, gasMemExpansion(evm, contract, stack, mem, memorySize))
+	memGas, err := gasMemExpansion(evm, contract, stack, mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	return safeAdd(copyGas, memGas), nil
 }
 
 // gasMemExpansion calculates dynamic gas for memory expansion.
-func gasMemExpansion(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) uint64 {
+func gasMemExpansion(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	if memorySize == 0 {
-		return 0
+		return 0, nil
 	}
 	words := (memorySize + 31) / 32
 	newCost := words*GasMemory + (words*words)/512
 	if uint64(mem.Len()) == 0 {
-		return newCost
+		return newCost, nil
 	}
 	oldWords := (uint64(mem.Len()) + 31) / 32
 	oldCost := oldWords*GasMemory + (oldWords*oldWords)/512
 	if newCost > oldCost {
-		return newCost - oldCost
+		return newCost - oldCost, nil
 	}
-	return 0
+	return 0, nil
 }
+
+// --- Frontier gas constants (pre-EIP-150) ---
+const (
+	GasBalanceFrontier     uint64 = 20 // BALANCE before EIP-150
+	GasExtcodeSizeFrontier uint64 = 20 // EXTCODESIZE before EIP-150
+	GasSloadFrontier       uint64 = 50 // SLOAD before EIP-150
+	GasCallFrontier        uint64 = 40 // CALL base before EIP-150
+	GasExtcodeCopyFrontier uint64 = 20 // EXTCODECOPY base before EIP-150
+
+	// EIP-150 (Tangerine Whistle) gas constants.
+	GasBalanceEIP150     uint64 = 400 // BALANCE after EIP-150
+	GasExtcodeSizeEIP150 uint64 = 700 // EXTCODESIZE after EIP-150
+	GasSloadEIP150       uint64 = 200 // SLOAD after EIP-150
+	GasCallEIP150        uint64 = 700 // CALL base after EIP-150
+	GasExtcodeCopyEIP150 uint64 = 700 // EXTCODECOPY base after EIP-150
+
+	// Istanbul (EIP-1884) gas constants.
+	GasBalanceEIP1884      uint64 = 700 // BALANCE after EIP-1884
+	GasSloadEIP1884        uint64 = 800 // SLOAD after EIP-1884
+	GasExtcodeHashConst    uint64 = 400 // EXTCODEHASH after Constantinople
+	GasExtcodeHashIstanbul uint64 = 700 // EXTCODEHASH after Istanbul (EIP-1884)
+)
 
 // NewFrontierJumpTable returns the Frontier (genesis) jump table.
 func NewFrontierJumpTable() JumpTable {
 	var tbl JumpTable
 
-	// Arithmetic (Gverylow=3 for ADD, SUB, MUL; Glow=5 for DIV, SDIV, MOD, SMOD, SIGNEXTEND; Gmid=8 for ADDMOD, MULMOD)
+	// Arithmetic
 	tbl[STOP] = &operation{execute: opStop, constantGas: GasStop, minStack: 0, maxStack: 1024, halts: true}
 	tbl[ADD] = &operation{execute: opAdd, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[MUL] = &operation{execute: opMul, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
@@ -178,7 +402,7 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[EXP] = &operation{execute: opExp, constantGas: GasHigh, dynamicGas: gasExp, minStack: 2, maxStack: 1024}
 	tbl[SIGNEXTEND] = &operation{execute: opSignExtend, constantGas: GasLow, minStack: 2, maxStack: 1024}
 
-	// Comparison (Gverylow=3)
+	// Comparison
 	tbl[LT] = &operation{execute: opLt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[GT] = &operation{execute: opGt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[SLT] = &operation{execute: opSlt, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
@@ -186,14 +410,14 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[EQ] = &operation{execute: opEq, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[ISZERO] = &operation{execute: opIsZero, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
 
-	// Bitwise (Gverylow=3)
+	// Bitwise
 	tbl[AND] = &operation{execute: opAnd, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[OR] = &operation{execute: opOr, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[XOR] = &operation{execute: opXor, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[NOT] = &operation{execute: opNot, constantGas: GasVerylow, minStack: 1, maxStack: 1024}
 	tbl[BYTE] = &operation{execute: opByte, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 
-	// Environment (Gbase=2 for info opcodes, Gverylow=3 for data access)
+	// Environment
 	tbl[ADDRESS] = &operation{execute: opAddress, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	tbl[ORIGIN] = &operation{execute: opOrigin, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	tbl[CALLER] = &operation{execute: opCaller, constantGas: GasBase, minStack: 0, maxStack: 1023}
@@ -205,7 +429,7 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[CODECOPY] = &operation{execute: opCodeCopy, constantGas: GasVerylow, minStack: 3, maxStack: 1024, memorySize: memoryCodeCopy, dynamicGas: gasCopy}
 	tbl[GASPRICE] = &operation{execute: opGasPrice, constantGas: GasBase, minStack: 0, maxStack: 1023}
 
-	// Block (Gbase=2 for info opcodes, Gext=20 for BLOCKHASH)
+	// Block
 	tbl[BLOCKHASH] = &operation{execute: opBlockhash, constantGas: GasExt, minStack: 1, maxStack: 1024}
 	tbl[COINBASE] = &operation{execute: opCoinbase, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	tbl[TIMESTAMP] = &operation{execute: opTimestamp, constantGas: GasBase, minStack: 0, maxStack: 1023}
@@ -259,9 +483,9 @@ func NewFrontierJumpTable() JumpTable {
 	// Hash
 	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
 
-	// State access
-	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
-	tbl[SLOAD] = &operation{execute: opSload, constantGas: GasSloadCold, minStack: 1, maxStack: 1024}
+	// State access -- Frontier gas costs (pre-EIP-150).
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceFrontier, minStack: 1, maxStack: 1024}
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: GasSloadFrontier, minStack: 1, maxStack: 1024}
 	tbl[SSTORE] = &operation{execute: opSstore, constantGas: GasSstoreSet, minStack: 2, maxStack: 1024, writes: true}
 
 	// Log
@@ -278,13 +502,13 @@ func NewFrontierJumpTable() JumpTable {
 		}
 	}
 
-	// Ext code
-	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
-	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasBalanceCold, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasExtCodeCopyCopy}
+	// Ext code -- Frontier gas costs (pre-EIP-150).
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasExtcodeSizeFrontier, minStack: 1, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasExtcodeCopyFrontier, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasExtCodeCopyCopy}
 
-	// CALL-family
-	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasCallFrontier}
-	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallCold, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasCallCodeFrontier}
+	// CALL-family -- Frontier gas costs.
+	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallFrontier, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasCallFrontier}
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallFrontier, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasCallCodeFrontier}
 
 	// CREATE
 	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasCreateDynamic, writes: true}
@@ -300,15 +524,24 @@ func NewFrontierJumpTable() JumpTable {
 // NewHomesteadJumpTable returns the Homestead fork jump table.
 func NewHomesteadJumpTable() JumpTable {
 	tbl := NewFrontierJumpTable()
-	// Homestead added DELEGATECALL.
-	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall, dynamicGas: gasMemExpansion}
+	// Homestead added DELEGATECALL with Frontier-era gas costs.
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: GasCallFrontier, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
 
 // NewTangerineWhistleJumpTable returns the Tangerine Whistle (EIP-150) fork jump table.
 func NewTangerineWhistleJumpTable() JumpTable {
 	tbl := NewHomesteadJumpTable()
-	// Gas cost repricing was the main change.
+
+	// EIP-150: increased gas costs for state access.
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceEIP150, minStack: 1, maxStack: 1024}
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: GasSloadEIP150, minStack: 1, maxStack: 1024}
+	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: GasExtcodeSizeEIP150, minStack: 1, maxStack: 1024}
+	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: GasExtcodeCopyEIP150, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy, dynamicGas: gasExtCodeCopyCopy}
+	tbl[CALL] = &operation{execute: opCall, constantGas: GasCallEIP150, minStack: 7, maxStack: 1024, memorySize: memoryCall, dynamicGas: gasCallFrontier}
+	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallEIP150, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasCallCodeFrontier}
+	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: GasCallEIP150, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall, dynamicGas: gasMemExpansion}
+
 	return tbl
 }
 
@@ -321,22 +554,20 @@ func NewSpuriousDragonJumpTable() JumpTable {
 // NewByzantiumJumpTable returns the Byzantium fork jump table.
 func NewByzantiumJumpTable() JumpTable {
 	tbl := NewSpuriousDragonJumpTable()
-	// Byzantium added REVERT, STATICCALL, RETURNDATASIZE, RETURNDATACOPY.
 	tbl[REVERT] = &operation{execute: opRevert, constantGas: GasRevert, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
 	tbl[RETURNDATASIZE] = &operation{execute: opReturndataSize, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	tbl[RETURNDATACOPY] = &operation{execute: opReturndataCopy, constantGas: GasVerylow, minStack: 3, maxStack: 1024, memorySize: memoryReturndataCopy, dynamicGas: gasCopy}
-	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: GasCallCold, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall, dynamicGas: gasMemExpansion}
+	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: GasCallEIP150, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall, dynamicGas: gasMemExpansion}
 	return tbl
 }
 
 // NewConstantinopleJumpTable returns the Constantinople fork jump table.
 func NewConstantinopleJumpTable() JumpTable {
 	tbl := NewByzantiumJumpTable()
-	// Constantinople added SHL, SHR, SAR, EXTCODEHASH, CREATE2.
 	tbl[SHL] = &operation{execute: opSHL, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[SHR] = &operation{execute: opSHR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[SAR] = &operation{execute: opSAR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
-	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasBalanceCold, minStack: 1, maxStack: 1024}
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasExtcodeHashConst, minStack: 1, maxStack: 1024}
 	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasCreate2Dynamic, writes: true}
 	return tbl
 }
@@ -344,9 +575,11 @@ func NewConstantinopleJumpTable() JumpTable {
 // NewIstanbulJumpTable returns the Istanbul fork jump table.
 func NewIstanbulJumpTable() JumpTable {
 	tbl := NewConstantinopleJumpTable()
-	// Istanbul added CHAINID and SELFBALANCE.
 	tbl[CHAINID] = &operation{execute: opChainID, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	tbl[SELFBALANCE] = &operation{execute: opSelfBalance, constantGas: GasLow, minStack: 0, maxStack: 1023}
+	tbl[BALANCE] = &operation{execute: opBalance, constantGas: GasBalanceEIP1884, minStack: 1, maxStack: 1024}
+	tbl[SLOAD] = &operation{execute: opSload, constantGas: GasSloadEIP1884, minStack: 1, maxStack: 1024}
+	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasExtcodeHashIstanbul, minStack: 1, maxStack: 1024}
 	return tbl
 }
 
@@ -354,9 +587,7 @@ func NewIstanbulJumpTable() JumpTable {
 func NewBerlinJumpTable() JumpTable {
 	tbl := NewIstanbulJumpTable()
 
-	// EIP-2929: warm/cold gas accounting. The constant gas becomes the warm
-	// cost (100), and a dynamic gas function adds the extra cold penalty
-	// when the address/slot is accessed for the first time.
+	// EIP-2929: warm/cold gas accounting.
 	tbl[SLOAD] = &operation{execute: opSload, constantGas: WarmStorageReadCost, dynamicGas: gasSloadEIP2929, minStack: 1, maxStack: 1024}
 	tbl[BALANCE] = &operation{execute: opBalance, constantGas: WarmStorageReadCost, dynamicGas: gasBalanceEIP2929, minStack: 1, maxStack: 1024}
 	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: WarmStorageReadCost, dynamicGas: gasExtCodeSizeEIP2929, minStack: 1, maxStack: 1024}
@@ -375,7 +606,6 @@ func NewBerlinJumpTable() JumpTable {
 // NewLondonJumpTable returns the London fork jump table.
 func NewLondonJumpTable() JumpTable {
 	tbl := NewBerlinJumpTable()
-	// London added BASEFEE.
 	tbl[BASEFEE] = &operation{execute: opBaseFee, constantGas: GasBase, minStack: 0, maxStack: 1023}
 	return tbl
 }
@@ -383,14 +613,12 @@ func NewLondonJumpTable() JumpTable {
 // NewMergeJumpTable returns the Merge (Paris) fork jump table.
 func NewMergeJumpTable() JumpTable {
 	tbl := NewLondonJumpTable()
-	// PREVRANDAO replaces DIFFICULTY (same opcode slot, already mapped).
 	return tbl
 }
 
 // NewShanghaiJumpTable returns the Shanghai fork jump table.
 func NewShanghaiJumpTable() JumpTable {
 	tbl := NewMergeJumpTable()
-	// Shanghai added PUSH0.
 	tbl[PUSH0] = &operation{execute: opPush0, constantGas: GasPush0, minStack: 0, maxStack: 1023}
 	return tbl
 }
@@ -399,17 +627,10 @@ func NewShanghaiJumpTable() JumpTable {
 func NewCancunJumpTable() JumpTable {
 	tbl := NewShanghaiJumpTable()
 
-	// EIP-1153: transient storage
 	tbl[TLOAD] = &operation{execute: opTload, constantGas: GasTload, minStack: 1, maxStack: 1024}
 	tbl[TSTORE] = &operation{execute: opTstore, constantGas: GasTstore, minStack: 2, maxStack: 1024, writes: true}
-
-	// EIP-5656: memory copy
 	tbl[MCOPY] = &operation{execute: opMcopy, constantGas: GasMcopyBase, minStack: 3, maxStack: 1024, memorySize: memoryMcopy, dynamicGas: gasMcopy}
-
-	// EIP-4844: blob hash
 	tbl[BLOBHASH] = &operation{execute: opBlobHash, constantGas: GasBlobHash, minStack: 1, maxStack: 1024}
-
-	// EIP-7516: blob base fee
 	tbl[BLOBBASEFEE] = &operation{execute: opBlobBaseFee, constantGas: GasBlobBaseFee, minStack: 0, maxStack: 1023}
 
 	return tbl
@@ -418,98 +639,62 @@ func NewCancunJumpTable() JumpTable {
 // NewPragueJumpTable returns the Prague fork jump table.
 func NewPragueJumpTable() JumpTable {
 	tbl := NewCancunJumpTable()
-	// Prague includes EIP-7702, EIP-7685, and other enhancements.
 	return tbl
 }
 
 // NewVerkleJumpTable returns the Verkle fork jump table.
-// EIP-4762: statelessness gas cost changes, replacing EIP-2929 warm/cold
-// with witness-based gas accounting.
 func NewVerkleJumpTable() JumpTable {
 	tbl := NewGlamsterdanJumpTable()
 
-	// EIP-4762: replace EIP-2929 gas with witness-based gas for state access.
-	// SLOAD: charge witness access gas (branch + chunk) instead of warm/cold.
 	tbl[SLOAD] = &operation{execute: opSload, constantGas: 0, dynamicGas: gasSloadEIP4762, minStack: 1, maxStack: 1024}
-	// SSTORE: charge witness access + write gas (no EIP-2200 schedule).
 	tbl[SSTORE] = &operation{execute: opSstore, constantGas: 0, dynamicGas: gasSstoreEIP4762, minStack: 2, maxStack: 1024, writes: true}
-	// BALANCE: witness access to basic data leaf.
 	tbl[BALANCE] = &operation{execute: opBalance, constantGas: 0, dynamicGas: gasBalanceEIP4762, minStack: 1, maxStack: 1024}
-	// EXTCODESIZE: witness access to basic data leaf.
 	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: 0, dynamicGas: gasExtCodeSizeEIP4762, minStack: 1, maxStack: 1024}
-	// EXTCODECOPY: witness access + code chunk access.
 	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: 0, dynamicGas: gasExtCodeCopyEIP4762, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy}
-	// EXTCODEHASH: witness access to code hash leaf.
 	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: 0, dynamicGas: gasExtCodeHashEIP4762, minStack: 1, maxStack: 1024}
-	// CALL: witness access + write for value transfers.
 	tbl[CALL] = &operation{execute: opCall, constantGas: 0, dynamicGas: gasCallEIP4762, minStack: 7, maxStack: 1024, memorySize: memoryCall}
-	// CALLCODE: witness access (value sending costs removed).
 	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: 0, dynamicGas: gasCallCodeEIP4762, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
-	// DELEGATECALL: witness access.
 	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: 0, dynamicGas: gasDelegateCallEIP4762, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
-	// STATICCALL: witness access.
 	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: 0, dynamicGas: gasStaticCallEIP4762, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
-	// SELFDESTRUCT: witness access + write.
 	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: 0, dynamicGas: gasSelfdestructEIP4762, minStack: 1, maxStack: 1024, halts: true, writes: true}
 
 	return tbl
 }
 
 // NewGlamsterdanJumpTable returns the Glamsterdan fork jump table.
-// EIP-7904: compute gas cost increases for underpriced opcodes.
-// EIP-8038: state access gas cost increases.
-// EIP-7778: SSTORE no longer issues refunds.
-// EIP-2780: CALL value transfer repricing.
 func NewGlamsterdanJumpTable() JumpTable {
 	tbl := NewPragueJumpTable()
 
-	// EIP-7904: DIV 5 -> 15
 	tbl[DIV] = &operation{execute: opDiv, constantGas: GasDivGlamsterdan, minStack: 2, maxStack: 1024}
-	// EIP-7904: SDIV 5 -> 20
 	tbl[SDIV] = &operation{execute: opSdiv, constantGas: GasSdivGlamsterdan, minStack: 2, maxStack: 1024}
-	// EIP-7904: MOD 5 -> 12
 	tbl[MOD] = &operation{execute: opMod, constantGas: GasModGlamsterdan, minStack: 2, maxStack: 1024}
-	// EIP-7904: MULMOD 8 -> 11
 	tbl[MULMOD] = &operation{execute: opMulmod, constantGas: GasMulmodGlamsterdan, minStack: 3, maxStack: 1024}
-	// EIP-7904: KECCAK256 constant 30 -> 45 (dynamic gas unchanged)
 	tbl[KECCAK256] = &operation{execute: opKeccak256, constantGas: GasKeccak256Glamsterdan, minStack: 2, maxStack: 1024, memorySize: memoryKeccak256, dynamicGas: gasSha3}
 
-	// EIP-8038: state access gas cost increases.
 	tbl[SLOAD] = &operation{execute: opSload, constantGas: WarmStorageReadGlamst, dynamicGas: gasSloadGlamst, minStack: 1, maxStack: 1024}
 	tbl[BALANCE] = &operation{execute: opBalance, constantGas: WarmStorageReadGlamst, dynamicGas: gasBalanceGlamst, minStack: 1, maxStack: 1024}
 	tbl[EXTCODESIZE] = &operation{execute: opExtcodesize, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeSizeGlamst, minStack: 1, maxStack: 1024}
 	tbl[EXTCODECOPY] = &operation{execute: opExtcodecopy, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeCopyGlamst, minStack: 4, maxStack: 1024, memorySize: memoryExtcodecopy}
 	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: WarmStorageReadGlamst, dynamicGas: gasExtCodeHashGlamst, minStack: 1, maxStack: 1024}
 
-	// EIP-7778/EIP-8038/EIP-8037: SSTORE with no refunds, increased costs.
 	tbl[SSTORE] = &operation{execute: opSstoreGlamst, constantGas: 0, dynamicGas: gasSstoreGlamst, minStack: 2, maxStack: 1024, writes: true}
 
-	// EIP-8038/EIP-2780: CALL family with increased access costs and repriced value transfer.
 	tbl[CALL] = &operation{execute: opCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasCallGlamst, minStack: 7, maxStack: 1024, memorySize: memoryCall}
 	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: WarmStorageReadGlamst, dynamicGas: gasCallCodeGlamst, minStack: 7, maxStack: 1024, memorySize: memoryCallCode}
 	tbl[STATICCALL] = &operation{execute: opStaticCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasStaticCallGlamst, minStack: 6, maxStack: 1024, memorySize: memoryStaticCall}
 	tbl[DELEGATECALL] = &operation{execute: opDelegateCall, constantGas: WarmStorageReadGlamst, dynamicGas: gasDelegateCallGlamst, minStack: 6, maxStack: 1024, memorySize: memoryDelegateCall}
 	tbl[SELFDESTRUCT] = &operation{execute: opSelfdestruct, constantGas: GasSelfdestruct, dynamicGas: gasSelfdestructGlamst, minStack: 1, maxStack: 1024, halts: true, writes: true}
 
-	// EIP-7843: SLOTNUM opcode - returns the current slot number.
 	tbl[SLOTNUM] = &operation{execute: opSlotNum, constantGas: GasBase, minStack: 0, maxStack: 1023}
-
-	// EIP-7939: CLZ opcode - count leading zero bits (GasFastStep = 5).
 	tbl[CLZ] = &operation{execute: opCLZ, constantGas: GasFastStep, minStack: 1, maxStack: 1024}
 
-	// EIP-8024: DUPN, SWAPN, EXCHANGE - extended stack manipulation with immediate operand.
 	tbl[DUPN] = &operation{execute: opDupN, constantGas: GasVerylow, minStack: 1, maxStack: 1023}
 	tbl[SWAPN] = &operation{execute: opSwapN, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[EXCHANGE] = &operation{execute: opExchange, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 
-	// EIP-8141: Frame Transaction opcodes.
-	// APPROVE: pops [offset, length, scope], halts like RETURN.
 	tbl[APPROVE] = &operation{execute: opApprove, constantGas: GasLow, minStack: 3, maxStack: 1024, halts: true, memorySize: memoryApprove, dynamicGas: gasMemExpansion}
-	// TXPARAMLOAD: pops [in1, in2], pushes 32-byte value.
 	tbl[TXPARAMLOAD] = &operation{execute: opTxParamLoad, constantGas: GasBase, minStack: 2, maxStack: 1024}
-	// TXPARAMSIZE: pops [in1, in2], pushes size.
 	tbl[TXPARAMSIZE] = &operation{execute: opTxParamSize, constantGas: GasBase, minStack: 2, maxStack: 1024}
-	// TXPARAMCOPY: pops [in1, in2, destOffset, offset, length], copies to memory.
 	tbl[TXPARAMCOPY] = &operation{execute: opTxParamCopy, constantGas: GasVerylow, minStack: 5, maxStack: 1024, memorySize: memoryTxParamCopy, dynamicGas: gasMemExpansion}
 
 	return tbl

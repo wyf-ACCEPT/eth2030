@@ -199,14 +199,20 @@ func TestCreate2GasViaOpcodeIncludesHashingCost(t *testing.T) {
 	st.Push(big.NewInt(64)) // length (Back(2) for CREATE)
 	st.Push(big.NewInt(0))  // offset
 	st.Push(big.NewInt(0))  // value
-	createGas := gasCreateDynamic(evm, contract, st, mem, 64)
+	createGas, err := gasCreateDynamic(evm, contract, st, mem, 64)
+	if err != nil {
+		t.Fatalf("gasCreateDynamic returned error: %v", err)
+	}
 
 	// Set up stack for CREATE2: value=0, offset=0, length=64, salt=0
 	st.Push(big.NewInt(0))  // salt (Back(3) for CREATE2)
 	st.Push(big.NewInt(64)) // length (Back(2) for CREATE2)
 	st.Push(big.NewInt(0))  // offset
 	st.Push(big.NewInt(0))  // value
-	create2Gas := gasCreate2Dynamic(evm, contract, st, mem, 64)
+	create2Gas, err := gasCreate2Dynamic(evm, contract, st, mem, 64)
+	if err != nil {
+		t.Fatalf("gasCreate2Dynamic returned error: %v", err)
+	}
 
 	// CREATE2 dynamic gas should be higher by GasKeccak256Word * 2 words = 12
 	if create2Gas <= createGas {

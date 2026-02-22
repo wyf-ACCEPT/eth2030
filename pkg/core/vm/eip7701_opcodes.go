@@ -179,8 +179,16 @@ func opAcceptRole(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stac
 // memoryAcceptRole returns the required memory size for ACCEPT_ROLE.
 // Stack: [frame_role, offset, length]
 // offset is at Back(1), length at Back(2).
-func memoryAcceptRole(stack *Stack) uint64 {
-	return stack.Back(1).Uint64() + stack.Back(2).Uint64()
+func memoryAcceptRole(stack *Stack) (uint64, bool) {
+	offset, overflow := bigUint64WithOverflow(stack.Back(1))
+	if overflow {
+		return 0, true
+	}
+	length, overflow := bigUint64WithOverflow(stack.Back(2))
+	if overflow {
+		return 0, true
+	}
+	return safeAddU_val(offset, length)
 }
 
 // NewAAContext creates a new AAContext from an AA transaction's fields.

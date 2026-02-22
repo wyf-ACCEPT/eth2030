@@ -90,7 +90,7 @@ func TestCallGas_ValueTransfer(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gasNoValue := gasCallEIP2929(evm, contract, stack, mem, 0)
+	gasNoValue, _ := gasCallEIP2929(evm, contract, stack, mem, 0)
 
 	// Reset for fresh cold check.
 	evm2, db2 := newEIP2929TestEVM()
@@ -101,7 +101,7 @@ func TestCallGas_ValueTransfer(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gasWithValue := gasCallEIP2929(evm2, &Contract{}, stack, mem, 0)
+	gasWithValue, _ := gasCallEIP2929(evm2, &Contract{}, stack, mem, 0)
 
 	diff := gasWithValue - gasNoValue
 	if diff != CallValueTransferGas {
@@ -124,7 +124,7 @@ func TestCallGas_NewAccount(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		big.NewInt(1), new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gas := gasCallEIP2929(evm, contract, stack, mem, 0)
+	gas, _ := gasCallEIP2929(evm, contract, stack, mem, 0)
 
 	coldPenalty := ColdAccountAccessCost - WarmStorageReadCost
 	expected := coldPenalty + CallValueTransferGas + CallNewAccountGas
@@ -148,7 +148,7 @@ func TestCallGas_NoNewAccountWithoutValue(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gas := gasCallEIP2929(evm, contract, stack, mem, 0)
+	gas, _ := gasCallEIP2929(evm, contract, stack, mem, 0)
 
 	// Should only have cold penalty, no value transfer or new account.
 	coldPenalty := ColdAccountAccessCost - WarmStorageReadCost
@@ -201,7 +201,7 @@ func TestDelegateCallGas_NoValueTransfer(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gas := gasDelegateCallEIP2929(evm, contract, stack, mem, 0)
+	gas, _ := gasDelegateCallEIP2929(evm, contract, stack, mem, 0)
 
 	// Only cold penalty, no value transfer.
 	coldPenalty := ColdAccountAccessCost - WarmStorageReadCost
@@ -226,7 +226,7 @@ func TestStaticCallGas_NoValueTransfer(t *testing.T) {
 		big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0),
 		new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
-	gas := gasStaticCallEIP2929(evm, contract, stack, mem, 0)
+	gas, _ := gasStaticCallEIP2929(evm, contract, stack, mem, 0)
 
 	coldPenalty := ColdAccountAccessCost - WarmStorageReadCost
 	if gas != coldPenalty {
@@ -257,7 +257,7 @@ func TestCreateGas_BaseAndInitcode(t *testing.T) {
 
 			// CREATE stack: value, offset, length (length at Back(2) for dynamic gas)
 			stack := testStack(new(big.Int).SetUint64(tt.initCodeSize), big.NewInt(0), big.NewInt(0))
-			gas := gasCreateDynamic(evm, contract, stack, mem, 0)
+			gas, _ := gasCreateDynamic(evm, contract, stack, mem, 0)
 			// gasCreateDynamic returns initcode word gas + memory expansion gas.
 			// With memorySize=0 from the call, no memory expansion.
 			if gas < tt.wantWordGas {
@@ -275,8 +275,8 @@ func TestCreate2Gas_WithHashCost(t *testing.T) {
 	// CREATE2 with 64 bytes: 2 words * (InitCodeWordGas + Keccak256WordGas) = 2 * (2+6) = 16.
 	// Stack: value=0, offset=0, length=64, salt=0
 	stack := testStack(big.NewInt(0), big.NewInt(64), big.NewInt(0), big.NewInt(0))
-	gas := gasCreate2Dynamic(evm, contract, stack, mem, 64)
-	memGas := gasMemExpansion(evm, contract, stack, mem, 64)
+	gas, _ := gasCreate2Dynamic(evm, contract, stack, mem, 64)
+	memGas, _ := gasMemExpansion(evm, contract, stack, mem, 64)
 	expected := uint64(2*(InitCodeWordGas+GasKeccak256Word)) + memGas
 	if gas != expected {
 		t.Errorf("gasCreate2Dynamic(64) = %d, want %d", gas, expected)
@@ -284,7 +284,7 @@ func TestCreate2Gas_WithHashCost(t *testing.T) {
 
 	// CREATE2 with 0 bytes: no word gas or hash gas.
 	stack = testStack(big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0))
-	gas = gasCreate2Dynamic(evm, contract, stack, mem, 0)
+	gas, _ = gasCreate2Dynamic(evm, contract, stack, mem, 0)
 	if gas != 0 {
 		t.Errorf("gasCreate2Dynamic(0) = %d, want 0", gas)
 	}
@@ -292,8 +292,8 @@ func TestCreate2Gas_WithHashCost(t *testing.T) {
 	// CREATE2 with 33 bytes: 2 words * (2+6) = 16.
 	mem2 := NewMemory()
 	stack = testStack(big.NewInt(0), big.NewInt(33), big.NewInt(0), big.NewInt(0))
-	gas = gasCreate2Dynamic(evm, contract, stack, mem2, 33)
-	memGas = gasMemExpansion(evm, contract, stack, mem2, 33)
+	gas, _ = gasCreate2Dynamic(evm, contract, stack, mem2, 33)
+	memGas, _ = gasMemExpansion(evm, contract, stack, mem2, 33)
 	expected = uint64(2*(InitCodeWordGas+GasKeccak256Word)) + memGas
 	if gas != expected {
 		t.Errorf("gasCreate2Dynamic(33) = %d, want %d", gas, expected)
@@ -590,7 +590,7 @@ func TestSelfdestructGas_PostCancun(t *testing.T) {
 	db.exists[beneficiary] = true
 
 	stack := testStack(new(big.Int).Set(beneficiaryInt))
-	gas := gasSelfdestructEIP2929(evm, contract, stack, mem, 0)
+	gas, _ := gasSelfdestructEIP2929(evm, contract, stack, mem, 0)
 	expectedCold := ColdAccountAccessCost - WarmStorageReadCost
 	if gas != expectedCold {
 		t.Errorf("SELFDESTRUCT cold beneficiary, no balance: gas = %d, want %d", gas, expectedCold)
@@ -610,7 +610,7 @@ func TestSelfdestructGas_PostCancun(t *testing.T) {
 	// beneficiary does NOT exist
 
 	stack = testStack(new(big.Int).Set(newBeneficiaryInt))
-	gas = gasSelfdestructEIP2929(evm2, contract2, stack, mem, 0)
+	gas, _ = gasSelfdestructEIP2929(evm2, contract2, stack, mem, 0)
 	expected := (ColdAccountAccessCost - WarmStorageReadCost) + CreateBySelfdestructGas
 	if gas != expected {
 		t.Errorf("SELFDESTRUCT cold+new account: gas = %d, want %d", gas, expected)
@@ -630,7 +630,7 @@ func TestSelfdestructGas_PostCancun(t *testing.T) {
 	db3.AddAddressToAccessList(warmBeneficiary) // pre-warm
 
 	stack = testStack(new(big.Int).Set(warmBeneficiaryInt))
-	gas = gasSelfdestructEIP2929(evm3, contract3, stack, mem, 0)
+	gas, _ = gasSelfdestructEIP2929(evm3, contract3, stack, mem, 0)
 	if gas != 0 {
 		t.Errorf("SELFDESTRUCT warm beneficiary, exists: gas = %d, want 0", gas)
 	}
@@ -796,9 +796,9 @@ func TestCallGas_MemoryExpansion(t *testing.T) {
 		big.NewInt(0), new(big.Int).Set(addrInt), big.NewInt(1000),
 	)
 	// Compute expected memory expansion gas for 128 bytes.
-	memGas := gasMemExpansion(evm, contract, stack, mem, 128)
+	memGas, _ := gasMemExpansion(evm, contract, stack, mem, 128)
 
-	gas := gasCallEIP2929(evm, contract, stack, mem, 128)
+	gas, _ := gasCallEIP2929(evm, contract, stack, mem, 128)
 	// Warm address (no cold penalty), no value. Should include memory gas.
 	if gas != memGas {
 		t.Errorf("CALL warm with memory: gas = %d, want %d (memGas)", gas, memGas)

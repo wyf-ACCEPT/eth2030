@@ -379,19 +379,5 @@ func opTxParamCopy(pc *uint64, evm *EVM, contract *Contract, memory *Memory, sta
 	return nil, nil
 }
 
-// memoryApprove returns the required memory size for APPROVE.
-// Stack: [offset, length, scope] (top-0 = offset, top-1 = length)
-func memoryApprove(stack *Stack) uint64 {
-	return stack.Back(0).Uint64() + stack.Back(1).Uint64()
-}
-
-// memoryTxParamCopy returns the required memory size for TXPARAMCOPY.
-// Stack: [in1, in2, destOffset, offset, length]
-func memoryTxParamCopy(stack *Stack) uint64 {
-	destOffset := stack.Back(2).Uint64()
-	length := stack.Back(4).Uint64()
-	if length == 0 {
-		return 0
-	}
-	return destOffset + length
-}
+// memoryApprove and memoryTxParamCopy are defined in jump_table.go
+// with overflow-safe (uint64, bool) return values.

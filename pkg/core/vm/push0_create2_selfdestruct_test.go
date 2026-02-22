@@ -318,7 +318,7 @@ func TestCreate2DynamicGasCost(t *testing.T) {
 
 	// For 64 bytes (2 words):
 	// InitCodeWordGas (2) * 2 + GasKeccak256Word (6) * 2 = 4 + 12 = 16
-	gas := gasCreate2Dynamic(evm, contract, st, mem, 0)
+	gas, _ := gasCreate2Dynamic(evm, contract, st, mem, 0)
 	expectedGas := (InitCodeWordGas + GasKeccak256Word) * 2
 	if gas != expectedGas {
 		t.Errorf("gasCreate2Dynamic for 64 bytes = %d, want %d", gas, expectedGas)

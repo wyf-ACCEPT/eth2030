@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
@@ -117,6 +118,7 @@ type EVM struct {
 	jumpTable   JumpTable
 	precompiles map[types.Address]PrecompiledContract
 	returnData  []byte // return data from the last CALL/CREATE
+	callGasTemp uint64 // temporary storage for CALL gas (set by dynamic gas, read by opCall)
 	witnessGas  *WitnessGasTracker // EIP-4762: witness gas tracking (nil if not Verkle)
 	forkRules   ForkRules          // active fork rules for this block
 	FrameCtx    *FrameContext      // EIP-8141: frame transaction approval context (nil if not frame tx)
@@ -258,6 +260,8 @@ func SelectJumpTable(rules ForkRules) JumpTable {
 }
 
 // Run executes the contract bytecode using the interpreter loop.
+// Gas charging order follows go-ethereum: constant gas -> dynamic gas
+// (which includes memory expansion cost) -> resize memory -> execute.
 func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 	contract.Input = input
 
@@ -295,37 +299,34 @@ func (evm *EVM) Run(contract *Contract, input []byte) ([]byte, error) {
 			}
 		}
 
-		// Memory expansion (if operation defines memorySize)
-		var memSize uint64
+		// Calculate required memory size (but don't resize yet).
+		var memorySize uint64
 		if operation.memorySize != nil {
-			memSize = operation.memorySize(stack)
+			memSize, overflow := operation.memorySize(stack)
+			if overflow {
+				return nil, ErrOutOfGas
+			}
+			// Align to 32-byte words.
 			if memSize > 0 {
-				// Check for overflow in word rounding.
-				if memSize > (^uint64(0))-31 {
-					return nil, ErrOutOfGas
-				}
-				words := (memSize + 31) / 32
-				newSize := words * 32
-				if uint64(mem.Len()) < newSize {
-					// Charge memory expansion gas before resizing.
-					expansionCost, ok := MemoryCost(uint64(mem.Len()), newSize)
-					if !ok {
-						return nil, ErrOutOfGas
-					}
-					if !contract.UseGas(expansionCost) {
-						return nil, ErrOutOfGas
-					}
-					mem.Resize(newSize)
-				}
+				memorySize = (memSize + 31) / 32 * 32
 			}
 		}
 
-		// Dynamic gas (EIP-2929 warm/cold checks, memory expansion, etc.)
+		// Dynamic gas: includes memory expansion cost + operation-specific costs.
+		// This is charged BEFORE memory is actually resized.
 		if operation.dynamicGas != nil {
-			cost := operation.dynamicGas(evm, contract, stack, mem, memSize)
+			cost, err := operation.dynamicGas(evm, contract, stack, mem, memorySize)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %v", ErrOutOfGas, err)
+			}
 			if !contract.UseGas(cost) {
 				return nil, ErrOutOfGas
 			}
+		}
+
+		// Resize memory AFTER gas has been charged (by dynamic gas function).
+		if memorySize > 0 && uint64(mem.Len()) < memorySize {
+			mem.Resize(memorySize)
 		}
 
 		// Compute the total cost for this step (difference before/after gas charging).

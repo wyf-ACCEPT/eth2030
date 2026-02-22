@@ -27,9 +27,9 @@ import (
 // - Nonces are incremented
 func TestEndToEndBlockProcessing(t *testing.T) {
 	// Set up sender and receiver addresses.
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver1 := types.BytesToAddress([]byte{0x02})
-	receiver2 := types.BytesToAddress([]byte{0x03})
+	sender := types.BytesToAddress([]byte{0xa1})
+	receiver1 := types.BytesToAddress([]byte{0xa2})
+	receiver2 := types.BytesToAddress([]byte{0xa3})
 
 	// Initialize state with sender having a large balance.
 	statedb := state.NewMemoryStateDB()
@@ -436,8 +436,8 @@ func TestEndToEndCryptoKeccak(t *testing.T) {
 // TestEndToEndBlockBuilder builds a block from scratch and validates it.
 func TestEndToEndBlockBuilder(t *testing.T) {
 	coinbase := types.BytesToAddress([]byte{0xff})
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xb1})
+	receiver := types.BytesToAddress([]byte{0xb2})
 
 	// Initialize state.
 	statedb := state.NewMemoryStateDB()
