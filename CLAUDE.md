@@ -69,7 +69,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `core/state/pruner/` - State pruner with bloom filter reachability
   - `core/vops/` - Validity-Only Partial Statelessness: partial executor, validator, witness integration, complete VOPS validator (access lists, storage proofs)
   - `core/eftest/` - EF state test runner: JSON parser, fixture loader, go-ethereum-backed execution (36,126/36,126 = 100%)
-  - `geth/` - go-ethereum adapter: type conversion, state bridge, EVM wrapper (imports go-ethereum v1.17.0)
+  - `geth/` - go-ethereum adapter: type conversion, chain config mapping, pre-state creation, state transition, block processor (imports go-ethereum v1.17.0 as library)
   - `rlp/` - RLP encoding/decoding
   - `consensus/` - Consensus layer: SSF (single-slot finality), quick slots (6s, 4-slot epochs), 1-epoch finality, EIP-7251 validator balance (2048 ETH max EB), consolidation, APS (committee selection), EIP-7549 attestations, PQ attestations (Dilithium), attester stake cap, endgame finality, UnifiedBeaconState (merged v1/v2/modern), finality BLS adapter, CL proof circuits (SHA-256 Merkle), jeanVM aggregation (Groth16 ZK-circuit BLS), PQ chain security (SHA-3 fork choice)
   - `ssz/` - SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList
