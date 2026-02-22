@@ -47,17 +47,18 @@ jobs:
 
       - name: Run tests
         working-directory: pkg
-        run: go test ./... -timeout=15m -count=1
+        run: |
+          go test ./... -timeout=15m -count=1 2>&1 | tee /tmp/test-output.txt
+          exit ${PIPESTATUS[0]}
         env:
           GOFLAGS: '-p=4'
 
       - name: Test summary
         if: always()
-        working-directory: pkg
         run: |
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          go test ./... -timeout=15m 2>&1 | grep -E "^(ok|FAIL|---)" | head -60 >> $GITHUB_STEP_SUMMARY || true
+          grep -E "^(ok|FAIL|---)" /tmp/test-output.txt | head -60 >> $GITHUB_STEP_SUMMARY || true
 
   lint:
     name: Lint
