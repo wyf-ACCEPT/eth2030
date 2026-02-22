@@ -270,6 +270,35 @@ func registrationDigest(classicPubKey []byte, validatorIndex uint64) []byte {
 	return crypto.Keccak256(classicPubKey, buf)
 }
 
+// ValidateRegistryEntry checks that a registry entry has valid fields:
+// non-empty keys, valid status, and matching validator index.
+func ValidateRegistryEntry(entry *RegistryEntry) error {
+	if entry == nil {
+		return errors.New("pqc: nil registry entry")
+	}
+	if len(entry.PQPubKey) == 0 {
+		return ErrEmptyPQPubKey
+	}
+	if len(entry.ClassicPubKey) == 0 {
+		return ErrEmptyClassicPubKey
+	}
+	if entry.Status != StatusActive && entry.Status != StatusMigrating && entry.Status != StatusRevoked {
+		return errors.New("pqc: invalid status")
+	}
+	return nil
+}
+
+// ValidateRegistrySize checks that the registry does not exceed maximum size.
+func ValidateRegistrySize(registry *PQKeyRegistry, maxEntries int) error {
+	if registry == nil {
+		return errors.New("pqc: nil registry")
+	}
+	if maxEntries > 0 && registry.Size() > maxEntries {
+		return errors.New("pqc: registry exceeds maximum entries")
+	}
+	return nil
+}
+
 // copyBytes returns a copy of the input byte slice.
 func copyBytes(b []byte) []byte {
 	if b == nil {

@@ -395,3 +395,37 @@ func TestZKISABridge_HostCallNilInput(t *testing.T) {
 		t.Fatalf("expected ErrZKISAInputTooShort, got %v", err)
 	}
 }
+
+func TestValidateBridgeCall(t *testing.T) {
+	// Nil call.
+	if err := ValidateBridgeCall(nil); err == nil {
+		t.Fatal("expected error for nil call")
+	}
+
+	// Zero gas limit.
+	call := &ZKISAHostCall{
+		Selector: ZKISAOpHash,
+		GasLimit: 0,
+	}
+	if err := ValidateBridgeCall(call); err == nil {
+		t.Fatal("expected error for zero gas limit")
+	}
+
+	// Invalid selector.
+	call2 := &ZKISAHostCall{
+		Selector: 0x77, // not a valid op
+		GasLimit: 100,
+	}
+	if err := ValidateBridgeCall(call2); err == nil {
+		t.Fatal("expected error for invalid selector")
+	}
+
+	// Valid call.
+	validCall := &ZKISAHostCall{
+		Selector: ZKISAOpHash,
+		GasLimit: 1000,
+	}
+	if err := ValidateBridgeCall(validCall); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

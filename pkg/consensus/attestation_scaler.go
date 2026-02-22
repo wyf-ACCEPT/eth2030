@@ -320,6 +320,30 @@ func (as *AttestationScaler) BufferSize() int {
 	return as.bufferSize
 }
 
+// ValidateScalerConfig checks that a ScalerConfig has valid values:
+// non-zero buffer, correct worker bounds, and valid epoch configuration.
+func ValidateScalerConfig(cfg *ScalerConfig) error {
+	if cfg == nil {
+		return errors.New("attestation_scaler: nil config")
+	}
+	if cfg.MaxBufferSize <= 0 {
+		return errors.New("attestation_scaler: max buffer size must be > 0")
+	}
+	if cfg.MinWorkers <= 0 {
+		return errors.New("attestation_scaler: min workers must be > 0")
+	}
+	if cfg.MaxWorkers < cfg.MinWorkers {
+		return errors.New("attestation_scaler: max workers must be >= min workers")
+	}
+	if cfg.SlotsPerEpoch == 0 {
+		return errors.New("attestation_scaler: slots per epoch must be > 0")
+	}
+	if cfg.PruneEpochs <= 0 {
+		return errors.New("attestation_scaler: prune epochs must be > 0")
+	}
+	return nil
+}
+
 // Stop stops the scaler, rejecting new submissions.
 func (as *AttestationScaler) Stop() {
 	as.mu.Lock()

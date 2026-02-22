@@ -447,3 +447,28 @@ func TestCellMessageCodec_FullCellSize(t *testing.T) {
 		t.Errorf("decoded data length = %d, want %d", len(decoded.Data), BytesPerCell)
 	}
 }
+
+func TestValidateCellMessageBatch(t *testing.T) {
+	// Valid batch.
+	msgs := []*CellMessageEntry{
+		{CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: make([]byte, BytesPerCell)},
+		{CellIndex: 1, ColumnIndex: 0, RowIndex: 0, Data: make([]byte, BytesPerCell)},
+	}
+	if err := ValidateCellMessageBatch(msgs); err != nil {
+		t.Errorf("valid batch: %v", err)
+	}
+
+	// Empty batch.
+	if err := ValidateCellMessageBatch(nil); err == nil {
+		t.Error("expected error for empty batch")
+	}
+
+	// Duplicate entries.
+	dups := []*CellMessageEntry{
+		{CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: make([]byte, BytesPerCell)},
+		{CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: make([]byte, BytesPerCell)},
+	}
+	if err := ValidateCellMessageBatch(dups); err == nil {
+		t.Error("expected error for duplicate cell messages")
+	}
+}

@@ -693,3 +693,33 @@ func TestAAExecutor_CheckNonce_NilState(t *testing.T) {
 		t.Error("expected error for nil stateDB")
 	}
 }
+
+func TestValidateAATransaction(t *testing.T) {
+	// Nil tx.
+	if err := ValidateAATransaction(nil); err == nil {
+		t.Fatal("expected error for nil AA tx")
+	}
+
+	// Zero sender.
+	tx := &AATx{
+		ValidationGasLimit: 100000,
+		ExecutionGasLimit:  200000,
+		MaxFeePerGas:       big.NewInt(50),
+	}
+	if err := ValidateAATransaction(tx); err == nil {
+		t.Fatal("expected error for zero sender")
+	}
+
+	// Zero execution gas.
+	tx.Sender = types.BytesToAddress([]byte{0x01})
+	tx.ExecutionGasLimit = 0
+	if err := ValidateAATransaction(tx); err == nil {
+		t.Fatal("expected error for zero execution gas")
+	}
+
+	// Valid tx.
+	tx.ExecutionGasLimit = 200000
+	if err := ValidateAATransaction(tx); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

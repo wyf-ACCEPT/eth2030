@@ -245,6 +245,51 @@ func (a *JeanVMAggregator) Stats() (uint64, uint64, uint64, uint64) {
 	return a.proofsGenerated, a.proofsVerified, a.sigsAggregated, a.batchesProcessed
 }
 
+// ValidateAggregationProof checks that a JeanVM aggregation proof has valid
+// format: correct proof size, non-zero signatures, and consistent committee root.
+func ValidateAggregationProof(proof *JeanVMAggregationProof) error {
+	if proof == nil {
+		return ErrJeanVMInvalidProof
+	}
+	if len(proof.ProofBytes) != jeanVMProofSize {
+		return ErrJeanVMProofSizeMismatch
+	}
+	if proof.NumSignatures <= 0 {
+		return ErrJeanVMNoAttestations
+	}
+	if proof.NumSignatures > jeanVMMaxCommitteeSize {
+		return errors.New("jeanvm: num signatures exceeds max committee size")
+	}
+	emptyHash := types.Hash{}
+	if proof.CommitteeRoot == emptyHash {
+		return errors.New("jeanvm: empty committee root")
+	}
+	if len(proof.AggregateSignature) == 0 {
+		return errors.New("jeanvm: empty aggregate signature")
+	}
+	return nil
+}
+
+// ValidateBatchAggregationProof checks that a JeanVM batch proof is valid.
+func ValidateBatchAggregationProof(proof *JeanVMBatchProof) error {
+	if proof == nil {
+		return ErrJeanVMInvalidProof
+	}
+	if len(proof.ProofBytes) != jeanVMProofSize {
+		return ErrJeanVMProofSizeMismatch
+	}
+	if proof.NumCommittees <= 0 || proof.NumCommittees > jeanVMMaxBatchSize {
+		return ErrJeanVMBatchEmpty
+	}
+	if len(proof.CommitteeRoots) != proof.NumCommittees {
+		return errors.New("jeanvm: committee roots count mismatch")
+	}
+	if len(proof.Messages) != proof.NumCommittees {
+		return errors.New("jeanvm: messages count mismatch")
+	}
+	return nil
+}
+
 // --- Internal helpers ---
 
 func jeanVMAggregateSignatures(attestations []JeanVMAttestationInput) []byte {

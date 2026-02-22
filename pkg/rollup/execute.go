@@ -237,6 +237,29 @@ func computeSimulatedStateRoot(preStateRoot types.Hash, blockData []byte) types.
 	return result
 }
 
+// ValidateRollupExecution checks that an ExecuteInput is well-formed:
+//   - ChainID must be non-zero
+//   - PreStateRoot must be non-zero
+//   - BlockData must be non-empty and within MaxBlockDataSize
+func ValidateRollupExecution(input *ExecuteInput) error {
+	if input == nil {
+		return ErrInputTooShort
+	}
+	if input.ChainID == 0 {
+		return ErrInvalidChainID
+	}
+	if input.PreStateRoot == (types.Hash{}) {
+		return errors.New("execute: zero pre-state root")
+	}
+	if len(input.BlockData) == 0 {
+		return ErrInvalidBlockData
+	}
+	if len(input.BlockData) > MaxBlockDataSize {
+		return ErrBlockDataTooLarge
+	}
+	return nil
+}
+
 // computeSimulatedReceiptsRoot produces a deterministic receipts root from
 // block data. In a full implementation, this would be the actual trie root
 // of transaction receipts.

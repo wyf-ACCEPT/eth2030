@@ -468,3 +468,23 @@ func TestEndgameConcurrentAccess(t *testing.T) {
 
 	<-done
 }
+
+func TestValidateEndgameState(t *testing.T) {
+	// Nil db.
+	if err := ValidateEndgameState(nil); err == nil {
+		t.Fatal("expected error for nil EndgameStateDB")
+	}
+
+	// Valid db.
+	edb := newTestEndgameDB(t)
+	if err := ValidateEndgameState(edb); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// After adding some finalized entries, still valid.
+	edb.AddPendingRoot(testRoot(1), 10)
+	edb.MarkFinalized(testRoot(1), 10)
+	if err := ValidateEndgameState(edb); err != nil {
+		t.Fatalf("unexpected error after finalize: %v", err)
+	}
+}

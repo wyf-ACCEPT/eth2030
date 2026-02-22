@@ -293,6 +293,31 @@ func (rm *RPOManager) GetScheduledRPO(epoch uint64) uint64 {
 	return rm.schedule[idx-1].TargetRPO
 }
 
+// ValidateBlobSchedule checks that an RPO schedule has monotonically increasing
+// epochs and non-decreasing RPO values within bounds.
+func ValidateBlobSchedule(schedule []*RPOSchedule, config RPOConfig) error {
+	if len(schedule) == 0 {
+		return ErrRPOScheduleEmpty
+	}
+	for i, s := range schedule {
+		if s.TargetRPO < config.MinRPO {
+			return fmt.Errorf("%w: %d < %d at epoch %d", ErrRPOBelowMin, s.TargetRPO, config.MinRPO, s.Epoch)
+		}
+		if s.TargetRPO > config.MaxRPO {
+			return fmt.Errorf("%w: %d > %d at epoch %d", ErrRPOAboveMax, s.TargetRPO, config.MaxRPO, s.Epoch)
+		}
+		if i > 0 {
+			if schedule[i].Epoch <= schedule[i-1].Epoch {
+				return ErrRPOScheduleOrder
+			}
+			if schedule[i].TargetRPO < schedule[i-1].TargetRPO {
+				return ErrRPOScheduleValues
+			}
+		}
+	}
+	return nil
+}
+
 // GetHistory returns a copy of the RPO change history.
 func (rm *RPOManager) GetHistory() []*RPOHistoryEntry {
 	rm.mu.RLock()

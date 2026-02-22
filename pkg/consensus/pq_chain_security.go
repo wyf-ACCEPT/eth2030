@@ -424,6 +424,38 @@ func (a *PQHistoryAccumulator) Verify(hash types.Hash) bool {
 	return false
 }
 
+// ValidatePQTransition checks that a PQ security transition is valid:
+// epoch alignment, level progression, and minimum threshold requirements.
+func ValidatePQTransition(currentLevel, targetLevel PQSecurityLevel, epoch uint64, cfg *PQChainConfig) error {
+	if cfg == nil {
+		return errors.New("pq_chain: nil config")
+	}
+	if epoch < cfg.TransitionEpoch {
+		return errors.New("pq_chain: transition epoch not yet reached")
+	}
+	if targetLevel < currentLevel {
+		return errors.New("pq_chain: security level cannot decrease")
+	}
+	if targetLevel > PQSecurityRequired {
+		return errors.New("pq_chain: invalid security level")
+	}
+	return nil
+}
+
+// ValidatePQChainConfig checks that a PQ chain config is valid.
+func ValidatePQChainConfig(cfg *PQChainConfig) error {
+	if cfg == nil {
+		return errors.New("pq_chain: nil config")
+	}
+	if cfg.PQThresholdPercent > 100 {
+		return errors.New("pq_chain: threshold percent must be <= 100")
+	}
+	if cfg.SlotsPerEpoch == 0 {
+		return errors.New("pq_chain: slots per epoch must be > 0")
+	}
+	return nil
+}
+
 // Stats returns the validation statistics.
 func (v *PQChainValidator) Stats() (blocksValidated, blocksFailed, attestationsValid, attestationsFailed uint64) {
 	v.mu.RLock()

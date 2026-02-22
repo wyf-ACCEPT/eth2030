@@ -215,3 +215,36 @@ func TestVerifyNilAttestation(t *testing.T) {
 		t.Errorf("expected ErrPQAttNoSignature, got %v", err)
 	}
 }
+
+func TestValidatePQAttestation(t *testing.T) {
+	// Valid attestation.
+	att := &PQAttestation{
+		SourceEpoch:     5,
+		TargetEpoch:     6,
+		BeaconBlockRoot: types.Hash{0x01},
+		PQSignature:     make([]byte, 32),
+	}
+	if err := ValidatePQAttestation(att); err != nil {
+		t.Errorf("valid attestation: %v", err)
+	}
+
+	// Nil.
+	if err := ValidatePQAttestation(nil); err == nil {
+		t.Error("expected error for nil attestation")
+	}
+
+	// No signature.
+	noSig := &PQAttestation{SourceEpoch: 5, TargetEpoch: 6, BeaconBlockRoot: types.Hash{0x01}}
+	if err := ValidatePQAttestation(noSig); err == nil {
+		t.Error("expected error for no signature")
+	}
+
+	// Target before source.
+	badEpoch := &PQAttestation{
+		SourceEpoch: 10, TargetEpoch: 5,
+		BeaconBlockRoot: types.Hash{0x01}, PQSignature: make([]byte, 32),
+	}
+	if err := ValidatePQAttestation(badEpoch); err == nil {
+		t.Error("expected error for target before source")
+	}
+}

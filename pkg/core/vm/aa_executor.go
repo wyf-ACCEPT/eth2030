@@ -93,6 +93,30 @@ type AATx struct {
 	MaxFeePerGas         *big.Int
 }
 
+// ValidateAATransaction checks that an AA transaction has valid fields:
+//   - Sender must be non-zero
+//   - ValidationGasLimit must be > 0
+//   - ExecutionGasLimit must be > 0
+//   - MaxFeePerGas must be > 0
+func ValidateAATransaction(tx *AATx) error {
+	if tx == nil {
+		return ErrAAInvalidTransaction
+	}
+	if tx.Sender == (types.Address{}) {
+		return fmt.Errorf("%w: zero sender address", ErrAAInvalidTransaction)
+	}
+	if tx.ValidationGasLimit == 0 {
+		return fmt.Errorf("%w: validation gas limit is zero", ErrAAInvalidTransaction)
+	}
+	if tx.ExecutionGasLimit == 0 {
+		return fmt.Errorf("%w: execution gas limit is zero", ErrAAInvalidTransaction)
+	}
+	if tx.MaxFeePerGas == nil || tx.MaxFeePerGas.Sign() <= 0 {
+		return fmt.Errorf("%w: max fee per gas must be > 0", ErrAAInvalidTransaction)
+	}
+	return nil
+}
+
 // AAResult is the outcome of processing a single AA transaction.
 type AAResult struct {
 	TxHash          types.Hash

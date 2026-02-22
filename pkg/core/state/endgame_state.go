@@ -314,6 +314,33 @@ func (e *EndgameStateDB) isFinalized(root types.Hash) bool {
 	return false
 }
 
+// ValidateEndgameState checks that an EndgameStateDB is internally consistent:
+//   - The underlying StateDB must not be nil
+//   - If finalized entries exist, they must have increasing slot numbers
+//   - All pending entries must have non-zero roots
+func ValidateEndgameState(e *EndgameStateDB) error {
+	if e == nil {
+		return errors.New("endgame: nil EndgameStateDB")
+	}
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if e.underlying == nil {
+		return ErrEndgameNilStateDB
+	}
+	for i := 1; i < len(e.finalized); i++ {
+		if e.finalized[i].Slot <= e.finalized[i-1].Slot {
+			return ErrEndgameSlotRegression
+		}
+	}
+	for root := range e.pending {
+		if root == (types.Hash{}) {
+			return ErrEndgameZeroRoot
+		}
+	}
+	return nil
+}
+
 // removePendingOrder removes a root from the pendingOrder slice.
 func (e *EndgameStateDB) removePendingOrder(root types.Hash) {
 	for i, r := range e.pendingOrder {

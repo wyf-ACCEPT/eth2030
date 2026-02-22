@@ -229,3 +229,31 @@ func TestBatchAggregatorClearsPending(t *testing.T) {
 		t.Errorf("expected ErrBatchEmpty after clearing, got %v", err)
 	}
 }
+
+func TestValidateAggregatedProof(t *testing.T) {
+	// Nil batch should fail.
+	if err := ValidateAggregatedProof(nil); err == nil {
+		t.Fatal("expected error for nil batch")
+	}
+
+	// Empty proofs should fail.
+	if err := ValidateAggregatedProof(&ProofBatch{}); err == nil {
+		t.Fatal("expected error for empty proofs")
+	}
+
+	// Zero aggregate hash should fail.
+	batch := &ProofBatch{
+		Proofs: []ExecutionProof{
+			{Type: ZKSNARK, ProofData: []byte{0x01}},
+		},
+	}
+	if err := ValidateAggregatedProof(batch); err == nil {
+		t.Fatal("expected error for zero aggregate hash")
+	}
+
+	// Valid batch.
+	batch.AggregateHash = types.Hash{0x01}
+	if err := ValidateAggregatedProof(batch); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

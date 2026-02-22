@@ -414,3 +414,28 @@ func TestUnifiedValidatorIsSlashableAt(t *testing.T) {
 		t.Error("slashed validator should not be slashable")
 	}
 }
+
+func TestValidateBeaconState(t *testing.T) {
+	// Nil state.
+	if err := ValidateBeaconState(nil); err == nil {
+		t.Error("expected error for nil state")
+	}
+
+	// Valid state.
+	state := NewUnifiedBeaconState(32)
+	state.CurrentSlot = 64
+	state.CurrentEpoch = 2
+	state.AddValidator(&UnifiedValidator{Index: 0, ActivationEpoch: 0, ExitEpoch: 9999})
+	state.AddValidator(&UnifiedValidator{Index: 1, ActivationEpoch: 0, ExitEpoch: 9999})
+	if err := ValidateBeaconState(state); err != nil {
+		t.Errorf("valid state: %v", err)
+	}
+
+	// Slot/epoch misalignment.
+	bad := NewUnifiedBeaconState(32)
+	bad.CurrentSlot = 64
+	bad.CurrentEpoch = 5 // Should be 2
+	if err := ValidateBeaconState(bad); err == nil {
+		t.Error("expected error for slot/epoch misalignment")
+	}
+}

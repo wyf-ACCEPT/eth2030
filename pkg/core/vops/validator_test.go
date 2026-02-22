@@ -149,3 +149,25 @@ func makeValue(val byte) *[32]byte {
 	v[0] = val
 	return &v
 }
+
+func TestValidateVOPSWitness(t *testing.T) {
+	// Nil witness.
+	if err := ValidateVOPSWitness(nil); err == nil {
+		t.Fatal("expected error for nil witness")
+	}
+
+	// Empty state.
+	w := witness.NewBlockWitness()
+	if err := ValidateVOPSWitness(w); err == nil {
+		t.Fatal("expected error for empty state")
+	}
+
+	// Valid witness with one account.
+	w.State[types.BytesToAddress([]byte{0x01})] = &witness.AccountWitness{
+		Nonce:  1,
+		Exists: true,
+	}
+	if err := ValidateVOPSWitness(w); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

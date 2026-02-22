@@ -296,6 +296,55 @@ func (m *TeradataManager) ListL2Chains() []uint64 {
 	return chains
 }
 
+// ValidateTeradataConfig checks that a TeradataConfig is well-formed.
+func ValidateTeradataConfig(cfg TeradataConfig) error {
+	if cfg.MaxDataSize == 0 {
+		return errors.New("teradata: max data size must be > 0")
+	}
+	if cfg.MaxL2Chains == 0 {
+		return errors.New("teradata: max L2 chains must be > 0")
+	}
+	if cfg.TotalStorageLimit == 0 {
+		return errors.New("teradata: total storage limit must be > 0")
+	}
+	if cfg.TotalStorageLimit < cfg.MaxDataSize {
+		return errors.New("teradata: total storage limit must be >= max data size")
+	}
+	return nil
+}
+
+// ValidateTeradataReceipt checks that a receipt is structurally valid.
+func ValidateTeradataReceipt(receipt *TeradataReceipt) error {
+	if receipt == nil {
+		return ErrTeradataInvalidReceipt
+	}
+	if receipt.L2ChainID == 0 {
+		return ErrTeradataInvalidChainID
+	}
+	if receipt.Size == 0 {
+		return ErrTeradataDataEmpty
+	}
+	emptyHash := types.Hash{}
+	if receipt.CommitmentHash == emptyHash {
+		return errors.New("teradata: empty commitment hash")
+	}
+	return nil
+}
+
+// ValidateBandwidthEnforcement checks that the bandwidth enforcer is properly
+// configured and integrated with the teradata manager.
+func ValidateBandwidthEnforcement(m *TeradataManager) error {
+	if m == nil {
+		return errors.New("teradata: nil manager")
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.enforcer == nil {
+		return errors.New("teradata: bandwidth enforcer not configured")
+	}
+	return nil
+}
+
 // uint64ToBytes converts a uint64 to an 8-byte big-endian slice.
 func uint64ToBytes(v uint64) []byte {
 	b := make([]byte, 8)

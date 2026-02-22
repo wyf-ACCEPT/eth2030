@@ -330,3 +330,35 @@ func TestAACircuitMerkleRootSHA256(t *testing.T) {
 		t.Errorf("three-leaf root len: got %d, want 32", len(root3))
 	}
 }
+
+func TestValidateAAProof(t *testing.T) {
+	// Nil proof.
+	if err := ValidateAAProof(nil); err == nil {
+		t.Fatal("expected error for nil proof")
+	}
+
+	// Wrong version.
+	proof := &AACircuitProof{
+		Version: 0xFF,
+		PublicInputs: AAPublicInputs{
+			Nonce:    1,
+			GasLimit: 100000,
+		},
+	}
+	if err := ValidateAAProof(proof); err == nil {
+		t.Fatal("expected error for wrong version")
+	}
+
+	// Zero nonce.
+	proof.Version = AACircuitVersion
+	proof.PublicInputs.Nonce = 0
+	if err := ValidateAAProof(proof); err == nil {
+		t.Fatal("expected error for zero nonce")
+	}
+
+	// Valid proof.
+	proof.PublicInputs.Nonce = 1
+	if err := ValidateAAProof(proof); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

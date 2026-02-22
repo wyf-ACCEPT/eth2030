@@ -12,6 +12,7 @@ package core
 //   - Payload shrinking optimizations reflected in gas costs
 
 import (
+	"errors"
 	"math"
 	"math/big"
 )
@@ -255,6 +256,32 @@ func IsHogotaActive(blockNum *big.Int, forkBlock *big.Int) bool {
 		return false
 	}
 	return blockNum.Cmp(forkBlock) >= 0
+}
+
+// ValidateHogotaGas checks that a HogotaGasTable has consistent, non-zero values:
+//   - All gas costs must be non-zero
+//   - Cold costs must be >= warm costs for the same operation
+//   - Create cost must be >= 1000 (lower bound sanity check)
+func ValidateHogotaGas(table *HogotaGasTable) error {
+	if table == nil {
+		return errors.New("hogota: nil gas table")
+	}
+	if table.SloadCold == 0 || table.SloadWarm == 0 {
+		return errors.New("hogota: SLOAD gas values must be non-zero")
+	}
+	if table.SstoreCold == 0 || table.SstoreWarm == 0 {
+		return errors.New("hogota: SSTORE gas values must be non-zero")
+	}
+	if table.SloadCold < table.SloadWarm {
+		return errors.New("hogota: SLOAD cold must be >= warm")
+	}
+	if table.BalanceCold < table.BalanceWarm {
+		return errors.New("hogota: BALANCE cold must be >= warm")
+	}
+	if table.Create < 1000 {
+		return errors.New("hogota: CREATE gas too low (min 1000)")
+	}
+	return nil
 }
 
 // HogotaGasReduction returns the total gas reduction from Glamsterdam to

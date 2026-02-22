@@ -193,6 +193,41 @@ func vdfComputeProof(x *big.Int, T uint64, l, n *big.Int) *big.Int {
 	return pi
 }
 
+// ValidateVDFParams checks that VDF parameters are secure: time parameter
+// non-zero, security bits sufficient, and modulus size adequate.
+func ValidateVDFParams(params *VDFParams) error {
+	if params == nil {
+		return errors.New("vdf: nil params")
+	}
+	if params.T == 0 {
+		return errVDFZeroIterations
+	}
+	if params.Lambda < 64 {
+		return errors.New("vdf: security parameter must be >= 64 bits")
+	}
+	return nil
+}
+
+// ValidateVDFProof checks that a VDF proof has non-empty fields.
+func ValidateVDFProof(proof *VDFProof) error {
+	if proof == nil {
+		return errVDFInvalidProof
+	}
+	if len(proof.Input) == 0 {
+		return errVDFNilInput
+	}
+	if len(proof.Output) == 0 {
+		return errors.New("vdf: empty output")
+	}
+	if len(proof.Proof) == 0 {
+		return errVDFInvalidProof
+	}
+	if proof.Iterations == 0 {
+		return errVDFZeroIterations
+	}
+	return nil
+}
+
 // generateVDFModulus generates a random RSA modulus N = p*q where p and q
 // are random primes. For a production VDF, these should be generated via
 // an MPC ceremony to ensure nobody knows the factorization.

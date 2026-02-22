@@ -211,6 +211,34 @@ func (v *MandatoryProofValidator) WeightedScore(proofSet *ProofSet) int {
 	return score
 }
 
+// ValidateProofSubmission checks that a proof being submitted to the mandatory
+// 3-of-5 system is well-formed:
+//   - proofType must be one of the 5 recognized block proof types
+//   - proofData must be non-empty
+//   - the prover identity (proverHash) must be non-zero
+func ValidateProofSubmission(proofType string, proofData []byte, proverHash [32]byte) error {
+	if proofType == "" {
+		return ErrInvalidProofType
+	}
+	found := false
+	for _, t := range AllBlockProofTypes {
+		if t == proofType {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("%w: %s", ErrInvalidProofType, proofType)
+	}
+	if len(proofData) == 0 {
+		return ErrEmptyProofData
+	}
+	if proverHash == [32]byte{} {
+		return errors.New("mandatory_proofs: zero prover hash")
+	}
+	return nil
+}
+
 // MissingTypes returns the proof types that are not present in the proof set.
 func (v *MandatoryProofValidator) MissingTypes(proofSet *ProofSet) []string {
 	if proofSet == nil {

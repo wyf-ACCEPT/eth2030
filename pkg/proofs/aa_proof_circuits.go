@@ -12,6 +12,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -430,6 +431,27 @@ func CompressAAProof(proof *AACircuitProof) ([]byte, error) {
 	copy(buf[off:], proof.PublicInputs.StateRoot[:])
 
 	return buf, nil
+}
+
+// ValidateAAProof checks that an AA circuit proof is well-formed:
+//   - Proof must not be nil
+//   - Version must match AACircuitVersion
+//   - Nonce must be > 0 (sequential)
+//   - GasLimit in public inputs must be > 0
+func ValidateAAProof(proof *AACircuitProof) error {
+	if proof == nil {
+		return ErrAACircuitNilWitness
+	}
+	if proof.Version != AACircuitVersion {
+		return fmt.Errorf("aa_circuit: version mismatch: got %d, want %d", proof.Version, AACircuitVersion)
+	}
+	if proof.PublicInputs.Nonce == 0 {
+		return ErrAACircuitInvalidNonce
+	}
+	if proof.PublicInputs.GasLimit == 0 {
+		return ErrAACircuitInsufficientGas
+	}
+	return nil
 }
 
 // --- helpers ---

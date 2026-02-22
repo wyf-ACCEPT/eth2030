@@ -201,6 +201,32 @@ func ValidateChallengeDeadline(challenge *CustodyChallenge, currentSlot uint64) 
 	return nil
 }
 
+// ValidateCustodyChallenge checks that a custody challenge is well-formed:
+// valid column, non-zero addresses, deadline in the future, and epoch cutoff.
+func ValidateCustodyChallenge(challenge *CustodyChallenge, currentSlot, currentEpoch uint64) error {
+	if challenge == nil {
+		return ErrChallengeNotFound
+	}
+	if challenge.Column >= NumberOfColumns {
+		return fmt.Errorf("%w: column %d >= %d", ErrInvalidColumn, challenge.Column, NumberOfColumns)
+	}
+	emptyAddr := types.Address{}
+	if challenge.Challenger == emptyAddr {
+		return errors.New("das: challenger address is empty")
+	}
+	if challenge.Target == emptyAddr {
+		return errors.New("das: target address is empty")
+	}
+	if challenge.Deadline <= currentSlot {
+		return fmt.Errorf("%w: deadline %d <= current slot %d", ErrDeadlinePassed, challenge.Deadline, currentSlot)
+	}
+	if currentEpoch > DefaultEpochCutoff && challenge.Epoch < currentEpoch-DefaultEpochCutoff {
+		return fmt.Errorf("%w: epoch %d too old (current %d, cutoff %d)",
+			ErrProofEpochTooOld, challenge.Epoch, currentEpoch, DefaultEpochCutoff)
+	}
+	return nil
+}
+
 // replayKey uniquely identifies a proof submission for replay protection.
 type replayKey struct {
 	NodeID [32]byte

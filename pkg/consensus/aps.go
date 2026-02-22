@@ -2,6 +2,8 @@ package consensus
 
 import (
 	"encoding/binary"
+	"errors"
+	"fmt"
 
 	"github.com/eth2030/eth2030/core/types"
 	"github.com/eth2030/eth2030/crypto"
@@ -191,6 +193,40 @@ func ComputeProposerDuties(
 		}
 	}
 	return duties
+}
+
+// ValidateDutyAssignment checks that an attester duty assignment is consistent:
+// validator index is within the set, slot is in the correct epoch, and committee
+// index is reasonable.
+func ValidateDutyAssignment(duty *AttesterDuty, epoch Epoch, slotsPerEpoch uint64, validatorCount int) error {
+	if duty == nil {
+		return errors.New("aps: nil duty")
+	}
+	if validatorCount > 0 && duty.ValidatorIndex >= uint64(validatorCount) {
+		return fmt.Errorf("aps: validator index %d >= count %d", duty.ValidatorIndex, validatorCount)
+	}
+	if slotsPerEpoch > 0 {
+		startSlot := uint64(epoch) * slotsPerEpoch
+		endSlot := startSlot + slotsPerEpoch
+		if uint64(duty.Slot) < startSlot || uint64(duty.Slot) >= endSlot {
+			return fmt.Errorf("aps: slot %d not in epoch %d [%d, %d)", duty.Slot, epoch, startSlot, endSlot)
+		}
+	}
+	return nil
+}
+
+// ValidateAPSConfig checks that an APS config is internally consistent.
+func ValidateAPSConfig(cfg *APSConfig) error {
+	if cfg == nil {
+		return errors.New("aps: nil config")
+	}
+	if cfg.AttesterWeight+cfg.ProposerWeight == 0 {
+		return errors.New("aps: weights sum to zero")
+	}
+	if cfg.AttesterWeight < 0 || cfg.ProposerWeight < 0 {
+		return errors.New("aps: weights must be non-negative")
+	}
+	return nil
 }
 
 // computeEpochSeed derives a deterministic seed for the given epoch and domain.

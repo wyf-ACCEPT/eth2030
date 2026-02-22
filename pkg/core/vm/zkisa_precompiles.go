@@ -13,6 +13,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/eth2030/eth2030/core/types"
@@ -620,6 +621,29 @@ func zkGetSlice(data []byte, offset, length uint64) []byte {
 	}
 	copy(result, data[offset:end])
 	return result
+}
+
+// ValidateZKISAPrecompile checks that a zkISA precompile execution proof is well-formed:
+//   - Proof must not be nil
+//   - Witness must not be empty
+//   - PrecompileAddr must be one of the registered addresses
+//   - StepCount must be > 0
+func ValidateZKISAPrecompile(proof *ExecutionProof) error {
+	if proof == nil {
+		return ErrZkISANilProof
+	}
+	if len(proof.Witness) == 0 {
+		return ErrZkISAWitnessMissing
+	}
+	if proof.StepCount == 0 {
+		return errors.New("zkisa: step count must be > 0")
+	}
+	// Check that the precompile address is one of the known zkISA addresses.
+	known := RegisterZkISAPrecompiles()
+	if _, ok := known[proof.PrecompileAddr]; !ok {
+		return fmt.Errorf("zkisa: unknown precompile address %x", proof.PrecompileAddr)
+	}
+	return nil
 }
 
 func maxUint64Safe(a, b uint64) uint64 {

@@ -148,6 +148,41 @@ func DetermineProposer(slot uint64, validatorCount int, randaoMix types.Hash) ui
 	return idx % uint64(validatorCount)
 }
 
+// ValidateCommitReveal checks that a commitment-reveal pair is consistent:
+// commitment format valid, secret non-empty, and reveal timing correct.
+func ValidateCommitReveal(commitment *ProposerCommitment, secret []byte, currentSlot uint64) error {
+	if commitment == nil {
+		return errors.New("secret proposer: nil commitment")
+	}
+	emptyHash := types.Hash{}
+	if commitment.CommitHash == emptyHash {
+		return errors.New("secret proposer: empty commit hash")
+	}
+	if len(secret) == 0 {
+		return errors.New("secret proposer: empty secret")
+	}
+	// Verify that the secret matches the commitment.
+	expected := computeCommitHash(commitment.ValidatorIndex, commitment.Slot, secret)
+	if expected != commitment.CommitHash {
+		return ErrSPWrongSecret
+	}
+	return nil
+}
+
+// ValidateSecretProposerConfig checks that config values are sensible.
+func ValidateSecretProposerConfig(cfg *SecretProposerConfig) error {
+	if cfg == nil {
+		return errors.New("secret proposer: nil config")
+	}
+	if cfg.LookaheadSlots == 0 {
+		return errors.New("secret proposer: lookahead slots must be > 0")
+	}
+	if cfg.RevealPeriod > cfg.LookaheadSlots {
+		return errors.New("secret proposer: reveal period exceeds lookahead")
+	}
+	return nil
+}
+
 // computeCommitHash computes Keccak256(validatorIndex || slot || secret).
 func computeCommitHash(validatorIndex uint64, slot uint64, secret []byte) types.Hash {
 	buf := make([]byte, 8+8+len(secret))

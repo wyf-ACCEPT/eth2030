@@ -308,3 +308,38 @@ func TestBlobStreamConcurrentChunks(t *testing.T) {
 		t.Error("stream should be complete after all chunks added concurrently")
 	}
 }
+
+func TestValidateStreamConfig(t *testing.T) {
+	cfg := DefaultStreamConfig()
+	if err := ValidateStreamConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	bad := cfg
+	bad.ChunkSize = 0
+	if err := ValidateStreamConfig(bad); err == nil {
+		t.Error("expected error for zero chunk size")
+	}
+
+	bad2 := cfg
+	bad2.MaxConcurrentStreams = 0
+	if err := ValidateStreamConfig(bad2); err == nil {
+		t.Error("expected error for zero max streams")
+	}
+}
+
+func TestValidateBlobChunk(t *testing.T) {
+	chunk := &BlobChunk{Index: 0, Data: []byte{1, 2, 3}}
+	if err := ValidateBlobChunk(chunk, 1024); err != nil {
+		t.Errorf("valid chunk: %v", err)
+	}
+
+	if err := ValidateBlobChunk(nil, 1024); err == nil {
+		t.Error("expected error for nil chunk")
+	}
+
+	oversized := &BlobChunk{Index: 0, Data: make([]byte, 2048)}
+	if err := ValidateBlobChunk(oversized, 1024); err == nil {
+		t.Error("expected error for oversized chunk")
+	}
+}

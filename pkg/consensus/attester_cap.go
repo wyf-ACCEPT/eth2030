@@ -5,7 +5,10 @@ package consensus
 // influence and targets ~128K active attesters with 16M ETH staked.
 // Part of the 2029+ Consensus Layer accessibility roadmap.
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Attester cap errors.
 var (
@@ -76,6 +79,18 @@ func ValidateAttesterCapConfig(config *AttesterCapConfig) error {
 	}
 	if config.MaxAttesterBalance < MinStakeGwei {
 		return ErrCapBelowMinStake
+	}
+	return nil
+}
+
+// MaxAttesterCount is the target maximum number of effective attesters (128K).
+const MaxAttesterCount = 128_000
+
+// ValidateMaxAttesterCount checks that the number of active validators does not
+// exceed the 128K attester cap. Returns an error if the count is over the limit.
+func ValidateMaxAttesterCount(activeCount int) error {
+	if activeCount > MaxAttesterCount {
+		return fmt.Errorf("attester cap: active count %d exceeds max %d", activeCount, MaxAttesterCount)
 	}
 	return nil
 }

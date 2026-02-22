@@ -387,6 +387,27 @@ func VerifyShieldedTransfer(proof *ShieldedCircuitProof, nullifier, outputCommit
 	return proof.ProofHash == types.Hash(expectedHash)
 }
 
+// ValidateShieldedTransfer checks that a ShieldedTransferWitness is well-formed:
+//   - Witness must not be nil
+//   - SecretKey must not be all zeros
+//   - MerklePath must have at least one sibling (non-trivial tree)
+//   - MerkleRoot must be non-zero
+func ValidateShieldedTransfer(witness *ShieldedTransferWitness) error {
+	if witness == nil {
+		return ErrShieldedCircuitNilWitness
+	}
+	if witness.SecretKey == [32]byte{} {
+		return errors.New("shielded_circuit: zero secret key")
+	}
+	if witness.MerkleRoot == (types.Hash{}) {
+		return errors.New("shielded_circuit: zero merkle root")
+	}
+	if len(witness.MerklePath) == 0 {
+		return ErrShieldedCircuitMerkle
+	}
+	return nil
+}
+
 // CreateShieldedNote creates a ShieldedNote from a witness, typically called
 // after successful proof generation.
 func CreateShieldedNote(witness *ShieldedTransferWitness) *ShieldedNote {

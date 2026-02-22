@@ -424,3 +424,38 @@ func TestComputeHogotaBlobFeeOverflow(t *testing.T) {
 		t.Errorf("expected MaxUint64 for extreme excess, got %d", fee)
 	}
 }
+
+func TestValidateHogotaGas(t *testing.T) {
+	// Nil table.
+	if err := ValidateHogotaGas(nil); err == nil {
+		t.Fatal("expected error for nil gas table")
+	}
+
+	// Valid default table.
+	table := DefaultHogotaGasTable()
+	if err := ValidateHogotaGas(table); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Cold < warm should fail.
+	bad := DefaultHogotaGasTable()
+	bad.SloadCold = 50
+	bad.SloadWarm = 100
+	if err := ValidateHogotaGas(bad); err == nil {
+		t.Fatal("expected error when cold < warm")
+	}
+
+	// Zero SLOAD should fail.
+	bad2 := DefaultHogotaGasTable()
+	bad2.SloadCold = 0
+	if err := ValidateHogotaGas(bad2); err == nil {
+		t.Fatal("expected error for zero SLOAD cold")
+	}
+
+	// Create too low.
+	bad3 := DefaultHogotaGasTable()
+	bad3.Create = 500
+	if err := ValidateHogotaGas(bad3); err == nil {
+		t.Fatal("expected error for CREATE gas too low")
+	}
+}

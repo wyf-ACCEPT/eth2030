@@ -320,3 +320,32 @@ func TestExecuteErrorSentinels(t *testing.T) {
 		seen[e.Error()] = true
 	}
 }
+
+func TestValidateRollupExecution(t *testing.T) {
+	// Nil input.
+	if err := ValidateRollupExecution(nil); err == nil {
+		t.Fatal("expected error for nil input")
+	}
+
+	// Zero chain ID.
+	input := &ExecuteInput{
+		PreStateRoot: types.Hash{0x01},
+		BlockData:    []byte{0x01},
+	}
+	if err := ValidateRollupExecution(input); err == nil {
+		t.Fatal("expected error for zero chain ID")
+	}
+
+	// Empty block data.
+	input.ChainID = 1
+	input.BlockData = nil
+	if err := ValidateRollupExecution(input); err == nil {
+		t.Fatal("expected error for empty block data")
+	}
+
+	// Valid input.
+	input.BlockData = []byte{0x01}
+	if err := ValidateRollupExecution(input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

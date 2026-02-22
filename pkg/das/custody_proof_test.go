@@ -349,3 +349,33 @@ func TestChallengeIDDeterministic(t *testing.T) {
 		t.Error("different column should produce different challenge ID")
 	}
 }
+
+func TestValidateCustodyChallenge(t *testing.T) {
+	challenger := types.Address{0x01}
+	target := types.Address{0x02}
+
+	c, _ := CreateChallenge(challenger, target, 5, 100, 200)
+
+	// Valid.
+	if err := ValidateCustodyChallenge(c, 150, 100); err != nil {
+		t.Errorf("valid challenge: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateCustodyChallenge(nil, 150, 100); err == nil {
+		t.Error("expected error for nil challenge")
+	}
+
+	// Deadline passed.
+	if err := ValidateCustodyChallenge(c, 250, 100); err == nil {
+		t.Error("expected error for deadline passed")
+	}
+
+	// Column out of range.
+	badCol, _ := CreateChallenge(challenger, target, NumberOfColumns+1, 100, 200)
+	if badCol != nil {
+		if err := ValidateCustodyChallenge(badCol, 150, 100); err == nil {
+			t.Error("expected error for column out of range")
+		}
+	}
+}

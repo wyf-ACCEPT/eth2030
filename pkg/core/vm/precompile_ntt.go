@@ -235,6 +235,31 @@ func bitReverse(v, numBits int) int {
 	return result
 }
 
+// ValidateNTTInput checks that raw NTT precompile input is well-formed before execution:
+//   - Input must have at least 1 byte (op type) + 32 bytes (at least 1 element)
+//   - Op type must be 0 (forward) or 1 (inverse)
+//   - Element count must be a power of two and at most NTTMaxDegree
+func ValidateNTTInput(input []byte) error {
+	if len(input) < 1 {
+		return ErrNTTInvalidInput
+	}
+	if input[0] > 1 {
+		return ErrNTTInvalidOpType
+	}
+	coeffData := input[1:]
+	if len(coeffData) == 0 || len(coeffData)%32 != 0 {
+		return ErrNTTInvalidInput
+	}
+	n := len(coeffData) / 32
+	if n > NTTMaxDegree {
+		return ErrNTTTooLarge
+	}
+	if n&(n-1) != 0 {
+		return ErrNTTNotPowerOfTwo
+	}
+	return nil
+}
+
 // PrecompiledContractsIPlus adds NTT precompile for I+ fork.
 var PrecompiledContractsIPlus = func() map[types.Address]PrecompiledContract {
 	m := make(map[types.Address]PrecompiledContract)

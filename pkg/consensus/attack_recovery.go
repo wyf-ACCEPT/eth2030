@@ -284,6 +284,52 @@ func (ad *AttackDetector) ClearRecovery() {
 	ad.recoveryStatus = RecoveryStatus{}
 }
 
+// ValidateRecoveryPlan checks that a recovery plan is complete and consistent:
+// severity classification matches actions, and plan has at least one action.
+func ValidateRecoveryPlan(plan *RecoveryPlan) error {
+	if plan == nil {
+		return ErrNilRecoveryPlan
+	}
+	if !plan.IsolationMode && !plan.FallbackToFinalized && !plan.SocialConsensusOverride {
+		return ErrInvalidPlan
+	}
+	// Validate severity-action consistency.
+	switch plan.Severity {
+	case SeverityCritical:
+		if !plan.SocialConsensusOverride {
+			return fmt.Errorf("consensus: critical severity should include social consensus override")
+		}
+	case SeverityHigh:
+		if !plan.FallbackToFinalized {
+			return fmt.Errorf("consensus: high severity should include fallback to finalized")
+		}
+	case SeverityMedium:
+		if !plan.IsolationMode {
+			return fmt.Errorf("consensus: medium severity should include isolation mode")
+		}
+	case SeverityLow, SeverityNone:
+		// Low severity plans may have any action.
+	}
+	return nil
+}
+
+// ValidateAttackReport checks that an attack report is internally consistent.
+func ValidateAttackReport(report *AttackReport) error {
+	if report == nil {
+		return errors.New("consensus: nil attack report")
+	}
+	if report.Detected && report.Severity == SeverityNone {
+		return errors.New("consensus: attack detected but severity is none")
+	}
+	if !report.Detected && report.Severity != SeverityNone {
+		return errors.New("consensus: no attack detected but severity is not none")
+	}
+	if report.CurrentEpoch > 0 && report.FinalizedEpoch > report.CurrentEpoch {
+		return errors.New("consensus: finalized epoch exceeds current epoch")
+	}
+	return nil
+}
+
 // String returns a human-readable summary of the attack report.
 func (r *AttackReport) String() string {
 	if !r.Detected {

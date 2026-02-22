@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/eth2030/eth2030/core/types"
@@ -157,6 +158,29 @@ func ParallelExecutionHints(txs []*types.Transaction) [][]int {
 }
 
 // EstimateParallelSpeedup estimates the theoretical speedup from parallel
+// ValidateGigagasConfig checks that a GigagasConfig is within safe bounds:
+//   - TargetGasPerSecond must be > 0
+//   - MaxBlockGas must be > 0 and <= TargetGasPerSecond
+//   - ParallelExecutionSlots must be between 1 and 256
+func ValidateGigagasConfig(config *GigagasConfig) error {
+	if config == nil {
+		return errors.New("gigagas: nil config")
+	}
+	if config.TargetGasPerSecond == 0 {
+		return errors.New("gigagas: target gas per second must be > 0")
+	}
+	if config.MaxBlockGas == 0 {
+		return errors.New("gigagas: max block gas must be > 0")
+	}
+	if config.MaxBlockGas > config.TargetGasPerSecond {
+		return errors.New("gigagas: max block gas exceeds target gas per second")
+	}
+	if config.ParallelExecutionSlots == 0 || config.ParallelExecutionSlots > 256 {
+		return errors.New("gigagas: parallel execution slots must be between 1 and 256")
+	}
+	return nil
+}
+
 // execution given the transaction groups. Returns 1.0 for no speedup.
 // The speedup is estimated as totalTxs / maxGroupSize (Amdahl's law approximation).
 func EstimateParallelSpeedup(txGroups [][]int) float64 {

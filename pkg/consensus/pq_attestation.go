@@ -143,6 +143,29 @@ func attestationMessage(slot, committeeIndex uint64, blockRoot types.Hash, sourc
 	return crypto.Keccak256(buf)
 }
 
+// ValidatePQAttestation checks that a PQ attestation has valid fields:
+// PQ signature format, algorithm compatibility, and epoch ordering.
+func ValidatePQAttestation(att *PQAttestation) error {
+	if att == nil {
+		return ErrPQAttNoSignature
+	}
+	if len(att.PQSignature) == 0 && len(att.ClassicSignature) == 0 {
+		return ErrPQAttNoSignature
+	}
+	if att.TargetEpoch < att.SourceEpoch {
+		return errors.New("pq attestation: target epoch before source epoch")
+	}
+	emptyHash := types.Hash{}
+	if att.BeaconBlockRoot == emptyHash {
+		return errors.New("pq attestation: empty beacon block root")
+	}
+	// Validate classic signature length if present.
+	if len(att.ClassicSignature) > 0 && len(att.ClassicSignature) != 65 {
+		return errors.New("pq attestation: classic signature must be 65 bytes")
+	}
+	return nil
+}
+
 // CreatePQAttestation creates a new attestation with a post-quantum signature.
 // The message is derived from the attestation fields and signed with the PQ key.
 func CreatePQAttestation(

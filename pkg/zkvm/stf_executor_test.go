@@ -341,3 +341,32 @@ func TestRealSTFExec_DefaultConfig(t *testing.T) {
 
 // Ensure the crypto import is used.
 var _ = crypto.Keccak256
+
+func TestValidateSTFInput(t *testing.T) {
+	// Nil input.
+	if err := ValidateSTFInput(nil); err == nil {
+		t.Fatal("expected error for nil input")
+	}
+
+	// Nil block header.
+	input := &STFInput{
+		PreStateRoot: types.Hash{0x01},
+		Transactions: []*types.Transaction{{}},
+	}
+	if err := ValidateSTFInput(input); err == nil {
+		t.Fatal("expected error for nil block header")
+	}
+
+	// Zero pre-state root.
+	input.BlockHeader = &types.Header{}
+	input.PreStateRoot = types.Hash{}
+	if err := ValidateSTFInput(input); err == nil {
+		t.Fatal("expected error for zero pre-state root")
+	}
+
+	// Valid input.
+	input.PreStateRoot = types.Hash{0x01}
+	if err := ValidateSTFInput(input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

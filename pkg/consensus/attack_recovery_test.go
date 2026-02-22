@@ -312,3 +312,43 @@ func TestLastReport(t *testing.T) {
 		t.Error("expected attack in updated last report")
 	}
 }
+
+func TestValidateRecoveryPlan(t *testing.T) {
+	// Valid critical plan.
+	plan := &RecoveryPlan{
+		Severity: SeverityCritical, IsolationMode: true,
+		FallbackToFinalized: true, SocialConsensusOverride: true,
+	}
+	if err := ValidateRecoveryPlan(plan); err != nil {
+		t.Errorf("valid plan: %v", err)
+	}
+
+	// Nil plan.
+	if err := ValidateRecoveryPlan(nil); err == nil {
+		t.Error("expected error for nil plan")
+	}
+
+	// No actions.
+	if err := ValidateRecoveryPlan(&RecoveryPlan{Severity: SeverityMedium}); err == nil {
+		t.Error("expected error for plan with no actions")
+	}
+}
+
+func TestValidateAttackReport(t *testing.T) {
+	// Valid report.
+	report := &AttackReport{Detected: true, Severity: SeverityHigh, CurrentEpoch: 10, FinalizedEpoch: 8}
+	if err := ValidateAttackReport(report); err != nil {
+		t.Errorf("valid report: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateAttackReport(nil); err == nil {
+		t.Error("expected error for nil report")
+	}
+
+	// Detected but no severity.
+	bad := &AttackReport{Detected: true, Severity: SeverityNone}
+	if err := ValidateAttackReport(bad); err == nil {
+		t.Error("expected error for detected with no severity")
+	}
+}

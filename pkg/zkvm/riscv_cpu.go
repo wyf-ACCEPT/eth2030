@@ -462,4 +462,23 @@ func (cpu *RVCPU) handleEcall() {
 	}
 }
 
+// ValidateCPUConfig checks that a RISC-V CPU configuration is within safe bounds:
+//   - GasLimit must be non-zero and at most 1<<32
+//   - Memory page count (if set) must not exceed 1<<16 pages
+func ValidateCPUConfig(gasLimit uint64, maxMemoryPages int) error {
+	if gasLimit == 0 {
+		return errors.New("riscv: gas limit must be non-zero")
+	}
+	if gasLimit > 1<<32 {
+		return fmt.Errorf("riscv: gas limit %d exceeds maximum %d", gasLimit, uint64(1<<32))
+	}
+	if maxMemoryPages < 0 {
+		return errors.New("riscv: negative memory page count")
+	}
+	if maxMemoryPages > 1<<16 {
+		return fmt.Errorf("riscv: memory pages %d exceeds maximum %d", maxMemoryPages, 1<<16)
+	}
+	return nil
+}
+
 // Decode and encode helpers are in riscv_encode.go.

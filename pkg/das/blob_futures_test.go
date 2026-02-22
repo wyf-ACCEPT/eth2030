@@ -491,3 +491,31 @@ func TestBlobFuturesPriceIsolation(t *testing.T) {
 		t.Error("future price should be a copy, not reference")
 	}
 }
+
+func TestValidateFutureContract(t *testing.T) {
+	// Valid.
+	f := &BlobFutureContract{
+		Slot: 200, BlobIndex: 0, Price: big.NewInt(1000),
+		Expiry: 300,
+	}
+	if err := ValidateFutureContract(f, 100); err != nil {
+		t.Errorf("valid contract: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateFutureContract(nil, 100); err == nil {
+		t.Error("expected error for nil contract")
+	}
+
+	// Slot in the past.
+	past := &BlobFutureContract{Slot: 50, Price: big.NewInt(1000), Expiry: 60}
+	if err := ValidateFutureContract(past, 100); err == nil {
+		t.Error("expected error for past slot")
+	}
+
+	// Expiry before slot.
+	badExpiry := &BlobFutureContract{Slot: 200, Price: big.NewInt(1000), Expiry: 100}
+	if err := ValidateFutureContract(badExpiry, 100); err == nil {
+		t.Error("expected error for expiry before slot")
+	}
+}

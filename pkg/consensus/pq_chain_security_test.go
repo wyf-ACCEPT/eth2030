@@ -391,3 +391,39 @@ func TestPQChainSecurityPQMerkleRoot(t *testing.T) {
 		t.Error("different input should produce different root")
 	}
 }
+
+func TestValidatePQTransition(t *testing.T) {
+	cfg := DefaultPQChainConfig()
+
+	// Valid transition.
+	if err := ValidatePQTransition(PQSecurityOptional, PQSecurityPreferred, cfg.TransitionEpoch, cfg); err != nil {
+		t.Errorf("valid transition: %v", err)
+	}
+
+	// Before transition epoch.
+	if err := ValidatePQTransition(PQSecurityOptional, PQSecurityPreferred, 0, cfg); err == nil {
+		t.Error("expected error for before transition epoch")
+	}
+
+	// Level decrease.
+	if err := ValidatePQTransition(PQSecurityRequired, PQSecurityOptional, cfg.TransitionEpoch, cfg); err == nil {
+		t.Error("expected error for level decrease")
+	}
+}
+
+func TestValidatePQChainConfig(t *testing.T) {
+	cfg := DefaultPQChainConfig()
+	if err := ValidatePQChainConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidatePQChainConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+
+	bad := *cfg
+	bad.PQThresholdPercent = 200
+	if err := ValidatePQChainConfig(&bad); err == nil {
+		t.Error("expected error for threshold > 100")
+	}
+}

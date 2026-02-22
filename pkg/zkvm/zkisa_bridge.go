@@ -426,6 +426,24 @@ func MapPrecompileToZKISA(precompileAddr byte) uint32 {
 	}
 }
 
+// ValidateBridgeCall checks that a ZKISAHostCall is well-formed:
+//   - Call must not be nil
+//   - Selector must be in the range of known ops (0x01-0x08 or 0xFF)
+//   - GasLimit must be > 0
+func ValidateBridgeCall(call *ZKISAHostCall) error {
+	if call == nil {
+		return ErrZKISAInputTooShort
+	}
+	if call.GasLimit == 0 {
+		return errors.New("zkisa: gas limit must be > 0")
+	}
+	table := NewZKISAOpTable()
+	if _, err := table.Lookup(call.Selector); err != nil {
+		return fmt.Errorf("%w: 0x%02x", ErrZKISAInvalidSelector, call.Selector)
+	}
+	return nil
+}
+
 // ZKISAGasCost calculates the gas cost for a zkISA call based on the
 // operation selector and input size.
 func ZKISAGasCost(selector uint32, inputLen int) uint64 {

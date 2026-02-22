@@ -159,3 +159,42 @@ func TestDetermineProposerDistribution(t *testing.T) {
 		t.Errorf("expected at least 2 distinct proposers across 100 slots, got %d", len(seen))
 	}
 }
+
+func TestValidateCommitReveal(t *testing.T) {
+	secret := []byte("my-secret")
+	commitment := &ProposerCommitment{
+		ValidatorIndex: 5,
+		Slot:           100,
+		CommitHash:     computeCommitHash(5, 100, secret),
+	}
+
+	// Valid.
+	if err := ValidateCommitReveal(commitment, secret, 100); err != nil {
+		t.Errorf("valid commit-reveal: %v", err)
+	}
+
+	// Nil commitment.
+	if err := ValidateCommitReveal(nil, secret, 100); err == nil {
+		t.Error("expected error for nil commitment")
+	}
+
+	// Wrong secret.
+	if err := ValidateCommitReveal(commitment, []byte("wrong"), 100); err == nil {
+		t.Error("expected error for wrong secret")
+	}
+
+	// Empty secret.
+	if err := ValidateCommitReveal(commitment, nil, 100); err == nil {
+		t.Error("expected error for empty secret")
+	}
+}
+
+func TestValidateSecretProposerConfig(t *testing.T) {
+	cfg := DefaultSecretProposerConfig()
+	if err := ValidateSecretProposerConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+	if err := ValidateSecretProposerConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+}

@@ -2,6 +2,7 @@ package proofs
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -163,6 +164,31 @@ func (ba *BatchAggregator) VerifyBatch(batch *ProofBatch) (bool, error) {
 	ba.verified.Add(uint64(len(batch.Proofs)))
 
 	return true, nil
+}
+
+// ValidateAggregatedProof checks that a ProofBatch is well-formed:
+//   - Batch must not be nil
+//   - Must contain at least one proof
+//   - All proofs must have the same proof type
+//   - AggregateHash must be non-zero
+func ValidateAggregatedProof(batch *ProofBatch) error {
+	if batch == nil {
+		return ErrBatchEmpty
+	}
+	if len(batch.Proofs) == 0 {
+		return ErrBatchEmpty
+	}
+	if batch.AggregateHash == (types.Hash{}) {
+		return errors.New("proofs: aggregate hash is zero")
+	}
+	// Verify all proofs have consistent type.
+	firstType := batch.Proofs[0].Type
+	for i, p := range batch.Proofs[1:] {
+		if p.Type != firstType {
+			return fmt.Errorf("proofs: batch proof %d has type %d, want %d", i+1, p.Type, firstType)
+		}
+	}
+	return nil
 }
 
 // Stats returns the aggregation statistics: total batched, verified, and failed proof counts.

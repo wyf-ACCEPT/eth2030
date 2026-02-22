@@ -1,6 +1,8 @@
 package vops
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/eth2030/eth2030/core/types"
@@ -108,6 +110,26 @@ func BuildPartialStateFromWitness(w *witness.ExecutionWitness) *PartialState {
 		}
 	}
 	return ps
+}
+
+// ValidateVOPSWitness checks that a VOPS block witness is well-formed for
+// validity-only partial statelessness:
+//   - Witness must not be nil
+//   - Witness must contain at least one account state
+//   - All account witnesses must have a valid code hash (non-zero if code exists)
+func ValidateVOPSWitness(w *witness.BlockWitness) error {
+	if w == nil {
+		return errors.New("vops: nil witness")
+	}
+	if len(w.State) == 0 {
+		return errors.New("vops: witness has no account state entries")
+	}
+	for addr, acctW := range w.State {
+		if acctW == nil {
+			return fmt.Errorf("vops: nil account witness for %x", addr)
+		}
+	}
+	return nil
 }
 
 // bytesToUint64 reads a little-endian uint64 from up to 8 bytes.

@@ -356,3 +356,39 @@ func makeTestJeanVMAttestations(n int) []JeanVMAttestationInput {
 	}
 	return atts
 }
+
+func TestValidateAggregationProof(t *testing.T) {
+	// Valid proof.
+	proof := &JeanVMAggregationProof{
+		ProofBytes:         make([]byte, jeanVMProofSize),
+		NumSignatures:      10,
+		CommitteeRoot:      types.Hash{0x01},
+		AggregateSignature: []byte("sig"),
+	}
+	if err := ValidateAggregationProof(proof); err != nil {
+		t.Errorf("valid proof: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateAggregationProof(nil); err == nil {
+		t.Error("expected error for nil proof")
+	}
+
+	// Wrong proof size.
+	badSize := &JeanVMAggregationProof{
+		ProofBytes: make([]byte, 10), NumSignatures: 1,
+		CommitteeRoot: types.Hash{0x01}, AggregateSignature: []byte("sig"),
+	}
+	if err := ValidateAggregationProof(badSize); err == nil {
+		t.Error("expected error for wrong proof size")
+	}
+
+	// Zero signatures.
+	noSig := &JeanVMAggregationProof{
+		ProofBytes: make([]byte, jeanVMProofSize), NumSignatures: 0,
+		CommitteeRoot: types.Hash{0x01}, AggregateSignature: []byte("sig"),
+	}
+	if err := ValidateAggregationProof(noSig); err == nil {
+		t.Error("expected error for zero signatures")
+	}
+}

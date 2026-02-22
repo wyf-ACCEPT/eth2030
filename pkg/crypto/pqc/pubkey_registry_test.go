@@ -353,3 +353,43 @@ func TestRegistrationDigest(t *testing.T) {
 		t.Error("digest does not match manual keccak256 computation")
 	}
 }
+
+func TestValidateRegistryEntry(t *testing.T) {
+	// Valid entry.
+	entry := &RegistryEntry{
+		PQPubKey:      []byte("pq-key-data"),
+		ClassicPubKey: []byte("classic-key-data"),
+		Status:        StatusActive,
+	}
+	if err := ValidateRegistryEntry(entry); err != nil {
+		t.Errorf("valid entry: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateRegistryEntry(nil); err == nil {
+		t.Error("expected error for nil entry")
+	}
+
+	// Empty PQ key.
+	badPQ := &RegistryEntry{PQPubKey: nil, ClassicPubKey: []byte("key"), Status: StatusActive}
+	if err := ValidateRegistryEntry(badPQ); err == nil {
+		t.Error("expected error for empty PQ key")
+	}
+
+	// Empty classic key.
+	badClassic := &RegistryEntry{PQPubKey: []byte("key"), ClassicPubKey: nil, Status: StatusActive}
+	if err := ValidateRegistryEntry(badClassic); err == nil {
+		t.Error("expected error for empty classic key")
+	}
+}
+
+func TestValidateRegistrySize(t *testing.T) {
+	reg := NewPQKeyRegistry()
+	if err := ValidateRegistrySize(reg, 100); err != nil {
+		t.Errorf("valid size: %v", err)
+	}
+
+	if err := ValidateRegistrySize(nil, 100); err == nil {
+		t.Error("expected error for nil registry")
+	}
+}

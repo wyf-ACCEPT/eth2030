@@ -198,6 +198,30 @@ func (fm *FuturesMarket) MarketStats() (open, filled, settled, expired int) {
 	return
 }
 
+// ValidateGasFuturePosition checks that a gas futures contract has valid parameters:
+//   - GasAmount must be > 0
+//   - PricePerGas must be > 0
+//   - SettlementSlot must be > 0
+//   - ExpirySlot must be > SettlementSlot
+func ValidateGasFuturePosition(contract *FuturesContract) error {
+	if contract == nil {
+		return errors.New("gas_market: nil contract")
+	}
+	if contract.GasAmount == 0 {
+		return ErrZeroGasAmount
+	}
+	if contract.PricePerGas == nil || contract.PricePerGas.Sign() <= 0 {
+		return ErrZeroPricePerGas
+	}
+	if contract.SettlementSlot == 0 {
+		return ErrZeroSettlementSlot
+	}
+	if contract.ExpirySlot <= contract.SettlementSlot {
+		return ErrExpiryBeforeSettle
+	}
+	return nil
+}
+
 // deriveContractID computes Keccak256(buyer || gasAmount || settlementSlot || nonce).
 func deriveContractID(buyer types.Address, gasAmount, settlementSlot, nonce uint64) types.Hash {
 	// 20 (address) + 8 (gasAmount) + 8 (settlementSlot) + 8 (nonce) = 44 bytes

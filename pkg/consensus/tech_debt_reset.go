@@ -8,6 +8,7 @@ package consensus
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"sync"
 )
@@ -338,6 +339,59 @@ func (t *TechDebtTracker) IsRemoved(fieldName string, currentEpoch uint64) bool 
 		return false // no removal planned
 	}
 	return currentEpoch >= f.RemovalEpoch
+}
+
+// ValidateMigrationReadiness checks that a state map is ready for migration
+// at the given epoch: all deprecated fields have replacements configured,
+// and the state contains the deprecated fields that need migration.
+func (t *TechDebtTracker) ValidateMigrationReadiness(state map[string]interface{}, currentEpoch uint64) error {
+	if state == nil {
+		return errors.New("tech_debt: nil state map")
+	}
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for name, field := range t.fields {
+		if currentEpoch < field.DeprecatedSinceEpoch {
+			continue
+		}
+		if _, exists := state[name]; !exists {
+			continue
+		}
+		// Field is deprecated and present - check it has replacements.
+		if len(field.ReplacedBy) == 0 && field.RemovalEpoch == 0 {
+			return fmt.Errorf("tech_debt: field %q deprecated but has no replacement or removal epoch", name)
+		}
+	}
+	return nil
+}
+
+// ValidateRollbackCapability checks that a migration can be rolled back:
+// for every replacement field in the state, the original deprecated field
+// must still be present (not yet removed).
+func (t *TechDebtTracker) ValidateRollbackCapability(state map[string]interface{}, currentEpoch uint64) error {
+	if state == nil {
+		return errors.New("tech_debt: nil state map")
+	}
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for name, field := range t.fields {
+		if currentEpoch < field.DeprecatedSinceEpoch {
+			continue
+		}
+		if field.RemovalEpoch != 0 && currentEpoch >= field.RemovalEpoch {
+			// Field already removed; rollback not possible.
+			for _, repl := range field.ReplacedBy {
+				if _, replExists := state[repl]; replExists {
+					if _, origExists := state[name]; !origExists {
+						return fmt.Errorf("tech_debt: rollback not possible for %q (removed at epoch %d)", name, field.RemovalEpoch)
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // copyDeprecatedField returns a deep copy of a DeprecatedField.

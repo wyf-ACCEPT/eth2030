@@ -419,3 +419,39 @@ func TestSelectIncluderDeterminismWithManyIncluders(t *testing.T) {
 		t.Error("selection must be deterministic for same slot and seed")
 	}
 }
+
+func TestValidateIncluderRegistration(t *testing.T) {
+	pool := NewIncluderPool()
+	addr := types.Address{0x01}
+
+	// Valid registration.
+	if err := ValidateIncluderRegistration(addr, OneETH, pool); err != nil {
+		t.Errorf("valid registration: %v", err)
+	}
+
+	// Zero address.
+	if err := ValidateIncluderRegistration(types.Address{}, OneETH, pool); err == nil {
+		t.Error("expected error for zero address")
+	}
+
+	// Wrong stake.
+	if err := ValidateIncluderRegistration(addr, big.NewInt(0), pool); err == nil {
+		t.Error("expected error for wrong stake")
+	}
+}
+
+func TestValidateIncluderDuty(t *testing.T) {
+	duty := &IncluderDuty{Slot: 1, Includer: types.Address{0x01}}
+	if err := ValidateIncluderDuty(duty); err != nil {
+		t.Errorf("valid duty: %v", err)
+	}
+
+	if err := ValidateIncluderDuty(nil); err == nil {
+		t.Error("expected error for nil duty")
+	}
+
+	bad := &IncluderDuty{Slot: 0, Includer: types.Address{0x01}}
+	if err := ValidateIncluderDuty(bad); err == nil {
+		t.Error("expected error for zero slot")
+	}
+}

@@ -309,6 +309,33 @@ func compareBigInt(actual, expected *big.Int, cmp uint8, label string) string {
 	return ""
 }
 
+// ValidateAssertionSet checks that an AssertionSet is well-formed:
+//   - The set must not be nil
+//   - If block range assertions exist, min must be <= max
+//   - If timestamp range assertions exist, min must be <= max
+//   - All comparator values must be in [0, 5]
+func ValidateAssertionSet(as *AssertionSet) error {
+	if as == nil {
+		return fmt.Errorf("assertion: nil assertion set")
+	}
+	if as.blockMin != nil && as.blockMax != nil {
+		if *as.blockMin > *as.blockMax {
+			return fmt.Errorf("assertion: block range min %d > max %d", *as.blockMin, *as.blockMax)
+		}
+	}
+	if as.timeMin != nil && as.timeMax != nil {
+		if *as.timeMin > *as.timeMax {
+			return fmt.Errorf("assertion: timestamp range min %d > max %d", *as.timeMin, *as.timeMax)
+		}
+	}
+	for i, a := range as.assertions {
+		if a.Comparator > CmpNeq {
+			return fmt.Errorf("assertion: assertion %d has invalid comparator %d", i, a.Comparator)
+		}
+	}
+	return nil
+}
+
 // hashToUint64 reads a uint64 from the last 8 bytes of a Hash.
 func hashToUint64(h types.Hash) uint64 {
 	return uint64(h[24])<<56 | uint64(h[25])<<48 | uint64(h[26])<<40 | uint64(h[27])<<32 |

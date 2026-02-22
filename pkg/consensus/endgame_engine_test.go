@@ -407,3 +407,42 @@ func TestEndgameEngine_CheckFinality_Threshold(t *testing.T) {
 		t.Errorf("Threshold: got %d, want 300", r.Threshold)
 	}
 }
+
+func TestValidateEngineConfig(t *testing.T) {
+	cfg := DefaultEndgameEngineConfig()
+	if err := ValidateEngineConfig(&cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	bad := cfg
+	bad.FinalityThreshold = 0
+	if err := ValidateEngineConfig(&bad); err == nil {
+		t.Error("expected error for zero finality threshold")
+	}
+
+	bad2 := cfg
+	bad2.MaxSlotHistory = 0
+	if err := ValidateEngineConfig(&bad2); err == nil {
+		t.Error("expected error for zero max slot history")
+	}
+}
+
+func TestValidateFinalityLatency(t *testing.T) {
+	cfg := DefaultEndgameEngineConfig()
+	cfg.TargetFinalityMs = 1000
+	cfg.FinalityThreshold = 0.5
+	eng := NewEndgameEngine(cfg)
+
+	// Submit enough votes to finalize slot 1.
+	for i := 0; i < 10; i++ {
+		eng.SubmitVote(&EndgameVote{
+			Slot: 1, ValidatorIndex: uint64(i),
+			BlockHash: types.Hash{0x01}, Weight: 100, Timestamp: uint64(i),
+		})
+	}
+
+	// Slot not finalized.
+	if err := eng.ValidateFinalityLatency(999); err == nil {
+		t.Error("expected error for non-finalized slot")
+	}
+}

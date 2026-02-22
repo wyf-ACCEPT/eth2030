@@ -193,3 +193,47 @@ func TestGenerateVDFModulus(t *testing.T) {
 		t.Fatal("modulus should be composite, not prime")
 	}
 }
+
+func TestValidateVDFParams(t *testing.T) {
+	params := DefaultVDFParams()
+	if err := ValidateVDFParams(params); err != nil {
+		t.Errorf("valid params: %v", err)
+	}
+
+	if err := ValidateVDFParams(nil); err == nil {
+		t.Error("expected error for nil params")
+	}
+
+	badT := *params
+	badT.T = 0
+	if err := ValidateVDFParams(&badT); err == nil {
+		t.Error("expected error for zero time parameter")
+	}
+
+	badSec := *params
+	badSec.Lambda = 32
+	if err := ValidateVDFParams(&badSec); err == nil {
+		t.Error("expected error for insufficient security bits")
+	}
+}
+
+func TestValidateVDFProof(t *testing.T) {
+	proof := &VDFProof{
+		Input:      []byte{0x01},
+		Output:     []byte{0x02},
+		Proof:      []byte{0x03},
+		Iterations: 100,
+	}
+	if err := ValidateVDFProof(proof); err != nil {
+		t.Errorf("valid proof: %v", err)
+	}
+
+	if err := ValidateVDFProof(nil); err == nil {
+		t.Error("expected error for nil proof")
+	}
+
+	emptyInput := &VDFProof{Input: nil, Output: []byte{0x02}, Proof: []byte{0x03}, Iterations: 100}
+	if err := ValidateVDFProof(emptyInput); err == nil {
+		t.Error("expected error for empty input")
+	}
+}

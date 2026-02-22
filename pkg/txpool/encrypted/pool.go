@@ -136,6 +136,30 @@ func (p *EncryptedPool) Committed() int {
 	return len(p.commits)
 }
 
+// ValidateEncryptedTx checks that a CommitTx is well-formed for the encrypted mempool:
+//   - CommitHash must be non-zero
+//   - Sender must be non-zero
+//   - GasLimit must be > 0
+//   - Timestamp must be > 0
+func ValidateEncryptedTx(commit *CommitTx) error {
+	if commit == nil {
+		return errors.New("encrypted: nil commit")
+	}
+	if commit.CommitHash == (types.Hash{}) {
+		return errors.New("encrypted: zero commit hash")
+	}
+	if commit.Sender == (types.Address{}) {
+		return errors.New("encrypted: zero sender address")
+	}
+	if commit.GasLimit == 0 {
+		return errors.New("encrypted: gas limit must be > 0")
+	}
+	if commit.Timestamp == 0 {
+		return errors.New("encrypted: timestamp must be > 0")
+	}
+	return nil
+}
+
 // ComputeCommitHash computes keccak256(rlp(tx)) for use as a commit hash.
 func ComputeCommitHash(tx *types.Transaction) types.Hash {
 	encoded, err := tx.EncodeRLP()

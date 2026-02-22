@@ -104,6 +104,27 @@ func (e *BlobEncoder) DecodeBlobsToBlock(blobs [][]byte) ([]byte, error) {
 	return result, nil
 }
 
+// ValidateBlockInBlobs checks that a set of blobs intended to encode a block are well-formed:
+//   - There must be at least one blob
+//   - Each blob must be exactly BlobSize bytes
+//   - The high byte of each field element must be zero (BLS field compliance)
+func ValidateBlockInBlobs(blobs [][]byte) error {
+	if len(blobs) == 0 {
+		return errors.New("block_in_blobs: no blobs provided")
+	}
+	for i, blob := range blobs {
+		if len(blob) != BlobSize {
+			return fmt.Errorf("block_in_blobs: blob %d has size %d, want %d", i, len(blob), BlobSize)
+		}
+		for ei := 0; ei < ElementsPerBlob; ei++ {
+			if blob[ei*FieldElementSize] != 0 {
+				return fmt.Errorf("block_in_blobs: blob %d element %d high byte is non-zero", i, ei)
+			}
+		}
+	}
+	return nil
+}
+
 // CalcBlobsRequired returns the number of blobs needed to store a block of the given size.
 func CalcBlobsRequired(blockSize int) int {
 	// Account for 4-byte length prefix.

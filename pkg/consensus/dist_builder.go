@@ -332,6 +332,41 @@ func (db *DistBlockBuilder) Config() DistBuilderConfig {
 	return *db.config
 }
 
+// ValidateBuilderFragment checks that a block fragment is well-formed:
+// non-nil, has transactions, gas within limits, and builder ID set.
+func ValidateBuilderFragment(frag *BlockFragment, gasLimit uint64) error {
+	if frag == nil {
+		return ErrDBNilFragment
+	}
+	if len(frag.TxList) == 0 {
+		return ErrDBEmptyFragment
+	}
+	if frag.BuilderID == "" {
+		return errors.New("dist builder: empty builder ID")
+	}
+	if gasLimit > 0 && frag.GasUsed > gasLimit {
+		return ErrDBGasExceeded
+	}
+	return nil
+}
+
+// ValidateDistBuilderConfig checks that a DistBuilderConfig is valid.
+func ValidateDistBuilderConfig(cfg *DistBuilderConfig) error {
+	if cfg == nil {
+		return errors.New("dist builder: nil config")
+	}
+	if cfg.MaxBuilders <= 0 {
+		return errors.New("dist builder: max builders must be > 0")
+	}
+	if cfg.GasLimit == 0 {
+		return errors.New("dist builder: gas limit must be > 0")
+	}
+	if cfg.MaxFragmentsPerSlot <= 0 {
+		return errors.New("dist builder: max fragments per slot must be > 0")
+	}
+	return nil
+}
+
 // getOrCreateSlotLocked returns the slotBids for the given slot, creating
 // it if it does not exist. Must be called with db.mu held for writing.
 func (db *DistBlockBuilder) getOrCreateSlotLocked(slot Slot) *slotBids {

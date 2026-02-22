@@ -255,3 +255,43 @@ func TestComputeProposerDuties_Empty(t *testing.T) {
 		t.Error("empty validator set should return nil")
 	}
 }
+
+func TestValidateDutyAssignment(t *testing.T) {
+	slotsPerEpoch := uint64(32)
+
+	// Valid duty.
+	duty := &AttesterDuty{
+		ValidatorIndex: 5,
+		Slot:           Slot(64), // epoch 2
+	}
+	if err := ValidateDutyAssignment(duty, 2, slotsPerEpoch, 100); err != nil {
+		t.Errorf("valid duty: %v", err)
+	}
+
+	// Nil duty.
+	if err := ValidateDutyAssignment(nil, 0, slotsPerEpoch, 100); err == nil {
+		t.Error("expected error for nil duty")
+	}
+
+	// Validator out of range.
+	oor := &AttesterDuty{ValidatorIndex: 200, Slot: Slot(64)}
+	if err := ValidateDutyAssignment(oor, 2, slotsPerEpoch, 100); err == nil {
+		t.Error("expected error for validator out of range")
+	}
+
+	// Slot not in epoch.
+	wrongEpoch := &AttesterDuty{ValidatorIndex: 5, Slot: Slot(0)}
+	if err := ValidateDutyAssignment(wrongEpoch, 2, slotsPerEpoch, 100); err == nil {
+		t.Error("expected error for slot not in epoch")
+	}
+}
+
+func TestValidateAPSConfig(t *testing.T) {
+	cfg := DefaultAPSConfig()
+	if err := ValidateAPSConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+	if err := ValidateAPSConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+}

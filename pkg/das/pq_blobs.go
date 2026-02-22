@@ -246,6 +246,53 @@ func batchVerifyParallel(proofs []*PQBlobProof, commitments []*PQBlobCommitment)
 	return valid
 }
 
+// ValidatePQBlob checks that a PQ blob commitment is well-formed:
+// non-zero digest, valid chunk count, and consistent data size.
+func ValidatePQBlob(commitment *PQBlobCommitment) error {
+	if commitment == nil {
+		return ErrPQBlobNilCommitment
+	}
+	allZero := true
+	for _, b := range commitment.Digest {
+		if b != 0 {
+			allZero = false
+			break
+		}
+	}
+	if allZero {
+		return errors.New("pq_blob: zero commitment digest")
+	}
+	if commitment.DataSize == 0 {
+		return ErrPQBlobEmpty
+	}
+	if commitment.DataSize > MaxBlobSize {
+		return ErrPQBlobTooLarge
+	}
+	expectedChunks := uint32(chunkCount(int(commitment.DataSize)))
+	if commitment.NumChunks != expectedChunks {
+		return errors.New("pq_blob: chunk count inconsistent with data size")
+	}
+	return nil
+}
+
+// ValidatePQBlobProof checks that a PQ blob proof has valid structure.
+func ValidatePQBlobProof(proof *PQBlobProof) error {
+	if proof == nil {
+		return ErrPQBlobNilProof
+	}
+	allZero := true
+	for _, b := range proof.LatticeWitness {
+		if b != 0 {
+			allZero = false
+			break
+		}
+	}
+	if allZero {
+		return errors.New("pq_blob: zero lattice witness")
+	}
+	return nil
+}
+
 // chunkCount returns the number of ChunkSize-byte chunks needed for data.
 func chunkCount(dataLen int) int {
 	return int(math.Ceil(float64(dataLen) / float64(ChunkSize)))

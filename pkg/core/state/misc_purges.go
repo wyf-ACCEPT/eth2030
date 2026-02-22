@@ -541,6 +541,26 @@ func EstimateGasSavings(stats PurgeStats) uint64 {
 	return accountSavings + slotSavings
 }
 
+// ValidatePurgeConfig checks that a PurgeConfig is well-formed:
+//   - At least one purge target must be selected
+//   - Targets must use only defined bits
+//   - BatchSize must be non-negative
+func ValidatePurgeConfig(config *PurgeConfig) error {
+	if config == nil {
+		return errors.New("purge: nil config")
+	}
+	if config.Targets == 0 {
+		return ErrPurgeNoTargets
+	}
+	if config.Targets & ^uint32(PurgeTargetAll) != 0 {
+		return fmt.Errorf("purge: unknown target bits set: 0x%x", config.Targets & ^uint32(PurgeTargetAll))
+	}
+	if config.BatchSize < 0 {
+		return errors.New("purge: batch size must be non-negative")
+	}
+	return nil
+}
+
 // PreserveSystemContracts adds common system contract addresses to the preserve
 // list. These addresses should never be purged.
 func PreserveSystemContracts(config *PurgeConfig) {

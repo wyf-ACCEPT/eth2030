@@ -271,3 +271,53 @@ func TestEndgameFinalityTracker_SkipWrongSlotAttestations(t *testing.T) {
 		t.Error("wrong-slot attestations should not count")
 	}
 }
+
+func TestValidateEndgameVote(t *testing.T) {
+	cfg := DefaultEndgameConfig()
+
+	// Valid vote.
+	att := &SubSlotAttestation{
+		Slot: 1, SubSlotIndex: 0,
+		BlockRoot: types.Hash{0x01}, Weight: 10,
+	}
+	if err := ValidateEndgameVote(att, cfg); err != nil {
+		t.Errorf("valid vote: %v", err)
+	}
+
+	// Nil vote.
+	if err := ValidateEndgameVote(nil, cfg); err == nil {
+		t.Error("expected error for nil vote")
+	}
+
+	// Zero weight.
+	zw := &SubSlotAttestation{Slot: 1, BlockRoot: types.Hash{0x01}, Weight: 0}
+	if err := ValidateEndgameVote(zw, cfg); err == nil {
+		t.Error("expected error for zero weight")
+	}
+
+	// Sub-slot index out of range.
+	oor := &SubSlotAttestation{
+		Slot: 1, SubSlotIndex: cfg.SubSlotCount + 1,
+		BlockRoot: types.Hash{0x01}, Weight: 10,
+	}
+	if err := ValidateEndgameVote(oor, cfg); err == nil {
+		t.Error("expected error for sub-slot out of range")
+	}
+}
+
+func TestValidateEndgameConfig(t *testing.T) {
+	cfg := DefaultEndgameConfig()
+	if err := ValidateEndgameConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidateEndgameConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+
+	bad := *cfg
+	bad.SubSlotCount = 0
+	if err := ValidateEndgameConfig(&bad); err == nil {
+		t.Error("expected error for zero sub-slot count")
+	}
+}

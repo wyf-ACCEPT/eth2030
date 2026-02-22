@@ -803,3 +803,31 @@ func TestMultipleUpdatesRecovery(t *testing.T) {
 		t.Fatalf("fee should decrease after empty blocks: got %s", lowFee)
 	}
 }
+
+func TestValidateMultidimGasConfig(t *testing.T) {
+	// Nil config.
+	if err := ValidateMultidimGasConfig(nil); err == nil {
+		t.Fatal("expected error for nil config")
+	}
+
+	// Valid default config.
+	cfg := DefaultMultidimGasConfig()
+	if err := ValidateMultidimGasConfig(&cfg); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Zero history limit.
+	bad := DefaultMultidimGasConfig()
+	bad.HistoryLimit = 0
+	if err := ValidateMultidimGasConfig(&bad); err == nil {
+		t.Fatal("expected error for zero history limit")
+	}
+
+	// MaxGas < Target.
+	bad2 := DefaultMultidimGasConfig()
+	bad2.Dims[0].MaxGas = 100
+	bad2.Dims[0].Target = 200
+	if err := ValidateMultidimGasConfig(&bad2); err == nil {
+		t.Fatal("expected error when MaxGas < Target")
+	}
+}

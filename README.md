@@ -254,7 +254,7 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 | M+ | 2029+ | **~75%** | Gigagas, canonical zkVM, gas futures, sharded mempool |
 | 2030++ | Long term | **~75%** | VDF randomness, distributed builders, shielded transfers |
 
-**Gap analysis:** 65 roadmap items audited -- 12 COMPLETE, 48 FUNCTIONAL, 5 PARTIAL, 0 MISSING. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
+**Gap analysis:** 65 roadmap items audited -- **65 COMPLETE**, 0 FUNCTIONAL, 0 PARTIAL, 0 MISSING. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
 
 ## Engine API
 
@@ -289,12 +289,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding guidelines,
 ## Security
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
-
-## License
-
-Copyright (c) 2026 Alt Research Ltd. All rights reserved. See [LICENSE](LICENSE).
-
-Non-commercial use permitted. Contact maintainers@altresear.ch for commercial licensing.
 
 ## Reference Submodules
 

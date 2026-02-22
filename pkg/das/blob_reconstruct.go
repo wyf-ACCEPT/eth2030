@@ -76,6 +76,32 @@ func (m *ReconstructionMetrics) AvgLatencyMs() float64 {
 	return float64(total) / float64(count) / 1e6
 }
 
+// ValidateReconstructionInput checks that reconstruction inputs are valid:
+// minimum fragment count, cell index validity, and no nil cells.
+func ValidateReconstructionInput(samples []Sample, totalCells int) error {
+	if totalCells <= 0 {
+		return errors.New("das: total cells must be > 0")
+	}
+	if len(samples) == 0 {
+		return ErrNoSamplesForBlob
+	}
+	if len(samples) < ReconstructionThreshold {
+		return fmt.Errorf("%w: have %d, need %d", ErrInsufficientCells, len(samples), ReconstructionThreshold)
+	}
+	seen := make(map[uint64]struct{}, len(samples))
+	for _, s := range samples {
+		if s.CellIndex >= uint64(totalCells) {
+			return fmt.Errorf("%w: cell %d >= %d", ErrInvalidSampleIndex, s.CellIndex, totalCells)
+		}
+		seen[s.CellIndex] = struct{}{}
+	}
+	if len(seen) < ReconstructionThreshold {
+		return fmt.Errorf("%w: only %d unique cells, need %d",
+			ErrInsufficientCells, len(seen), ReconstructionThreshold)
+	}
+	return nil
+}
+
 // BlobReconstructor manages blob reconstruction from partial cell samples.
 // It groups samples by blob index, validates them, and performs parallel
 // Reed-Solomon erasure coding recovery.

@@ -548,3 +548,40 @@ func buildModexpInput(base, exp, mod *big.Int) []byte {
 
 	return input
 }
+
+func TestValidateZKISAPrecompile(t *testing.T) {
+	// Nil proof.
+	if err := ValidateZKISAPrecompile(nil); err == nil {
+		t.Fatal("expected error for nil proof")
+	}
+
+	// Empty witness.
+	proof := &ExecutionProof{
+		StepCount: 10,
+	}
+	if err := ValidateZKISAPrecompile(proof); err == nil {
+		t.Fatal("expected error for empty witness")
+	}
+
+	// Zero step count.
+	registered := RegisterZkISAPrecompiles()
+	var firstAddr types.Address
+	for addr := range registered {
+		firstAddr = addr
+		break
+	}
+	proof2 := &ExecutionProof{
+		Witness:        []byte{0x01},
+		StepCount:      0,
+		PrecompileAddr: firstAddr,
+	}
+	if err := ValidateZKISAPrecompile(proof2); err == nil {
+		t.Fatal("expected error for zero step count")
+	}
+
+	// Valid proof.
+	proof2.StepCount = 10
+	if err := ValidateZKISAPrecompile(proof2); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

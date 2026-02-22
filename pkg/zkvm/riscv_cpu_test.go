@@ -462,3 +462,25 @@ func TestRVCPU_DIVSignedOverflow(t *testing.T) {
 		t.Errorf("REM overflow: got %d, want 0", cpu.Regs[4])
 	}
 }
+
+func TestValidateCPUConfig(t *testing.T) {
+	// Zero gas limit.
+	if err := ValidateCPUConfig(0, 100); err == nil {
+		t.Fatal("expected error for zero gas limit")
+	}
+
+	// Gas limit too large.
+	if err := ValidateCPUConfig(1<<32+1, 100); err == nil {
+		t.Fatal("expected error for excessive gas limit")
+	}
+
+	// Negative memory pages.
+	if err := ValidateCPUConfig(1000, -1); err == nil {
+		t.Fatal("expected error for negative memory pages")
+	}
+
+	// Valid config.
+	if err := ValidateCPUConfig(1<<24, 1<<14); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

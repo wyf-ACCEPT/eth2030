@@ -234,6 +234,35 @@ func (bs *BlobStreamer) ActiveStreams() int {
 	return len(bs.streams)
 }
 
+// ValidateStreamConfig checks that a StreamConfig has valid parameters:
+// non-zero chunk size, positive max streams, and positive timeout.
+func ValidateStreamConfig(cfg StreamConfig) error {
+	if cfg.ChunkSize == 0 {
+		return errors.New("das: chunk size must be > 0")
+	}
+	if cfg.MaxConcurrentStreams <= 0 {
+		return errors.New("das: max concurrent streams must be > 0")
+	}
+	if cfg.Timeout <= 0 {
+		return errors.New("das: timeout must be > 0")
+	}
+	return nil
+}
+
+// ValidateBlobChunk checks that a blob chunk is well-formed.
+func ValidateBlobChunk(chunk *BlobChunk, chunkSize uint32) error {
+	if chunk == nil {
+		return errors.New("das: nil chunk")
+	}
+	if len(chunk.Data) == 0 {
+		return errors.New("das: empty chunk data")
+	}
+	if chunkSize > 0 && uint32(len(chunk.Data)) > chunkSize {
+		return fmt.Errorf("das: chunk data %d exceeds chunk size %d", len(chunk.Data), chunkSize)
+	}
+	return nil
+}
+
 // verifyChunkProof verifies a chunk's proof using a simple hash-based scheme.
 // In production this would use KZG sub-proofs; here we use
 // hash(commitment || index || data) for testing.

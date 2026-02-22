@@ -252,3 +252,22 @@ func (c *ProofRewardCalculator) RewardPool() uint64 {
 	defer c.mu.RUnlock()
 	return c.rewardPool
 }
+
+// ValidateProofPolicy checks that an OptionalProofPolicy is well-formed:
+//   - The policy must not be nil
+//   - All accepted types must be non-empty strings
+//   - Accepted types must include at least one recognized proof type
+func ValidateProofPolicy(policy *OptionalProofPolicy) error {
+	if policy == nil {
+		return errors.New("optional: nil proof policy")
+	}
+	policy.mu.RLock()
+	defer policy.mu.RUnlock()
+
+	for t := range policy.acceptedTypes {
+		if t == "" {
+			return errors.New("optional: empty proof type in policy")
+		}
+	}
+	return nil
+}

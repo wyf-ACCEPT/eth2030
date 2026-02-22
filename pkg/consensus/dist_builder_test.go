@@ -390,3 +390,39 @@ func TestMultipleSlotsIndependent(t *testing.T) {
 		t.Errorf("slot 2 value = %s, want 200", w2.Value)
 	}
 }
+
+func TestValidateBuilderFragment(t *testing.T) {
+	// Valid.
+	frag := &BlockFragment{BuilderID: "b1", TxList: [][]byte{{0x01}}, GasUsed: 100}
+	if err := ValidateBuilderFragment(frag, 30_000_000); err != nil {
+		t.Errorf("valid fragment: %v", err)
+	}
+
+	// Nil.
+	if err := ValidateBuilderFragment(nil, 30_000_000); err == nil {
+		t.Error("expected error for nil fragment")
+	}
+
+	// Empty builder ID.
+	badID := &BlockFragment{BuilderID: "", TxList: [][]byte{{0x01}}, GasUsed: 100}
+	if err := ValidateBuilderFragment(badID, 30_000_000); err == nil {
+		t.Error("expected error for empty builder ID")
+	}
+
+	// Gas exceeds limit.
+	gasOver := &BlockFragment{BuilderID: "b1", TxList: [][]byte{{0x01}}, GasUsed: 50_000_000}
+	if err := ValidateBuilderFragment(gasOver, 30_000_000); err == nil {
+		t.Error("expected error for gas exceeding limit")
+	}
+}
+
+func TestValidateDistBuilderConfig(t *testing.T) {
+	cfg := DefaultDistBuilderConfig()
+	if err := ValidateDistBuilderConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidateDistBuilderConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+}

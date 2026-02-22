@@ -267,3 +267,33 @@ func TestPool_CommitHashDiffers(t *testing.T) {
 		t.Fatal("different txs should produce different commit hashes")
 	}
 }
+
+func TestValidateEncryptedTx(t *testing.T) {
+	// Nil commit.
+	if err := ValidateEncryptedTx(nil); err == nil {
+		t.Fatal("expected error for nil commit")
+	}
+
+	// Zero commit hash.
+	commit := &CommitTx{
+		Sender:    types.BytesToAddress([]byte{0x01}),
+		GasLimit:  100000,
+		Timestamp: 1,
+	}
+	if err := ValidateEncryptedTx(commit); err == nil {
+		t.Fatal("expected error for zero commit hash")
+	}
+
+	// Zero gas limit.
+	commit.CommitHash = types.Hash{0x01}
+	commit.GasLimit = 0
+	if err := ValidateEncryptedTx(commit); err == nil {
+		t.Fatal("expected error for zero gas limit")
+	}
+
+	// Valid commit.
+	commit.GasLimit = 100000
+	if err := ValidateEncryptedTx(commit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

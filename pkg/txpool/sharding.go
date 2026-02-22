@@ -230,6 +230,29 @@ func (sp *ShardedPool) PendingByAddress(addr types.Address) []*types.Transaction
 	return result
 }
 
+// ValidateShardAssignment checks that a shard configuration is valid:
+//   - NumShards must be > 0 and a power of two (for consistent hashing)
+//   - ShardCapacity must be > 0
+//   - ReplicationFactor must be >= 1 and <= NumShards
+func ValidateShardAssignment(config ShardConfig) error {
+	if config.NumShards == 0 {
+		return errors.New("shard: NumShards must be > 0")
+	}
+	if config.NumShards&(config.NumShards-1) != 0 {
+		return errors.New("shard: NumShards must be a power of two")
+	}
+	if config.ShardCapacity <= 0 {
+		return errors.New("shard: ShardCapacity must be > 0")
+	}
+	if config.ReplicationFactor < 1 {
+		return errors.New("shard: ReplicationFactor must be >= 1")
+	}
+	if config.ReplicationFactor > config.NumShards {
+		return errors.New("shard: ReplicationFactor exceeds NumShards")
+	}
+	return nil
+}
+
 // Count returns the total number of transactions across all shards.
 func (sp *ShardedPool) Count() int {
 	total := 0

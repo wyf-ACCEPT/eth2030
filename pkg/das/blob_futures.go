@@ -328,6 +328,31 @@ func (m *BlobFuturesMarket) ExpireOldFutures(currentSlot uint64) (int, []types.H
 	return expired, expiredIDs
 }
 
+// ValidateFutureContract checks that a blob future contract is well-formed:
+// positive price, valid expiry bounds, and valid blob index.
+func ValidateFutureContract(f *BlobFutureContract, currentSlot uint64) error {
+	if f == nil {
+		return ErrBlobFutureNotFound
+	}
+	if f.Price == nil || f.Price.Sign() <= 0 {
+		return ErrBlobFutureBadPrice
+	}
+	if f.Slot <= currentSlot {
+		return ErrBlobFutureInvalidSlot
+	}
+	if int(f.BlobIndex) >= MaxBlobCommitmentsPerBlock {
+		return ErrBlobFutureBadIndex
+	}
+	if f.Expiry < f.Slot {
+		return ErrBlobFutureBadExpiry
+	}
+	maxSlots := uint64(LongDatedMaxSlots)
+	if f.Expiry-currentSlot > maxSlots {
+		return ErrBlobFutureBadExpiry
+	}
+	return nil
+}
+
 // FutureCount returns total number of futures (all statuses).
 func (m *BlobFuturesMarket) FutureCount() int {
 	m.mu.RLock()

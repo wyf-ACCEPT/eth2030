@@ -339,3 +339,48 @@ func testUnifiedStateWithValidators(n int) *UnifiedBeaconState {
 	}
 	return s
 }
+
+func TestValidateProofCircuit(t *testing.T) {
+	c := NewCLProofCircuitWithDepth(16)
+	if err := ValidateProofCircuit(c); err != nil {
+		t.Errorf("valid circuit: %v", err)
+	}
+
+	if err := ValidateProofCircuit(nil); err == nil {
+		t.Error("expected error for nil circuit")
+	}
+}
+
+func TestValidateStateRootProofData(t *testing.T) {
+	proof := &StateRootProof{
+		StateRoot:    types.Hash{0x01},
+		MerkleBranch: []types.Hash{{0x02}},
+	}
+	if err := ValidateStateRootProofData(proof); err != nil {
+		t.Errorf("valid proof: %v", err)
+	}
+
+	if err := ValidateStateRootProofData(nil); err == nil {
+		t.Error("expected error for nil proof")
+	}
+
+	empty := &StateRootProof{StateRoot: types.Hash{}, MerkleBranch: []types.Hash{{0x02}}}
+	if err := ValidateStateRootProofData(empty); err == nil {
+		t.Error("expected error for empty state root")
+	}
+}
+
+func TestValidateBalanceProofData(t *testing.T) {
+	proof := &ValidatorBalanceProof{
+		StateRoot:    types.Hash{0x01},
+		BalanceRoot:  types.Hash{0x02},
+		MerkleBranch: []types.Hash{{0x03}},
+	}
+	if err := ValidateBalanceProofData(proof); err != nil {
+		t.Errorf("valid proof: %v", err)
+	}
+
+	if err := ValidateBalanceProofData(nil); err == nil {
+		t.Error("expected error for nil proof")
+	}
+}

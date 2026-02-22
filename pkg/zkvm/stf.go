@@ -239,6 +239,27 @@ func computePostStateRoot(preState types.Hash, txs []*types.Transaction, witness
 	return postRoot
 }
 
+// ValidateSTFInput checks that an STFInput is well-formed before execution:
+//   - Input must not be nil
+//   - BlockHeader must not be nil
+//   - Transactions must not be empty
+//   - PreStateRoot must not be zero
+func ValidateSTFInput(input *STFInput) error {
+	if input == nil {
+		return ErrSTFNilInput
+	}
+	if input.BlockHeader == nil {
+		return ErrSTFNilBlock
+	}
+	if len(input.Transactions) == 0 {
+		return ErrSTFEmptyTransactions
+	}
+	if input.PreStateRoot == (types.Hash{}) {
+		return errors.New("stf: zero pre-state root")
+	}
+	return nil
+}
+
 // computeGasUsed estimates gas usage from the transactions.
 func computeGasUsed(txs []*types.Transaction) uint64 {
 	// Simulated: 21000 base gas per transaction.

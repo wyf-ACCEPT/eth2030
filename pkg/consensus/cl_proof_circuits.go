@@ -298,6 +298,52 @@ func (c *CLProofCircuit) VerifyAttestationProof(proof *AttestationValidityProof)
 	return computedState == proof.StateRoot
 }
 
+// ValidateProofCircuit checks that a CL proof circuit is properly configured:
+// depth bounds, and non-zero depth.
+func ValidateProofCircuit(c *CLProofCircuit) error {
+	if c == nil {
+		return errors.New("cl_circuit: nil circuit")
+	}
+	if c.depth <= 0 {
+		return errors.New("cl_circuit: depth must be > 0")
+	}
+	if c.depth > 64 {
+		return errors.New("cl_circuit: depth exceeds maximum (64)")
+	}
+	return nil
+}
+
+// ValidateStateRootProofData checks that a state root proof is well-formed.
+func ValidateStateRootProofData(proof *StateRootProof) error {
+	if proof == nil {
+		return ErrCircuitNilProof
+	}
+	if proof.StateRoot.IsZero() {
+		return errors.New("cl_circuit: empty state root")
+	}
+	if len(proof.MerkleBranch) == 0 {
+		return errors.New("cl_circuit: empty merkle branch")
+	}
+	return nil
+}
+
+// ValidateBalanceProofData checks that a balance proof is well-formed.
+func ValidateBalanceProofData(proof *ValidatorBalanceProof) error {
+	if proof == nil {
+		return ErrCircuitNilProof
+	}
+	if proof.StateRoot.IsZero() {
+		return errors.New("cl_circuit: empty state root")
+	}
+	if proof.BalanceRoot.IsZero() {
+		return errors.New("cl_circuit: empty balance root")
+	}
+	if len(proof.MerkleBranch) == 0 {
+		return errors.New("cl_circuit: empty merkle branch")
+	}
+	return nil
+}
+
 // --- Internal SHA-256 Merkle helpers ---
 
 // hashValidatorLeaf produces the SHA-256 leaf hash for a validator.

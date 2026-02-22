@@ -419,3 +419,37 @@ func TestNewBlobReconstructorDefaults(t *testing.T) {
 		t.Errorf("maxBlobs = %d, want %d", br.maxBlobs, MaxBlobCommitmentsPerBlock)
 	}
 }
+
+func TestValidateReconstructionInput(t *testing.T) {
+	// Valid input with enough samples.
+	samples := make([]Sample, ReconstructionThreshold)
+	for i := range samples {
+		samples[i] = Sample{BlobIndex: 0, CellIndex: uint64(i), Data: Cell{}}
+	}
+	if err := ValidateReconstructionInput(samples, CellsPerExtBlob); err != nil {
+		t.Errorf("valid input: %v", err)
+	}
+
+	// Empty.
+	if err := ValidateReconstructionInput(nil, CellsPerExtBlob); err == nil {
+		t.Error("expected error for empty samples")
+	}
+
+	// Too few unique cells.
+	fewSamples := make([]Sample, ReconstructionThreshold-1)
+	for i := range fewSamples {
+		fewSamples[i] = Sample{CellIndex: uint64(i), Data: Cell{}}
+	}
+	if err := ValidateReconstructionInput(fewSamples, CellsPerExtBlob); err == nil {
+		t.Error("expected error for too few samples")
+	}
+
+	// Cell out of range.
+	oob := []Sample{{CellIndex: uint64(CellsPerExtBlob + 1), Data: Cell{}}}
+	for len(oob) < ReconstructionThreshold {
+		oob = append(oob, Sample{CellIndex: uint64(len(oob)), Data: Cell{}})
+	}
+	if err := ValidateReconstructionInput(oob, CellsPerExtBlob); err == nil {
+		t.Error("expected error for cell out of range")
+	}
+}

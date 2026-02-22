@@ -241,6 +241,53 @@ func (ft *FastConfirmTracker) isQuorumMet(count int) bool {
 	return ratio >= ft.config.QuorumThreshold
 }
 
+// ValidateConfirmation checks that a fast confirmation is internally consistent:
+// quorum threshold met, no duplicate votes, and slot bounds respected.
+func ValidateConfirmation(fc *FastConfirmation, cfg *FastConfirmConfig) error {
+	if fc == nil {
+		return errors.New("fast confirm: nil confirmation")
+	}
+	if fc.Slot == 0 {
+		return ErrFCSlotZero
+	}
+	emptyHash := types.Hash{}
+	if fc.BlockRoot == emptyHash {
+		return ErrFCBlockRootEmpty
+	}
+	if cfg != nil {
+		if cfg.TotalValidators > 0 && fc.AttestationCount > cfg.TotalValidators {
+			return errors.New("fast confirm: attestation count exceeds total validators")
+		}
+		if fc.Confirmed && cfg.TotalValidators > 0 {
+			ratio := float64(fc.AttestationCount) / float64(cfg.TotalValidators)
+			if ratio < cfg.QuorumThreshold {
+				return errors.New("fast confirm: confirmed but quorum threshold not met")
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateFastConfirmConfig checks that a FastConfirmConfig has valid values.
+func ValidateFastConfirmConfig(cfg *FastConfirmConfig) error {
+	if cfg == nil {
+		return errors.New("fast confirm: nil config")
+	}
+	if cfg.QuorumThreshold < 0 || cfg.QuorumThreshold > 1.0 {
+		return errors.New("fast confirm: quorum threshold must be in [0, 1]")
+	}
+	if cfg.MinAttesters < 0 {
+		return errors.New("fast confirm: min attesters must be >= 0")
+	}
+	if cfg.TotalValidators < 0 {
+		return errors.New("fast confirm: total validators must be >= 0")
+	}
+	if cfg.MaxTrackedSlots <= 0 {
+		return errors.New("fast confirm: max tracked slots must be > 0")
+	}
+	return nil
+}
+
 // pruneOldestLocked removes the oldest tracked slots if the max is exceeded.
 // Must be called with ft.mu held.
 func (ft *FastConfirmTracker) pruneOldestLocked() {

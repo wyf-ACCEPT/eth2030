@@ -424,3 +424,56 @@ func TestGetConfirmation_NotConfirmed(t *testing.T) {
 		t.Errorf("AttestationCount = %d, want 1", fc.AttestationCount)
 	}
 }
+
+func TestValidateConfirmation(t *testing.T) {
+	cfg := DefaultFastConfirmConfig()
+	cfg.TotalValidators = 100
+
+	// Valid confirmed confirmation.
+	fc := &FastConfirmation{
+		Slot:             1,
+		BlockRoot:        fcHash(0x01),
+		Confirmed:        true,
+		AttestationCount: 70,
+	}
+	if err := ValidateConfirmation(fc, cfg); err != nil {
+		t.Errorf("valid confirmation: %v", err)
+	}
+
+	// Nil confirmation.
+	if err := ValidateConfirmation(nil, cfg); err == nil {
+		t.Error("expected error for nil confirmation")
+	}
+
+	// Zero slot.
+	badSlot := &FastConfirmation{Slot: 0, BlockRoot: fcHash(0x01)}
+	if err := ValidateConfirmation(badSlot, cfg); err == nil {
+		t.Error("expected error for zero slot")
+	}
+
+	// Confirmed but quorum not met.
+	lowQuorum := &FastConfirmation{
+		Slot: 1, BlockRoot: fcHash(0x01),
+		Confirmed: true, AttestationCount: 10,
+	}
+	if err := ValidateConfirmation(lowQuorum, cfg); err == nil {
+		t.Error("expected error for quorum not met")
+	}
+}
+
+func TestValidateFastConfirmConfig(t *testing.T) {
+	cfg := DefaultFastConfirmConfig()
+	if err := ValidateFastConfirmConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidateFastConfirmConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+
+	badThreshold := *cfg
+	badThreshold.QuorumThreshold = 1.5
+	if err := ValidateFastConfirmConfig(&badThreshold); err == nil {
+		t.Error("expected error for bad quorum threshold")
+	}
+}

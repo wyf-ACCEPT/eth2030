@@ -267,3 +267,34 @@ func TestCanonicalGuestPrecompileAddr(t *testing.T) {
 			CanonicalGuestPrecompileAddr.Hex(), expected.Hex())
 	}
 }
+
+func TestValidateGuestProgram(t *testing.T) {
+	// Empty program.
+	if err := ValidateGuestProgram(nil, types.Hash{}, nil); err == nil {
+		t.Fatal("expected error for empty program")
+	}
+
+	// Hash mismatch.
+	program := []byte{0x01, 0x02, 0x03}
+	wrongHash := types.Hash{0xFF}
+	if err := ValidateGuestProgram(program, wrongHash, nil); err == nil {
+		t.Fatal("expected error for hash mismatch")
+	}
+
+	// Valid (no registry, zero hash means skip hash check).
+	if err := ValidateGuestProgram(program, types.Hash{}, nil); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Not registered in registry.
+	registry := NewGuestRegistry()
+	if err := ValidateGuestProgram(program, types.Hash{}, registry); err == nil {
+		t.Fatal("expected error for unregistered program")
+	}
+
+	// Registered.
+	registry.RegisterGuest(program)
+	if err := ValidateGuestProgram(program, types.Hash{}, registry); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

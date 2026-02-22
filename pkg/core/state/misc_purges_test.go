@@ -736,3 +736,28 @@ func TestPurgeExpiredStorage_PreserveAddresses(t *testing.T) {
 		t.Fatal("preserved addr1 storage should remain")
 	}
 }
+
+func TestValidatePurgeConfig(t *testing.T) {
+	// Nil config.
+	if err := ValidatePurgeConfig(nil); err == nil {
+		t.Fatal("expected error for nil config")
+	}
+
+	// No targets.
+	cfg := &PurgeConfig{}
+	if err := ValidatePurgeConfig(cfg); err == nil {
+		t.Fatal("expected error for no targets")
+	}
+
+	// Valid config.
+	dflt := DefaultPurgeConfig()
+	if err := ValidatePurgeConfig(&dflt); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Unknown bits.
+	bad := &PurgeConfig{Targets: 0xFF}
+	if err := ValidatePurgeConfig(bad); err == nil {
+		t.Fatal("expected error for unknown target bits")
+	}
+}

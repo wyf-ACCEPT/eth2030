@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"errors"
+
 	"github.com/eth2030/eth2030/core/types"
 )
 
@@ -105,6 +107,24 @@ func (ft *FinalityTracker) trySingleEpochFinality(currentEpoch Epoch) {
 	if ft.state.JustifiedCheckpoint.Epoch == currentEpoch {
 		ft.state.FinalizedCheckpoint = ft.state.JustifiedCheckpoint
 	}
+}
+
+// ValidateEpochFinality checks that epoch finality state is internally consistent:
+// epoch bounds, checkpoint ordering, and justification bits integrity.
+func ValidateEpochFinality(state *BeaconState) error {
+	if state == nil {
+		return errors.New("finality: nil beacon state")
+	}
+	if state.FinalizedCheckpoint.Epoch > state.Epoch {
+		return errors.New("finality: finalized epoch exceeds current epoch")
+	}
+	if state.JustifiedCheckpoint.Epoch > state.Epoch {
+		return errors.New("finality: justified epoch exceeds current epoch")
+	}
+	if state.FinalizedCheckpoint.Epoch > state.JustifiedCheckpoint.Epoch {
+		return errors.New("finality: finalized epoch exceeds justified epoch")
+	}
+	return nil
 }
 
 // tryDualEpochFinality implements standard Casper FFG 2-epoch finality.

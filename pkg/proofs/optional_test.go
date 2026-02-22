@@ -431,3 +431,22 @@ func TestOptionalProofStore_SameSubmitterDifferentBlocks(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateProofPolicy(t *testing.T) {
+	// Nil policy should fail.
+	if err := ValidateProofPolicy(nil); err == nil {
+		t.Fatal("expected error for nil policy")
+	}
+
+	// Valid policy with accepted types.
+	policy := NewOptionalProofPolicy([]string{"ZK-SNARK", "KZG"})
+	if err := ValidateProofPolicy(policy); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Empty policy (accept all) should pass.
+	emptyPolicy := NewOptionalProofPolicy(nil)
+	if err := ValidateProofPolicy(emptyPolicy); err != nil {
+		t.Fatalf("unexpected error for empty policy: %v", err)
+	}
+}

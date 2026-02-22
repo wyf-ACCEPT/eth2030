@@ -355,3 +355,32 @@ func TestShieldedCircuitIntegrationWithCommitmentTree(t *testing.T) {
 		t.Error("commitment tree proof should verify")
 	}
 }
+
+func TestValidateShieldedTransfer(t *testing.T) {
+	// Nil witness.
+	if err := ValidateShieldedTransfer(nil); err == nil {
+		t.Fatal("expected error for nil witness")
+	}
+
+	// Zero secret key.
+	witness := &ShieldedTransferWitness{
+		MerkleRoot: types.Hash{0x01},
+		MerklePath: [][32]byte{{0x01}},
+	}
+	if err := ValidateShieldedTransfer(witness); err == nil {
+		t.Fatal("expected error for zero secret key")
+	}
+
+	// Empty merkle path.
+	witness.SecretKey = [32]byte{0x01}
+	witness.MerklePath = nil
+	if err := ValidateShieldedTransfer(witness); err == nil {
+		t.Fatal("expected error for empty merkle path")
+	}
+
+	// Valid witness.
+	witness.MerklePath = [][32]byte{{0x01}}
+	if err := ValidateShieldedTransfer(witness); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

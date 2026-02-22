@@ -282,3 +282,17 @@ func TestTotalCappedWeight_PreCap(t *testing.T) {
 		t.Errorf("before cap epoch, should use full balance: got %d", total)
 	}
 }
+
+func TestValidateMaxAttesterCount(t *testing.T) {
+	if err := ValidateMaxAttesterCount(100_000); err != nil {
+		t.Errorf("valid count: %v", err)
+	}
+
+	if err := ValidateMaxAttesterCount(MaxAttesterCount); err != nil {
+		t.Errorf("exactly at cap: %v", err)
+	}
+
+	if err := ValidateMaxAttesterCount(MaxAttesterCount + 1); err == nil {
+		t.Error("expected error for exceeding max attester count")
+	}
+}

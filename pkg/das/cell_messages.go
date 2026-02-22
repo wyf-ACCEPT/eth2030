@@ -250,6 +250,30 @@ func ValidateCellMessageEntry(msg *CellMessageEntry) error {
 	return nil
 }
 
+// ValidateCellMessageBatch checks a batch for duplicates and overall consistency.
+func ValidateCellMessageBatch(msgs []*CellMessageEntry) error {
+	if len(msgs) == 0 {
+		return ErrBatchEmpty
+	}
+	if len(msgs) > MaxBatchSize {
+		return fmt.Errorf("%w: %d cells", ErrBatchTooLarge, len(msgs))
+	}
+	// Check for duplicate (cellIndex, columnIndex, rowIndex) tuples.
+	type key struct{ c, col, row uint16 }
+	seen := make(map[key]struct{}, len(msgs))
+	for _, msg := range msgs {
+		if msg == nil {
+			return ErrCellMsgNil
+		}
+		k := key{msg.CellIndex, msg.ColumnIndex, msg.RowIndex}
+		if _, dup := seen[k]; dup {
+			return fmt.Errorf("das: duplicate cell message at (%d, %d, %d)", msg.CellIndex, msg.ColumnIndex, msg.RowIndex)
+		}
+		seen[k] = struct{}{}
+	}
+	return nil
+}
+
 // CellMessageHandlerFunc is a callback invoked when a cell message is routed.
 type CellMessageHandlerFunc func(msg *CellMessageEntry) error
 

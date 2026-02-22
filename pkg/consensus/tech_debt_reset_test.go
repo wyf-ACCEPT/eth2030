@@ -532,3 +532,55 @@ func TestTechDebtTracker_KnownDeprecations(t *testing.T) {
 		t.Errorf("replacements = %v, want [epoch_slot_count]", repls)
 	}
 }
+
+func TestValidateMigrationReadiness(t *testing.T) {
+	tracker := NewTechDebtTracker(nil)
+	tracker.RegisterDeprecation(&DeprecatedField{
+		FieldName: "old_field", DeprecatedSinceEpoch: 5,
+		ReplacedBy: []string{"new_field"}, RemovalEpoch: 10,
+	})
+
+	state := map[string]interface{}{
+		"old_field": true,
+		"new_field": true,
+	}
+
+	// Before deprecation epoch.
+	if err := tracker.ValidateMigrationReadiness(state, 3); err != nil {
+		t.Errorf("before deprecation: %v", err)
+	}
+
+	// After deprecation epoch with replacements.
+	if err := tracker.ValidateMigrationReadiness(state, 6); err != nil {
+		t.Errorf("after deprecation with replacements: %v", err)
+	}
+
+	// Nil state.
+	if err := tracker.ValidateMigrationReadiness(nil, 6); err == nil {
+		t.Error("expected error for nil state")
+	}
+}
+
+func TestValidateRollbackCapability(t *testing.T) {
+	tracker := NewTechDebtTracker(nil)
+	tracker.RegisterDeprecation(&DeprecatedField{
+		FieldName: "old_field", DeprecatedSinceEpoch: 5,
+		ReplacedBy: []string{"new_field"}, RemovalEpoch: 10,
+	})
+
+	state := map[string]interface{}{
+		"old_field": true,
+		"new_field": true,
+	}
+
+	// Before removal, rollback should be possible.
+	if err := tracker.ValidateRollbackCapability(state, 6); err != nil {
+		t.Errorf("before removal: %v", err)
+	}
+
+	// After removal, if original is gone, rollback not possible.
+	stateNoOld := map[string]interface{}{"new_field": true}
+	if err := tracker.ValidateRollbackCapability(stateNoOld, 11); err == nil {
+		t.Error("expected error for rollback after removal")
+	}
+}

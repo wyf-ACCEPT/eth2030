@@ -465,3 +465,23 @@ func TestFirstFailure(t *testing.T) {
 		t.Fatal("expected non-empty failure reason")
 	}
 }
+
+func TestValidateAssertionSet(t *testing.T) {
+	// Nil assertion set.
+	if err := ValidateAssertionSet(nil); err == nil {
+		t.Fatal("expected error for nil assertion set")
+	}
+
+	// Valid empty assertion set.
+	as := NewAssertionSet()
+	if err := ValidateAssertionSet(as); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Valid assertion set with block range.
+	as2 := NewAssertionSet()
+	as2.AddBlockAssertion(100, 200)
+	if err := ValidateAssertionSet(as2); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

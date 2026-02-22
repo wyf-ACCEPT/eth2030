@@ -95,6 +95,29 @@ func (c *DimGasConfig) validate() error {
 	return nil
 }
 
+// ValidateMultidimGasConfig checks that a MultidimGasConfig is well-formed:
+//   - All five dimension configs must pass individual validation
+//   - HistoryLimit must be positive
+//   - MaxGas must be >= Target for every dimension
+func ValidateMultidimGasConfig(cfg *MultidimGasConfig) error {
+	if cfg == nil {
+		return fmt.Errorf("%w: nil config", ErrMDGasInvalidConfig)
+	}
+	if cfg.HistoryLimit <= 0 {
+		return fmt.Errorf("%w: history limit must be > 0", ErrMDGasInvalidConfig)
+	}
+	for i, dim := range cfg.Dims {
+		if err := dim.validate(); err != nil {
+			return fmt.Errorf("dimension %d (%s): %w", i, GasDimension(i).String(), err)
+		}
+		if dim.MaxGas < dim.Target {
+			return fmt.Errorf("%w: dimension %d max gas %d < target %d",
+				ErrMDGasInvalidConfig, i, dim.MaxGas, dim.Target)
+		}
+	}
+	return nil
+}
+
 // MultidimGasConfig holds configuration for all five gas dimensions.
 type MultidimGasConfig struct {
 	Dims         [NumGasDimensions]DimGasConfig

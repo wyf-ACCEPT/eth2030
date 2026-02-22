@@ -424,3 +424,57 @@ func TestStoreL2Data_CallerCannotMutateInternalData(t *testing.T) {
 		t.Error("StoreL2Data did not copy input data; caller mutation visible")
 	}
 }
+
+func TestValidateTeradataConfig(t *testing.T) {
+	cfg := DefaultTeradataConfig()
+	if err := ValidateTeradataConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	bad := cfg
+	bad.MaxDataSize = 0
+	if err := ValidateTeradataConfig(bad); err == nil {
+		t.Error("expected error for zero max data size")
+	}
+
+	bad2 := cfg
+	bad2.TotalStorageLimit = 1
+	if err := ValidateTeradataConfig(bad2); err == nil {
+		t.Error("expected error for storage limit < max data size")
+	}
+}
+
+func TestValidateTeradataReceipt(t *testing.T) {
+	receipt := &TeradataReceipt{
+		CommitmentHash: types.Hash{0x01},
+		L2ChainID:      1,
+		Size:           100,
+	}
+	if err := ValidateTeradataReceipt(receipt); err != nil {
+		t.Errorf("valid receipt: %v", err)
+	}
+
+	if err := ValidateTeradataReceipt(nil); err == nil {
+		t.Error("expected error for nil receipt")
+	}
+
+	badChain := &TeradataReceipt{CommitmentHash: types.Hash{0x01}, L2ChainID: 0, Size: 100}
+	if err := ValidateTeradataReceipt(badChain); err == nil {
+		t.Error("expected error for zero chain ID")
+	}
+}
+
+func TestValidateBandwidthEnforcement(t *testing.T) {
+	m := NewTeradataManager(DefaultTeradataConfig())
+	if err := ValidateBandwidthEnforcement(m); err == nil {
+		t.Error("expected error when enforcer not configured")
+	}
+
+	cfg := DefaultBandwidthConfig()
+	enforcer, _ := NewBandwidthEnforcer(cfg)
+	m.SetBandwidthEnforcer(enforcer)
+
+	if err := ValidateBandwidthEnforcement(m); err != nil {
+		t.Errorf("with enforcer configured: %v", err)
+	}
+}

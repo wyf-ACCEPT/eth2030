@@ -260,6 +260,37 @@ func (p *IncluderPool) TotalCount() int {
 	return len(p.includers)
 }
 
+// ValidateIncluderRegistration checks that an includer registration is valid:
+// non-zero address, exactly 1 ETH stake, not already registered.
+func ValidateIncluderRegistration(addr types.Address, stake *big.Int, pool *IncluderPool) error {
+	if addr.IsZero() {
+		return ErrIncluderZeroAddress
+	}
+	if stake == nil || stake.Cmp(OneETH) != 0 {
+		return ErrIncluderWrongStake
+	}
+	if pool != nil && pool.GetIncluder(addr) != nil {
+		return ErrIncluderAlreadyRegistered
+	}
+	return nil
+}
+
+// ValidateIncluderDuty checks that an includer duty is well-formed: non-nil,
+// non-zero slot, non-zero includer address, and deadline in the future relative
+// to the duty slot.
+func ValidateIncluderDuty(duty *IncluderDuty) error {
+	if duty == nil {
+		return ErrIncluderNilDuty
+	}
+	if duty.Slot == 0 {
+		return errors.New("includer: slot must be > 0")
+	}
+	if duty.Includer.IsZero() {
+		return ErrIncluderZeroAddress
+	}
+	return nil
+}
+
 // --- Internal helpers ---
 
 // activeIncludersLocked returns addresses of all active (non-slashed) includers.

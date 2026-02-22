@@ -363,3 +363,26 @@ func TestAttScaler_StopPreventsNewSubmissions(t *testing.T) {
 		t.Errorf("expected 1 entry remaining, got %d", len(result))
 	}
 }
+
+func TestValidateScalerConfig(t *testing.T) {
+	cfg := DefaultScalerConfig()
+	if err := ValidateScalerConfig(cfg); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidateScalerConfig(nil); err == nil {
+		t.Error("expected error for nil config")
+	}
+
+	bad := *cfg
+	bad.MaxWorkers = 0
+	if err := ValidateScalerConfig(&bad); err == nil {
+		t.Error("expected error for zero max workers")
+	}
+
+	bad2 := *cfg
+	bad2.MaxBufferSize = 0
+	if err := ValidateScalerConfig(&bad2); err == nil {
+		t.Error("expected error for zero buffer size")
+	}
+}

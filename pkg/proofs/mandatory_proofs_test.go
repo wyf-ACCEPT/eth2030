@@ -367,3 +367,31 @@ func TestIsValidBlockProofType(t *testing.T) {
 		t.Fatal("empty string should not be valid")
 	}
 }
+
+func TestValidateProofSubmission(t *testing.T) {
+	validProver := [32]byte{1, 2, 3}
+	// Valid submission.
+	if err := ValidateProofSubmission(BlockProofState, []byte{0x01}, validProver); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Empty proof type.
+	if err := ValidateProofSubmission("", []byte{0x01}, validProver); err == nil {
+		t.Fatal("expected error for empty proof type")
+	}
+
+	// Invalid proof type.
+	if err := ValidateProofSubmission("FakeProof", []byte{0x01}, validProver); err == nil {
+		t.Fatal("expected error for unknown proof type")
+	}
+
+	// Empty proof data.
+	if err := ValidateProofSubmission(BlockProofState, nil, validProver); err == nil {
+		t.Fatal("expected error for empty proof data")
+	}
+
+	// Zero prover hash.
+	if err := ValidateProofSubmission(BlockProofState, []byte{0x01}, [32]byte{}); err == nil {
+		t.Fatal("expected error for zero prover hash")
+	}
+}

@@ -544,6 +544,45 @@ func (s *UnifiedBeaconState) ToMinimalBeaconState() BeaconState {
 	}
 }
 
+// ValidateBeaconState checks the internal consistency of a UnifiedBeaconState:
+// field consistency across v1/v2/modern, epoch/slot alignment, validator index
+// integrity, and checkpoint ordering.
+func ValidateBeaconState(s *UnifiedBeaconState) error {
+	if s == nil {
+		return ErrUnifiedNilState
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	// Verify slot/epoch alignment.
+	if s.SlotsPerEpoch > 0 {
+		expectedEpoch := Epoch(s.CurrentSlot / s.SlotsPerEpoch)
+		if s.CurrentEpoch != expectedEpoch {
+			return errors.New("unified_beacon: slot/epoch misalignment")
+		}
+	}
+
+	// Verify checkpoint ordering: finalized <= justified <= current.
+	if s.FinalizedCheckpointU.Epoch > s.CurrentJustified.Epoch {
+		return errors.New("unified_beacon: finalized epoch exceeds justified epoch")
+	}
+	if s.FinalizedCheckpointU.Epoch > s.CurrentEpoch {
+		return errors.New("unified_beacon: finalized epoch exceeds current epoch")
+	}
+
+	// Verify validator index continuity.
+	for i, v := range s.Validators {
+		if v == nil {
+			return errors.New("unified_beacon: nil validator at index")
+		}
+		if v.Index != uint64(i) {
+			return errors.New("unified_beacon: validator index mismatch")
+		}
+	}
+
+	return nil
+}
+
 // computeKeccakStateRoot is an alternative state root using Keccak256
 // for compatibility with v1 FullBeaconState.
 func (s *UnifiedBeaconState) computeKeccakStateRoot() types.Hash {

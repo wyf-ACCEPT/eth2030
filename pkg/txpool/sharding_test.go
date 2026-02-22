@@ -255,3 +255,25 @@ func TestShardedPool_ZeroConfig(t *testing.T) {
 		t.Fatalf("expected 1 tx, got %d", sp.Count())
 	}
 }
+
+func TestValidateShardAssignment(t *testing.T) {
+	// Zero shards.
+	if err := ValidateShardAssignment(ShardConfig{NumShards: 0}); err == nil {
+		t.Fatal("expected error for zero shards")
+	}
+
+	// Non-power-of-two.
+	if err := ValidateShardAssignment(ShardConfig{NumShards: 3, ShardCapacity: 100, ReplicationFactor: 1}); err == nil {
+		t.Fatal("expected error for non-power-of-two shards")
+	}
+
+	// ReplicationFactor > NumShards.
+	if err := ValidateShardAssignment(ShardConfig{NumShards: 4, ShardCapacity: 100, ReplicationFactor: 8}); err == nil {
+		t.Fatal("expected error when replication > shards")
+	}
+
+	// Valid config.
+	if err := ValidateShardAssignment(DefaultShardConfig()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

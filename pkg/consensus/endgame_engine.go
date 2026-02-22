@@ -9,6 +9,7 @@ package consensus
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/eth2030/eth2030/core/types"
@@ -412,6 +413,38 @@ func (e *EndgameEngine) OptimisticConfirmation(blockHash types.Hash) *Optimistic
 	}
 
 	return result
+}
+
+// ValidateFinalityLatency checks that the engine meets its configured target
+// finality latency. Returns an error if finality took longer than the target
+// or if the slot was never finalized.
+func (e *EndgameEngine) ValidateFinalityLatency(slot uint64) error {
+	result := e.CheckFinality(slot)
+	if result == nil {
+		return errors.New("endgame: nil finality result")
+	}
+	if !result.IsFinalized {
+		return errors.New("endgame: slot not finalized")
+	}
+	if e.config.TargetFinalityMs > 0 && result.TimeToFinality > e.config.TargetFinalityMs {
+		return fmt.Errorf("endgame: finality latency %dms exceeds target %dms",
+			result.TimeToFinality, e.config.TargetFinalityMs)
+	}
+	return nil
+}
+
+// ValidateEngineConfig checks that an EndgameEngineConfig has valid values.
+func ValidateEngineConfig(cfg *EndgameEngineConfig) error {
+	if cfg.FinalityThreshold <= 0 || cfg.FinalityThreshold > 1.0 {
+		return errors.New("endgame: finality threshold must be in (0, 1]")
+	}
+	if cfg.OptimisticThreshold < 0 || cfg.OptimisticThreshold > 1.0 {
+		return errors.New("endgame: optimistic threshold must be in [0, 1]")
+	}
+	if cfg.MaxSlotHistory == 0 {
+		return errors.New("endgame: max slot history must be > 0")
+	}
+	return nil
 }
 
 // GetFinalizedChain returns a copy of the ordered finalized block hashes.

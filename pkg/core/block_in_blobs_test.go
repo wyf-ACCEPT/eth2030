@@ -160,3 +160,28 @@ func TestBlobEncoderLargeBlock(t *testing.T) {
 		t.Fatal("roundtrip mismatch for 1MB block")
 	}
 }
+
+func TestValidateBlockInBlobs(t *testing.T) {
+	// Empty blobs.
+	if err := ValidateBlockInBlobs(nil); err == nil {
+		t.Fatal("expected error for empty blobs")
+	}
+
+	// Wrong blob size.
+	if err := ValidateBlockInBlobs([][]byte{make([]byte, 100)}); err == nil {
+		t.Fatal("expected error for wrong blob size")
+	}
+
+	// Non-zero high byte.
+	blob := make([]byte, BlobSize)
+	blob[0] = 0xFF // high byte of first element
+	if err := ValidateBlockInBlobs([][]byte{blob}); err == nil {
+		t.Fatal("expected error for non-zero high byte")
+	}
+
+	// Valid blob (all zeros, high bytes are 0).
+	validBlob := make([]byte, BlobSize)
+	if err := ValidateBlockInBlobs([][]byte{validBlob}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

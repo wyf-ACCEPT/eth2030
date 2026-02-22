@@ -437,3 +437,35 @@ func TestProofDifferentChunks(t *testing.T) {
 		t.Error("Different chunk indices produced same LatticeWitness")
 	}
 }
+
+func TestValidatePQBlob(t *testing.T) {
+	data := []byte("hello world, this is a blob!")
+	commitment, _ := CommitBlob(data)
+
+	if err := ValidatePQBlob(commitment); err != nil {
+		t.Errorf("valid commitment: %v", err)
+	}
+
+	if err := ValidatePQBlob(nil); err == nil {
+		t.Error("expected error for nil commitment")
+	}
+
+	// Zero-size data.
+	bad := &PQBlobCommitment{Digest: [PQCommitmentSize]byte{0x01}, NumChunks: 0, DataSize: 0}
+	if err := ValidatePQBlob(bad); err == nil {
+		t.Error("expected error for zero data size")
+	}
+}
+
+func TestValidatePQBlobProof(t *testing.T) {
+	data := []byte("test data for proof")
+	proof, _ := GenerateBlobProof(data, 0)
+
+	if err := ValidatePQBlobProof(proof); err != nil {
+		t.Errorf("valid proof: %v", err)
+	}
+
+	if err := ValidatePQBlobProof(nil); err == nil {
+		t.Error("expected error for nil proof")
+	}
+}

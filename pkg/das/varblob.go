@@ -141,6 +141,33 @@ func (vb *VarBlob) Verify(expectedHash types.Hash) bool {
 	return computed == expectedHash
 }
 
+// ValidateVarBlob checks that a VarBlob is internally consistent:
+// non-empty data, valid chunk size, alignment, and size bounds.
+func ValidateVarBlob(vb *VarBlob) error {
+	if vb == nil {
+		return ErrVarBlobEmptyData
+	}
+	if len(vb.Data) == 0 {
+		return ErrVarBlobEmptyData
+	}
+	cfg := DefaultVarBlobConfig()
+	if len(vb.Data) > cfg.MaxBlobSize {
+		return ErrVarBlobTooLarge
+	}
+	if !isPowerOfTwo(vb.ChunkSize) || vb.ChunkSize < cfg.MinChunkSize || vb.ChunkSize > cfg.MaxChunkSize {
+		return ErrVarBlobInvalidChunk
+	}
+	// Verify data length is aligned to chunk size.
+	if len(vb.Data)%vb.ChunkSize != 0 {
+		return errors.New("das: blob data not aligned to chunk size")
+	}
+	expectedChunks := len(vb.Data) / vb.ChunkSize
+	if vb.NumChunks != expectedChunks {
+		return errors.New("das: chunk count mismatch")
+	}
+	return nil
+}
+
 // VarBlobTx wraps a VarBlob with transaction-level fields for blob transactions.
 type VarBlobTx struct {
 	Blob  *VarBlob

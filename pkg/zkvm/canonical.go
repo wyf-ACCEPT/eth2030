@@ -217,6 +217,28 @@ func (r *GuestRegistry) Count() int {
 	return len(r.programs)
 }
 
+// ValidateGuestProgram checks that a guest program binary is well-formed and
+// consistent with the registry:
+//   - Program must be non-empty
+//   - Program hash must match the expected hash (if provided)
+//   - Program must be registered in the registry (if registry is provided)
+func ValidateGuestProgram(program []byte, expectedHash types.Hash, registry *GuestRegistry) error {
+	if len(program) == 0 {
+		return ErrGuestEmptyProgram
+	}
+	actualHash := crypto.Keccak256Hash(program)
+	if expectedHash != (types.Hash{}) && actualHash != expectedHash {
+		return fmt.Errorf("zkvm: program hash mismatch: got %x, want %x", actualHash[:8], expectedHash[:8])
+	}
+	if registry != nil {
+		_, err := registry.GetGuest(actualHash)
+		if err != nil {
+			return fmt.Errorf("zkvm: program not registered: %w", err)
+		}
+	}
+	return nil
+}
+
 // CanonicalGuestPrecompile implements the precompile interface for canonical
 // guest invocation at address 0x0200.
 //

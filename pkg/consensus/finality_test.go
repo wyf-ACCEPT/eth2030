@@ -203,3 +203,40 @@ func TestFinalityTracker_IsFinalizedAt_Zero(t *testing.T) {
 		t.Error("epoch 1 should not be finalized at start")
 	}
 }
+
+func TestValidateEpochFinality(t *testing.T) {
+	// Valid state.
+	state := &BeaconState{
+		Epoch:               10,
+		JustifiedCheckpoint: Checkpoint{Epoch: 9, Root: types.Hash{0x01}},
+		FinalizedCheckpoint: Checkpoint{Epoch: 8, Root: types.Hash{0x02}},
+	}
+	if err := ValidateEpochFinality(state); err != nil {
+		t.Errorf("valid state: %v", err)
+	}
+
+	// Nil state.
+	if err := ValidateEpochFinality(nil); err == nil {
+		t.Error("expected error for nil state")
+	}
+
+	// Finalized exceeds current epoch.
+	bad := &BeaconState{
+		Epoch:               5,
+		JustifiedCheckpoint: Checkpoint{Epoch: 4},
+		FinalizedCheckpoint: Checkpoint{Epoch: 6},
+	}
+	if err := ValidateEpochFinality(bad); err == nil {
+		t.Error("expected error: finalized exceeds current epoch")
+	}
+
+	// Finalized exceeds justified.
+	bad2 := &BeaconState{
+		Epoch:               10,
+		JustifiedCheckpoint: Checkpoint{Epoch: 5},
+		FinalizedCheckpoint: Checkpoint{Epoch: 7},
+	}
+	if err := ValidateEpochFinality(bad2); err == nil {
+		t.Error("expected error: finalized exceeds justified")
+	}
+}

@@ -485,3 +485,38 @@ func TestSetScheduleImmutability(t *testing.T) {
 		t.Fatal("SetSchedule should copy entries to prevent external mutation")
 	}
 }
+
+func TestValidateBlobSchedule(t *testing.T) {
+	cfg := DefaultRPOConfig()
+
+	// Valid schedule.
+	sched := []*RPOSchedule{
+		{Epoch: 10, TargetRPO: 4},
+		{Epoch: 20, TargetRPO: 8},
+	}
+	if err := ValidateBlobSchedule(sched, cfg); err != nil {
+		t.Errorf("valid schedule: %v", err)
+	}
+
+	// Empty schedule.
+	if err := ValidateBlobSchedule(nil, cfg); err == nil {
+		t.Error("expected error for empty schedule")
+	}
+
+	// Non-increasing epochs.
+	bad := []*RPOSchedule{
+		{Epoch: 20, TargetRPO: 4},
+		{Epoch: 10, TargetRPO: 8},
+	}
+	if err := ValidateBlobSchedule(bad, cfg); err == nil {
+		t.Error("expected error for non-increasing epochs")
+	}
+
+	// RPO above max.
+	overMax := []*RPOSchedule{
+		{Epoch: 10, TargetRPO: 1000},
+	}
+	if err := ValidateBlobSchedule(overMax, cfg); err == nil {
+		t.Error("expected error for RPO above max")
+	}
+}

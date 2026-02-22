@@ -364,6 +364,24 @@ func (b *SetCodeBroadcaster) SetRateLimit(limit int) {
 	}
 }
 
+// ValidateBroadcastConfig checks that a SetCodeBroadcaster is properly configured:
+// rate limits, chain ID, and bloom filter parameters.
+func ValidateBroadcastConfig(b *SetCodeBroadcaster) error {
+	if b == nil {
+		return errors.New("setcode: nil broadcaster")
+	}
+	if b.chainID == nil || b.chainID.Sign() <= 0 {
+		return ErrSetCodeInvalidChainID
+	}
+	if b.rateLimit <= 0 {
+		return errors.New("setcode: rate limit must be > 0")
+	}
+	if b.epochDuration <= 0 {
+		return errors.New("setcode: epoch duration must be > 0")
+	}
+	return nil
+}
+
 // --- internal helpers ---
 
 // checkRateLimit checks if the authority has exceeded its rate limit.

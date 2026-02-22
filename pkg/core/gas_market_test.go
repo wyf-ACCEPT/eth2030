@@ -336,3 +336,35 @@ func TestUniqueContractIDs(t *testing.T) {
 		t.Error("two contracts with same params should have different IDs (nonce differs)")
 	}
 }
+
+func TestValidateGasFuturePosition(t *testing.T) {
+	// Nil contract.
+	if err := ValidateGasFuturePosition(nil); err == nil {
+		t.Fatal("expected error for nil contract")
+	}
+
+	// Valid contract.
+	c := &FuturesContract{
+		GasAmount:      1000,
+		PricePerGas:    big.NewInt(50),
+		SettlementSlot: 100,
+		ExpirySlot:     200,
+	}
+	if err := ValidateGasFuturePosition(c); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Zero gas amount.
+	bad := *c
+	bad.GasAmount = 0
+	if err := ValidateGasFuturePosition(&bad); err == nil {
+		t.Fatal("expected error for zero gas amount")
+	}
+
+	// Expiry <= settlement.
+	bad2 := *c
+	bad2.ExpirySlot = 100
+	if err := ValidateGasFuturePosition(&bad2); err == nil {
+		t.Fatal("expected error when expiry <= settlement")
+	}
+}

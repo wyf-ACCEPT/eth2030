@@ -1,6 +1,9 @@
 package consensus
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/eth2030/eth2030/core/types"
 )
 
@@ -180,6 +183,42 @@ func (eft *EndgameFinalityTracker) SlotFinalized(slot Slot) bool {
 		return false
 	}
 	return state.Finalized
+}
+
+// ValidateEndgameVote checks that an endgame sub-slot attestation is valid:
+// slot matches, sub-slot index in range, weight positive, and block root non-empty.
+func ValidateEndgameVote(att *SubSlotAttestation, cfg *EndgameConfig) error {
+	if att == nil {
+		return errors.New("endgame: nil attestation")
+	}
+	if att.Weight == 0 {
+		return errors.New("endgame: vote weight must be > 0")
+	}
+	emptyHash := types.Hash{}
+	if att.BlockRoot == emptyHash {
+		return errors.New("endgame: block root must not be empty")
+	}
+	if cfg != nil && att.SubSlotIndex >= cfg.SubSlotCount {
+		return fmt.Errorf("endgame: sub-slot index %d >= count %d", att.SubSlotIndex, cfg.SubSlotCount)
+	}
+	return nil
+}
+
+// ValidateEndgameConfig checks that an EndgameConfig has valid values.
+func ValidateEndgameConfig(cfg *EndgameConfig) error {
+	if cfg == nil {
+		return errors.New("endgame: nil config")
+	}
+	if cfg.SubSlotCount == 0 {
+		return errors.New("endgame: sub-slot count must be > 0")
+	}
+	if cfg.MaxFinalityDelay == 0 {
+		return errors.New("endgame: max finality delay must be > 0")
+	}
+	if cfg.TargetFinalityDelay > cfg.MaxFinalityDelay {
+		return errors.New("endgame: target finality delay exceeds max")
+	}
+	return nil
 }
 
 // PruneSlots removes finality state for slots older than the given slot.

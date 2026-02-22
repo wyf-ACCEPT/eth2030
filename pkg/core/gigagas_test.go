@@ -170,3 +170,30 @@ func TestDefaultGigagasConfig(t *testing.T) {
 		t.Fatalf("expected 16 parallel slots, got %d", cfg.ParallelExecutionSlots)
 	}
 }
+
+func TestValidateGigagasConfig(t *testing.T) {
+	// Nil config.
+	if err := ValidateGigagasConfig(nil); err == nil {
+		t.Fatal("expected error for nil config")
+	}
+
+	// Valid default config.
+	cfg := DefaultGigagasConfig
+	if err := ValidateGigagasConfig(&cfg); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Zero parallel slots.
+	bad := DefaultGigagasConfig
+	bad.ParallelExecutionSlots = 0
+	if err := ValidateGigagasConfig(&bad); err == nil {
+		t.Fatal("expected error for zero parallel slots")
+	}
+
+	// MaxBlockGas > TargetGasPerSecond.
+	bad2 := DefaultGigagasConfig
+	bad2.MaxBlockGas = 2_000_000_000
+	if err := ValidateGigagasConfig(&bad2); err == nil {
+		t.Fatal("expected error when MaxBlockGas > TargetGasPerSecond")
+	}
+}

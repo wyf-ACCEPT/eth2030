@@ -395,3 +395,25 @@ func TestVarBlobConfig(t *testing.T) {
 		t.Errorf("MaxBlobSize = %d, want %d", cfg.MaxBlobSize, 128*1024)
 	}
 }
+
+func TestValidateVarBlob(t *testing.T) {
+	data := make([]byte, 256)
+	for i := range data {
+		data[i] = byte(i)
+	}
+	vb, _ := NewVarBlob(data, 128)
+
+	if err := ValidateVarBlob(vb); err != nil {
+		t.Errorf("valid varblob: %v", err)
+	}
+
+	if err := ValidateVarBlob(nil); err == nil {
+		t.Error("expected error for nil varblob")
+	}
+
+	// Bad chunk size.
+	bad := &VarBlob{Data: make([]byte, 256), ChunkSize: 77, NumChunks: 4}
+	if err := ValidateVarBlob(bad); err == nil {
+		t.Error("expected error for non-power-of-two chunk size")
+	}
+}

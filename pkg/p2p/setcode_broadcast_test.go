@@ -440,3 +440,20 @@ func TestComputeSetCodeMessageHash(t *testing.T) {
 		t.Error("message hash should not be zero")
 	}
 }
+
+func TestValidateBroadcastConfig(t *testing.T) {
+	b := NewSetCodeBroadcaster(big.NewInt(1))
+	if err := ValidateBroadcastConfig(b); err != nil {
+		t.Errorf("valid config: %v", err)
+	}
+
+	if err := ValidateBroadcastConfig(nil); err == nil {
+		t.Error("expected error for nil broadcaster")
+	}
+
+	// Zero chain ID.
+	badChain := NewSetCodeBroadcaster(big.NewInt(0))
+	if err := ValidateBroadcastConfig(badChain); err == nil {
+		t.Error("expected error for zero chain ID")
+	}
+}

@@ -378,3 +378,29 @@ func TestNTTGasCalculation(t *testing.T) {
 		t.Errorf("gas for %d elements: got %d, want %d", n, g, expected)
 	}
 }
+
+func TestValidateNTTInput(t *testing.T) {
+	// Empty input.
+	if err := ValidateNTTInput(nil); err == nil {
+		t.Fatal("expected error for empty input")
+	}
+
+	// Invalid op type.
+	if err := ValidateNTTInput([]byte{0x05}); err == nil {
+		t.Fatal("expected error for invalid op type")
+	}
+
+	// Valid forward NTT with 4 elements (power of two).
+	input := make([]byte, 1+4*32)
+	input[0] = 0 // forward
+	if err := ValidateNTTInput(input); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Non-power-of-two element count (3).
+	input2 := make([]byte, 1+3*32)
+	input2[0] = 0
+	if err := ValidateNTTInput(input2); err == nil {
+		t.Fatal("expected error for non-power-of-two elements")
+	}
+}
