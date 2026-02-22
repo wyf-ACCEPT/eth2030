@@ -34,7 +34,7 @@ func makeTx(nonce uint64, sender, receiver types.Address, value int64) *types.Tr
 	to := receiver
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    nonce,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(1_000_000_000), // Must be >= BaseFee (EIP-1559)
 		Gas:      21000,
 		To:       &to,
 		Value:    big.NewInt(value),

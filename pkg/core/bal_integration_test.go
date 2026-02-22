@@ -48,7 +48,7 @@ func TestProcessWithBAL_WithTransactions(t *testing.T) {
 	// Create a value transfer transaction.
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiver,
 		Value:    big.NewInt(100),
@@ -136,7 +136,7 @@ func TestBALHash_Computed(t *testing.T) {
 
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiver,
 		Value:    big.NewInt(100),

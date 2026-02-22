@@ -711,17 +711,18 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		}
 	}
 
-	// EIP-1559: validate gas fee caps for dynamic fee transactions (type 2+).
-	// Legacy and access list txs (types 0, 1) use GasPrice directly.
+	// EIP-1559 (London+): validate gas fee caps for ALL transaction types.
+	// For legacy/access-list txs, GasFeeCap and GasTipCap both equal GasPrice,
+	// so the tip > cap check always passes, but the baseFee check still applies.
 	isEIP1559Tx := msg.TxType >= types.DynamicFeeTxType
-	if isEIP1559Tx && header.BaseFee != nil && header.BaseFee.Sign() > 0 {
+	if header.BaseFee != nil && header.BaseFee.Sign() > 0 {
 		if msg.GasFeeCap != nil && msg.GasTipCap != nil {
 			// Reject if MaxPriorityFeePerGas > MaxFeePerGas.
 			if msg.GasFeeCap.Cmp(msg.GasTipCap) < 0 {
 				gp.AddGas(msg.GasLimit)
 				return nil, fmt.Errorf("max priority fee per gas higher than max fee per gas: tip %s, cap %s", msg.GasTipCap, msg.GasFeeCap)
 			}
-			// Reject if MaxFeePerGas < BaseFee.
+			// Reject if MaxFeePerGas < BaseFee (applies to all tx types under London).
 			if msg.GasFeeCap.Cmp(header.BaseFee) < 0 {
 				gp.AddGas(msg.GasLimit)
 				return nil, fmt.Errorf("max fee per gas less than block base fee: fee %s, baseFee %s", msg.GasFeeCap, header.BaseFee)

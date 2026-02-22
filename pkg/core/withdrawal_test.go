@@ -102,7 +102,7 @@ func TestWithdrawalProcessingWithTransactions(t *testing.T) {
 
 	// Create a transfer transaction.
 	oneETH := new(big.Int).SetUint64(1e18)
-	gasPrice := big.NewInt(1)
+	gasPrice := big.NewInt(1_000_000_000) // Must be >= BaseFee (EIP-1559)
 	gasLimit := uint64(21000)
 	tx := newTransferTx(0, recipient, oneETH, gasLimit, gasPrice)
 

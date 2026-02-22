@@ -25,7 +25,7 @@ func newTestHeader() *types.Header {
 		Number:   big.NewInt(1),
 		GasLimit: 10_000_000,
 		Time:     1000,
-		BaseFee:  big.NewInt(1_000_000_000),
+		BaseFee:  big.NewInt(1), // Low base fee so GasPrice=1 txs pass EIP-1559 validation
 		Coinbase: types.HexToAddress("0xfee"),
 	}
 }

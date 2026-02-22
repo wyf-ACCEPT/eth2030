@@ -225,7 +225,7 @@ func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 	// Create a transaction.
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiver,
 		Value:    big.NewInt(100),
@@ -581,7 +581,7 @@ func TestBlockchain_WriteReadBlock_WithTransactions(t *testing.T) {
 	// Create a transaction.
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiver,
 		Value:    big.NewInt(100),
@@ -728,7 +728,7 @@ func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
 	for i := 0; i < int(stateSnapshotInterval)+2; i++ {
 		tx := types.NewTransaction(&types.LegacyTx{
 			Nonce:    uint64(i),
-			GasPrice: big.NewInt(1),
+			GasPrice: big.NewInt(7),
 			Gas:      21000,
 			To:       &receiver,
 			Value:    big.NewInt(1),

@@ -708,7 +708,7 @@ func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
 	// Build chain A: genesis -> a1 (sends to receiverA).
 	txA := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiverA,
 		Value:    big.NewInt(1000),
@@ -731,7 +731,7 @@ func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
 	// Build chain B: genesis -> b1 (sends to receiverB).
 	txB := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
-		GasPrice: big.NewInt(1),
+		GasPrice: big.NewInt(7),
 		Gas:      21000,
 		To:       &receiverB,
 		Value:    big.NewInt(2000),
