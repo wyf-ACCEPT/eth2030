@@ -143,6 +143,19 @@ The EF test runner uses go-ethereum's execution engine directly:
 All 57 test categories pass at 100%. The go-ethereum backend provides correct gas accounting, state root computation, and EIP-158 empty account cleanup.
 - Key areas: SSTORE gas schedule (EIP-2200/2929/3529), CALL gas forwarding (63/64 rule), memory expansion gas
 
+### Custom Precompile Integration
+
+eth2028's custom precompiles are injected into go-ethereum's EVM via `evm.SetPrecompiles()`:
+
+| Category | Count | Addresses | Activation Fork |
+|----------|-------|-----------|----------------|
+| Glamsterdam repricing | 4 | 0x06, 0x08, 0x09, 0x0a | Glamsterdam |
+| NTT (Number Theoretic Transform) | 1 | 0x15 | I+ |
+| NII (Number-Theoretic) | 4 | 0x0201-0x0204 | I+ |
+| Field arithmetic | 4 | 0x0205-0x0208 | I+ |
+
+**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes (CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, EOF, AA) remain eth2028-native-EVM-only.
+
 ### Fixes Applied (24.7% → 27.4%)
 
 1. Precompile dispatch: processor now routes all calls through `evm.Call` instead of bypassing precompiles

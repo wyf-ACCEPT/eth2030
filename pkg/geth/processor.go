@@ -14,19 +14,29 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 
+	eth2028core "github.com/eth2028/eth2028/core"
 	"github.com/eth2028/eth2028/core/types"
 )
 
 // GethBlockProcessor executes eth2028 blocks using go-ethereum's EVM and
 // state transition engine. It produces correct state roots and gas accounting
-// for all forks from Frontier through Prague.
+// for all forks from Frontier through Prague, with optional eth2028 custom
+// precompile injection for Glamsterdam+ forks.
 type GethBlockProcessor struct {
-	config *params.ChainConfig
+	config      *params.ChainConfig
+	eth2028Cfg  *eth2028core.ChainConfig // optional, for custom precompile injection
 }
 
 // NewGethBlockProcessor creates a processor for the given chain config.
 func NewGethBlockProcessor(config *params.ChainConfig) *GethBlockProcessor {
 	return &GethBlockProcessor{config: config}
+}
+
+// NewGethBlockProcessorWithEth2028 creates a processor that injects eth2028
+// custom precompiles (NTT, NII, field precompiles, Glamsterdam repricing)
+// based on the eth2028 fork schedule.
+func NewGethBlockProcessorWithEth2028(config *params.ChainConfig, eth2028Cfg *eth2028core.ChainConfig) *GethBlockProcessor {
+	return &GethBlockProcessor{config: config, eth2028Cfg: eth2028Cfg}
 }
 
 // ProcessBlock executes all transactions in an eth2028 block against a
@@ -112,6 +122,16 @@ func (p *GethBlockProcessor) applyTransaction(
 	msg := txToGethMessage(tx, header.BaseFee)
 
 	evm := gethvm.NewEVM(*blockCtx, statedb, p.config, gethvm.Config{})
+
+	// Inject eth2028 custom precompiles if configured.
+	if p.eth2028Cfg != nil {
+		forkLevel := Eth2028ForkLevelFromConfig(p.eth2028Cfg, header.Time)
+		if forkLevel > ForkLevelPrague {
+			rules := p.config.Rules(header.Number, true, header.Time)
+			precompiles := InjectCustomPrecompiles(rules, forkLevel)
+			evm.SetPrecompiles(precompiles)
+		}
+	}
 
 	snapshot := statedb.Snapshot()
 	result, err := gethcore.ApplyMessage(evm, msg, gasPool)
