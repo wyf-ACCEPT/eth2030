@@ -1,13 +1,50 @@
 package p2p
 
 import (
+	"encoding/binary"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
+// makeSignedSetCodeMsg creates a SetCodeMessage with a real secp256k1 signature.
+func makeSignedSetCodeMsg(nonce uint64) (*SetCodeMessage, error) {
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		return nil, err
+	}
+	authority := crypto.PubkeyToAddress(key.PublicKey)
+	target := types.HexToAddress("0x2222222222222222222222222222222222222222")
+	chainID := big.NewInt(1)
+
+	msg := &SetCodeMessage{
+		Authority: authority,
+		ChainID:   chainID,
+		Nonce:     nonce,
+		Target:    target,
+		Timestamp: time.Now(),
+	}
+
+	// Compute message hash using the same logic as computeSetCodeMessageHash.
+	msgHash := computeSetCodeMessageHash(msg)
+
+	sig, err := crypto.Sign(msgHash[:], key)
+	if err != nil {
+		return nil, err
+	}
+
+	msg.R = new(big.Int).SetBytes(sig[0:32])
+	msg.S = new(big.Int).SetBytes(sig[32:64])
+	msg.V = new(big.Int).SetUint64(uint64(sig[64]))
+
+	return msg, nil
+}
+
+// makeSetCodeMsg creates a basic SetCodeMessage with fake (but well-formed) R/S values.
+// This is used for tests that don't need real signature verification.
 func makeSetCodeMsg(authority types.Address, nonce uint64) *SetCodeMessage {
 	return &SetCodeMessage{
 		Authority: authority,
@@ -44,10 +81,13 @@ func TestSetCodeBroadcasterTopicName(t *testing.T) {
 	}
 }
 
-func TestSetCodeBroadcasterSubmit(t *testing.T) {
+func TestSetCodeBroadcasterSubmitSigned(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
-	auth := types.HexToAddress("0x1111111111111111111111111111111111111111")
-	msg := makeSetCodeMsg(auth, 1)
+
+	msg, err := makeSignedSetCodeMsg(1)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg: %v", err)
+	}
 
 	if err := b.Submit(msg); err != nil {
 		t.Fatalf("Submit: %v", err)
@@ -82,6 +122,20 @@ func TestSetCodeBroadcasterSubmitInvalidChainID(t *testing.T) {
 	}
 }
 
+func TestSetCodeBroadcasterSubmitWrongChainID(t *testing.T) {
+	b := NewSetCodeBroadcaster(big.NewInt(1))
+
+	msg, err := makeSignedSetCodeMsg(1)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg: %v", err)
+	}
+	msg.ChainID = big.NewInt(999) // different from broadcaster's chain ID
+
+	if err := b.Submit(msg); err != ErrSetCodeInvalidChainID {
+		t.Errorf("expected ErrSetCodeInvalidChainID for wrong chain ID, got %v", err)
+	}
+}
+
 func TestSetCodeBroadcasterSubmitInvalidSig(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
 	auth := types.HexToAddress("0x1111111111111111111111111111111111111111")
@@ -94,29 +148,42 @@ func TestSetCodeBroadcasterSubmitInvalidSig(t *testing.T) {
 
 func TestSetCodeBroadcasterDeduplication(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
-	auth := types.HexToAddress("0x3333333333333333333333333333333333333333")
 
-	msg1 := makeSetCodeMsg(auth, 1)
-	msg2 := makeSetCodeMsg(auth, 1) // same authority + nonce
+	msg1, err := makeSignedSetCodeMsg(1)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg: %v", err)
+	}
 
 	if err := b.Submit(msg1); err != nil {
 		t.Fatalf("Submit first: %v", err)
 	}
-	if err := b.Submit(msg2); err != ErrSetCodeDuplicate {
+
+	// Same authority + nonce = duplicate.
+	msg2 := *msg1
+	if err := b.Submit(&msg2); err != ErrSetCodeDuplicate {
 		t.Errorf("expected ErrSetCodeDuplicate, got %v", err)
 	}
 }
 
 func TestSetCodeBroadcasterDifferentNonces(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
-	auth := types.HexToAddress("0x4444444444444444444444444444444444444444")
 
-	if err := b.Submit(makeSetCodeMsg(auth, 1)); err != nil {
+	msg1, err := makeSignedSetCodeMsg(1)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg(1): %v", err)
+	}
+	if err := b.Submit(msg1); err != nil {
 		t.Fatalf("Submit nonce 1: %v", err)
 	}
-	if err := b.Submit(makeSetCodeMsg(auth, 2)); err != nil {
+
+	msg2, err := makeSignedSetCodeMsg(2)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg(2): %v", err)
+	}
+	if err := b.Submit(msg2); err != nil {
 		t.Fatalf("Submit nonce 2: %v", err)
 	}
+
 	if b.PendingCount() != 2 {
 		t.Errorf("pending: got %d, want 2", b.PendingCount())
 	}
@@ -124,10 +191,11 @@ func TestSetCodeBroadcasterDifferentNonces(t *testing.T) {
 
 func TestSetCodeBroadcasterDrainPending(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
-	auth := types.HexToAddress("0x5555555555555555555555555555555555555555")
 
-	b.Submit(makeSetCodeMsg(auth, 1))
-	b.Submit(makeSetCodeMsg(auth, 2))
+	msg1, _ := makeSignedSetCodeMsg(1)
+	msg2, _ := makeSignedSetCodeMsg(2)
+	b.Submit(msg1)
+	b.Submit(msg2)
 
 	msgs := b.DrainPending()
 	if len(msgs) != 2 {
@@ -142,21 +210,21 @@ func TestSetCodeBroadcasterStop(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
 	b.Stop()
 
-	auth := types.HexToAddress("0x6666666666666666666666666666666666666666")
-	if err := b.Submit(makeSetCodeMsg(auth, 1)); err != ErrSetCodeBroadcasterStop {
+	msg, _ := makeSignedSetCodeMsg(1)
+	if err := b.Submit(msg); err != ErrSetCodeBroadcasterStop {
 		t.Errorf("expected ErrSetCodeBroadcasterStop, got %v", err)
 	}
 }
 
 func TestSetCodeBroadcasterResetEpoch(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
-	auth := types.HexToAddress("0x7777777777777777777777777777777777777777")
 
-	b.Submit(makeSetCodeMsg(auth, 1))
+	msg, _ := makeSignedSetCodeMsg(1)
+	b.Submit(msg)
 	b.ResetEpoch()
 
 	// After reset, same key should be submittable again.
-	if err := b.Submit(makeSetCodeMsg(auth, 1)); err != nil {
+	if err := b.Submit(msg); err != nil {
 		t.Errorf("after reset, submit should succeed: %v", err)
 	}
 }
@@ -171,23 +239,33 @@ func TestSetCodeBroadcasterHandler(t *testing.T) {
 	})
 	b.AddHandler(handler)
 
-	auth := types.HexToAddress("0x8888888888888888888888888888888888888888")
-	msg := makeSetCodeMsg(auth, 1)
+	msg, _ := makeSignedSetCodeMsg(1)
 	b.Submit(msg)
 
 	if received == nil {
 		t.Fatal("handler should have received the message")
 	}
-	if received.Authority != auth {
+	if received.Authority != msg.Authority {
 		t.Error("handler received wrong authority")
 	}
 }
 
-func TestSetCodeValidateAuth(t *testing.T) {
+func TestSetCodeValidateAuthWithRealSignature(t *testing.T) {
+	msg, err := makeSignedSetCodeMsg(42)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg: %v", err)
+	}
+	if !ValidateSetCodeAuth(msg) {
+		t.Error("properly signed message should pass validation")
+	}
+}
+
+func TestSetCodeValidateAuthFakeSignature(t *testing.T) {
 	auth := types.HexToAddress("0x9999999999999999999999999999999999999999")
 	msg := makeSetCodeMsg(auth, 1)
-	if !ValidateSetCodeAuth(msg) {
-		t.Error("valid message should pass validation")
+	// Fake R/S will not recover to the claimed authority.
+	if ValidateSetCodeAuth(msg) {
+		t.Error("fake signature should not pass validation with ecrecover")
 	}
 }
 
@@ -219,6 +297,28 @@ func TestSetCodeValidateAuthBadV(t *testing.T) {
 	msg.V = big.NewInt(2) // must be 0 or 1
 	if ValidateSetCodeAuth(msg) {
 		t.Error("V=2 should not pass validation")
+	}
+}
+
+func TestSetCodeValidateAuthWithChainID(t *testing.T) {
+	msg, err := makeSignedSetCodeMsg(1)
+	if err != nil {
+		t.Fatalf("makeSignedSetCodeMsg: %v", err)
+	}
+
+	// Should pass with matching chain ID.
+	if !ValidateSetCodeAuthWithChainID(msg, big.NewInt(1)) {
+		t.Error("valid message with matching chain ID should pass")
+	}
+
+	// Should fail with mismatched chain ID.
+	if ValidateSetCodeAuthWithChainID(msg, big.NewInt(999)) {
+		t.Error("message with wrong chain ID should not pass")
+	}
+
+	// Nil localChainID should fail.
+	if ValidateSetCodeAuthWithChainID(msg, nil) {
+		t.Error("nil local chain ID should not pass")
 	}
 }
 
@@ -257,14 +357,86 @@ func TestSetCodeBroadcasterSetRateLimit(t *testing.T) {
 	b := NewSetCodeBroadcaster(big.NewInt(1))
 	b.SetRateLimit(5)
 
-	auth := types.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+	// Use the same key for all messages so they share the same authority.
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatalf("GenerateKey: %v", err)
+	}
+	authority := crypto.PubkeyToAddress(key.PublicKey)
+	target := types.HexToAddress("0x2222222222222222222222222222222222222222")
+
 	for i := uint64(0); i < 5; i++ {
-		if err := b.Submit(makeSetCodeMsg(auth, i)); err != nil {
+		msg := &SetCodeMessage{
+			Authority: authority,
+			ChainID:   big.NewInt(1),
+			Nonce:     i,
+			Target:    target,
+			Timestamp: time.Now(),
+		}
+		msgHash := computeSetCodeMessageHash(msg)
+		sig, err := crypto.Sign(msgHash[:], key)
+		if err != nil {
+			t.Fatalf("Sign(%d): %v", i, err)
+		}
+		msg.R = new(big.Int).SetBytes(sig[0:32])
+		msg.S = new(big.Int).SetBytes(sig[32:64])
+		msg.V = new(big.Int).SetUint64(uint64(sig[64]))
+
+		if err := b.Submit(msg); err != nil {
 			t.Fatalf("Submit[%d]: %v", i, err)
 		}
 	}
-	// 6th should be rate limited.
-	if err := b.Submit(makeSetCodeMsg(auth, 5)); err != ErrSetCodeRateLimited {
+
+	// 6th with same authority should be rate limited.
+	msg := &SetCodeMessage{
+		Authority: authority,
+		ChainID:   big.NewInt(1),
+		Nonce:     5,
+		Target:    target,
+		Timestamp: time.Now(),
+	}
+	msgHash := computeSetCodeMessageHash(msg)
+	sig, err := crypto.Sign(msgHash[:], key)
+	if err != nil {
+		t.Fatalf("Sign(5): %v", err)
+	}
+	msg.R = new(big.Int).SetBytes(sig[0:32])
+	msg.S = new(big.Int).SetBytes(sig[32:64])
+	msg.V = new(big.Int).SetUint64(uint64(sig[64]))
+
+	if err := b.Submit(msg); err != ErrSetCodeRateLimited {
 		t.Errorf("expected ErrSetCodeRateLimited, got %v", err)
+	}
+}
+
+// computeSetCodeMessageHashForTest is a test helper that replicates the hash computation.
+func computeSetCodeMessageHashForTest(msg *SetCodeMessage) types.Hash {
+	var buf []byte
+	buf = append(buf, msg.Authority[:]...)
+	if msg.ChainID != nil {
+		chainIDBytes := msg.ChainID.Bytes()
+		padded := make([]byte, 32)
+		copy(padded[32-len(chainIDBytes):], chainIDBytes)
+		buf = append(buf, padded...)
+	}
+	var nonceBuf [8]byte
+	binary.BigEndian.PutUint64(nonceBuf[:], msg.Nonce)
+	buf = append(buf, nonceBuf[:]...)
+	buf = append(buf, msg.Target[:]...)
+	return crypto.Keccak256Hash(buf)
+}
+
+func TestComputeSetCodeMessageHash(t *testing.T) {
+	auth := types.HexToAddress("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	msg := makeSetCodeMsg(auth, 1)
+
+	h1 := computeSetCodeMessageHash(msg)
+	h2 := computeSetCodeMessageHashForTest(msg)
+
+	if h1 != h2 {
+		t.Error("message hashes should match")
+	}
+	if h1 == (types.Hash{}) {
+		t.Error("message hash should not be zero")
 	}
 }

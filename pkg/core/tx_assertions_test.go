@@ -275,6 +275,166 @@ func TestMultipleAssertions(t *testing.T) {
 	}
 }
 
+func TestCodeHashAssertion(t *testing.T) {
+	as := NewAssertionSet()
+	addr := types.HexToAddress("0xaabbccddaabbccddaabbccddaabbccddaabbccdd")
+	expectedHash := types.HexToHash("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+	as.AddCodeHashAssertion(addr, expectedHash)
+
+	ctx := &AssertionContext{
+		BlockNumber: 100,
+		Timestamp:   1000,
+		GetCodeHash: func(a types.Address) types.Hash {
+			if a == addr {
+				return expectedHash
+			}
+			return types.Hash{}
+		},
+	}
+	result := as.Evaluate(ctx)
+	if !result.Passed {
+		t.Fatalf("expected code hash assertion to pass: %s", result.Reason)
+	}
+
+	// Wrong code hash.
+	ctx.GetCodeHash = func(a types.Address) types.Hash {
+		return types.HexToHash("0x9999999999999999999999999999999999999999999999999999999999999999")
+	}
+	result = as.Evaluate(ctx)
+	if result.Passed {
+		t.Fatal("expected code hash assertion to fail for wrong hash")
+	}
+}
+
+func TestCodeHashAssertionNilGetter(t *testing.T) {
+	as := NewAssertionSet()
+	addr := types.HexToAddress("0xaabbccddaabbccddaabbccddaabbccddaabbccdd")
+	as.AddCodeHashAssertion(addr, types.Hash{})
+
+	ctx := &AssertionContext{
+		BlockNumber: 100,
+		Timestamp:   1000,
+		// No GetCodeHash set.
+	}
+	result := as.Evaluate(ctx)
+	if result.Passed {
+		t.Fatal("expected failure when code hash getter is nil")
+	}
+}
+
+func TestAllComparators(t *testing.T) {
+	// Test all comparators via block assertions.
+	tests := []struct {
+		name   string
+		cmp    uint8
+		actual uint64
+		expect uint64
+		passes bool
+	}{
+		{"Eq pass", CmpEq, 100, 100, true},
+		{"Eq fail", CmpEq, 100, 200, false},
+		{"Gt pass", CmpGt, 200, 100, true},
+		{"Gt fail", CmpGt, 100, 100, false},
+		{"Lt pass", CmpLt, 50, 100, true},
+		{"Lt fail", CmpLt, 100, 100, false},
+		{"Gte pass eq", CmpGte, 100, 100, true},
+		{"Gte pass gt", CmpGte, 200, 100, true},
+		{"Gte fail", CmpGte, 50, 100, false},
+		{"Lte pass eq", CmpLte, 100, 100, true},
+		{"Lte pass lt", CmpLte, 50, 100, true},
+		{"Lte fail", CmpLte, 200, 100, false},
+		{"Neq pass", CmpNeq, 100, 200, true},
+		{"Neq fail", CmpNeq, 100, 100, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			as := NewAssertionSet()
+			as.AddAssertion(TxAssertion{
+				Type:          AssertBlock,
+				ExpectedValue: uint64ToHash(tt.expect),
+				Comparator:    tt.cmp,
+			})
+
+			ctx := &AssertionContext{
+				BlockNumber: tt.actual,
+			}
+			result := as.Evaluate(ctx)
+			if result.Passed != tt.passes {
+				t.Errorf("Passed=%v, want %v (reason=%s)", result.Passed, tt.passes, result.Reason)
+			}
+		})
+	}
+}
+
+func TestStorageAssertionNeq(t *testing.T) {
+	as := NewAssertionSet()
+	addr := types.HexToAddress("0xcccccccccccccccccccccccccccccccccccccccc")
+	key := types.HexToHash("0x01")
+	value := types.HexToHash("0x42")
+
+	as.AddAssertion(TxAssertion{
+		Type:          AssertStorage,
+		Address:       addr,
+		Key:           key,
+		ExpectedValue: value,
+		Comparator:    CmpNeq,
+	})
+
+	ctx := &AssertionContext{
+		BlockNumber: 100,
+		Timestamp:   1000,
+		GetStorage: func(a types.Address, k types.Hash) types.Hash {
+			return types.HexToHash("0x99") // different from 0x42
+		},
+	}
+	result := as.Evaluate(ctx)
+	if !result.Passed {
+		t.Fatalf("expected Neq storage assertion to pass: %s", result.Reason)
+	}
+
+	// Same value should fail Neq.
+	ctx.GetStorage = func(a types.Address, k types.Hash) types.Hash {
+		return value
+	}
+	result = as.Evaluate(ctx)
+	if result.Passed {
+		t.Fatal("expected Neq storage assertion to fail when values are equal")
+	}
+}
+
+func TestFailedAssertionsField(t *testing.T) {
+	as := NewAssertionSet()
+	addr := types.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+
+	as.AddBlockAssertion(100, 200)                 // block 50 fails both >= 100 and <= 200 checks
+	as.AddBalanceAssertion(addr, big.NewInt(1000)) // fails
+	as.AddNonceAssertion(addr, 5)                  // fails
+
+	ctx := &AssertionContext{
+		BlockNumber: 50, // fails block >= 100
+		Timestamp:   1000,
+		GetBalance: func(a types.Address) *big.Int {
+			return big.NewInt(0) // fails >= 1000
+		},
+		GetNonce: func(a types.Address) uint64 {
+			return 99 // fails == 5
+		},
+	}
+	result := as.Evaluate(ctx)
+	if result.Passed {
+		t.Fatal("expected assertion failure")
+	}
+	// Should have at least 3 failures (block min, balance, nonce).
+	if len(result.FailedAssertions) < 3 {
+		t.Fatalf("expected at least 3 failed assertions, got %d", len(result.FailedAssertions))
+	}
+	// First failure should be at index 0 (block >= 100).
+	if result.AssertionIndex != 0 {
+		t.Fatalf("expected first failure at index 0, got %d", result.AssertionIndex)
+	}
+}
+
 func TestFirstFailure(t *testing.T) {
 	as := NewAssertionSet()
 	addr := types.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")

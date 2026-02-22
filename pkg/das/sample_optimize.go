@@ -2,6 +2,7 @@ package das
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"sync"
 )
@@ -243,6 +244,43 @@ func (so *SampleOptimizer) EstimateNetworkLoad(blobCount, sampleSize int) uint64
 	}
 	bytesPerSample := uint64(BytesPerCell + 48) // cell + proof
 	return uint64(blobCount) * uint64(sampleSize) * bytesPerSample
+}
+
+// ValidateSamplingPlan checks that a SamplingPlan has consistent and valid
+// parameters:
+//   - SamplesPerBlob is within [MinSamples, MaxSamples]
+//   - ConfidenceLevel is in [0, 1]
+//   - SecurityLevel increases with sample count (is non-negative)
+//   - TotalSamples is non-negative
+func (so *SampleOptimizer) ValidateSamplingPlan(plan *SamplingPlan) error {
+	if plan == nil {
+		return errors.New("das/sample: nil sampling plan")
+	}
+	so.mu.RLock()
+	cfg := so.config
+	so.mu.RUnlock()
+
+	if plan.SamplesPerBlob < cfg.MinSamples {
+		return fmt.Errorf("%w: SamplesPerBlob %d < MinSamples %d",
+			ErrInvalidSampleSize, plan.SamplesPerBlob, cfg.MinSamples)
+	}
+	if plan.SamplesPerBlob > cfg.MaxSamples {
+		return fmt.Errorf("%w: SamplesPerBlob %d > MaxSamples %d",
+			ErrInvalidSampleSize, plan.SamplesPerBlob, cfg.MaxSamples)
+	}
+	if plan.ConfidenceLevel < 0 || plan.ConfidenceLevel > 1 {
+		return fmt.Errorf("%w: ConfidenceLevel %f not in [0, 1]",
+			ErrInvalidNetworkHealth, plan.ConfidenceLevel)
+	}
+	if plan.SecurityLevel < 0 {
+		return fmt.Errorf("%w: SecurityLevel %d must be non-negative",
+			ErrInvalidSecurityParam, plan.SecurityLevel)
+	}
+	if plan.TotalSamples < 0 {
+		return fmt.Errorf("%w: TotalSamples %d must be non-negative",
+			ErrInvalidSampleSize, plan.TotalSamples)
+	}
+	return nil
 }
 
 // clamp restricts v to [MinSamples, MaxSamples].

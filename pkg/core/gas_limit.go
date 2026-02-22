@@ -1,11 +1,52 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/eth2030/eth2030/core/types"
 )
+
+// MaxGigagas is the absolute ceiling for any gas limit schedule entry (1 Ggas).
+const MaxGigagas = 1_000_000_000
+
+// Errors for gas limit schedule validation.
+var (
+	ErrGasLimitScheduleEmpty        = errors.New("gas limit schedule: empty schedule")
+	ErrGasLimitScheduleNotMonotone  = errors.New("gas limit schedule: activation times must be strictly increasing")
+	ErrGasLimitScheduleJumpTooLarge = errors.New("gas limit schedule: target exceeds 3x previous entry")
+	ErrGasLimitScheduleExceedsMax   = errors.New("gas limit schedule: target exceeds gigagas ceiling")
+)
+
+// ValidateGasLimitSchedule checks that a gas limit schedule is well-formed:
+//   - The schedule is non-empty
+//   - Activation times are strictly monotonically increasing
+//   - Each new target gas limit is at most 3x the previous entry
+//   - No entry exceeds MaxGigagas (1_000_000_000)
+func ValidateGasLimitSchedule(schedule GasLimitSchedule) error {
+	if len(schedule) == 0 {
+		return ErrGasLimitScheduleEmpty
+	}
+
+	for i, entry := range schedule {
+		if entry.TargetGasLimit > MaxGigagas {
+			return fmt.Errorf("%w: entry %d target %d > %d",
+				ErrGasLimitScheduleExceedsMax, i, entry.TargetGasLimit, MaxGigagas)
+		}
+		if i > 0 {
+			if entry.ActivationTime <= schedule[i-1].ActivationTime {
+				return fmt.Errorf("%w: entry %d time %d <= entry %d time %d",
+					ErrGasLimitScheduleNotMonotone, i, entry.ActivationTime, i-1, schedule[i-1].ActivationTime)
+			}
+			if entry.TargetGasLimit > 3*schedule[i-1].TargetGasLimit {
+				return fmt.Errorf("%w: entry %d target %d > 3 * entry %d target %d",
+					ErrGasLimitScheduleJumpTooLarge, i, entry.TargetGasLimit, i-1, schedule[i-1].TargetGasLimit)
+			}
+		}
+	}
+	return nil
+}
 
 // GasLimitEntry defines a target gas limit that activates at a specific time.
 type GasLimitEntry struct {

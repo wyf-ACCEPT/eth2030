@@ -4,10 +4,15 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/eth2030/eth2030/core/types"
 	"golang.org/x/crypto/sha3"
 )
+
+// DefaultEpochCutoff is the maximum number of epochs in the past for which
+// custody proofs are accepted. Proofs for epochs older than this are rejected.
+const DefaultEpochCutoff = 256
 
 // Custody proof errors.
 var (
@@ -15,6 +20,9 @@ var (
 	ErrChallengeExpired    = errors.New("das: challenge has expired")
 	ErrChallengeNotFound   = errors.New("das: challenge not found")
 	ErrInvalidColumn       = errors.New("das: invalid column index in proof")
+	ErrProofEpochTooOld    = errors.New("das: proof epoch is older than cutoff")
+	ErrDeadlinePassed      = errors.New("das: challenge deadline has passed")
+	ErrProofReplay         = errors.New("das: duplicate proof submission")
 )
 
 // CustodyProof attests that a node has custodied specific columns for an epoch.
@@ -165,6 +173,110 @@ func RespondToChallenge(challenge *CustodyChallenge, proof *CustodyProof) bool {
 
 	// Verify structural validity.
 	return VerifyCustodyProof(proof)
+}
+
+// VerifyCustodyProofWithEpoch validates a custody proof with epoch bounds
+// checking. It rejects proofs for epochs older than currentEpoch - cutoff.
+func VerifyCustodyProofWithEpoch(proof *CustodyProof, currentEpoch, cutoff uint64) error {
+	if !VerifyCustodyProof(proof) {
+		return ErrInvalidCustodyProof
+	}
+	if cutoff > 0 && currentEpoch > cutoff && proof.Epoch < currentEpoch-cutoff {
+		return fmt.Errorf("%w: proof epoch %d, current %d, cutoff %d",
+			ErrProofEpochTooOld, proof.Epoch, currentEpoch, cutoff)
+	}
+	return nil
+}
+
+// ValidateChallengeDeadline checks that a challenge response is submitted
+// before the deadline. Returns an error if currentSlot >= deadline.
+func ValidateChallengeDeadline(challenge *CustodyChallenge, currentSlot uint64) error {
+	if challenge == nil {
+		return ErrChallengeNotFound
+	}
+	if currentSlot >= challenge.Deadline {
+		return fmt.Errorf("%w: current slot %d >= deadline %d",
+			ErrDeadlinePassed, currentSlot, challenge.Deadline)
+	}
+	return nil
+}
+
+// replayKey uniquely identifies a proof submission for replay protection.
+type replayKey struct {
+	NodeID [32]byte
+	Epoch  uint64
+	Column uint64
+}
+
+// CustodyProofTracker tracks submitted custody proofs to prevent replay attacks.
+// Thread-safe.
+type CustodyProofTracker struct {
+	mu   sync.RWMutex
+	seen map[replayKey]bool
+}
+
+// NewCustodyProofTracker creates a new proof tracker.
+func NewCustodyProofTracker() *CustodyProofTracker {
+	return &CustodyProofTracker{
+		seen: make(map[replayKey]bool),
+	}
+}
+
+// RecordProof records a proof submission. Returns ErrProofReplay if the
+// (nodeID, epoch, column) tuple has already been seen.
+func (t *CustodyProofTracker) RecordProof(proof *CustodyProof) error {
+	if proof == nil {
+		return ErrInvalidCustodyProof
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	for _, col := range proof.ColumnIndices {
+		key := replayKey{
+			NodeID: proof.NodeID,
+			Epoch:  proof.Epoch,
+			Column: col,
+		}
+		if t.seen[key] {
+			return fmt.Errorf("%w: nodeID %x, epoch %d, column %d",
+				ErrProofReplay, proof.NodeID[:4], proof.Epoch, col)
+		}
+	}
+
+	// Record all columns.
+	for _, col := range proof.ColumnIndices {
+		key := replayKey{
+			NodeID: proof.NodeID,
+			Epoch:  proof.Epoch,
+			Column: col,
+		}
+		t.seen[key] = true
+	}
+	return nil
+}
+
+// HasSeen returns true if a proof for the given (nodeID, epoch, column)
+// has already been recorded.
+func (t *CustodyProofTracker) HasSeen(nodeID [32]byte, epoch, column uint64) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.seen[replayKey{NodeID: nodeID, Epoch: epoch, Column: column}]
+}
+
+// PruneEpoch removes all entries for epochs older than minEpoch.
+func (t *CustodyProofTracker) PruneEpoch(minEpoch uint64) int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	pruned := 0
+	for key := range t.seen {
+		if key.Epoch < minEpoch {
+			delete(t.seen, key)
+			pruned++
+		}
+	}
+	return pruned
 }
 
 // computeCustodyHash computes the custody proof hash.

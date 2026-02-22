@@ -47,9 +47,10 @@ type TxAssertion struct {
 
 // AssertionResult holds the outcome of evaluating an assertion set.
 type AssertionResult struct {
-	Passed         bool
-	AssertionIndex int
-	Reason         string
+	Passed           bool
+	AssertionIndex   int
+	Reason           string
+	FailedAssertions []string
 }
 
 // AssertionContext provides the state needed to evaluate assertions.
@@ -59,6 +60,7 @@ type AssertionContext struct {
 	GetBalance  func(types.Address) *big.Int
 	GetNonce    func(types.Address) uint64
 	GetStorage  func(types.Address, types.Hash) types.Hash
+	GetCodeHash func(types.Address) types.Hash
 }
 
 // AssertionSet holds multiple assertions that must all pass for a transaction.
@@ -141,6 +143,21 @@ func (as *AssertionSet) AddStorageAssertion(addr types.Address, key, value types
 	})
 }
 
+// AddCodeHashAssertion adds an assertion that the account code hash equals expectedHash.
+func (as *AssertionSet) AddCodeHashAssertion(addr types.Address, expectedHash types.Hash) {
+	as.assertions = append(as.assertions, TxAssertion{
+		Type:          AssertCodeHash,
+		Address:       addr,
+		ExpectedValue: expectedHash,
+		Comparator:    CmpEq,
+	})
+}
+
+// AddAssertion adds a raw assertion with the given type, address, key, value, and comparator.
+func (as *AssertionSet) AddAssertion(a TxAssertion) {
+	as.assertions = append(as.assertions, a)
+}
+
 // Assertions returns the underlying assertion slice.
 func (as *AssertionSet) Assertions() []TxAssertion {
 	return as.assertions
@@ -148,17 +165,21 @@ func (as *AssertionSet) Assertions() []TxAssertion {
 
 // Evaluate checks all assertions against the provided context.
 // Returns a result indicating whether all passed, or the first failure.
+// The FailedAssertions field collects reasons for all failed assertions.
 func (as *AssertionSet) Evaluate(ctx *AssertionContext) *AssertionResult {
+	result := &AssertionResult{Passed: true}
 	for i, a := range as.assertions {
 		if reason := evaluateAssertion(a, ctx); reason != "" {
-			return &AssertionResult{
-				Passed:         false,
-				AssertionIndex: i,
-				Reason:         reason,
+			if result.Passed {
+				// Record first failure index and reason for backward compatibility.
+				result.Passed = false
+				result.AssertionIndex = i
+				result.Reason = reason
 			}
+			result.FailedAssertions = append(result.FailedAssertions, reason)
 		}
 	}
-	return &AssertionResult{Passed: true}
+	return result
 }
 
 // evaluateAssertion checks a single assertion. Returns empty string on pass,
@@ -206,8 +227,18 @@ func evaluateAssertion(a TxAssertion, ctx *AssertionContext) string {
 		return ""
 
 	case AssertCodeHash:
-		// CodeHash assertions use storage getter with zero key as a convention.
-		// Not implemented in this initial version.
+		if ctx.GetCodeHash == nil {
+			return "code hash getter not provided"
+		}
+		got := ctx.GetCodeHash(a.Address)
+		if a.Comparator == CmpEq && got != a.ExpectedValue {
+			return fmt.Sprintf("code hash of %s: got %s, want %s",
+				a.Address.Hex(), got.Hex(), a.ExpectedValue.Hex())
+		}
+		if a.Comparator == CmpNeq && got == a.ExpectedValue {
+			return fmt.Sprintf("code hash of %s: got %s, should differ",
+				a.Address.Hex(), got.Hex())
+		}
 		return ""
 
 	default:

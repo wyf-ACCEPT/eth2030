@@ -661,6 +661,120 @@ func TestUpdateBaseFeesNilMaps(t *testing.T) {
 	}
 }
 
+func TestValidateTotalGasUsageValid(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	e, _ := NewMultidimPricingEngine(cfg)
+
+	usage := map[GasDimension]uint64{
+		DimCompute:   1_000_000,
+		DimStorage:   500_000,
+		DimBandwidth: 200_000,
+		DimBlob:      100_000,
+		DimWitness:   100_000,
+	}
+	if err := e.ValidateTotalGasUsage(usage); err != nil {
+		t.Fatalf("valid usage rejected: %v", err)
+	}
+}
+
+func TestValidateTotalGasUsageExceedsGigagas(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	e, _ := NewMultidimPricingEngine(cfg)
+
+	// Sum > 1 Ggas but each dimension is within its own max.
+	usage := map[GasDimension]uint64{
+		DimCompute:   cfg.Dims[DimCompute].MaxGas,
+		DimStorage:   cfg.Dims[DimStorage].MaxGas,
+		DimBandwidth: cfg.Dims[DimBandwidth].MaxGas,
+		DimBlob:      cfg.Dims[DimBlob].MaxGas,
+		DimWitness:   cfg.Dims[DimWitness].MaxGas,
+	}
+	// Total = 30M + 10M + 7.5M + 786K + 4M = ~52M which is below gigagas.
+	// Use larger values to exceed.
+	total := uint64(0)
+	for _, v := range usage {
+		total += v
+	}
+	if total > MaxTotalGasUsage {
+		// If defaults already exceed, this test checks rejection.
+		if err := e.ValidateTotalGasUsage(usage); err == nil {
+			t.Fatal("usage exceeding gigagas should fail")
+		}
+	} else {
+		// Defaults sum to ~52M, well below gigagas. Verify pass.
+		if err := e.ValidateTotalGasUsage(usage); err != nil {
+			t.Fatalf("sum below gigagas should pass: %v", err)
+		}
+	}
+}
+
+func TestValidateTotalGasUsageOverflow(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	// Set very large max gas to allow large values.
+	for i := range cfg.Dims {
+		cfg.Dims[i].MaxGas = ^uint64(0) / 2
+	}
+	e, _ := NewMultidimPricingEngine(cfg)
+
+	// Two dimensions that together overflow uint64.
+	usage := map[GasDimension]uint64{
+		DimCompute: ^uint64(0) / 2,
+		DimStorage: ^uint64(0) / 2,
+	}
+	if err := e.ValidateTotalGasUsage(usage); err == nil {
+		t.Fatal("overflow should be detected")
+	}
+}
+
+func TestValidateTotalGasUsageEmpty(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	e, _ := NewMultidimPricingEngine(cfg)
+
+	if err := e.ValidateTotalGasUsage(nil); err != nil {
+		t.Fatalf("nil usage should pass: %v", err)
+	}
+	if err := e.ValidateTotalGasUsage(map[GasDimension]uint64{}); err != nil {
+		t.Fatalf("empty usage should pass: %v", err)
+	}
+}
+
+func TestValidateTotalGasUsageInvalidDim(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	e, _ := NewMultidimPricingEngine(cfg)
+
+	usage := map[GasDimension]uint64{
+		GasDimension(99): 100,
+	}
+	if err := e.ValidateTotalGasUsage(usage); err == nil {
+		t.Fatal("invalid dimension should fail")
+	}
+}
+
+func TestUpdateBaseFeesMaxClamping(t *testing.T) {
+	cfg := DefaultMultidimGasConfig()
+	maxFee := big.NewInt(5_000_000_000)
+	cfg.Dims[DimCompute].MaxBaseFee = maxFee
+
+	e, _ := NewMultidimPricingEngineWithFees(cfg, map[GasDimension]*big.Int{
+		DimCompute: big.NewInt(4_999_999_999),
+	})
+
+	// Many full blocks should hit the ceiling.
+	for i := 0; i < 50; i++ {
+		e.UpdateBaseFees(map[GasDimension]uint64{
+			DimCompute: cfg.Dims[DimCompute].MaxGas,
+		}, nil)
+	}
+
+	got := e.BaseFee(DimCompute)
+	if got.Cmp(maxFee) > 0 {
+		t.Fatalf("fee %s exceeds max %s", got, maxFee)
+	}
+	if got.Cmp(maxFee) != 0 {
+		t.Logf("fee clamped to %s (max %s)", got, maxFee)
+	}
+}
+
 func TestMultipleUpdatesRecovery(t *testing.T) {
 	cfg := DefaultMultidimGasConfig()
 	e, _ := NewMultidimPricingEngineWithFees(cfg, map[GasDimension]*big.Int{

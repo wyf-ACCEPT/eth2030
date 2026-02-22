@@ -174,6 +174,130 @@ func TestValidateChunk(t *testing.T) {
 	}
 }
 
+func TestVerifyPayloadChunks_Valid(t *testing.T) {
+	payload := make([]byte, 500)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	if err := VerifyPayloadChunks(chunks); err != nil {
+		t.Fatalf("VerifyPayloadChunks: %v", err)
+	}
+}
+
+func TestVerifyPayloadChunks_Empty(t *testing.T) {
+	if err := VerifyPayloadChunks(nil); err == nil {
+		t.Fatal("expected error for nil chunks")
+	}
+}
+
+func TestVerifyPayloadChunks_MismatchedPayloadID(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	chunks[1].PayloadID = [32]byte{0xFF}
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for mismatched PayloadID")
+	}
+}
+
+func TestVerifyPayloadChunks_MismatchedTotalChunks(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	chunks[1].TotalChunks = 99
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for mismatched TotalChunks")
+	}
+}
+
+func TestVerifyPayloadChunks_CorruptedProof(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	// Corrupt the proof hash of one chunk.
+	chunks[1].ProofHash = [32]byte{0xDE, 0xAD}
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for corrupted proof hash")
+	}
+}
+
+func TestVerifyPayloadChunks_CorruptedData(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	// Corrupt the data of one chunk (proof will no longer match).
+	chunks[0].Data[0] ^= 0xFF
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for corrupted data")
+	}
+}
+
+func TestVerifyPayloadChunks_DuplicateIndex(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	// Create a duplicate.
+	chunks[2].ChunkIndex = chunks[0].ChunkIndex
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for duplicate chunk index")
+	}
+}
+
+func TestVerifyPayloadChunks_EmptyData(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	chunks[1].Data = nil
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for empty chunk data")
+	}
+}
+
+func TestVerifyPayloadChunks_IndexOutOfRange(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	chunks[1].ChunkIndex = chunks[1].TotalChunks
+	if err := VerifyPayloadChunks(chunks); err == nil {
+		t.Fatal("expected error for chunk index out of range")
+	}
+}
+
+func TestReassemblePayload_WithVerification(t *testing.T) {
+	// Normal roundtrip still works with verification integrated.
+	payload := make([]byte, 500)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	got, err := ReassemblePayload(chunks)
+	if err != nil {
+		t.Fatalf("ReassemblePayload: %v", err)
+	}
+	if !bytes.Equal(got, payload) {
+		t.Fatal("roundtrip mismatch")
+	}
+}
+
+func TestReassemblePayload_RejectsCorruptedChunks(t *testing.T) {
+	payload := make([]byte, 300)
+	rand.Read(payload)
+	chunks := ChunkPayload(payload, 100)
+
+	// Corrupt data; proof will be wrong.
+	chunks[0].Data[0] ^= 0xFF
+	_, err := ReassemblePayload(chunks)
+	if err == nil {
+		t.Fatal("expected error for corrupted chunk during reassembly")
+	}
+}
+
 func TestEncodeDecodeChunk(t *testing.T) {
 	original := PayloadChunk{
 		ChunkIndex:  3,

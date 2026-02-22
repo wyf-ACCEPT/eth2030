@@ -68,6 +68,12 @@ type PurgeStats struct {
 	SelfDestructedPurged int
 	ExpiredSlotsPurged   int
 
+	// Detailed counts per category.
+	ZeroBalancePurged   int
+	ZeroNoncePurged     int
+	EmptyCodeHashPurged int
+	PreservedCount      int
+
 	// Before/after state metrics.
 	AccountsBefore     int
 	AccountsAfter      int
@@ -292,6 +298,31 @@ func (sp *StatePurger) FullPurge(db *MemoryStateDB, cutoffBlock uint64) (PurgeSt
 		return dryStats, nil
 	}
 
+	// Count preserved addresses.
+	for addr := range sp.config.PreserveAddresses {
+		if sp.config.PreserveAddresses[addr] && db.Exist(addr) {
+			stats.PreservedCount++
+		}
+	}
+
+	// Count detailed categories before purging.
+	for addr, obj := range db.stateObjects {
+		if sp.config.PreserveAddresses[addr] {
+			continue
+		}
+		if isPurgeableEmpty(obj) {
+			if obj.account.Balance == nil || obj.account.Balance.Sign() == 0 {
+				stats.ZeroBalancePurged++
+			}
+			if obj.account.Nonce == 0 {
+				stats.ZeroNoncePurged++
+			}
+			if len(obj.account.CodeHash) == 0 || types.BytesToHash(obj.account.CodeHash) == types.EmptyCodeHash {
+				stats.EmptyCodeHashPurged++
+			}
+		}
+	}
+
 	if sp.config.HasTarget(PurgeTargetEmptyAccounts) {
 		count, _, err := sp.PurgeEmptyAccounts(db)
 		if err != nil && err != ErrPurgeDryRun {
@@ -439,6 +470,64 @@ func (sp *StatePurger) Config() PurgeConfig {
 	sp.mu.Lock()
 	defer sp.mu.Unlock()
 	return sp.config
+}
+
+// PurgeEligibility describes why an account is or is not eligible for purging.
+type PurgeEligibility struct {
+	Eligible         bool
+	IsEmpty          bool
+	IsSelfDestructed bool
+	IsPreserved      bool
+	HasBalance       bool
+	HasNonce         bool
+	HasCode          bool
+}
+
+// VerifyPurgeEligibility checks whether an account at the given address meets
+// purge criteria: zero balance, zero nonce, and empty code hash. Also checks
+// if the address is in the preserve list.
+func VerifyPurgeEligibility(db *MemoryStateDB, addr types.Address, config PurgeConfig) PurgeEligibility {
+	result := PurgeEligibility{}
+
+	if config.PreserveAddresses[addr] {
+		result.IsPreserved = true
+		return result
+	}
+
+	obj := db.getStateObject(addr)
+	if obj == nil {
+		// Non-existent account: not eligible (nothing to purge).
+		return result
+	}
+
+	result.HasBalance = obj.account.Balance != nil && obj.account.Balance.Sign() > 0
+	result.HasNonce = obj.account.Nonce > 0
+	result.HasCode = len(obj.code) > 0 ||
+		(len(obj.account.CodeHash) > 0 && types.BytesToHash(obj.account.CodeHash) != types.EmptyCodeHash)
+	result.IsSelfDestructed = obj.selfDestructed
+	result.IsEmpty = !result.HasBalance && !result.HasNonce && !result.HasCode && !result.IsSelfDestructed
+
+	// Account is eligible if it is empty or self-destructed, and not preserved.
+	result.Eligible = result.IsEmpty || result.IsSelfDestructed
+
+	return result
+}
+
+// ValidatePreserveAddresses verifies that all addresses in the PreserveAddresses
+// set actually exist in the state and are preserved (not purged) after a purge
+// operation. Returns the list of addresses that were supposed to be preserved
+// but are missing from state.
+func ValidatePreserveAddresses(db *MemoryStateDB, config PurgeConfig) []types.Address {
+	var missing []types.Address
+	for addr := range config.PreserveAddresses {
+		if !config.PreserveAddresses[addr] {
+			continue
+		}
+		if !db.Exist(addr) {
+			missing = append(missing, addr)
+		}
+	}
+	return missing
 }
 
 // EstimateGasSavings estimates the gas savings from purging, based on the

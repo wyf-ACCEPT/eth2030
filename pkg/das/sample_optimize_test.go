@@ -437,6 +437,106 @@ func TestSampleOptimizerConcurrency(t *testing.T) {
 	wg.Wait()
 }
 
+// --- ValidateSamplingPlan ---
+
+func TestValidateSamplingPlanValid(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+	plan := so.AdaptiveSampling(6, 1.0)
+
+	if err := so.ValidateSamplingPlan(plan); err != nil {
+		t.Fatalf("valid plan rejected: %v", err)
+	}
+}
+
+func TestValidateSamplingPlanNil(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+	if err := so.ValidateSamplingPlan(nil); err == nil {
+		t.Fatal("nil plan should fail")
+	}
+}
+
+func TestValidateSamplingPlanBelowMin(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+	plan := &SamplingPlan{
+		SamplesPerBlob:  1, // below MinSamples (8)
+		TotalSamples:    6,
+		SecurityLevel:   5,
+		ConfidenceLevel: 0.9,
+	}
+	if err := so.ValidateSamplingPlan(plan); err == nil {
+		t.Fatal("plan below min samples should fail")
+	}
+}
+
+func TestValidateSamplingPlanAboveMax(t *testing.T) {
+	so := NewSampleOptimizer(SampleOptimizerConfig{
+		MinSamples:       4,
+		MaxSamples:       16,
+		TargetConfidence: 0.99,
+	})
+	plan := &SamplingPlan{
+		SamplesPerBlob:  20, // above MaxSamples (16)
+		TotalSamples:    20,
+		SecurityLevel:   10,
+		ConfidenceLevel: 0.95,
+	}
+	if err := so.ValidateSamplingPlan(plan); err == nil {
+		t.Fatal("plan above max samples should fail")
+	}
+}
+
+func TestValidateSamplingPlanBadConfidence(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+	plan := &SamplingPlan{
+		SamplesPerBlob:  SamplesPerSlot,
+		TotalSamples:    SamplesPerSlot,
+		SecurityLevel:   5,
+		ConfidenceLevel: 1.5, // invalid
+	}
+	if err := so.ValidateSamplingPlan(plan); err == nil {
+		t.Fatal("confidence > 1 should fail")
+	}
+}
+
+func TestValidateSamplingPlanSecurityMonotonic(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+
+	// Higher sample count should produce higher security level.
+	plan1 := so.AdaptiveSampling(6, 1.0)
+	plan2 := so.AdaptiveSampling(6, 0.0) // worse health -> more samples
+
+	if plan2.SamplesPerBlob > plan1.SamplesPerBlob && plan2.SecurityLevel < plan1.SecurityLevel {
+		t.Fatal("more samples should not decrease security level")
+	}
+
+	// Both should validate.
+	if err := so.ValidateSamplingPlan(plan1); err != nil {
+		t.Fatalf("plan1 rejected: %v", err)
+	}
+	if err := so.ValidateSamplingPlan(plan2); err != nil {
+		t.Fatalf("plan2 rejected: %v", err)
+	}
+}
+
+func TestKnownSecurityValues(t *testing.T) {
+	so := NewSampleOptimizer(DefaultSampleOptimizerConfig())
+
+	// With 128 columns, k=10 samples gives confidence ~1-((127/128)^10) ~= 0.0754.
+	// Security bits ~= -log2(1-0.0754) ~= 0.113 bits. With margin, samples should
+	// be higher than 10 for useful security.
+	plan := so.AdaptiveSampling(1, 1.0)
+	if plan.SecurityLevel < 1 {
+		t.Fatalf("plan with default config should achieve at least 1-bit security, got %d", plan.SecurityLevel)
+	}
+
+	// Confidence with N=128 and k=8 (minimum).
+	n := float64(NumberOfColumns)
+	minConf := 1.0 - math.Pow((n-1)/n, float64(SamplesPerSlot))
+	if minConf <= 0 {
+		t.Fatal("minimum confidence should be positive")
+	}
+}
+
 // --- Integration: full adaptive flow ---
 
 func TestAdaptiveSamplingFullFlow(t *testing.T) {

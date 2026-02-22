@@ -5,8 +5,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/alt-research/eth2030/actions/workflows/ci.yml"><img src="https://github.com/alt-research/eth2030/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI" /></a>
-  <a href="https://github.com/alt-research/eth2030/releases/latest"><img src="https://img.shields.io/github/v/release/alt-research/eth2030?label=Release&color=%234f46e5" alt="Release" /></a>
+  <img src="https://img.shields.io/badge/Status-Experimental-orange?style=for-the-badge" alt="Experimental" />
+  <img src="https://img.shields.io/badge/Build-In%20Progress-yellow?style=for-the-badge" alt="Build In Progress" />
+</p>
+
+> **Warning**: This is an experimental research project under active development. It is **not** production-ready. Use at your own risk. APIs, data formats, and behavior may change without notice.
+
+<p align="center">
+  <a href="https://github.com/jiayaoqijia/eth2030/actions/workflows/ci.yml"><img src="https://github.com/jiayaoqijia/eth2030/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI" /></a>
+  <a href="https://github.com/jiayaoqijia/eth2030/releases/latest"><img src="https://img.shields.io/github/v/release/jiayaoqijia/eth2030?label=Release&color=%234f46e5" alt="Release" /></a>
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go" alt="Go" />
 </p>
 
@@ -49,7 +56,7 @@
 
 ```bash
 # Clone
-git clone https://github.com/alt-research/eth2030.git
+git clone https://github.com/jiayaoqijia/eth2030.git
 cd eth2030
 
 # Build all packages

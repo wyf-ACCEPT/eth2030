@@ -199,6 +199,139 @@ func TestRespondToChallengeNil(t *testing.T) {
 	}
 }
 
+func TestVerifyCustodyProofWithEpoch(t *testing.T) {
+	nodeID := [32]byte{0x01}
+	columns := []uint64{0, 5, 10}
+	data := []byte("test data")
+	proof := GenerateCustodyProof(nodeID, 50, columns, data)
+
+	// Current epoch 100, cutoff 256: epoch 50 should pass.
+	if err := VerifyCustodyProofWithEpoch(proof, 100, 256); err != nil {
+		t.Fatalf("valid epoch rejected: %v", err)
+	}
+
+	// Current epoch 500, cutoff 256: epoch 50 should fail (50 < 500-256=244).
+	if err := VerifyCustodyProofWithEpoch(proof, 500, 256); err == nil {
+		t.Fatal("old epoch should be rejected")
+	}
+
+	// Cutoff 0 means no epoch check.
+	if err := VerifyCustodyProofWithEpoch(proof, 500, 0); err != nil {
+		t.Fatalf("cutoff 0 should bypass epoch check: %v", err)
+	}
+
+	// Invalid proof should fail regardless.
+	badProof := &CustodyProof{Proof: []byte{0x01}}
+	if err := VerifyCustodyProofWithEpoch(badProof, 100, 256); err == nil {
+		t.Fatal("invalid proof should fail")
+	}
+}
+
+func TestValidateChallengeDeadline(t *testing.T) {
+	challenge, _ := CreateChallenge(types.Address{0x01}, types.Address{0x02}, 10, 5, 100)
+
+	// Before deadline.
+	if err := ValidateChallengeDeadline(challenge, 50); err != nil {
+		t.Fatalf("before deadline rejected: %v", err)
+	}
+
+	// At deadline (should fail: currentSlot >= deadline).
+	if err := ValidateChallengeDeadline(challenge, 100); err == nil {
+		t.Fatal("at deadline should fail")
+	}
+
+	// After deadline.
+	if err := ValidateChallengeDeadline(challenge, 200); err == nil {
+		t.Fatal("after deadline should fail")
+	}
+
+	// Nil challenge.
+	if err := ValidateChallengeDeadline(nil, 50); err == nil {
+		t.Fatal("nil challenge should fail")
+	}
+}
+
+func TestCustodyProofTracker(t *testing.T) {
+	tracker := NewCustodyProofTracker()
+	nodeID := [32]byte{0x01}
+	columns := []uint64{5, 10}
+	data := []byte("custody data")
+	proof := GenerateCustodyProof(nodeID, 42, columns, data)
+
+	// First submission should succeed.
+	if err := tracker.RecordProof(proof); err != nil {
+		t.Fatalf("first submission failed: %v", err)
+	}
+
+	// Check seen.
+	if !tracker.HasSeen(nodeID, 42, 5) {
+		t.Fatal("should have seen (nodeID, 42, 5)")
+	}
+	if !tracker.HasSeen(nodeID, 42, 10) {
+		t.Fatal("should have seen (nodeID, 42, 10)")
+	}
+	if tracker.HasSeen(nodeID, 42, 15) {
+		t.Fatal("should not have seen (nodeID, 42, 15)")
+	}
+
+	// Replay should fail.
+	if err := tracker.RecordProof(proof); err == nil {
+		t.Fatal("replay should fail")
+	}
+
+	// Different epoch should succeed.
+	proof2 := GenerateCustodyProof(nodeID, 43, columns, data)
+	if err := tracker.RecordProof(proof2); err != nil {
+		t.Fatalf("different epoch should succeed: %v", err)
+	}
+
+	// Nil proof should fail.
+	if err := tracker.RecordProof(nil); err == nil {
+		t.Fatal("nil proof should fail")
+	}
+}
+
+func TestCustodyProofTrackerPrune(t *testing.T) {
+	tracker := NewCustodyProofTracker()
+	nodeID := [32]byte{0x01}
+
+	// Record proofs for multiple epochs.
+	for epoch := uint64(1); epoch <= 10; epoch++ {
+		proof := GenerateCustodyProof(nodeID, epoch, []uint64{0}, []byte("data"))
+		tracker.RecordProof(proof)
+	}
+
+	// Prune epochs < 5.
+	pruned := tracker.PruneEpoch(5)
+	if pruned != 4 {
+		t.Errorf("pruned = %d, want 4", pruned)
+	}
+
+	// Epoch 4 should no longer be seen.
+	if tracker.HasSeen(nodeID, 4, 0) {
+		t.Fatal("epoch 4 should have been pruned")
+	}
+
+	// Epoch 5 should still be seen.
+	if !tracker.HasSeen(nodeID, 5, 0) {
+		t.Fatal("epoch 5 should still be present")
+	}
+}
+
+func TestDeadlineEdgeCases(t *testing.T) {
+	// Deadline at slot 0: any current slot >= 0 fails.
+	challenge, _ := CreateChallenge(types.Address{0x01}, types.Address{0x02}, 10, 5, 0)
+	if err := ValidateChallengeDeadline(challenge, 0); err == nil {
+		t.Fatal("deadline 0, current 0 should fail")
+	}
+
+	// Deadline at slot 1: current slot 0 should pass.
+	challenge2, _ := CreateChallenge(types.Address{0x01}, types.Address{0x02}, 10, 5, 1)
+	if err := ValidateChallengeDeadline(challenge2, 0); err != nil {
+		t.Fatalf("deadline 1, current 0 should pass: %v", err)
+	}
+}
+
 func TestChallengeIDDeterministic(t *testing.T) {
 	challenger := types.Address{0x01}
 	target := types.Address{0x02}

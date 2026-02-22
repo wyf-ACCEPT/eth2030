@@ -1,7 +1,16 @@
 package consensus
 
 import (
+	"errors"
+	"fmt"
 	"time"
+)
+
+// Quick slots validation errors.
+var (
+	ErrQuickSlotDurationZero       = errors.New("quick_slots: SlotDuration must be > 0")
+	ErrQuickSlotSlotsPerEpoch      = errors.New("quick_slots: SlotsPerEpoch must be > 0")
+	ErrQuickSlotBackwardTransition = errors.New("quick_slots: slot cannot go backwards")
 )
 
 // Quick Slots implements the K+ upgrade (2028) with 4-slot epochs and
@@ -40,14 +49,50 @@ type QuickSlotScheduler struct {
 }
 
 // NewQuickSlotScheduler creates a scheduler with the given config and genesis time.
+// If config is nil, defaults are used. If SlotDuration or SlotsPerEpoch are
+// invalid (zero), defaults are applied to ensure safe operation.
 func NewQuickSlotScheduler(config *QuickSlotConfig, genesisTime time.Time) *QuickSlotScheduler {
 	if config == nil {
 		config = DefaultQuickSlotConfig()
+	}
+	if config.SlotDuration <= 0 {
+		config.SlotDuration = DefaultQuickSlotConfig().SlotDuration
+	}
+	if config.SlotsPerEpoch == 0 {
+		config.SlotsPerEpoch = DefaultQuickSlotConfig().SlotsPerEpoch
 	}
 	return &QuickSlotScheduler{
 		config:      config,
 		genesisTime: genesisTime,
 	}
+}
+
+// ValidateConfig validates a QuickSlotConfig for correctness.
+func ValidateConfig(config *QuickSlotConfig) error {
+	if config == nil {
+		return fmt.Errorf("quick_slots: config is nil")
+	}
+	if config.SlotDuration <= 0 {
+		return ErrQuickSlotDurationZero
+	}
+	if config.SlotsPerEpoch == 0 {
+		return ErrQuickSlotSlotsPerEpoch
+	}
+	return nil
+}
+
+// IsSlotInEpoch returns true if the given slot belongs to the specified epoch.
+func (s *QuickSlotScheduler) IsSlotInEpoch(slot, epoch uint64) bool {
+	return s.SlotToEpoch(slot) == epoch
+}
+
+// ValidateSlotTransition checks that a slot transition is valid: the next slot
+// must not go backwards relative to the previous slot.
+func (s *QuickSlotScheduler) ValidateSlotTransition(prevSlot, nextSlot uint64) error {
+	if nextSlot < prevSlot {
+		return fmt.Errorf("%w: prev=%d, next=%d", ErrQuickSlotBackwardTransition, prevSlot, nextSlot)
+	}
+	return nil
 }
 
 // CurrentSlot returns the current slot based on the wall clock.

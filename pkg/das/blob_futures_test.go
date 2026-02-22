@@ -388,6 +388,97 @@ func TestBlobFuturesConcurrency(t *testing.T) {
 	wg.Wait()
 }
 
+func TestSettleBlobFutureMatch(t *testing.T) {
+	m := newTestMarket()
+	committed := types.Hash{0x42, 0x43}
+	price := big.NewInt(1_000_000_000)
+
+	f, _ := m.CreateFuture(200, 0, committed, 250, price, types.Address{0xAA}, types.Address{0xBB})
+
+	payout, winner, err := m.SettleBlobFuture(f.ID, committed)
+	if err != nil {
+		t.Fatalf("SettleBlobFuture: %v", err)
+	}
+	if winner != "buyer" {
+		t.Errorf("winner = %s, want buyer", winner)
+	}
+	expected := new(big.Int).Mul(price, big.NewInt(2))
+	if payout.Cmp(expected) != 0 {
+		t.Errorf("payout = %v, want %v", payout, expected)
+	}
+}
+
+func TestSettleBlobFutureMismatch(t *testing.T) {
+	m := newTestMarket()
+	committed := types.Hash{0x42}
+	actual := types.Hash{0xFF}
+	price := big.NewInt(1_000_000_000)
+
+	f, _ := m.CreateFuture(200, 0, committed, 250, price, types.Address{0xAA}, types.Address{0xBB})
+
+	payout, winner, err := m.SettleBlobFuture(f.ID, actual)
+	if err != nil {
+		t.Fatalf("SettleBlobFuture: %v", err)
+	}
+	if winner != "seller" {
+		t.Errorf("winner = %s, want seller", winner)
+	}
+	if payout.Sign() != 0 {
+		t.Errorf("payout = %v, want 0", payout)
+	}
+}
+
+func TestSettleBlobFutureNotFound(t *testing.T) {
+	m := newTestMarket()
+	_, _, err := m.SettleBlobFuture(types.Hash{0xFF}, types.Hash{})
+	if err != ErrBlobFutureNotFound {
+		t.Fatalf("expected ErrBlobFutureNotFound, got %v", err)
+	}
+}
+
+func TestExpireOldFutures(t *testing.T) {
+	m := newTestMarket()
+
+	m.CreateFuture(150, 0, types.Hash{0x01}, 200, big.NewInt(100), types.Address{0x01}, types.Address{0x02})
+	m.CreateFuture(200, 1, types.Hash{0x02}, 250, big.NewInt(200), types.Address{0x03}, types.Address{0x04})
+	m.CreateFuture(300, 2, types.Hash{0x03}, 350, big.NewInt(300), types.Address{0x05}, types.Address{0x06})
+
+	// Expire up to slot 250 -> futures at 200 and 250 expired.
+	count, ids := m.ExpireOldFutures(250)
+	if count != 2 {
+		t.Errorf("expired = %d, want 2", count)
+	}
+	if len(ids) != 2 {
+		t.Errorf("expired IDs len = %d, want 2", len(ids))
+	}
+	if m.ActiveFutureCount() != 1 {
+		t.Errorf("ActiveFutureCount = %d, want 1", m.ActiveFutureCount())
+	}
+
+	// Expire remaining.
+	count, ids = m.ExpireOldFutures(400)
+	if count != 1 {
+		t.Errorf("expired = %d, want 1", count)
+	}
+	if len(ids) != 1 {
+		t.Errorf("expired IDs len = %d, want 1", len(ids))
+	}
+	if m.ActiveFutureCount() != 0 {
+		t.Errorf("ActiveFutureCount = %d, want 0", m.ActiveFutureCount())
+	}
+}
+
+func TestExpireOldFuturesNoActiveToExpire(t *testing.T) {
+	m := newTestMarket()
+	count, ids := m.ExpireOldFutures(500)
+	if count != 0 {
+		t.Errorf("empty market: expired = %d, want 0", count)
+	}
+	if len(ids) != 0 {
+		t.Errorf("empty market: expired IDs len = %d, want 0", len(ids))
+	}
+}
+
 func TestBlobFuturesPriceIsolation(t *testing.T) {
 	m := newTestMarket()
 	price := big.NewInt(1000)

@@ -7,7 +7,7 @@ from anyone and are grateful for even the smallest improvements.
 
 ```bash
 # Clone the repository
-git clone https://github.com/alt-research/eth2030.git
+git clone https://github.com/jiayaoqijia/eth2030.git
 cd eth2030
 
 # Build all packages

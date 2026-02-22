@@ -280,6 +280,54 @@ func (m *BlobFuturesMarket) CancelFuture(id types.Hash) error {
 	return nil
 }
 
+// SettleBlobFuture is a convenience function that settles an active future by
+// comparing the committed hash to the actual blob hash. Returns the payout
+// amount and the winner ("buyer" for match, "seller" for mismatch).
+func (m *BlobFuturesMarket) SettleBlobFuture(futureID types.Hash, actualHash types.Hash) (*big.Int, string, error) {
+	payout, err := m.SettleFuture(futureID, actualHash)
+	if err != nil {
+		return nil, "", err
+	}
+	winner := "seller"
+	if payout.Sign() > 0 {
+		winner = "buyer"
+	}
+	return payout, winner, nil
+}
+
+// ExpireOldFutures is a cleanup function that expires all futures at or before
+// the given currentSlot and removes them from the expiry index. Returns the
+// number of expired futures and the list of expired IDs.
+func (m *BlobFuturesMarket) ExpireOldFutures(currentSlot uint64) (int, []types.Hash) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.currentSlot = currentSlot
+	expired := 0
+	var expiredIDs []types.Hash
+
+	for slot, ids := range m.byExpiry {
+		if slot > currentSlot {
+			continue
+		}
+		for _, id := range ids {
+			f, ok := m.futures[id]
+			if !ok {
+				continue
+			}
+			if f.Status == FutureActive {
+				f.Status = FutureExpired
+				f.Payout = new(big.Int)
+				expired++
+				expiredIDs = append(expiredIDs, id)
+			}
+		}
+		delete(m.byExpiry, slot)
+	}
+
+	return expired, expiredIDs
+}
+
 // FutureCount returns total number of futures (all statuses).
 func (m *BlobFuturesMarket) FutureCount() int {
 	m.mu.RLock()

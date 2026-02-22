@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"math/bits"
 
@@ -33,6 +34,8 @@ var (
 	ErrNTTTooLarge      = errors.New("ntt: exceeds maximum degree")
 	ErrNTTInvalidOpType = errors.New("ntt: invalid operation type")
 	ErrNTTNoRootOfUnity = errors.New("ntt: no root of unity for given size")
+	ErrNTTZeroModulus   = errors.New("ntt: modulus must be non-zero")
+	ErrNTTOutputRange   = errors.New("ntt: output element out of field range")
 )
 
 type nttPrecompile struct{}
@@ -42,7 +45,7 @@ func (c *nttPrecompile) RequiredGas(input []byte) uint64 {
 		return 0
 	}
 	nBytes := len(input) - 1
-	n := nBytes / 32
+	n := uint64(nBytes / 32)
 	if n == 0 {
 		return NTTBaseCost
 	}
@@ -51,7 +54,20 @@ func (c *nttPrecompile) RequiredGas(input []byte) uint64 {
 	if log2n == 0 {
 		log2n = 1
 	}
-	return NTTBaseCost + uint64(n)*log2n*NTTPerElementCost
+	// Overflow check: compute n * log2n first, then multiply by perElement.
+	product := n * log2n
+	if n != 0 && product/n != log2n {
+		return ^uint64(0) // return max gas on overflow
+	}
+	gasAdditional := product * NTTPerElementCost
+	if product != 0 && gasAdditional/product != NTTPerElementCost {
+		return ^uint64(0)
+	}
+	total := NTTBaseCost + gasAdditional
+	if total < NTTBaseCost {
+		return ^uint64(0)
+	}
+	return total
 }
 
 func (c *nttPrecompile) Run(input []byte) ([]byte, error) {
@@ -100,6 +116,13 @@ func (c *nttPrecompile) Run(input []byte) ([]byte, error) {
 		result = nttInverse(coeffs, omega, bn254ScalarField)
 	}
 
+	// Validate output field elements are within the BN254 scalar field.
+	for i, val := range result {
+		if val.Sign() < 0 || val.Cmp(bn254ScalarField) >= 0 {
+			return nil, fmt.Errorf("%w: element %d = %s", ErrNTTOutputRange, i, val.String())
+		}
+	}
+
 	// Encode output: n * 32-byte big-endian values.
 	out := make([]byte, n*32)
 	for i, val := range result {
@@ -113,6 +136,9 @@ func (c *nttPrecompile) Run(input []byte) ([]byte, error) {
 // For BN254 scalar field, p-1 = 2^28 * m, so we can support up to n = 2^28.
 // omega = g^((p-1)/n) where g is a primitive root.
 func findRootOfUnity(n int, p *big.Int) (*big.Int, error) {
+	if p == nil || p.Sign() == 0 {
+		return nil, ErrNTTZeroModulus
+	}
 	if n <= 0 || n&(n-1) != 0 {
 		return nil, ErrNTTNotPowerOfTwo
 	}

@@ -415,6 +415,77 @@ func TestEncodeDecodeAnnounceNonce_LargeNonce(t *testing.T) {
 	}
 }
 
+func TestValidateAnnouncedNonce(t *testing.T) {
+	tracker := NewNonceTracker()
+	sender := types.Address{0x01}
+	hash := types.Hash{0xAA}
+
+	tracker.Announce(sender, 5, hash)
+
+	// Valid: correct sender, nonce, hash.
+	if err := ValidateAnnouncedNonce(tracker, sender, 5, hash); err != nil {
+		t.Fatalf("valid nonce rejected: %v", err)
+	}
+
+	// Wrong hash.
+	wrongHash := types.Hash{0xBB}
+	if err := ValidateAnnouncedNonce(tracker, sender, 5, wrongHash); err == nil {
+		t.Fatal("wrong hash should fail")
+	}
+
+	// Wrong nonce.
+	if err := ValidateAnnouncedNonce(tracker, sender, 6, hash); err == nil {
+		t.Fatal("wrong nonce should fail")
+	}
+
+	// Unknown sender.
+	if err := ValidateAnnouncedNonce(tracker, types.Address{0xFF}, 5, hash); err == nil {
+		t.Fatal("unknown sender should fail")
+	}
+
+	// Nil tracker.
+	if err := ValidateAnnouncedNonce(nil, sender, 5, hash); err == nil {
+		t.Fatal("nil tracker should fail")
+	}
+}
+
+func TestProcessAnnounceMsg(t *testing.T) {
+	tracker := NewNonceTracker()
+	msg := &AnnounceNonceMsg{
+		Types:   []byte{0x02, 0x02},
+		Sizes:   []uint32{100, 200},
+		Hashes:  []types.Hash{{0x01}, {0x02}},
+		Sources: []types.Address{{0xAA}, {0xBB}},
+		Nonces:  []uint64{0, 1},
+	}
+
+	newCount, err := ProcessAnnounceMsg(tracker, msg)
+	if err != nil {
+		t.Fatalf("ProcessAnnounceMsg: %v", err)
+	}
+	if newCount != 2 {
+		t.Errorf("newCount = %d, want 2", newCount)
+	}
+	if tracker.Len() != 2 {
+		t.Errorf("tracker.Len() = %d, want 2", tracker.Len())
+	}
+
+	// Process again: all duplicates.
+	newCount, err = ProcessAnnounceMsg(tracker, msg)
+	if err != nil {
+		t.Fatalf("ProcessAnnounceMsg: %v", err)
+	}
+	if newCount != 0 {
+		t.Errorf("duplicate processing: newCount = %d, want 0", newCount)
+	}
+
+	// Nil tracker.
+	_, err = ProcessAnnounceMsg(nil, msg)
+	if err == nil {
+		t.Fatal("nil tracker should fail")
+	}
+}
+
 func TestNonceTracker_RBFTracking(t *testing.T) {
 	nt := NewNonceTracker()
 	sender := types.Address{0x01}

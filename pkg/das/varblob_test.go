@@ -290,6 +290,98 @@ func TestDecodeVarBlobErrors(t *testing.T) {
 	}
 }
 
+func TestValidatePaddingProofKnownLen(t *testing.T) {
+	data := []byte("hello world padding test")
+	vb, err := NewVarBlob(data, 128)
+	if err != nil {
+		t.Fatalf("NewVarBlob: %v", err)
+	}
+
+	// Valid padding with known data length.
+	if err := ValidatePaddingProof(vb, len(data)); err != nil {
+		t.Fatalf("valid padding rejected: %v", err)
+	}
+
+	// Tamper with padding.
+	vb.Data[len(data)+1] = 0xFF
+	if err := ValidatePaddingProof(vb, len(data)); err == nil {
+		t.Fatal("tampered padding should be rejected")
+	}
+}
+
+func TestValidatePaddingProofNoLen(t *testing.T) {
+	data := make([]byte, 200)
+	for i := range data {
+		data[i] = byte(i%255 + 1) // all nonzero
+	}
+	vb, err := NewVarBlob(data, 128)
+	if err != nil {
+		t.Fatalf("NewVarBlob: %v", err)
+	}
+
+	// With no known length, structural check should pass.
+	if err := ValidatePaddingProof(vb, 0); err != nil {
+		t.Fatalf("structural check failed: %v", err)
+	}
+}
+
+func TestValidatePaddingProofNil(t *testing.T) {
+	if err := ValidatePaddingProof(nil, 0); err == nil {
+		t.Fatal("nil blob should fail")
+	}
+}
+
+func TestVarBlobCrossValidation(t *testing.T) {
+	// Create blobs via both APIs and verify they produce consistent results
+	// for the same input data.
+	data := make([]byte, 2000)
+	for i := range data {
+		data[i] = byte(i % 256)
+	}
+
+	// Create via varblob API.
+	vb, err := NewVarBlob(data, 128)
+	if err != nil {
+		t.Fatalf("NewVarBlob: %v", err)
+	}
+
+	// Validate via variable_blobs API: blob size should be valid.
+	schedule := BlobSchedule{
+		{Timestamp: 0, Config: BlobConfig{
+			MinBlobsPerBlock: 0, MaxBlobsPerBlock: 6, TargetBlobsPerBlock: 3,
+			BlobSize: MaxBlobSizeBytes,
+		}},
+	}
+	if err := ValidateVariableBlobSize(schedule, 0, uint64(len(vb.Data))); err != nil {
+		t.Fatalf("padded blob size should be valid: %v", err)
+	}
+
+	// Verify the original data size is also valid.
+	if err := ValidateVariableBlobSize(schedule, 0, uint64(len(data))); err != nil {
+		t.Fatalf("original data size should be valid: %v", err)
+	}
+
+	// Verify encoding/decoding roundtrips correctly.
+	encoded := vb.Encode()
+	decoded, err := DecodeVarBlob(encoded)
+	if err != nil {
+		t.Fatalf("DecodeVarBlob: %v", err)
+	}
+	if decoded.NumChunks != vb.NumChunks {
+		t.Errorf("NumChunks mismatch: %d vs %d", decoded.NumChunks, vb.NumChunks)
+	}
+	if decoded.ChunkSize != vb.ChunkSize {
+		t.Errorf("ChunkSize mismatch: %d vs %d", decoded.ChunkSize, vb.ChunkSize)
+	}
+
+	// Gas estimation should be consistent with the chunk count.
+	gas := EstimateVarBlobGas(len(data), vb.ChunkSize)
+	expectedGas := uint64(varBlobBaseGas + varBlobPerChunkGas*uint64(vb.NumChunks))
+	if gas != expectedGas {
+		t.Errorf("gas mismatch: %d vs %d", gas, expectedGas)
+	}
+}
+
 func TestVarBlobConfig(t *testing.T) {
 	cfg := DefaultVarBlobConfig()
 

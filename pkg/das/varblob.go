@@ -149,6 +149,70 @@ type VarBlobTx struct {
 	Data  []byte
 }
 
+// ValidatePaddingProof verifies that the padding bytes (the region between the
+// original data length and the padded blob end) are all zero. The original data
+// length is inferred from the stored BlobHash: the hash is over the original
+// (unpadded) data, so we search for the longest prefix whose keccak256 matches.
+// If dataLen is known, callers can pass it directly; otherwise pass 0 to skip
+// the hash check and only verify trailing zeros after the first zero-run.
+func ValidatePaddingProof(vb *VarBlob, dataLen int) error {
+	if vb == nil {
+		return ErrVarBlobEmptyData
+	}
+	if dataLen < 0 {
+		dataLen = 0
+	}
+	// If dataLen is explicitly provided, check that all bytes from dataLen
+	// to the end of the padded blob are zero.
+	if dataLen > 0 {
+		if dataLen > len(vb.Data) {
+			return fmt.Errorf("das: dataLen %d exceeds blob data length %d", dataLen, len(vb.Data))
+		}
+		for i := dataLen; i < len(vb.Data); i++ {
+			if vb.Data[i] != 0 {
+				return fmt.Errorf("das: non-zero padding byte at index %d (value 0x%02x)", i, vb.Data[i])
+			}
+		}
+		// Verify the hash matches the original data prefix.
+		expectedHash := crypto.Keccak256Hash(vb.Data[:dataLen])
+		if expectedHash != vb.BlobHash {
+			return fmt.Errorf("das: blob hash mismatch: computed %x, stored %x", expectedHash, vb.BlobHash)
+		}
+		return nil
+	}
+
+	// Without a known dataLen, verify structural consistency: once we hit a
+	// zero byte that starts a zero-only suffix at a chunk boundary, all
+	// remaining bytes must be zero.
+	chunkSize := vb.ChunkSize
+	if chunkSize <= 0 {
+		chunkSize = 1
+	}
+	for i := 0; i < len(vb.Data); i += chunkSize {
+		end := i + chunkSize
+		if end > len(vb.Data) {
+			end = len(vb.Data)
+		}
+		allZero := true
+		for j := i; j < end; j++ {
+			if vb.Data[j] != 0 {
+				allZero = false
+				break
+			}
+		}
+		if allZero {
+			// All subsequent bytes must also be zero.
+			for j := end; j < len(vb.Data); j++ {
+				if vb.Data[j] != 0 {
+					return fmt.Errorf("das: non-zero byte at index %d after zero chunk at offset %d", j, i)
+				}
+			}
+			break
+		}
+	}
+	return nil
+}
+
 // Gas cost constants for variable blob transactions.
 const (
 	// varBlobBaseGas is the base gas for submitting a variable-size blob.

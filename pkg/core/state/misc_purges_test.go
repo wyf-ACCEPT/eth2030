@@ -463,6 +463,169 @@ func TestCreatePurgeableState(t *testing.T) {
 	}
 }
 
+func TestVerifyPurgeEligibility_Empty(t *testing.T) {
+	db := createPurgeableState(3, 0, 0)
+	config := DefaultPurgeConfig()
+
+	addr := makeTestAddr(0x01, 0) // empty account
+	elig := VerifyPurgeEligibility(db, addr, config)
+
+	if !elig.Eligible {
+		t.Fatal("empty account should be eligible for purging")
+	}
+	if !elig.IsEmpty {
+		t.Fatal("empty account should be flagged as empty")
+	}
+	if elig.HasBalance || elig.HasNonce || elig.HasCode {
+		t.Fatal("empty account should have no balance, nonce, or code")
+	}
+}
+
+func TestVerifyPurgeEligibility_NonEmpty(t *testing.T) {
+	db := createPurgeableState(0, 0, 3)
+	config := DefaultPurgeConfig()
+
+	addr := makeTestAddr(0x03, 0) // account with storage, nonce, balance
+	elig := VerifyPurgeEligibility(db, addr, config)
+
+	if elig.Eligible {
+		t.Fatal("non-empty account should not be eligible for purging")
+	}
+	if elig.IsEmpty {
+		t.Fatal("non-empty account should not be flagged as empty")
+	}
+	if !elig.HasBalance {
+		t.Fatal("account should have balance")
+	}
+	if !elig.HasNonce {
+		t.Fatal("account should have nonce")
+	}
+}
+
+func TestVerifyPurgeEligibility_SelfDestructed(t *testing.T) {
+	db := createPurgeableState(0, 2, 0)
+	config := DefaultPurgeConfig()
+
+	addr := makeTestAddr(0x02, 0) // self-destructed account
+	elig := VerifyPurgeEligibility(db, addr, config)
+
+	if !elig.Eligible {
+		t.Fatal("self-destructed account should be eligible for purging")
+	}
+	if !elig.IsSelfDestructed {
+		t.Fatal("should be flagged as self-destructed")
+	}
+}
+
+func TestVerifyPurgeEligibility_Preserved(t *testing.T) {
+	db := createPurgeableState(3, 0, 0)
+	addr := makeTestAddr(0x01, 0)
+
+	config := DefaultPurgeConfig()
+	config.PreserveAddresses = map[types.Address]bool{addr: true}
+
+	elig := VerifyPurgeEligibility(db, addr, config)
+
+	if elig.Eligible {
+		t.Fatal("preserved address should not be eligible for purging")
+	}
+	if !elig.IsPreserved {
+		t.Fatal("should be flagged as preserved")
+	}
+}
+
+func TestVerifyPurgeEligibility_NonExistent(t *testing.T) {
+	db := NewMemoryStateDB()
+	config := DefaultPurgeConfig()
+
+	addr := makeTestAddr(0xFF, 0) // does not exist
+	elig := VerifyPurgeEligibility(db, addr, config)
+
+	if elig.Eligible {
+		t.Fatal("non-existent account should not be eligible")
+	}
+}
+
+func TestValidatePreserveAddresses(t *testing.T) {
+	db := createPurgeableState(3, 0, 0)
+
+	addr1 := makeTestAddr(0x01, 0)  // exists
+	addr2 := makeTestAddr(0xFF, 99) // does not exist
+
+	config := DefaultPurgeConfig()
+	config.PreserveAddresses = map[types.Address]bool{
+		addr1: true,
+		addr2: true,
+	}
+
+	missing := ValidatePreserveAddresses(db, config)
+
+	if len(missing) != 1 {
+		t.Fatalf("expected 1 missing preserved address, got %d", len(missing))
+	}
+	if missing[0] != addr2 {
+		t.Fatalf("expected missing address %s, got %s", addr2.Hex(), missing[0].Hex())
+	}
+}
+
+func TestValidatePreserveAddresses_AllExist(t *testing.T) {
+	db := createPurgeableState(3, 0, 0)
+	addr := makeTestAddr(0x01, 0)
+
+	config := DefaultPurgeConfig()
+	config.PreserveAddresses = map[types.Address]bool{addr: true}
+
+	missing := ValidatePreserveAddresses(db, config)
+	if len(missing) != 0 {
+		t.Fatalf("expected no missing addresses, got %d", len(missing))
+	}
+}
+
+func TestFullPurge_DetailedStats(t *testing.T) {
+	db := createPurgeableState(3, 2, 4)
+
+	config := DefaultPurgeConfig()
+	purger := NewStatePurger(config)
+
+	stats, err := purger.FullPurge(db, 10)
+	if err != nil {
+		t.Fatalf("full purge error: %v", err)
+	}
+
+	// Empty accounts have zero balance, zero nonce, and empty code hash.
+	if stats.ZeroBalancePurged != 3 {
+		t.Errorf("ZeroBalancePurged: got %d, want 3", stats.ZeroBalancePurged)
+	}
+	if stats.ZeroNoncePurged != 3 {
+		t.Errorf("ZeroNoncePurged: got %d, want 3", stats.ZeroNoncePurged)
+	}
+	if stats.EmptyCodeHashPurged != 3 {
+		t.Errorf("EmptyCodeHashPurged: got %d, want 3", stats.EmptyCodeHashPurged)
+	}
+}
+
+func TestFullPurge_PreservedCount(t *testing.T) {
+	db := createPurgeableState(3, 0, 2)
+	preserveAddr := makeTestAddr(0x01, 0)
+
+	config := DefaultPurgeConfig()
+	config.PreserveAddresses = map[types.Address]bool{preserveAddr: true}
+	purger := NewStatePurger(config)
+
+	stats, err := purger.FullPurge(db, 10)
+	if err != nil {
+		t.Fatalf("full purge error: %v", err)
+	}
+
+	if stats.PreservedCount != 1 {
+		t.Errorf("PreservedCount: got %d, want 1", stats.PreservedCount)
+	}
+	// 3 empty accounts minus 1 preserved = 2 purged.
+	if stats.EmptyAccountsPurged != 2 {
+		t.Errorf("EmptyAccountsPurged: got %d, want 2", stats.EmptyAccountsPurged)
+	}
+}
+
 func TestStatePurger_SetConfig(t *testing.T) {
 	config := DefaultPurgeConfig()
 	purger := NewStatePurger(config)

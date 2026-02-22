@@ -356,10 +356,52 @@ func (nt *NonceTracker) Len() int {
 	return total
 }
 
+// ValidateAnnouncedNonce checks whether the nonce announced for a given block
+// hash is consistent with the tracker. It looks up the announced nonce for the
+// sender and verifies it matches the expected nonce. Returns nil if valid.
+func ValidateAnnouncedNonce(tracker *NonceTracker, sender types.Address, expectedNonce uint64, txHash types.Hash) error {
+	if tracker == nil {
+		return ErrNonceTrackerNil
+	}
+	pending := tracker.GetPending(sender)
+	if pending == nil {
+		return ErrNonceNotTracked
+	}
+	storedHash, ok := pending[expectedNonce]
+	if !ok {
+		return fmt.Errorf("%w: sender %x nonce %d", ErrNonceNotTracked, sender, expectedNonce)
+	}
+	if storedHash != txHash {
+		return fmt.Errorf("%w: expected tx %x, got %x", ErrNonceHashMismatch, storedHash, txHash)
+	}
+	return nil
+}
+
+// ProcessAnnounceMsg processes an AnnounceNonceMsg and records all entries
+// into the given NonceTracker. Returns the number of new announcements recorded.
+func ProcessAnnounceMsg(tracker *NonceTracker, msg *AnnounceNonceMsg) (int, error) {
+	if tracker == nil {
+		return 0, ErrNonceTrackerNil
+	}
+	if err := msg.Validate(); err != nil {
+		return 0, err
+	}
+	newCount := 0
+	for i := range msg.Hashes {
+		if tracker.Announce(msg.Sources[i], msg.Nonces[i], msg.Hashes[i]) {
+			newCount++
+		}
+	}
+	return newCount, nil
+}
+
 // Errors for announce nonce.
 var (
 	ErrTooManyAnnouncements   = fmt.Errorf("eth: too many announcements (max %d)", MaxAnnouncements)
 	ErrAnnounceLengthMismatch = fmt.Errorf("eth: announce field length mismatch")
 	ErrInvalidHashLength      = fmt.Errorf("eth: invalid hash length in announcement")
 	ErrInvalidAddressLength   = fmt.Errorf("eth: invalid address length in announcement")
+	ErrNonceTrackerNil        = fmt.Errorf("eth: nonce tracker is nil")
+	ErrNonceNotTracked        = fmt.Errorf("eth: nonce not tracked for sender")
+	ErrNonceHashMismatch      = fmt.Errorf("eth: nonce hash mismatch")
 )

@@ -300,6 +300,124 @@ func TestCellMessageRouter_HandlerCount(t *testing.T) {
 	}
 }
 
+func TestCellMessageHandlerStruct_HandleValid(t *testing.T) {
+	h := NewCellMessageHandlerStruct()
+	var received []*CellMessageEntry
+	h.OnValid = func(entry *CellMessageEntry) {
+		received = append(received, entry)
+	}
+
+	msg := makeValidCellMsg(10, 5, 2)
+	if err := h.HandleCellMessage(msg); err != nil {
+		t.Fatalf("HandleCellMessage: %v", err)
+	}
+	if len(received) != 1 {
+		t.Fatalf("expected 1 received, got %d", len(received))
+	}
+	if received[0].CellIndex != 10 {
+		t.Errorf("CellIndex = %d, want 10", received[0].CellIndex)
+	}
+}
+
+func TestCellMessageHandlerStruct_HandleInvalid(t *testing.T) {
+	h := NewCellMessageHandlerStruct()
+
+	tests := []struct {
+		name    string
+		entry   *CellMessageEntry
+		wantErr error
+	}{
+		{"nil", nil, ErrCellMsgNil},
+		{"cell index out of range", &CellMessageEntry{
+			CellIndex: uint16(CellsPerExtBlob), ColumnIndex: 0, RowIndex: 0, Data: []byte{1},
+		}, ErrCellMsgCellIndex},
+		{"column index out of range", &CellMessageEntry{
+			CellIndex: 0, ColumnIndex: uint16(NumberOfColumns), RowIndex: 0, Data: []byte{1},
+		}, ErrCellMsgColumnIndex},
+		{"row index out of range", &CellMessageEntry{
+			CellIndex: 0, ColumnIndex: 0, RowIndex: uint16(MaxBlobCommitmentsPerBlock), Data: []byte{1},
+		}, ErrCellMsgRowIndex},
+		{"empty data", &CellMessageEntry{
+			CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: nil,
+		}, ErrCellMsgDataEmpty},
+		{"data too large", &CellMessageEntry{
+			CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: make([]byte, MaxCellDataSize+1),
+		}, ErrCellMsgDataTooLarge},
+		{"proof too large", &CellMessageEntry{
+			CellIndex: 0, ColumnIndex: 0, RowIndex: 0, Data: []byte{1}, Proof: make([]byte, MaxCellProofSize+1),
+		}, ErrCellMsgProofTooLarge},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := h.HandleCellMessage(tt.entry)
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("got %v, want %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCellMessageHandlerStruct_ProcessCellBatch(t *testing.T) {
+	h := NewCellMessageHandlerStruct()
+	var validCount int
+	h.OnValid = func(entry *CellMessageEntry) {
+		validCount++
+	}
+
+	entries := []*CellMessageEntry{
+		makeValidCellMsg(0, 0, 0), // valid
+		makeValidCellMsg(5, 3, 1), // valid
+		nil,                       // invalid: nil
+		{CellIndex: uint16(CellsPerExtBlob), Data: []byte{1}}, // invalid: cell index out of range
+		makeValidCellMsg(10, 7, 2),                            // valid
+	}
+
+	processed, errs := h.ProcessCellBatch(entries)
+	if processed != 3 {
+		t.Errorf("processed = %d, want 3", processed)
+	}
+	if len(errs) != 2 {
+		t.Errorf("errors = %d, want 2", len(errs))
+	}
+	if validCount != 3 {
+		t.Errorf("validCount = %d, want 3", validCount)
+	}
+}
+
+func TestCellMessageHandlerStruct_ProcessCellBatchAllValid(t *testing.T) {
+	h := NewCellMessageHandlerStruct()
+
+	entries := []*CellMessageEntry{
+		makeValidCellMsg(0, 0, 0),
+		makeValidCellMsg(1, 1, 0),
+		makeValidCellMsg(2, 2, 0),
+	}
+
+	processed, errs := h.ProcessCellBatch(entries)
+	if processed != 3 {
+		t.Errorf("processed = %d, want 3", processed)
+	}
+	if len(errs) != 0 {
+		t.Errorf("errors = %d, want 0", len(errs))
+	}
+}
+
+func TestCellMessageHandlerStruct_ProcessCellBatchEmpty(t *testing.T) {
+	h := NewCellMessageHandlerStruct()
+
+	processed, errs := h.ProcessCellBatch(nil)
+	if processed != 0 {
+		t.Errorf("processed = %d, want 0", processed)
+	}
+	if len(errs) != 0 {
+		t.Errorf("errors = %d, want 0", len(errs))
+	}
+}
+
 func TestCellMessageCodec_FullCellSize(t *testing.T) {
 	codec := NewCellMessageCodec()
 

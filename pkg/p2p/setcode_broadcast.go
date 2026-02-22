@@ -86,6 +86,8 @@ func (m *SetCodeMessage) DeduplicationKey() types.Hash {
 }
 
 // ValidateSetCodeAuth verifies the authorization signature and checks nonce.
+// It performs secp256k1 signature recovery and verifies the recovered signer
+// matches the claimed authority address.
 func ValidateSetCodeAuth(msg *SetCodeMessage) bool {
 	if msg == nil {
 		return false
@@ -104,7 +106,6 @@ func ValidateSetCodeAuth(msg *SetCodeMessage) bool {
 	}
 
 	// Verify signature is well-formed (r, s in valid range).
-	// secp256k1 order N (approximate check).
 	secp256k1N, _ := new(big.Int).SetString(
 		"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16,
 	)
@@ -118,7 +119,63 @@ func ValidateSetCodeAuth(msg *SetCodeMessage) bool {
 		return false
 	}
 
-	return true
+	// Compute the message hash: keccak256(authority || chainID || nonce || target).
+	msgHash := computeSetCodeMessageHash(msg)
+
+	// Build 65-byte signature [R(32) || S(32) || V(1)].
+	sig := make([]byte, 65)
+	rBytes := msg.R.Bytes()
+	sBytes := msg.S.Bytes()
+	copy(sig[32-len(rBytes):32], rBytes)
+	copy(sig[64-len(sBytes):64], sBytes)
+	sig[64] = byte(vVal)
+
+	// Recover the signer's public key.
+	pubkey, err := crypto.Ecrecover(msgHash[:], sig)
+	if err != nil {
+		return false
+	}
+
+	// Derive the address from the recovered public key.
+	if len(pubkey) < 65 {
+		return false
+	}
+	addrHash := crypto.Keccak256(pubkey[1:])
+	var recovered types.Address
+	copy(recovered[:], addrHash[12:])
+
+	// Verify the recovered signer matches the claimed authority.
+	return recovered == msg.Authority
+}
+
+// ValidateSetCodeAuthWithChainID verifies the authorization signature and also
+// checks that the message chain ID matches the local chain ID.
+func ValidateSetCodeAuthWithChainID(msg *SetCodeMessage, localChainID *big.Int) bool {
+	if msg == nil || localChainID == nil {
+		return false
+	}
+	if msg.ChainID == nil || msg.ChainID.Cmp(localChainID) != 0 {
+		return false
+	}
+	return ValidateSetCodeAuth(msg)
+}
+
+// computeSetCodeMessageHash computes keccak256(authority || chainID || nonce || target).
+func computeSetCodeMessageHash(msg *SetCodeMessage) types.Hash {
+	var buf []byte
+	buf = append(buf, msg.Authority[:]...)
+	if msg.ChainID != nil {
+		chainIDBytes := msg.ChainID.Bytes()
+		// Pad to 32 bytes for consistent hashing.
+		padded := make([]byte, 32)
+		copy(padded[32-len(chainIDBytes):], chainIDBytes)
+		buf = append(buf, padded...)
+	}
+	var nonceBuf [8]byte
+	binary.BigEndian.PutUint64(nonceBuf[:], msg.Nonce)
+	buf = append(buf, nonceBuf[:]...)
+	buf = append(buf, msg.Target[:]...)
+	return crypto.Keccak256Hash(buf)
 }
 
 // setCodeBloomFilter is a simple bloom filter for deduplication.
@@ -221,6 +278,11 @@ func (b *SetCodeBroadcaster) Submit(msg *SetCodeMessage) error {
 		return ErrSetCodeEmptyAuthority
 	}
 	if msg.ChainID == nil || msg.ChainID.Sign() < 0 {
+		return ErrSetCodeInvalidChainID
+	}
+
+	// Validate chain ID matches local chain.
+	if b.chainID != nil && msg.ChainID != nil && msg.ChainID.Cmp(b.chainID) != 0 {
 		return ErrSetCodeInvalidChainID
 	}
 

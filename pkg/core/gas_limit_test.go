@@ -252,3 +252,78 @@ func TestCalcGasLimit_SmallValues(t *testing.T) {
 		t.Errorf("small decreasing: got %d, want %d", result, MinGasLimit+100-expectedDelta)
 	}
 }
+
+func TestValidateGasLimitSchedule_Default(t *testing.T) {
+	if err := ValidateGasLimitSchedule(DefaultGasLimitSchedule); err != nil {
+		t.Fatalf("default schedule should be valid: %v", err)
+	}
+}
+
+func TestValidateGasLimitSchedule_Empty(t *testing.T) {
+	err := ValidateGasLimitSchedule(nil)
+	if err != ErrGasLimitScheduleEmpty {
+		t.Fatalf("expected ErrGasLimitScheduleEmpty, got %v", err)
+	}
+}
+
+func TestValidateGasLimitSchedule_NotMonotone(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 100, TargetGasLimit: 60_000_000},
+		{ActivationTime: 50, TargetGasLimit: 120_000_000},
+	}
+	err := ValidateGasLimitSchedule(schedule)
+	if err == nil {
+		t.Fatal("expected error for non-monotone activation times")
+	}
+}
+
+func TestValidateGasLimitSchedule_DuplicateTime(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 100, TargetGasLimit: 60_000_000},
+		{ActivationTime: 100, TargetGasLimit: 120_000_000},
+	}
+	err := ValidateGasLimitSchedule(schedule)
+	if err == nil {
+		t.Fatal("expected error for duplicate activation times")
+	}
+}
+
+func TestValidateGasLimitSchedule_JumpTooLarge(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 0, TargetGasLimit: 60_000_000},
+		{ActivationTime: 100, TargetGasLimit: 60_000_001 * 3}, // > 3x
+	}
+	err := ValidateGasLimitSchedule(schedule)
+	if err == nil {
+		t.Fatal("expected error for > 3x jump")
+	}
+}
+
+func TestValidateGasLimitSchedule_ExactlyThreeX(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 0, TargetGasLimit: 60_000_000},
+		{ActivationTime: 100, TargetGasLimit: 180_000_000}, // exactly 3x
+	}
+	if err := ValidateGasLimitSchedule(schedule); err != nil {
+		t.Fatalf("3x jump should be allowed: %v", err)
+	}
+}
+
+func TestValidateGasLimitSchedule_ExceedsGigagas(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 0, TargetGasLimit: MaxGigagas + 1},
+	}
+	err := ValidateGasLimitSchedule(schedule)
+	if err == nil {
+		t.Fatal("expected error for exceeding gigagas ceiling")
+	}
+}
+
+func TestValidateGasLimitSchedule_SingleEntry(t *testing.T) {
+	schedule := GasLimitSchedule{
+		{ActivationTime: 0, TargetGasLimit: 60_000_000},
+	}
+	if err := ValidateGasLimitSchedule(schedule); err != nil {
+		t.Fatalf("single entry should be valid: %v", err)
+	}
+}

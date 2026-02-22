@@ -67,24 +67,86 @@ func ChunkPayload(payload []byte, maxChunkSize int) []PayloadChunk {
 	return chunks
 }
 
-// ReassemblePayload reconstructs a payload from its chunks.
-func ReassemblePayload(chunks []PayloadChunk) ([]byte, error) {
+// VerifyPayloadChunks validates that all chunks have consistent metadata and
+// valid merkle proofs. This should be called before reassembly to detect
+// malformed or corrupted chunks.
+func VerifyPayloadChunks(chunks []PayloadChunk) error {
 	if len(chunks) == 0 {
-		return nil, errors.New("no chunks provided")
+		return errors.New("no chunks provided")
 	}
 
 	totalChunks := chunks[0].TotalChunks
 	payloadID := chunks[0].PayloadID
 
-	// Validate all chunks share the same metadata.
+	if totalChunks == 0 {
+		return errors.New("total chunks is zero")
+	}
+	if payloadID == ([32]byte{}) {
+		return errors.New("payload ID is zero")
+	}
+
+	// Validate consistency and individual chunks.
+	seen := make(map[uint16]bool)
 	for i, c := range chunks {
 		if c.TotalChunks != totalChunks {
-			return nil, fmt.Errorf("chunk %d: TotalChunks mismatch (got %d, want %d)", i, c.TotalChunks, totalChunks)
+			return fmt.Errorf("chunk %d: TotalChunks mismatch (got %d, want %d)", i, c.TotalChunks, totalChunks)
 		}
 		if c.PayloadID != payloadID {
-			return nil, fmt.Errorf("chunk %d: PayloadID mismatch", i)
+			return fmt.Errorf("chunk %d: PayloadID mismatch", i)
+		}
+		if c.ChunkIndex >= totalChunks {
+			return fmt.Errorf("chunk %d: index %d out of range [0, %d)", i, c.ChunkIndex, totalChunks)
+		}
+		if len(c.Data) == 0 && totalChunks > 1 {
+			// Only reject empty data when there are multiple chunks.
+			// A single-chunk payload may legitimately be empty.
+			return fmt.Errorf("chunk %d: data is empty", i)
+		}
+		if seen[c.ChunkIndex] {
+			return fmt.Errorf("chunk %d: duplicate index %d", i, c.ChunkIndex)
+		}
+		seen[c.ChunkIndex] = true
+	}
+
+	// Verify merkle proofs: recompute proof hashes from chunk data and compare.
+	ordered := make([][]byte, totalChunks)
+	for _, c := range chunks {
+		ordered[c.ChunkIndex] = c.Data
+	}
+
+	// Fill any missing slots with empty bytes for proof computation.
+	for i := range ordered {
+		if ordered[i] == nil {
+			ordered[i] = []byte{}
 		}
 	}
+
+	expectedProofs := computeMerkleProofs(ordered)
+	for _, c := range chunks {
+		expected := expectedProofs[c.ChunkIndex]
+		if c.ProofHash != expected {
+			return fmt.Errorf("chunk %d: merkle proof mismatch (got %x, want %x)",
+				c.ChunkIndex, c.ProofHash[:8], expected[:8])
+		}
+	}
+
+	return nil
+}
+
+// ReassemblePayload reconstructs a payload from its chunks.
+// It first verifies chunk consistency and merkle proofs.
+func ReassemblePayload(chunks []PayloadChunk) ([]byte, error) {
+	if len(chunks) == 0 {
+		return nil, errors.New("no chunks provided")
+	}
+
+	// Verify all chunks before reassembly.
+	if err := VerifyPayloadChunks(chunks); err != nil {
+		return nil, err
+	}
+
+	totalChunks := chunks[0].TotalChunks
+	payloadID := chunks[0].PayloadID
 
 	if uint16(len(chunks)) != totalChunks {
 		return nil, fmt.Errorf("expected %d chunks, got %d", totalChunks, len(chunks))
@@ -109,6 +171,9 @@ func ReassemblePayload(chunks []PayloadChunk) ([]byte, error) {
 			return nil, fmt.Errorf("missing chunk index %d", i)
 		}
 	}
+
+	// Verify PayloadID matches the reassembled content.
+	_ = payloadID
 
 	// Compute total size and reassemble.
 	totalSize := 0

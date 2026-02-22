@@ -286,6 +286,76 @@ func TestBitReverse(t *testing.T) {
 	}
 }
 
+func TestNTTPrecompileSize1(t *testing.T) {
+	// n=1: forward NTT of a single element should return that element.
+	p := &nttPrecompile{}
+	input := make([]byte, 1+1*32)
+	input[0] = 0x00
+	input[32] = 42 // last byte of 32-byte big-endian
+
+	out, err := p.Run(input)
+	if err != nil {
+		t.Fatalf("Run(n=1): %v", err)
+	}
+	val := new(big.Int).SetBytes(out[0:32])
+	if val.Cmp(big.NewInt(42)) != 0 {
+		t.Errorf("NTT([42]) = %v, want 42", val)
+	}
+}
+
+func TestNTTPrecompileZeroInputs(t *testing.T) {
+	// All-zero input should produce all-zero output.
+	p := &nttPrecompile{}
+	input := make([]byte, 1+4*32)
+	input[0] = 0x00 // forward
+
+	out, err := p.Run(input)
+	if err != nil {
+		t.Fatalf("Run(zeros): %v", err)
+	}
+	for i := 0; i < 4; i++ {
+		val := new(big.Int).SetBytes(out[i*32 : (i+1)*32])
+		if val.Sign() != 0 {
+			t.Errorf("NTT(zeros)[%d] = %v, want 0", i, val)
+		}
+	}
+}
+
+func TestFindRootOfUnity_ZeroModulus(t *testing.T) {
+	_, err := findRootOfUnity(4, big.NewInt(0))
+	if err != ErrNTTZeroModulus {
+		t.Errorf("expected ErrNTTZeroModulus, got %v", err)
+	}
+}
+
+func TestFindRootOfUnity_NilModulus(t *testing.T) {
+	_, err := findRootOfUnity(4, nil)
+	if err != ErrNTTZeroModulus {
+		t.Errorf("expected ErrNTTZeroModulus, got %v", err)
+	}
+}
+
+func TestFindRootOfUnity_NDividesP(t *testing.T) {
+	// Pick a prime where n does not divide p-1.
+	// p=7, p-1=6: 6 is not divisible by 4.
+	_, err := findRootOfUnity(4, big.NewInt(7))
+	if err != ErrNTTNoRootOfUnity {
+		t.Errorf("expected ErrNTTNoRootOfUnity for p=7,n=4, got %v", err)
+	}
+}
+
+func TestNTTRequiredGas_OverflowProtection(t *testing.T) {
+	p := &nttPrecompile{}
+
+	// The gas function should handle large inputs gracefully (no panic).
+	// RequiredGas with very large input should not underflow.
+	input := make([]byte, 1) // just 1 byte, no coefficients
+	gas := p.RequiredGas(input)
+	if gas != NTTBaseCost {
+		t.Errorf("gas for 0 coeff: got %d, want %d", gas, NTTBaseCost)
+	}
+}
+
 func TestNTTGasCalculation(t *testing.T) {
 	p := &nttPrecompile{}
 

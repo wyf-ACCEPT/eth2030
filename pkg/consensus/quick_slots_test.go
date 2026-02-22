@@ -370,6 +370,104 @@ func TestSchedulerNilConfig(t *testing.T) {
 	}
 }
 
+func TestValidateConfig(t *testing.T) {
+	// Valid config.
+	cfg := DefaultQuickSlotConfig()
+	if err := ValidateConfig(cfg); err != nil {
+		t.Fatalf("valid config rejected: %v", err)
+	}
+
+	// Nil config.
+	if err := ValidateConfig(nil); err == nil {
+		t.Fatal("nil config should fail validation")
+	}
+
+	// Zero slot duration.
+	bad := &QuickSlotConfig{SlotDuration: 0, SlotsPerEpoch: 4}
+	if err := ValidateConfig(bad); err != ErrQuickSlotDurationZero {
+		t.Fatalf("expected ErrQuickSlotDurationZero, got %v", err)
+	}
+
+	// Zero slots per epoch.
+	bad2 := &QuickSlotConfig{SlotDuration: 6 * time.Second, SlotsPerEpoch: 0}
+	if err := ValidateConfig(bad2); err != ErrQuickSlotSlotsPerEpoch {
+		t.Fatalf("expected ErrQuickSlotSlotsPerEpoch, got %v", err)
+	}
+}
+
+func TestNewQuickSlotSchedulerZeroDuration(t *testing.T) {
+	cfg := &QuickSlotConfig{SlotDuration: 0, SlotsPerEpoch: 4}
+	sched := NewQuickSlotScheduler(cfg, time.Now())
+	if sched.config.SlotDuration != 6*time.Second {
+		t.Errorf("zero SlotDuration should default to 6s, got %v", sched.config.SlotDuration)
+	}
+}
+
+func TestNewQuickSlotSchedulerZeroSlotsPerEpoch(t *testing.T) {
+	cfg := &QuickSlotConfig{SlotDuration: 6 * time.Second, SlotsPerEpoch: 0}
+	sched := NewQuickSlotScheduler(cfg, time.Now())
+	if sched.config.SlotsPerEpoch != 4 {
+		t.Errorf("zero SlotsPerEpoch should default to 4, got %d", sched.config.SlotsPerEpoch)
+	}
+}
+
+func TestIsSlotInEpoch(t *testing.T) {
+	cfg := DefaultQuickSlotConfig() // 4 slots per epoch
+	genesis := time.Now()
+	sched := NewQuickSlotScheduler(cfg, genesis)
+
+	tests := []struct {
+		slot  uint64
+		epoch uint64
+		want  bool
+	}{
+		{0, 0, true},
+		{1, 0, true},
+		{3, 0, true},
+		{4, 0, false},
+		{4, 1, true},
+		{7, 1, true},
+		{8, 2, true},
+		{8, 1, false},
+		{100, 25, true},
+		{100, 24, false},
+	}
+
+	for _, tt := range tests {
+		got := sched.IsSlotInEpoch(tt.slot, tt.epoch)
+		if got != tt.want {
+			t.Errorf("IsSlotInEpoch(%d, %d) = %v, want %v", tt.slot, tt.epoch, got, tt.want)
+		}
+	}
+}
+
+func TestValidateSlotTransition(t *testing.T) {
+	cfg := DefaultQuickSlotConfig()
+	genesis := time.Now()
+	sched := NewQuickSlotScheduler(cfg, genesis)
+
+	// Forward transition.
+	if err := sched.ValidateSlotTransition(5, 6); err != nil {
+		t.Fatalf("forward transition rejected: %v", err)
+	}
+
+	// Same slot (no change).
+	if err := sched.ValidateSlotTransition(5, 5); err != nil {
+		t.Fatalf("same slot rejected: %v", err)
+	}
+
+	// Backward transition.
+	err := sched.ValidateSlotTransition(10, 5)
+	if err == nil {
+		t.Fatal("backward transition should fail")
+	}
+
+	// Zero to zero.
+	if err := sched.ValidateSlotTransition(0, 0); err != nil {
+		t.Fatalf("0->0 rejected: %v", err)
+	}
+}
+
 func TestEpochRoundTrip(t *testing.T) {
 	cfg := DefaultQuickSlotConfig()
 	genesis := time.Now()

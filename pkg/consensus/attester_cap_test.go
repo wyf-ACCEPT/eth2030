@@ -164,6 +164,108 @@ func TestTotalCappedWeight(t *testing.T) {
 	}
 }
 
+func TestValidateAttesterCapConfig_Valid(t *testing.T) {
+	config := DefaultAttesterCapConfig()
+	if err := ValidateAttesterCapConfig(config); err != nil {
+		t.Fatalf("valid config rejected: %v", err)
+	}
+}
+
+func TestValidateAttesterCapConfig_Exact32ETH(t *testing.T) {
+	config := &AttesterCapConfig{
+		MaxAttesterBalance: 32 * GweiPerETH,
+		CapEpoch:           1,
+	}
+	if err := ValidateAttesterCapConfig(config); err != nil {
+		t.Fatalf("32 ETH config should be valid: %v", err)
+	}
+}
+
+func TestValidateAttesterCapConfig_BelowMinStake(t *testing.T) {
+	config := &AttesterCapConfig{
+		MaxAttesterBalance: 31 * GweiPerETH, // below 32 ETH minimum
+		CapEpoch:           1,
+	}
+	if err := ValidateAttesterCapConfig(config); err != ErrCapBelowMinStake {
+		t.Fatalf("expected ErrCapBelowMinStake, got %v", err)
+	}
+}
+
+func TestValidateAttesterCapConfig_Zero(t *testing.T) {
+	config := &AttesterCapConfig{
+		MaxAttesterBalance: 0,
+		CapEpoch:           1,
+	}
+	if err := ValidateAttesterCapConfig(config); err != ErrCapBelowMinStake {
+		t.Fatalf("expected ErrCapBelowMinStake for zero cap, got %v", err)
+	}
+}
+
+func TestValidateAttesterCapConfig_Nil(t *testing.T) {
+	if err := ValidateAttesterCapConfig(nil); err == nil {
+		t.Fatal("expected error for nil config")
+	}
+}
+
+func TestMigrateSupermajorityThresholds(t *testing.T) {
+	vs := NewValidatorSet()
+	cap := uint64(128 * GweiPerETH)
+
+	// Add 3 validators totaling (128+64+128)=320 ETH capped weight.
+	vs.Add(&ValidatorBalance{
+		Pubkey:           [48]byte{1},
+		EffectiveBalance: 2048 * GweiPerETH, // capped to 128 ETH
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+	vs.Add(&ValidatorBalance{
+		Pubkey:           [48]byte{2},
+		EffectiveBalance: 64 * GweiPerETH, // below cap
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+	vs.Add(&ValidatorBalance{
+		Pubkey:           [48]byte{3},
+		EffectiveBalance: 128 * GweiPerETH, // at cap
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+
+	config := &AttesterCapConfig{MaxAttesterBalance: cap, CapEpoch: 0}
+	thresholds := MigrateSupermajorityThresholds(vs, config, Epoch(5))
+
+	expectedTotal := (128 + 64 + 128) * GweiPerETH
+	if thresholds.TotalWeight != expectedTotal {
+		t.Errorf("TotalWeight: got %d, want %d", thresholds.TotalWeight, expectedTotal)
+	}
+	expectedTwoThirds := (expectedTotal * 2) / 3
+	if thresholds.TwoThirdsWeight != expectedTwoThirds {
+		t.Errorf("TwoThirdsWeight: got %d, want %d", thresholds.TwoThirdsWeight, expectedTwoThirds)
+	}
+	expectedOneThird := expectedTotal / 3
+	if thresholds.OneThirdWeight != expectedOneThird {
+		t.Errorf("OneThirdWeight: got %d, want %d", thresholds.OneThirdWeight, expectedOneThird)
+	}
+}
+
+func TestMigrateSupermajorityThresholds_PreCap(t *testing.T) {
+	vs := NewValidatorSet()
+	vs.Add(&ValidatorBalance{
+		Pubkey:           [48]byte{1},
+		EffectiveBalance: 2048 * GweiPerETH,
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+
+	config := &AttesterCapConfig{MaxAttesterBalance: 128 * GweiPerETH, CapEpoch: 100}
+	thresholds := MigrateSupermajorityThresholds(vs, config, Epoch(50))
+
+	// Before cap epoch, full balance is used.
+	if thresholds.TotalWeight != 2048*GweiPerETH {
+		t.Errorf("expected full balance before cap epoch: got %d", thresholds.TotalWeight)
+	}
+}
+
 func TestTotalCappedWeight_PreCap(t *testing.T) {
 	vs := NewValidatorSet()
 	vs.Add(&ValidatorBalance{

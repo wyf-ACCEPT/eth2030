@@ -389,6 +389,36 @@ func (e *MultidimPricingEngine) HistoryLen(dim GasDimension) int {
 	return len(e.prices[dim].history)
 }
 
+// MaxTotalGasUsage is the absolute ceiling for the sum of gas usage across
+// all dimensions (gigagas: 1_000_000_000).
+const MaxTotalGasUsage = 1_000_000_000
+
+// ErrMDGasTotalOverflow indicates the sum of gas usage across dimensions
+// would overflow uint64 or exceed the gigagas ceiling.
+var ErrMDGasTotalOverflow = errors.New("mdgas: total gas usage overflow or exceeds gigagas")
+
+// ValidateTotalGasUsage checks that the sum of gas usage across all dimensions
+// does not overflow uint64 and does not exceed MaxTotalGasUsage (gigagas).
+func (e *MultidimPricingEngine) ValidateTotalGasUsage(usage map[GasDimension]uint64) error {
+	// First validate per-dimension.
+	if err := e.ValidateUsage(usage); err != nil {
+		return err
+	}
+
+	var total uint64
+	for _, amount := range usage {
+		// Check for overflow before adding.
+		if total > ^uint64(0)-amount {
+			return fmt.Errorf("%w: overflow adding %d to %d", ErrMDGasTotalOverflow, amount, total)
+		}
+		total += amount
+	}
+	if total > MaxTotalGasUsage {
+		return fmt.Errorf("%w: total %d exceeds %d", ErrMDGasTotalOverflow, total, MaxTotalGasUsage)
+	}
+	return nil
+}
+
 // Config returns a copy of the engine's configuration.
 func (e *MultidimPricingEngine) Config() MultidimGasConfig {
 	e.mu.RLock()

@@ -250,8 +250,76 @@ func ValidateCellMessageEntry(msg *CellMessageEntry) error {
 	return nil
 }
 
+// CellMessageHandlerFunc is a callback invoked when a cell message is routed.
+type CellMessageHandlerFunc func(msg *CellMessageEntry) error
+
 // CellMessageHandler is a callback invoked when a cell message is routed.
-type CellMessageHandler func(msg *CellMessageEntry) error
+type CellMessageHandler = CellMessageHandlerFunc
+
+// CellMessageHandlerStruct handles cell messages with validation against
+// the extended blob matrix bounds.
+type CellMessageHandlerStruct struct {
+	// MaxCellIndex is the upper bound for cell indices (CellsPerExtBlob).
+	MaxCellIndex int
+	// MaxColumnIndex is the upper bound for column indices (NumberOfColumns).
+	MaxColumnIdx int
+	// MaxRowIndex is the upper bound for row indices (MaxBlobCommitmentsPerBlock).
+	MaxRowIdx int
+	// OnValid is called for each valid cell message. May be nil.
+	OnValid func(entry *CellMessageEntry)
+}
+
+// NewCellMessageHandlerStruct creates a handler with default matrix bounds.
+func NewCellMessageHandlerStruct() *CellMessageHandlerStruct {
+	return &CellMessageHandlerStruct{
+		MaxCellIndex: CellsPerExtBlob,
+		MaxColumnIdx: NumberOfColumns,
+		MaxRowIdx:    MaxBlobCommitmentsPerBlock,
+	}
+}
+
+// HandleCellMessage validates a single cell message entry against the extended
+// blob matrix bounds and invokes OnValid if set.
+func (h *CellMessageHandlerStruct) HandleCellMessage(entry *CellMessageEntry) error {
+	if entry == nil {
+		return ErrCellMsgNil
+	}
+	if int(entry.CellIndex) >= h.MaxCellIndex {
+		return fmt.Errorf("%w: %d >= %d", ErrCellMsgCellIndex, entry.CellIndex, h.MaxCellIndex)
+	}
+	if int(entry.ColumnIndex) >= h.MaxColumnIdx {
+		return fmt.Errorf("%w: %d >= %d", ErrCellMsgColumnIndex, entry.ColumnIndex, h.MaxColumnIdx)
+	}
+	if int(entry.RowIndex) >= h.MaxRowIdx {
+		return fmt.Errorf("%w: %d >= %d", ErrCellMsgRowIndex, entry.RowIndex, h.MaxRowIdx)
+	}
+	if len(entry.Data) == 0 {
+		return ErrCellMsgDataEmpty
+	}
+	if len(entry.Data) > MaxCellDataSize {
+		return fmt.Errorf("%w: %d > %d", ErrCellMsgDataTooLarge, len(entry.Data), MaxCellDataSize)
+	}
+	if len(entry.Proof) > MaxCellProofSize {
+		return fmt.Errorf("%w: %d > %d", ErrCellMsgProofTooLarge, len(entry.Proof), MaxCellProofSize)
+	}
+	if h.OnValid != nil {
+		h.OnValid(entry)
+	}
+	return nil
+}
+
+// ProcessCellBatch validates a batch of cell message entries and returns the
+// count of successfully processed entries along with any errors encountered.
+func (h *CellMessageHandlerStruct) ProcessCellBatch(entries []*CellMessageEntry) (processed int, errors []error) {
+	for _, entry := range entries {
+		if err := h.HandleCellMessage(entry); err != nil {
+			errors = append(errors, err)
+			continue
+		}
+		processed++
+	}
+	return processed, errors
+}
 
 // CellMessageRouter routes cell-level messages to appropriate DAS validators
 // based on column index assignments.
