@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Anchor storage slot constants (similar to EIP-4788 beacon root contract).
@@ -127,6 +128,31 @@ func (ac *AnchorContract) ProcessAnchorData(data []byte) error {
 		BlockNumber:     blockNumber,
 		Timestamp:       timestamp,
 	})
+}
+
+// UpdateAnchorAfterExecute advances the anchor state after a successful EXECUTE
+// precompile call. It validates the execution output, constructs the new anchor
+// state from the output's post-state root and the provided block metadata, and
+// updates the ring buffer. Returns an error if the output indicates failure or
+// if the block number does not advance.
+func (ac *AnchorContract) UpdateAnchorAfterExecute(output *ExecuteOutput, blockNumber, timestamp uint64) error {
+	if output == nil {
+		return ErrAnchorDataTooShort
+	}
+	if !output.Success {
+		return ErrSTFailed
+	}
+	if output.PostStateRoot == (types.Hash{}) {
+		return ErrInvalidBlockData
+	}
+
+	newState := AnchorState{
+		LatestBlockHash: crypto.Keccak256Hash(output.PostStateRoot[:]),
+		LatestStateRoot: output.PostStateRoot,
+		BlockNumber:     blockNumber,
+		Timestamp:       timestamp,
+	}
+	return ac.UpdateState(newState)
 }
 
 // EncodeAnchorData encodes an AnchorState into the wire format expected

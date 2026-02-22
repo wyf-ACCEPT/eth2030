@@ -254,6 +254,57 @@ func TestGigagasBlockProcessorCurrentGasRate(t *testing.T) {
 	}
 }
 
+func TestGigagasIntegrationTestEndToEnd(t *testing.T) {
+	cc := testGigagasChainConfig()
+	execFunc := func(tx *types.Transaction, _ interface{}) (uint64, []types.Hash, error) {
+		return tx.Gas(), nil, nil
+	}
+	proc := NewGigagasBlockProcessor(DefaultGigagasBlockConfig(), cc, execFunc)
+	stateDB := state.NewShardedStateDB()
+
+	t.Run("basic pipeline", func(t *testing.T) {
+		to := types.Address{0x30}
+		tx1 := testGigagasTx(0, to, 21000)
+		tx2 := testGigagasTx(1, to, 42000)
+		tx1.SetSender(types.Address{0x10})
+		tx2.SetSender(types.Address{0x20})
+
+		result, err := proc.IntegrationTest(
+			[]*types.Transaction{tx1, tx2}, stateDB, 1_000_000, 2000, 1,
+		)
+		if err != nil {
+			t.Fatalf("IntegrationTest: %v", err)
+		}
+		if result.GasUsed != 63000 {
+			t.Errorf("GasUsed = %d, want 63000", result.GasUsed)
+		}
+		if len(result.Receipts) != 2 {
+			t.Errorf("Receipts count = %d, want 2", len(result.Receipts))
+		}
+	})
+
+	t.Run("empty txs", func(t *testing.T) {
+		result, err := proc.IntegrationTest(
+			nil, stateDB, 1_000_000, 2000, 2,
+		)
+		if err != nil {
+			t.Fatalf("IntegrationTest: %v", err)
+		}
+		if result.GasUsed != 0 {
+			t.Errorf("GasUsed = %d, want 0", result.GasUsed)
+		}
+	})
+
+	t.Run("not enabled", func(t *testing.T) {
+		_, err := proc.IntegrationTest(
+			nil, stateDB, 1_000_000, 500, 3,
+		)
+		if err != ErrGigagasNotEnabled {
+			t.Errorf("expected ErrGigagasNotEnabled, got %v", err)
+		}
+	})
+}
+
 func TestGigagasDetectConflictingTxIndicesEmpty(t *testing.T) {
 	results := make(map[int]*txExecResult)
 	groups := [][]int{{0}, {1}}

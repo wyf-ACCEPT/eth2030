@@ -406,6 +406,64 @@ func TestReconstructionMetricsAvgLatency(t *testing.T) {
 	}
 }
 
+func TestReconstructWithErasure_ZeroBlob(t *testing.T) {
+	br := NewBlobReconstructor(9)
+
+	// Create zero-filled samples for the first threshold cells.
+	samples := make([]Sample, ReconstructionThreshold)
+	for i := range samples {
+		samples[i] = Sample{
+			BlobIndex: 0,
+			CellIndex: uint64(i),
+			Data:      Cell{},
+		}
+	}
+
+	result, err := ReconstructWithErasure(br, 0, samples)
+	if err != nil {
+		t.Fatalf("ReconstructWithErasure: %v", err)
+	}
+
+	expectedSize := FieldElementsPerBlob * BytesPerFieldElement
+	if len(result) != expectedSize {
+		t.Fatalf("result size = %d, want %d", len(result), expectedSize)
+	}
+
+	// All-zero input should give all-zero output.
+	for i, b := range result {
+		if b != 0 {
+			t.Fatalf("result[%d] = %d, want 0", i, b)
+		}
+	}
+}
+
+func TestReconstructWithErasure_InsufficientSamples(t *testing.T) {
+	br := NewBlobReconstructor(9)
+
+	// Too few samples.
+	samples := make([]Sample, ReconstructionThreshold-1)
+	for i := range samples {
+		samples[i] = Sample{CellIndex: uint64(i)}
+	}
+
+	_, err := ReconstructWithErasure(br, 0, samples)
+	if err == nil {
+		t.Fatal("expected error for insufficient samples")
+	}
+}
+
+func TestReconstructWithErasure_NilReconstructor(t *testing.T) {
+	samples := make([]Sample, ReconstructionThreshold)
+	for i := range samples {
+		samples[i] = Sample{CellIndex: uint64(i)}
+	}
+
+	_, err := ReconstructWithErasure(nil, 0, samples)
+	if err == nil {
+		t.Fatal("expected error for nil reconstructor")
+	}
+}
+
 func TestNewBlobReconstructorDefaults(t *testing.T) {
 	// maxBlobs = 0 should default to MaxBlobCommitmentsPerBlock.
 	br := NewBlobReconstructor(0)

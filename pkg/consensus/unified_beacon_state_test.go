@@ -439,3 +439,88 @@ func TestValidateBeaconState(t *testing.T) {
 		t.Error("expected error for slot/epoch misalignment")
 	}
 }
+
+func TestMergeBeaconLeanSpecs_Basic(t *testing.T) {
+	s := NewUnifiedBeaconState(32)
+	s.CurrentSlot = 128
+	s.CurrentEpoch = 4
+	s.FinalizedCheckpointU = UnifiedCheckpoint{Epoch: 2, Root: [32]byte{0xAB}}
+	s.CurrentJustified = UnifiedCheckpoint{Epoch: 3, Root: [32]byte{0xCD}}
+
+	// Add two active validators.
+	s.AddValidator(&UnifiedValidator{
+		EffectiveBalance: 32 * GweiPerETH,
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+	s.AddValidator(&UnifiedValidator{
+		EffectiveBalance: 64 * GweiPerETH,
+		ActivationEpoch:  0,
+		ExitEpoch:        FarFutureEpoch,
+	})
+
+	lean, err := MergeBeaconLeanSpecs(s)
+	if err != nil {
+		t.Fatalf("MergeBeaconLeanSpecs: %v", err)
+	}
+	if lean.Slot != 128 {
+		t.Errorf("lean.Slot = %d, want 128", lean.Slot)
+	}
+	if lean.Epoch != 4 {
+		t.Errorf("lean.Epoch = %d, want 4", lean.Epoch)
+	}
+	if lean.ValidatorCount != 2 {
+		t.Errorf("lean.ValidatorCount = %d, want 2", lean.ValidatorCount)
+	}
+	if lean.TotalActiveBalance != 96*GweiPerETH {
+		t.Errorf("lean.TotalActiveBalance = %d, want %d", lean.TotalActiveBalance, 96*GweiPerETH)
+	}
+	if lean.FinalizedEpoch != 2 {
+		t.Errorf("lean.FinalizedEpoch = %d, want 2", lean.FinalizedEpoch)
+	}
+	if lean.JustifiedEpoch != 3 {
+		t.Errorf("lean.JustifiedEpoch = %d, want 3", lean.JustifiedEpoch)
+	}
+	if lean.StateRoot.IsZero() {
+		t.Error("lean.StateRoot should not be zero")
+	}
+}
+
+func TestMergeBeaconLeanSpecs_NilState(t *testing.T) {
+	_, err := MergeBeaconLeanSpecs(nil)
+	if err != ErrUnifiedNilState {
+		t.Fatalf("expected ErrUnifiedNilState, got %v", err)
+	}
+}
+
+func TestApplyLeanState_AdvancesFinalization(t *testing.T) {
+	s := NewUnifiedBeaconState(32)
+	s.FinalizedCheckpointU = UnifiedCheckpoint{Epoch: 2, Root: [32]byte{0x01}}
+	s.CurrentJustified = UnifiedCheckpoint{Epoch: 3, Root: [32]byte{0x02}}
+
+	lean := &LeanBeaconState{
+		FinalizedEpoch: 5,
+		FinalizedRoot:  [32]byte{0xAA},
+		JustifiedEpoch: 6,
+		JustifiedRoot:  [32]byte{0xBB},
+	}
+
+	if err := s.ApplyLeanState(lean); err != nil {
+		t.Fatalf("ApplyLeanState: %v", err)
+	}
+	if s.FinalizedCheckpointU.Epoch != 5 {
+		t.Errorf("finalized epoch = %d, want 5", s.FinalizedCheckpointU.Epoch)
+	}
+	if s.CurrentJustified.Epoch != 6 {
+		t.Errorf("justified epoch = %d, want 6", s.CurrentJustified.Epoch)
+	}
+
+	// Older lean state should not regress finalization.
+	old := &LeanBeaconState{FinalizedEpoch: 1, JustifiedEpoch: 2}
+	if err := s.ApplyLeanState(old); err != nil {
+		t.Fatalf("ApplyLeanState (old): %v", err)
+	}
+	if s.FinalizedCheckpointU.Epoch != 5 {
+		t.Errorf("finalized should not regress, got %d", s.FinalizedCheckpointU.Epoch)
+	}
+}

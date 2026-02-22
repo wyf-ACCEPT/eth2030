@@ -232,3 +232,88 @@ func TestEIP7685ToConsolidationRequest_WrongType(t *testing.T) {
 		t.Error("expected error for wrong request type")
 	}
 }
+
+func TestConsolidateValidators_Basic(t *testing.T) {
+	creds := makeCompoundingCreds()
+	state := NewUnifiedBeaconState(32)
+	state.CurrentEpoch = 100
+
+	state.AddValidator(&UnifiedValidator{
+		Pubkey:                [48]byte{0xAA},
+		WithdrawalCredentials: creds,
+		EffectiveBalance:      32 * GweiPerETH,
+		Balance:               32 * GweiPerETH,
+		ActivationEpoch:       0,
+		ExitEpoch:             FarFutureEpoch,
+		WithdrawableEpoch:     FarFutureEpoch,
+	})
+	state.AddValidator(&UnifiedValidator{
+		Pubkey:                [48]byte{0xBB},
+		WithdrawalCredentials: creds,
+		EffectiveBalance:      32 * GweiPerETH,
+		Balance:               32 * GweiPerETH,
+		ActivationEpoch:       0,
+		ExitEpoch:             FarFutureEpoch,
+		WithdrawableEpoch:     FarFutureEpoch,
+	})
+
+	result, err := ConsolidateValidators(state, 0, 1, 100)
+	if err != nil {
+		t.Fatalf("ConsolidateValidators: %v", err)
+	}
+	if result.AmountTransferred != 32*GweiPerETH {
+		t.Errorf("amount = %d, want %d", result.AmountTransferred, 32*GweiPerETH)
+	}
+	if result.SourcePubkey[0] != 0xAA {
+		t.Error("source pubkey mismatch")
+	}
+	if result.TargetPubkey[0] != 0xBB {
+		t.Error("target pubkey mismatch")
+	}
+
+	// Source should be exited with zero balance.
+	src, _ := state.GetValidator(0)
+	if src.Balance != 0 {
+		t.Errorf("source balance = %d, want 0", src.Balance)
+	}
+	if src.ExitEpoch != 101 {
+		t.Errorf("source exit epoch = %d, want 101", src.ExitEpoch)
+	}
+
+	// Target should have combined balance.
+	tgt, _ := state.GetValidator(1)
+	if tgt.Balance != 64*GweiPerETH {
+		t.Errorf("target balance = %d, want %d", tgt.Balance, 64*GweiPerETH)
+	}
+}
+
+func TestConsolidateValidators_SameIndex(t *testing.T) {
+	state := NewUnifiedBeaconState(32)
+	state.AddValidator(&UnifiedValidator{ActivationEpoch: 0, ExitEpoch: FarFutureEpoch})
+	_, err := ConsolidateValidators(state, 0, 0, 0)
+	if err != ErrConsolidationSameValidator {
+		t.Fatalf("expected ErrConsolidationSameValidator, got %v", err)
+	}
+}
+
+func TestConsolidateValidators_SlashedSource(t *testing.T) {
+	creds := makeCompoundingCreds()
+	state := NewUnifiedBeaconState(32)
+	state.AddValidator(&UnifiedValidator{
+		WithdrawalCredentials: creds,
+		ActivationEpoch:       0,
+		ExitEpoch:             FarFutureEpoch,
+		Slashed:               true,
+		Balance:               32 * GweiPerETH,
+	})
+	state.AddValidator(&UnifiedValidator{
+		WithdrawalCredentials: creds,
+		ActivationEpoch:       0,
+		ExitEpoch:             FarFutureEpoch,
+		Balance:               32 * GweiPerETH,
+	})
+	_, err := ConsolidateValidators(state, 0, 1, 0)
+	if err != ErrConsolidationSourceSlashed {
+		t.Fatalf("expected ErrConsolidationSourceSlashed, got %v", err)
+	}
+}

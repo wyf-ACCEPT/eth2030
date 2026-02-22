@@ -306,6 +306,66 @@ func TestValidateCellMessage(t *testing.T) {
 	}
 }
 
+func TestGossipTopicForSubnet(t *testing.T) {
+	topic := GossipTopicForSubnet(42)
+	expected := "/eth2030/das/cell/subnet/42"
+	if topic != expected {
+		t.Errorf("topic = %q, want %q", topic, expected)
+	}
+
+	topic0 := GossipTopicForSubnet(0)
+	if topic0 != "/eth2030/das/cell/subnet/0" {
+		t.Errorf("topic0 = %q, want /eth2030/das/cell/subnet/0", topic0)
+	}
+}
+
+func TestRouteCellToGossipTopic(t *testing.T) {
+	t.Run("valid message", func(t *testing.T) {
+		config := SubnetConfig{NumSubnets: 4, SubnetsPerNode: 2}
+		router := NewGossipRouter(config)
+
+		msg := &CellMessage{
+			BlobIndex: 0,
+			CellIndex: 2,
+			Data:      make([]byte, BytesPerCell),
+			Proof:     make([]byte, 48),
+		}
+
+		topic, data, err := router.RouteCellToGossipTopic(msg)
+		if err != nil {
+			t.Fatalf("RouteCellToGossipTopic: %v", err)
+		}
+
+		expectedTopic := "/eth2030/das/cell/subnet/2"
+		if topic != expectedTopic {
+			t.Errorf("topic = %q, want %q", topic, expectedTopic)
+		}
+
+		// Data should contain 16 bytes header + cell data + proof.
+		expectedLen := 16 + BytesPerCell + 48
+		if len(data) != expectedLen {
+			t.Errorf("data len = %d, want %d", len(data), expectedLen)
+		}
+	})
+
+	t.Run("nil message", func(t *testing.T) {
+		router := NewGossipRouter(DefaultSubnetConfig())
+		_, _, err := router.RouteCellToGossipTopic(nil)
+		if err == nil {
+			t.Error("expected error for nil message")
+		}
+	})
+
+	t.Run("invalid cell index", func(t *testing.T) {
+		router := NewGossipRouter(DefaultSubnetConfig())
+		msg := &CellMessage{CellIndex: NumberOfColumns, Data: make([]byte, 1)}
+		_, _, err := router.RouteCellToGossipTopic(msg)
+		if err == nil {
+			t.Error("expected error for invalid cell index")
+		}
+	})
+}
+
 func TestSubnetCount(t *testing.T) {
 	config := SubnetConfig{NumSubnets: 4, SubnetsPerNode: 1}
 	router := NewGossipRouter(config)

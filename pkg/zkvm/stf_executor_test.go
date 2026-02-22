@@ -342,6 +342,77 @@ func TestRealSTFExec_DefaultConfig(t *testing.T) {
 // Ensure the crypto import is used.
 var _ = crypto.Keccak256
 
+func TestRealSTFExec_FullRoundTrip(t *testing.T) {
+	// Full round-trip: state transition -> witness -> proof -> verify.
+	reg := NewGuestRegistry()
+	config := DefaultRealSTFConfig()
+	exec, err := NewRealSTFExecutor(config, reg)
+	if err != nil {
+		t.Fatalf("NewRealSTFExecutor: %v", err)
+	}
+
+	program := buildSTFExecTestProgram()
+	if _, err := exec.RegisterSTFProgram(program); err != nil {
+		t.Fatalf("RegisterSTFProgram: %v", err)
+	}
+
+	t.Run("basic round-trip", func(t *testing.T) {
+		block := makeSTFExecTestBlock(3)
+		preState := types.Hash{0xDD}
+
+		// Step 1: Generate witness.
+		stfInput, err := exec.GenerateSTFWitness(preState, block)
+		if err != nil {
+			t.Fatalf("GenerateSTFWitness: %v", err)
+		}
+
+		// Step 2: Execute and produce proof.
+		output, err := exec.ExecuteSTF(stfInput)
+		if err != nil {
+			t.Fatalf("ExecuteSTF: %v", err)
+		}
+		if !output.Valid {
+			t.Error("expected valid transition")
+		}
+		if len(output.ProofData) == 0 {
+			t.Fatal("proof data should not be empty")
+		}
+
+		// Step 3: Verify the proof.
+		if err := exec.VerifySTFProof(output); err != nil {
+			t.Fatalf("VerifySTFProof: %v", err)
+		}
+	})
+
+	t.Run("commitment determinism", func(t *testing.T) {
+		block := makeSTFExecTestBlock(2)
+		preState := types.Hash{0xEE}
+
+		stfInput, _ := exec.GenerateSTFWitness(preState, block)
+		c1 := ComputeSTFCommitment(stfInput.PreStateRoot, stfInput.PostStateRoot, block.Header().Hash())
+		c2 := ComputeSTFCommitment(stfInput.PreStateRoot, stfInput.PostStateRoot, block.Header().Hash())
+		if c1 != c2 {
+			t.Error("commitment should be deterministic")
+		}
+	})
+
+	t.Run("tampered proof fails verification", func(t *testing.T) {
+		block := makeSTFExecTestBlock(1)
+		preState := types.Hash{0xFF}
+
+		stfInput, _ := exec.GenerateSTFWitness(preState, block)
+		output, err := exec.ExecuteSTF(stfInput)
+		if err != nil {
+			t.Fatalf("ExecuteSTF: %v", err)
+		}
+		// Tamper with the proof.
+		output.ProofData[0] ^= 0xFF
+		if err := exec.VerifySTFProof(output); err == nil {
+			t.Error("expected error for tampered proof")
+		}
+	})
+}
+
 func TestValidateSTFInput(t *testing.T) {
 	// Nil input.
 	if err := ValidateSTFInput(nil); err == nil {

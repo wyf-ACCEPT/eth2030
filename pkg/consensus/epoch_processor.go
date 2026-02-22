@@ -393,6 +393,59 @@ func (ep *EpochProcessor) churnLimit(state *EpochProcessorState, epoch Epoch) ui
 	return epMinPerEpochChurnLimit
 }
 
+// ProcessEpoch is a unified epoch processing function that wires together
+// finality tracking, quick slot parameters, and attester cap enforcement
+// into a single pass. It runs the full epoch transition then applies:
+//   - Finality tracking via FinalityTracker (finality.go)
+//   - Quick slot epoch duration validation (quick_slots.go)
+//   - Attester stake cap enforcement (attester_cap.go)
+//
+// This provides the cross-component integration needed for the K+ phase
+// where 4-slot epochs, single-epoch finality, and attester caps converge.
+func (ep *EpochProcessor) ProcessEpoch(
+	state *EpochProcessorState,
+	finalityTracker *FinalityTracker,
+	quickSlotCfg *QuickSlotConfig,
+	attesterCapCfg *AttesterCapConfig,
+) error {
+	// Run the standard epoch transition first.
+	if err := ep.ProcessEpochTransition(state); err != nil {
+		return err
+	}
+
+	ce := state.CurrentEpoch()
+
+	// Wire finality tracker: update with current epoch's justification state.
+	if finalityTracker != nil {
+		totalActive := ep.totalActiveBalance(state, ce)
+		// Use target attestation balance as vote weight.
+		voteWeight := ep.partBalance(state, state.PreviousEpochParticipation, 1)
+		epochRoot := state.BlockRoots[uint64(ce)*state.SlotsPerEpoch%epSlotsPerHistoricalRoot]
+		finalityTracker.ProcessEpoch(ce, epochRoot, totalActive, voteWeight)
+	}
+
+	// Validate quick slot configuration: if provided, verify SlotsPerEpoch
+	// matches the quick slot config and adjust if transitioning.
+	if quickSlotCfg != nil && quickSlotCfg.SlotsPerEpoch > 0 {
+		if state.SlotsPerEpoch != quickSlotCfg.SlotsPerEpoch {
+			state.SlotsPerEpoch = quickSlotCfg.SlotsPerEpoch
+		}
+	}
+
+	// Enforce attester stake caps: clamp each active validator's effective
+	// balance to the cap, ensuring no validator has outsized influence.
+	if attesterCapCfg != nil && IsCapActive(ce, attesterCapCfg) {
+		for i, v := range state.Validators {
+			if v.IsActiveV2(ce) {
+				capped := CapEffectiveBalance(v.EffectiveBalance, attesterCapCfg.MaxAttesterBalance)
+				state.Validators[i].EffectiveBalance = capped
+			}
+		}
+	}
+
+	return nil
+}
+
 // intSqrt computes the integer square root using Newton's method.
 func (ep *EpochProcessor) intSqrt(n uint64) uint64 {
 	if n == 0 {

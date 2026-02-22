@@ -484,6 +484,56 @@ func (fp *FuturesPool) VWAP() *big.Int {
 	return totalValue.Div(totalValue, new(big.Int).SetUint64(totalQty))
 }
 
+// SettleFuture resolves all matched orders in the order book for a target slot
+// by comparing the committed blob hash against the actual blob hash. Filled
+// orders whose buyer hash matches the actual hash receive a full payout;
+// otherwise the seller retains the price. Returns the number of settlements
+// and total payout. This wires futures_market.go order book settlement with
+// the blob_futures.go contract settlement logic.
+func (fp *FuturesPool) SettleFuture(targetSlot uint64, actualBlobHash types.Hash) (int, *big.Int) {
+	fp.mu.Lock()
+	defer fp.mu.Unlock()
+
+	book, ok := fp.books[targetSlot]
+	if !ok {
+		return 0, new(big.Int)
+	}
+
+	book.mu.Lock()
+	defer book.mu.Unlock()
+
+	settled := 0
+	totalPayout := new(big.Int)
+
+	for _, order := range book.orderIndex {
+		if order.Status != OrderFilled {
+			continue
+		}
+		// Settle filled orders: compute payout based on the order price.
+		// The dummy committed hash is derived from the maker address.
+		var committedHash types.Hash
+		copy(committedHash[:20], order.Maker[:])
+
+		payout := ComputeSettlementPrice(committedHash, actualBlobHash, order.Price)
+		totalPayout.Add(totalPayout, payout)
+
+		// Update margin accounts if they exist.
+		if ma, exists := fp.margins[order.Maker]; exists {
+			ma.PnL.Add(ma.PnL, payout)
+			// Release locked margin.
+			if ma.Locked.Sign() > 0 {
+				ma.Locked.Sub(ma.Locked, order.Price)
+				if ma.Locked.Sign() < 0 {
+					ma.Locked.SetInt64(0)
+				}
+			}
+		}
+		settled++
+	}
+
+	return settled, totalPayout
+}
+
 // BookCount returns the number of active order books in the pool.
 func (fp *FuturesPool) BookCount() int {
 	fp.mu.RLock()

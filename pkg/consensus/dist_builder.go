@@ -367,6 +367,47 @@ func ValidateDistBuilderConfig(cfg *DistBuilderConfig) error {
 	return nil
 }
 
+// EPBSBidAdapter converts an ePBS-style builder bid (epbs.BuilderBid fields)
+// into a ConsensusBuilderBid and submits it to the DistBlockBuilder. This
+// wires the epbs/ builder bid pipeline through engine/ payload building into
+// consensus/dist_builder.go, completing the proposer-builder separation flow.
+// builderID identifies the builder, slot is the target slot, value is the
+// bid value in Gwei, gasLimit and blockRoot come from the ePBS bid.
+func (db *DistBlockBuilder) EPBSBidAdapter(
+	builderID string,
+	slot Slot,
+	valueGwei uint64,
+	gasLimit uint64,
+	blockRoot types.Hash,
+) (*ConsensusBuilderBid, error) {
+	if slot == 0 {
+		return nil, ErrDBSlotZero
+	}
+	if valueGwei == 0 {
+		return nil, ErrDBZeroBidValue
+	}
+
+	// Convert Gwei to wei for internal bid representation.
+	valueWei := new(big.Int).Mul(
+		new(big.Int).SetUint64(valueGwei),
+		new(big.Int).SetUint64(1_000_000_000),
+	)
+
+	bid := &ConsensusBuilderBid{
+		BuilderID: builderID,
+		Slot:      slot,
+		Value:     valueWei,
+		GasUsed:   gasLimit,
+		BlockRoot: blockRoot,
+		Timestamp: time.Now(),
+	}
+
+	if err := db.SubmitBid(bid); err != nil {
+		return nil, err
+	}
+	return bid, nil
+}
+
 // getOrCreateSlotLocked returns the slotBids for the given slot, creating
 // it if it does not exist. Must be called with db.mu held for writing.
 func (db *DistBlockBuilder) getOrCreateSlotLocked(slot Slot) *slotBids {

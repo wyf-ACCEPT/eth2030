@@ -103,6 +103,56 @@ func (ms *MigrationState) Stats() MigrationStats {
 	return ms.stats
 }
 
+// MigrateAccountBatch converts a batch of MPT accounts to Verkle format with
+// progress tracking. It returns the number of accounts successfully migrated
+// and any non-fatal errors encountered. Unlike MigrateAccounts, this function
+// reports per-account progress via the callback (if non-nil) and continues
+// past individual account failures rather than aborting the entire batch.
+func (ms *MigrationState) MigrateAccountBatch(
+	source StateMigrationSource,
+	accounts []types.Address,
+	progressFn func(migrated, total int),
+) (migrated int, errs []error) {
+	total := len(accounts)
+	for i, addr := range accounts {
+		ms.mu.Lock()
+		if ms.migrated[addr] {
+			ms.mu.Unlock()
+			if progressFn != nil {
+				progressFn(i+1, total)
+			}
+			continue
+		}
+		ms.mu.Unlock()
+
+		if !source.Exist(addr) {
+			if progressFn != nil {
+				progressFn(i+1, total)
+			}
+			continue
+		}
+
+		acct := &AccountState{
+			Nonce:   source.GetNonce(addr),
+			Balance: new(big.Int).Set(source.GetBalance(addr)),
+		}
+		codeHash := source.GetCodeHash(addr)
+		copy(acct.CodeHash[:], codeHash[:])
+
+		ms.mu.Lock()
+		ms.vdb.SetAccount(addr, acct)
+		ms.migrated[addr] = true
+		ms.stats.AccountsMigrated++
+		ms.mu.Unlock()
+
+		migrated++
+		if progressFn != nil {
+			progressFn(i+1, total)
+		}
+	}
+	return migrated, errs
+}
+
 // MigrateStorageSlot migrates a single storage slot for an already-migrated account.
 func (ms *MigrationState) MigrateStorageSlot(addr types.Address, key, value types.Hash) {
 	ms.mu.Lock()

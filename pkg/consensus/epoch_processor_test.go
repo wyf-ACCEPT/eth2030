@@ -497,3 +497,63 @@ func TestEpochProcessorState_Epochs(t *testing.T) {
 		t.Errorf("expected previous epoch 0 at genesis, got %d", s2.PreviousEpoch())
 	}
 }
+
+func TestProcessEpoch_WithFinalityAndAttesterCap(t *testing.T) {
+	state := makeTestState(4, 32*GweiPerETH, 32*GweiPerETH, 64, 32)
+
+	// All validators attest.
+	for i := 0; i < 4; i++ {
+		state.PreviousEpochParticipation.SourceAttested[uint64(i)] = true
+		state.PreviousEpochParticipation.TargetAttested[uint64(i)] = true
+		state.PreviousEpochParticipation.HeadAttested[uint64(i)] = true
+	}
+
+	// Set up finality tracker.
+	cfg := DefaultConfig()
+	ft := NewFinalityTracker(cfg)
+
+	// Set up attester cap (cap at 31 ETH to test clamping).
+	capCfg := &AttesterCapConfig{
+		MaxAttesterBalance: 31 * GweiPerETH,
+		CapEpoch:           0,
+	}
+
+	ep := NewEpochProcessor()
+	if err := ep.ProcessEpoch(state, ft, nil, capCfg); err != nil {
+		t.Fatalf("ProcessEpoch: %v", err)
+	}
+
+	// Verify attester cap was applied: all effective balances should be <= 31 ETH.
+	for i, v := range state.Validators {
+		if v.EffectiveBalance > 31*GweiPerETH {
+			t.Errorf("validator %d effective balance %d > cap %d", i, v.EffectiveBalance, 31*GweiPerETH)
+		}
+	}
+}
+
+func TestProcessEpoch_WithQuickSlots(t *testing.T) {
+	state := makeTestState(4, 32*GweiPerETH, 32*GweiPerETH, 64, 32)
+
+	for i := 0; i < 4; i++ {
+		state.PreviousEpochParticipation.SourceAttested[uint64(i)] = true
+		state.PreviousEpochParticipation.TargetAttested[uint64(i)] = true
+	}
+
+	qsCfg := DefaultQuickSlotConfig()
+	ep := NewEpochProcessor()
+	if err := ep.ProcessEpoch(state, nil, qsCfg, nil); err != nil {
+		t.Fatalf("ProcessEpoch with quick slots: %v", err)
+	}
+
+	// SlotsPerEpoch should be updated to quick slot value (4).
+	if state.SlotsPerEpoch != 4 {
+		t.Errorf("SlotsPerEpoch = %d, want 4", state.SlotsPerEpoch)
+	}
+}
+
+func TestProcessEpoch_NilState(t *testing.T) {
+	ep := NewEpochProcessor()
+	if err := ep.ProcessEpoch(nil, nil, nil, nil); err != ErrEPNilState {
+		t.Fatalf("expected ErrEPNilState, got %v", err)
+	}
+}

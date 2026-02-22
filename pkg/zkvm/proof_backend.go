@@ -235,3 +235,41 @@ func computeVerificationKey(programHash, traceCommitment [32]byte) [32]byte {
 func HashProgram(program []byte) [32]byte {
 	return sha256.Sum256(program)
 }
+
+// VerifyWithBackend chains proof generation, serialization, and verification
+// into a single end-to-end pipeline. It takes a witness trace and program
+// binary, generates a proof, then immediately verifies it. Returns the proof
+// result on success, or an error if any step fails.
+func VerifyWithBackend(trace *RVWitnessCollector, program []byte, publicInputs []byte) (*ProofResult, error) {
+	if trace == nil {
+		return nil, ErrProofBackendNilTrace
+	}
+	if len(trace.Steps) == 0 {
+		return nil, ErrProofBackendEmptyTrace
+	}
+
+	programHash := HashProgram(program)
+
+	// Step 1: Generate proof.
+	req := &ProofRequest{
+		Trace:        trace,
+		PublicInputs: publicInputs,
+		ProgramHash:  programHash,
+	}
+	result, err := ProveExecution(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Serialize and verify -- the proof bytes are already serialized
+	// by ProveExecution, so we verify directly.
+	valid, err := VerifyExecProof(result, programHash)
+	if err != nil {
+		return nil, err
+	}
+	if !valid {
+		return nil, ErrProofBackendInvalidProof
+	}
+
+	return result, nil
+}

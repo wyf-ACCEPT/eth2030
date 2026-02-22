@@ -318,6 +318,49 @@ func ValidateBlobSchedule(schedule []*RPOSchedule, config RPOConfig) error {
 	return nil
 }
 
+// BPO3Schedule returns the J+ phase BPO blob schedule. J+ (2027-2028)
+// increases blob targets beyond BPO2, enabling higher data throughput
+// for variable-size blobs, Reed-Solomon blob reconstruction, and
+// block-in-blobs encoding. Target blobs rise to 48 (max 64).
+func BPO3Schedule() []*RPOSchedule {
+	return []*RPOSchedule{
+		{Epoch: 300000, TargetRPO: 32, Description: "J+ BPO3: target 48 blobs (32 RPO)"},
+		{Epoch: 350000, TargetRPO: 48, Description: "J+ BPO3: target 64 blobs (48 RPO)"},
+	}
+}
+
+// BPO4Schedule returns the L+ phase BPO blob schedule. L+ (2029) further
+// increases blob targets toward teragas L2 throughput, with BPO blobs
+// increase enabling higher sustained data rates. Target blobs rise to 64+.
+func BPO4Schedule() []*RPOSchedule {
+	return []*RPOSchedule{
+		{Epoch: 500000, TargetRPO: 48, Description: "L+ BPO4: target 96 blobs (48 RPO)"},
+		{Epoch: 600000, TargetRPO: 64, Description: "L+ BPO4: target 128 blobs (64 RPO)"},
+	}
+}
+
+// MergeBPOSchedules combines multiple BPO schedule phases into a single
+// schedule, verifying epoch monotonicity and RPO non-decreasing invariants.
+func MergeBPOSchedules(phases ...[]*RPOSchedule) ([]*RPOSchedule, error) {
+	var merged []*RPOSchedule
+	for _, phase := range phases {
+		merged = append(merged, phase...)
+	}
+	if len(merged) == 0 {
+		return nil, ErrRPOScheduleEmpty
+	}
+	// Validate epoch ordering and RPO progression.
+	for i := 1; i < len(merged); i++ {
+		if merged[i].Epoch <= merged[i-1].Epoch {
+			return nil, ErrRPOScheduleOrder
+		}
+		if merged[i].TargetRPO < merged[i-1].TargetRPO {
+			return nil, ErrRPOScheduleValues
+		}
+	}
+	return merged, nil
+}
+
 // GetHistory returns a copy of the RPO change history.
 func (rm *RPOManager) GetHistory() []*RPOHistoryEntry {
 	rm.mu.RLock()

@@ -214,6 +214,49 @@ func (sp *ShardedPool) RebalanceShards() {
 	}
 }
 
+// ResizeShards changes the shard count and redistributes all transactions to
+// the new shards using consistent hashing. This is called when the network
+// decides to increase or decrease the shard count (e.g., at epoch boundaries).
+// The old shards are drained and all transactions are re-inserted into the new
+// shard set. Returns the number of transactions that were migrated.
+func (sp *ShardedPool) ResizeShards(newNumShards uint32) int {
+	if newNumShards == 0 {
+		newNumShards = 1
+	}
+	if newNumShards == sp.config.NumShards {
+		return 0
+	}
+
+	// Collect all transactions from old shards.
+	var allTxs []*types.Transaction
+	for _, shard := range sp.shards {
+		shard.mu.Lock()
+		for _, tx := range shard.transactions {
+			allTxs = append(allTxs, tx)
+		}
+		shard.transactions = make(map[types.Hash]*types.Transaction)
+		shard.mu.Unlock()
+	}
+
+	// Create new shards.
+	oldConfig := sp.config
+	sp.config.NumShards = newNumShards
+	sp.config.ShardCapacity = oldConfig.ShardCapacity
+	sp.shards = make([]*TxShard, newNumShards)
+	for i := uint32(0); i < newNumShards; i++ {
+		sp.shards[i] = newTxShard(i)
+	}
+
+	// Re-insert all transactions using the new hash mapping.
+	migrated := 0
+	for _, tx := range allTxs {
+		if err := sp.AddTx(tx); err == nil {
+			migrated++
+		}
+	}
+	return migrated
+}
+
 // PendingByAddress queries all shards to find transactions from a given address.
 // This is a cross-shard query that iterates every shard.
 func (sp *ShardedPool) PendingByAddress(addr types.Address) []*types.Transaction {

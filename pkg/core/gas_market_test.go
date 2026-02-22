@@ -337,6 +337,85 @@ func TestUniqueContractIDs(t *testing.T) {
 	}
 }
 
+func TestSettleExpiredPositions(t *testing.T) {
+	t.Run("settle filled and expire open", func(t *testing.T) {
+		fm := NewFuturesMarket()
+		buyer := types.BytesToAddress([]byte{0x01})
+		seller := types.BytesToAddress([]byte{0x02})
+
+		// c1: filled, settlement=100, expiry=200
+		c1, _ := fm.CreateContract(buyer, 1000, big.NewInt(50), 100, 200)
+		fm.FillContract(c1.ID, seller)
+
+		// c2: open, settlement=100, expiry=150 (will expire at slot 150)
+		fm.CreateContract(buyer, 500, big.NewInt(60), 100, 150)
+
+		// c3: filled, settlement=200, expiry=300 (not yet at settlement)
+		c3, _ := fm.CreateContract(buyer, 2000, big.NewInt(70), 200, 300)
+		fm.FillContract(c3.ID, seller)
+
+		results, total := fm.SettleExpiredPositions(150, big.NewInt(80))
+
+		// c1 should be settled: (80-50)*1000 = 30000
+		// c2 should be expired (open, past expiry)
+		// c3 should not be touched (settlement slot 200 not reached)
+		if len(results) != 2 {
+			t.Fatalf("results count = %d, want 2", len(results))
+		}
+
+		settled := 0
+		expired := 0
+		for _, r := range results {
+			if r.Expired {
+				expired++
+			} else {
+				settled++
+			}
+		}
+		if settled != 1 {
+			t.Errorf("settled = %d, want 1", settled)
+		}
+		if expired != 1 {
+			t.Errorf("expired = %d, want 1", expired)
+		}
+		if total.Cmp(big.NewInt(30000)) != 0 {
+			t.Errorf("total = %v, want 30000", total)
+		}
+	})
+
+	t.Run("no eligible contracts", func(t *testing.T) {
+		fm := NewFuturesMarket()
+		buyer := types.BytesToAddress([]byte{0x01})
+		fm.CreateContract(buyer, 1000, big.NewInt(50), 200, 300)
+
+		results, total := fm.SettleExpiredPositions(100, big.NewInt(80))
+		if len(results) != 0 {
+			t.Errorf("results = %d, want 0", len(results))
+		}
+		if total.Sign() != 0 {
+			t.Errorf("total = %v, want 0", total)
+		}
+	})
+
+	t.Run("negative settlement", func(t *testing.T) {
+		fm := NewFuturesMarket()
+		buyer := types.BytesToAddress([]byte{0x01})
+		seller := types.BytesToAddress([]byte{0x02})
+		c, _ := fm.CreateContract(buyer, 500, big.NewInt(100), 50, 200)
+		fm.FillContract(c.ID, seller)
+
+		// Actual gas price below contract price: buyer pays seller.
+		results, total := fm.SettleExpiredPositions(50, big.NewInt(40))
+		if len(results) != 1 {
+			t.Fatalf("results = %d, want 1", len(results))
+		}
+		// (40-100)*500 = -30000
+		if total.Cmp(big.NewInt(-30000)) != 0 {
+			t.Errorf("total = %v, want -30000", total)
+		}
+	})
+}
+
 func TestValidateGasFuturePosition(t *testing.T) {
 	// Nil contract.
 	if err := ValidateGasFuturePosition(nil); err == nil {

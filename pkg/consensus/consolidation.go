@@ -118,6 +118,72 @@ func ConsolidationRequestToEIP7685(req *types.ConsolidationRequest) *types.Reque
 	return types.NewRequest(types.ConsolidationRequestType, req.Encode())
 }
 
+// ConsolidateValidators merges two validators in a UnifiedBeaconState per
+// EIP-7251. The source validator's balance is transferred to the target,
+// and the source is marked for exit. Both validators must be active, not
+// slashed, and have matching compounding withdrawal credentials.
+func ConsolidateValidators(state *UnifiedBeaconState, sourceIdx, targetIdx uint64, currentEpoch Epoch) (*ConsolidationResult, error) {
+	if state == nil {
+		return nil, ErrConsolidationSameValidator // nil state
+	}
+	if sourceIdx == targetIdx {
+		return nil, ErrConsolidationSameValidator
+	}
+
+	state.mu.Lock()
+	defer state.mu.Unlock()
+
+	if int(sourceIdx) >= len(state.Validators) || int(targetIdx) >= len(state.Validators) {
+		return nil, ErrUnifiedIndexOutOfRange
+	}
+
+	src := state.Validators[sourceIdx]
+	tgt := state.Validators[targetIdx]
+
+	// Both must be active.
+	if !src.IsActiveAt(currentEpoch) {
+		return nil, ErrConsolidationSourceNotActive
+	}
+	if !tgt.IsActiveAt(currentEpoch) {
+		return nil, ErrConsolidationTargetNotActive
+	}
+	// Neither can be slashed.
+	if src.Slashed {
+		return nil, ErrConsolidationSourceSlashed
+	}
+	if tgt.Slashed {
+		return nil, ErrConsolidationTargetSlashed
+	}
+	// Withdrawal credentials must match.
+	if src.WithdrawalCredentials != tgt.WithdrawalCredentials {
+		return nil, ErrConsolidationCredentialsMismatch
+	}
+	// Target must have compounding credentials (0x02 prefix).
+	if tgt.WithdrawalCredentials[0] != CompoundingWithdrawalPrefix {
+		return nil, ErrConsolidationNotCompounding
+	}
+
+	// Transfer balance from source to target.
+	amount := src.Balance
+	tgt.Balance += amount
+	src.Balance = 0
+	src.EffectiveBalance = 0
+	src.ExitEpoch = currentEpoch + 1
+
+	// Cap target effective balance at MaxEffectiveBalance.
+	tgtEff := tgt.Balance
+	if tgtEff > MaxEffectiveBalance {
+		tgtEff = MaxEffectiveBalance
+	}
+	tgt.EffectiveBalance = (tgtEff / EffectiveBalanceIncrement) * EffectiveBalanceIncrement
+
+	return &ConsolidationResult{
+		SourcePubkey:      src.Pubkey,
+		TargetPubkey:      tgt.Pubkey,
+		AmountTransferred: amount,
+	}, nil
+}
+
 // EIP7685ToConsolidationRequest decodes an EIP-7685 Request into a
 // types.ConsolidationRequest.
 func EIP7685ToConsolidationRequest(req *types.Request) (*types.ConsolidationRequest, error) {

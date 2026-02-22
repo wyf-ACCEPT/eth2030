@@ -486,6 +486,64 @@ func TestSetScheduleImmutability(t *testing.T) {
 	}
 }
 
+func TestBPO3Schedule(t *testing.T) {
+	sched := BPO3Schedule()
+	if len(sched) != 2 {
+		t.Fatalf("BPO3Schedule length = %d, want 2", len(sched))
+	}
+	if sched[0].TargetRPO != 32 {
+		t.Errorf("BPO3[0].TargetRPO = %d, want 32", sched[0].TargetRPO)
+	}
+	if sched[1].TargetRPO != 48 {
+		t.Errorf("BPO3[1].TargetRPO = %d, want 48", sched[1].TargetRPO)
+	}
+	// Epochs should be increasing.
+	if sched[1].Epoch <= sched[0].Epoch {
+		t.Error("BPO3 epochs must be increasing")
+	}
+}
+
+func TestBPO4Schedule(t *testing.T) {
+	sched := BPO4Schedule()
+	if len(sched) != 2 {
+		t.Fatalf("BPO4Schedule length = %d, want 2", len(sched))
+	}
+	if sched[0].TargetRPO != 48 {
+		t.Errorf("BPO4[0].TargetRPO = %d, want 48", sched[0].TargetRPO)
+	}
+	if sched[1].TargetRPO != 64 {
+		t.Errorf("BPO4[1].TargetRPO = %d, want 64", sched[1].TargetRPO)
+	}
+}
+
+func TestMergeBPOSchedules(t *testing.T) {
+	t.Run("merge BPO3 and BPO4", func(t *testing.T) {
+		merged, err := MergeBPOSchedules(BPO3Schedule(), BPO4Schedule())
+		if err != nil {
+			t.Fatalf("MergeBPOSchedules: %v", err)
+		}
+		if len(merged) != 4 {
+			t.Fatalf("merged length = %d, want 4", len(merged))
+		}
+		// Verify monotonicity.
+		for i := 1; i < len(merged); i++ {
+			if merged[i].Epoch <= merged[i-1].Epoch {
+				t.Errorf("epoch[%d]=%d <= epoch[%d]=%d", i, merged[i].Epoch, i-1, merged[i-1].Epoch)
+			}
+			if merged[i].TargetRPO < merged[i-1].TargetRPO {
+				t.Errorf("RPO[%d]=%d < RPO[%d]=%d", i, merged[i].TargetRPO, i-1, merged[i-1].TargetRPO)
+			}
+		}
+	})
+
+	t.Run("empty merge", func(t *testing.T) {
+		_, err := MergeBPOSchedules()
+		if err != ErrRPOScheduleEmpty {
+			t.Fatalf("expected ErrRPOScheduleEmpty, got %v", err)
+		}
+	})
+}
+
 func TestValidateBlobSchedule(t *testing.T) {
 	cfg := DefaultRPOConfig()
 

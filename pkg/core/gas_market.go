@@ -178,6 +178,51 @@ func (fm *FuturesMarket) OpenContracts() []*FuturesContract {
 	return result
 }
 
+// FuturesSettlementOutcome holds per-contract outcomes from SettleExpiredPositions.
+type FuturesSettlementOutcome struct {
+	ContractID types.Hash
+	Settlement *big.Int
+	Expired    bool
+}
+
+// SettleExpiredPositions scans all filled contracts that have reached their
+// settlement slot and settles them at the given actualGasPrice. Contracts
+// that are still open and past their expiry slot are marked expired. Returns
+// a list of settlement outcomes and the total settlement amount.
+func (fm *FuturesMarket) SettleExpiredPositions(currentSlot uint64, actualGasPrice *big.Int) ([]FuturesSettlementOutcome, *big.Int) {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
+
+	var results []FuturesSettlementOutcome
+	totalSettlement := new(big.Int)
+
+	for _, c := range fm.contracts {
+		switch c.Status {
+		case ContractFilled:
+			if currentSlot >= c.SettlementSlot {
+				diff := new(big.Int).Sub(actualGasPrice, c.PricePerGas)
+				settlement := new(big.Int).Mul(diff, new(big.Int).SetUint64(c.GasAmount))
+				c.Status = ContractSettled
+				totalSettlement.Add(totalSettlement, settlement)
+				results = append(results, FuturesSettlementOutcome{
+					ContractID: c.ID,
+					Settlement: settlement,
+				})
+			}
+		case ContractOpen:
+			if currentSlot >= c.ExpirySlot {
+				c.Status = ContractExpired
+				results = append(results, FuturesSettlementOutcome{
+					ContractID: c.ID,
+					Expired:    true,
+				})
+			}
+		}
+	}
+
+	return results, totalSettlement
+}
+
 // MarketStats returns the count of contracts in each status.
 func (fm *FuturesMarket) MarketStats() (open, filled, settled, expired int) {
 	fm.mu.RLock()

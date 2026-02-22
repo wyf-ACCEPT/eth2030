@@ -209,3 +209,33 @@ func (gr *GossipRouter) SubnetCount(subnet uint64) int {
 	defer gr.mu.RUnlock()
 	return len(gr.subscribers[subnet])
 }
+
+// GossipTopicForSubnet returns the canonical p2p gossip topic name for a
+// cell subnet. This maps the das cell gossip subnet IDs to p2p/gossip.go
+// topic names, wiring cell-level message routing through the p2p layer.
+func GossipTopicForSubnet(subnet uint64) string {
+	return fmt.Sprintf("/eth2030/das/cell/subnet/%d", subnet)
+}
+
+// RouteCellToGossipTopic determines which gossip topic a cell message should
+// be published to, performing validation and subnet mapping. This bridges
+// the DAS cell gossip layer with the p2p gossip protocol by converting cell
+// messages into (topic, data) pairs ready for GossipManager.PublishMessage.
+func (gr *GossipRouter) RouteCellToGossipTopic(msg *CellMessage) (topic string, data []byte, err error) {
+	if err = ValidateCellMessage(msg); err != nil {
+		return "", nil, err
+	}
+
+	subnet := CellSubnet(msg.CellIndex, gr.config.NumSubnets)
+	topic = GossipTopicForSubnet(subnet)
+
+	// Serialize the cell message into a flat byte buffer:
+	// [8 bytes blobIndex][8 bytes cellIndex][data][proof]
+	buf := make([]byte, 16+len(msg.Data)+len(msg.Proof))
+	binary.LittleEndian.PutUint64(buf[0:8], msg.BlobIndex)
+	binary.LittleEndian.PutUint64(buf[8:16], msg.CellIndex)
+	copy(buf[16:16+len(msg.Data)], msg.Data)
+	copy(buf[16+len(msg.Data):], msg.Proof)
+
+	return topic, buf, nil
+}

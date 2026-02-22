@@ -148,6 +148,61 @@ func TestAccessEventsGasCalculatorMerge(t *testing.T) {
 	}
 }
 
+func TestAccessEventsGasCalculatorCreateContractGas(t *testing.T) {
+	t.Run("small contract", func(t *testing.T) {
+		calc := NewAccessEventsGasCalculator()
+		addr := types.HexToAddress("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+		// 62 bytes of code = 2 chunks of 31 bytes.
+		gas := calc.CreateContractGas(addr, 62, 10_000_000)
+		if gas == 0 {
+			t.Fatal("CreateContractGas should return non-zero gas")
+		}
+	})
+
+	t.Run("zero code size", func(t *testing.T) {
+		calc := NewAccessEventsGasCalculator()
+		addr := types.HexToAddress("0x1111111111111111111111111111111111111111")
+		gas := calc.CreateContractGas(addr, 0, 10_000_000)
+		// Should still charge for account header writes even with 0 code.
+		if gas == 0 {
+			t.Fatal("CreateContractGas with zero code should charge header gas")
+		}
+	})
+
+	t.Run("large contract", func(t *testing.T) {
+		calc := NewAccessEventsGasCalculator()
+		addr := types.HexToAddress("0x2222222222222222222222222222222222222222")
+		smallGas := calc.CreateContractGas(addr, 31, 10_000_000)
+		calc2 := NewAccessEventsGasCalculator()
+		largeGas := calc2.CreateContractGas(addr, 310, 10_000_000)
+		if largeGas <= smallGas {
+			t.Fatalf("larger code (%d) should cost more than smaller code (%d)", largeGas, smallGas)
+		}
+	})
+}
+
+func TestAccessEventsGasCalculatorCodeChunkAccessGas(t *testing.T) {
+	t.Run("single chunk", func(t *testing.T) {
+		calc := NewAccessEventsGasCalculator()
+		addr := types.HexToAddress("0x3333333333333333333333333333333333333333")
+		gas := calc.CodeChunkAccessGas(addr, 1, 10_000_000)
+		if gas == 0 {
+			t.Fatal("CodeChunkAccessGas should return non-zero gas for cold access")
+		}
+	})
+
+	t.Run("multiple chunks", func(t *testing.T) {
+		calc := NewAccessEventsGasCalculator()
+		addr := types.HexToAddress("0x4444444444444444444444444444444444444444")
+		gas1 := calc.CodeChunkAccessGas(addr, 1, 10_000_000)
+		calc2 := NewAccessEventsGasCalculator()
+		gas5 := calc2.CodeChunkAccessGas(addr, 5, 10_000_000)
+		if gas5 <= gas1 {
+			t.Fatalf("5 chunks (%d) should cost more than 1 chunk (%d)", gas5, gas1)
+		}
+	})
+}
+
 func TestAccessEventsGasCalculatorCopy(t *testing.T) {
 	calc := NewAccessEventsGasCalculator()
 	addr := types.HexToAddress("0x1234567890abcdef1234567890abcdef12345678")

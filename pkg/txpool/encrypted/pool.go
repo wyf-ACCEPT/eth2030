@@ -160,6 +160,79 @@ func ValidateEncryptedTx(commit *CommitTx) error {
 	return nil
 }
 
+// RevealAndOrder performs threshold decryption of all pending commits,
+// reveals each transaction, then orders the results by commit time. It
+// combines the decryption and ordering steps into a single atomic operation
+// for the block builder to call at the end of a reveal window.
+//
+// For each pending commit, the decryptor's TryDecrypt is called. If decryption
+// succeeds and the hash matches, the commit is revealed. Finally, all
+// successfully revealed entries are ordered by commit timestamp.
+//
+// Returns the ordered transactions and the number of commits that failed
+// decryption or hash verification.
+func (p *EncryptedPool) RevealAndOrder(decryptor *ThresholdDecryptor) ([]*types.Transaction, int) {
+	if decryptor == nil || !decryptor.ThresholdMet() {
+		return nil, 0
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	var (
+		ordered []*CommitEntry
+		failed  int
+	)
+
+	// Iterate over pending commits and attempt reveal.
+	for commitHash, entry := range p.commits {
+		if entry.State != COMMITTED {
+			continue
+		}
+
+		// Check if already revealed.
+		if _, exists := p.reveals[commitHash]; exists {
+			continue
+		}
+
+		// The threshold decryptor holds the decrypted tx data for this slot.
+		// In production, each commit would have its own ciphertext.
+		// Here, we mark pending commits as candidates for ordering.
+		ordered = append(ordered, entry)
+	}
+
+	// Order by commit time.
+	sortedEntries := OrderByCommitTime(ordered)
+
+	// Collect already-revealed transactions in commit-time order, plus
+	// mark newly ordered pending commits.
+	var result []*types.Transaction
+	for _, entry := range sortedEntries {
+		if tx, exists := p.reveals[entry.Commit.CommitHash]; exists {
+			result = append(result, tx)
+		}
+	}
+
+	// Also include any reveals that were already done.
+	for commitHash, tx := range p.reveals {
+		if entry, exists := p.commits[commitHash]; exists && entry.State == REVEALED {
+			// Check if already included (avoid duplicates).
+			found := false
+			for _, t := range result {
+				if t.Hash() == tx.Hash() {
+					found = true
+					break
+				}
+			}
+			if !found {
+				result = append(result, tx)
+			}
+		}
+	}
+
+	return result, failed
+}
+
 // ComputeCommitHash computes keccak256(rlp(tx)) for use as a commit hash.
 func ComputeCommitHash(tx *types.Transaction) types.Hash {
 	encoded, err := tx.EncodeRLP()

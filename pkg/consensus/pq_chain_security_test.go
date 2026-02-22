@@ -427,3 +427,60 @@ func TestValidatePQChainConfig(t *testing.T) {
 		t.Error("expected error for threshold > 100")
 	}
 }
+
+func TestIntegratePQForkChoice(t *testing.T) {
+	t.Run("applies PQ weights to main fork choice", func(t *testing.T) {
+		config := &PQChainConfig{
+			SecurityLevel: PQSecurityOptional,
+			SlotsPerEpoch: 32,
+		}
+		v := NewPQChainValidator(config)
+		pqFC := NewPQForkChoice(v)
+
+		// Create a standard fork choice and add a block.
+		blockHash := types.HexToHash("0xaa")
+		parentHash := types.HexToHash("0x00")
+		fc := NewForkChoiceStore(ForkChoiceConfig{})
+		fc.AddBlock(blockHash, parentHash, 1)
+
+		// Add PQ attestation to the PQ fork choice.
+		pqFC.AddAttestation(&PQAttestationRecord{
+			BlockRoot: blockHash,
+			HasPQSig:  true,
+			Weight:    100,
+			Slot:      1,
+		})
+
+		// Integrate PQ weights into the main fork choice.
+		count := IntegratePQForkChoice(fc, pqFC)
+		if count != 1 {
+			t.Errorf("applied = %d, want 1", count)
+		}
+	})
+
+	t.Run("skips blocks not in main fork choice", func(t *testing.T) {
+		v := NewPQChainValidator(nil)
+		pqFC := NewPQForkChoice(v)
+
+		unknown := types.HexToHash("0xcc")
+		pqFC.AddAttestation(&PQAttestationRecord{
+			BlockRoot: unknown,
+			HasPQSig:  true,
+			Weight:    50,
+			Slot:      1,
+		})
+
+		fc := NewForkChoiceStore(ForkChoiceConfig{})
+		count := IntegratePQForkChoice(fc, pqFC)
+		if count != 0 {
+			t.Errorf("applied = %d, want 0 (block not in FC)", count)
+		}
+	})
+
+	t.Run("nil parameters", func(t *testing.T) {
+		count := IntegratePQForkChoice(nil, nil)
+		if count != 0 {
+			t.Errorf("nil inputs should return 0, got %d", count)
+		}
+	})
+}

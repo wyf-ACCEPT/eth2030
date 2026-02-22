@@ -256,6 +256,51 @@ func TestShardedPool_ZeroConfig(t *testing.T) {
 	}
 }
 
+func TestShardedPool_ResizeShards(t *testing.T) {
+	t.Run("grow shards", func(t *testing.T) {
+		sp := NewShardedPool(ShardConfig{NumShards: 2, ShardCapacity: 1000})
+		for i := 0; i < 20; i++ {
+			sp.AddTx(makeTestTx(uint64(i)))
+		}
+		totalBefore := sp.Count()
+
+		migrated := sp.ResizeShards(8)
+		if sp.Count() != totalBefore {
+			t.Fatalf("total changed: %d -> %d", totalBefore, sp.Count())
+		}
+		if migrated != totalBefore {
+			t.Errorf("migrated = %d, want %d", migrated, totalBefore)
+		}
+		if len(sp.shards) != 8 {
+			t.Errorf("shard count = %d, want 8", len(sp.shards))
+		}
+	})
+
+	t.Run("shrink shards", func(t *testing.T) {
+		sp := NewShardedPool(ShardConfig{NumShards: 8, ShardCapacity: 1000})
+		for i := 0; i < 15; i++ {
+			sp.AddTx(makeTestTx(uint64(i)))
+		}
+		totalBefore := sp.Count()
+		sp.ResizeShards(2)
+		if sp.Count() != totalBefore {
+			t.Fatalf("total changed: %d -> %d", totalBefore, sp.Count())
+		}
+		if len(sp.shards) != 2 {
+			t.Errorf("shard count = %d, want 2", len(sp.shards))
+		}
+	})
+
+	t.Run("same size noop", func(t *testing.T) {
+		sp := NewShardedPool(ShardConfig{NumShards: 4, ShardCapacity: 100})
+		sp.AddTx(makeTestTx(0))
+		migrated := sp.ResizeShards(4)
+		if migrated != 0 {
+			t.Errorf("migrated = %d, want 0 (no resize)", migrated)
+		}
+	})
+}
+
 func TestValidateShardAssignment(t *testing.T) {
 	// Zero shards.
 	if err := ValidateShardAssignment(ShardConfig{NumShards: 0}); err == nil {

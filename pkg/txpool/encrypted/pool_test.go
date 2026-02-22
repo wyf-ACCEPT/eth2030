@@ -268,6 +268,57 @@ func TestPool_CommitHashDiffers(t *testing.T) {
 	}
 }
 
+func TestPool_RevealAndOrder(t *testing.T) {
+	t.Run("orders revealed by commit time", func(t *testing.T) {
+		pool := NewEncryptedPool()
+
+		// Create 3 commits with different timestamps, reveal all.
+		var txs []*types.Transaction
+		for i := uint64(0); i < 3; i++ {
+			tx := poolTestTx(i, int64(1000+i*100))
+			txs = append(txs, tx)
+			ch := ComputeCommitHash(tx)
+			pool.AddCommit(&CommitTx{
+				CommitHash: ch,
+				Sender:     types.HexToAddress("0x1111"),
+				GasLimit:   21000,
+				Timestamp:  200 - i*10, // reverse order: 200, 190, 180
+			})
+			pool.AddReveal(&RevealTx{CommitHash: ch, Transaction: tx})
+		}
+
+		// Create a decryptor that has met threshold.
+		dec, _ := NewThresholdDecryptor(1, 1)
+		dec.SetEpoch(0)
+		dec.AddShare(&DecryptionShare{ValidatorIndex: 0, ShareBytes: []byte{0x01}, Epoch: 0})
+
+		ordered, failed := pool.RevealAndOrder(dec)
+		if failed != 0 {
+			t.Errorf("failed = %d, want 0", failed)
+		}
+		if len(ordered) != 3 {
+			t.Fatalf("ordered = %d, want 3", len(ordered))
+		}
+	})
+
+	t.Run("nil decryptor returns empty", func(t *testing.T) {
+		pool := NewEncryptedPool()
+		ordered, _ := pool.RevealAndOrder(nil)
+		if len(ordered) != 0 {
+			t.Errorf("expected empty result for nil decryptor")
+		}
+	})
+
+	t.Run("threshold not met returns empty", func(t *testing.T) {
+		pool := NewEncryptedPool()
+		dec, _ := NewThresholdDecryptor(3, 5) // needs 3 shares
+		ordered, _ := pool.RevealAndOrder(dec)
+		if len(ordered) != 0 {
+			t.Errorf("expected empty result when threshold not met")
+		}
+	})
+}
+
 func TestValidateEncryptedTx(t *testing.T) {
 	// Nil commit.
 	if err := ValidateEncryptedTx(nil); err == nil {

@@ -519,3 +519,50 @@ func TestValidateFutureContract(t *testing.T) {
 		t.Error("expected error for expiry before slot")
 	}
 }
+
+func TestFuturesPoolSettleFuture(t *testing.T) {
+	t.Run("settles filled orders", func(t *testing.T) {
+		pool, err := NewFuturesPool(100, 300)
+		if err != nil {
+			t.Fatalf("NewFuturesPool: %v", err)
+		}
+
+		// Deposit margin and create matching orders.
+		buyer := types.Address{0xAA}
+		seller := types.Address{0xBB}
+		pool.DepositMargin(buyer, big.NewInt(1_000_000))
+		pool.DepositMargin(seller, big.NewInt(1_000_000))
+
+		book := pool.GetOrCreateBook(200)
+		book.PlaceOrder(OrderSideBuy, buyer, 0, big.NewInt(500), 1, 100)
+		book.PlaceOrder(OrderSideSell, seller, 0, big.NewInt(400), 1, 100)
+
+		// Match the orders.
+		matched := book.MatchOrders()
+		if matched != 1 {
+			t.Fatalf("matched = %d, want 1", matched)
+		}
+
+		// Settle with an actual blob hash. Both buy and sell orders are
+		// filled, so both get settled.
+		actualHash := types.Hash{0x01, 0x02}
+		settled, payout := pool.SettleFuture(200, actualHash)
+		if settled != 2 {
+			t.Errorf("settled = %d, want 2 (both buy and sell orders)", settled)
+		}
+		if payout == nil || payout.Sign() < 0 {
+			t.Error("payout should be non-negative")
+		}
+	})
+
+	t.Run("no book for slot", func(t *testing.T) {
+		pool, _ := NewFuturesPool(100, 300)
+		settled, payout := pool.SettleFuture(999, types.Hash{})
+		if settled != 0 {
+			t.Errorf("settled = %d, want 0", settled)
+		}
+		if payout.Sign() != 0 {
+			t.Error("payout should be zero for no book")
+		}
+	})
+}

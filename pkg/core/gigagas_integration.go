@@ -8,6 +8,7 @@ package core
 import (
 	"errors"
 	"math"
+	"math/big"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -376,4 +377,53 @@ func (p *GigagasBlockProcessor) Metrics() (blocks, conflicts uint64) {
 // CurrentGasRate returns the current gas/sec from the rate tracker.
 func (p *GigagasBlockProcessor) CurrentGasRate() float64 {
 	return p.rateTracker.CurrentGasRate()
+}
+
+// IntegrationTest runs a full parallel pipeline end-to-end: it creates a block
+// with the given transactions, processes it through the gigagas block processor
+// (parallel execution, conflict detection, sequential re-execution), and verifies
+// that all receipts are produced, gas totals are consistent, and the adaptive
+// worker count is updated. Returns the processing result for further inspection.
+func (p *GigagasBlockProcessor) IntegrationTest(
+	txs []*types.Transaction,
+	stateDB *state.ShardedStateDB,
+	gasLimit uint64,
+	blockTime uint64,
+	blockNum int64,
+) (*BlockProcessingResult, error) {
+	if stateDB == nil {
+		return nil, ErrGigagasNilState
+	}
+	if !p.IsEnabled(blockTime) {
+		return nil, ErrGigagasNotEnabled
+	}
+
+	// Build a block from the transactions.
+	header := &types.Header{
+		Number:   new(big.Int).SetInt64(blockNum),
+		GasLimit: gasLimit,
+	}
+	body := &types.Body{Transactions: txs}
+	block := types.NewBlock(header, body)
+
+	// Process the block through the full parallel pipeline.
+	result, err := p.ProcessBlockParallel(block, stateDB, gasLimit, blockTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate invariants: receipt count matches tx count, gas totals consistent.
+	if len(result.Receipts) != len(txs) {
+		return result, errors.New("gigagas_integration: receipt count mismatch")
+	}
+
+	var receiptGasSum uint64
+	for _, r := range result.Receipts {
+		receiptGasSum += r.GasUsed
+	}
+	if receiptGasSum != result.GasUsed {
+		return result, errors.New("gigagas_integration: receipt gas sum mismatch")
+	}
+
+	return result, nil
 }

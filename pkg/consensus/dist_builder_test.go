@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 	"time"
+
+	"github.com/eth2030/eth2030/core/types"
 )
 
 func TestDefaultDistBuilderConfig(t *testing.T) {
@@ -424,5 +426,50 @@ func TestValidateDistBuilderConfig(t *testing.T) {
 
 	if err := ValidateDistBuilderConfig(nil); err == nil {
 		t.Error("expected error for nil config")
+	}
+}
+
+func TestEPBSBidAdapter_Basic(t *testing.T) {
+	db := NewDistBlockBuilder(nil)
+
+	bid, err := db.EPBSBidAdapter("builder-0", 10, 1000, 30_000_000, types.HexToHash("0xAA"))
+	if err != nil {
+		t.Fatalf("EPBSBidAdapter: %v", err)
+	}
+	if bid.Slot != 10 {
+		t.Errorf("slot = %d, want 10", bid.Slot)
+	}
+	// Value in wei: 1000 Gwei = 1000 * 10^9 wei = 10^12.
+	expected := new(big.Int).Mul(big.NewInt(1000), big.NewInt(1_000_000_000))
+	if bid.Value.Cmp(expected) != 0 {
+		t.Errorf("value = %s, want %s", bid.Value, expected)
+	}
+	if bid.BuilderID != "builder-0" {
+		t.Errorf("builderID = %s, want builder-0", bid.BuilderID)
+	}
+
+	// Should be retrievable as winning bid.
+	winning := db.GetWinningBid(10)
+	if winning == nil {
+		t.Fatal("expected winning bid for slot 10")
+	}
+	if winning.BlockRoot != types.HexToHash("0xAA") {
+		t.Error("winning bid block root mismatch")
+	}
+}
+
+func TestEPBSBidAdapter_ZeroSlot(t *testing.T) {
+	db := NewDistBlockBuilder(nil)
+	_, err := db.EPBSBidAdapter("builder-0", 0, 100, 30_000_000, types.Hash{})
+	if err != ErrDBSlotZero {
+		t.Fatalf("expected ErrDBSlotZero, got %v", err)
+	}
+}
+
+func TestEPBSBidAdapter_ZeroValue(t *testing.T) {
+	db := NewDistBlockBuilder(nil)
+	_, err := db.EPBSBidAdapter("builder-0", 10, 0, 30_000_000, types.Hash{})
+	if err != ErrDBZeroBidValue {
+		t.Fatalf("expected ErrDBZeroBidValue, got %v", err)
 	}
 }

@@ -230,6 +230,81 @@ func TestBatchAggregatorClearsPending(t *testing.T) {
 	}
 }
 
+func TestBatchAggregatorAllProofTypesRoundTrip(t *testing.T) {
+	// Round-trip test: aggregate 5 proofs (one of each type + extra ZKSNARK),
+	// then verify the batch.
+	ba := NewBatchAggregator(DefaultAggregationConfig(), NewSimpleAggregator())
+
+	t.Run("aggregate all types", func(t *testing.T) {
+		proofTypes := []ProofType{ZKSNARK, ZKSTARK, IPA, KZG, ZKSNARK}
+		for i, pt := range proofTypes {
+			p := ExecutionProof{
+				StateRoot: types.Hash{byte(i + 1)},
+				BlockHash: types.Hash{byte(i + 0x10)},
+				ProofData: []byte{byte(i), byte(pt), 0xAA},
+				ProverID:  "test-prover",
+				Type:      pt,
+			}
+			if err := ba.AddProof(p); err != nil {
+				t.Fatalf("AddProof(%d): %v", i, err)
+			}
+		}
+
+		batch, err := ba.AggregateBatch()
+		if err != nil {
+			t.Fatalf("AggregateBatch: %v", err)
+		}
+		if len(batch.Proofs) != 5 {
+			t.Fatalf("expected 5 proofs, got %d", len(batch.Proofs))
+		}
+		if batch.AggregateHash.IsZero() {
+			t.Error("AggregateHash should not be zero")
+		}
+
+		valid, err := ba.VerifyBatch(batch)
+		if err != nil {
+			t.Fatalf("VerifyBatch: %v", err)
+		}
+		if !valid {
+			t.Error("expected valid batch with all proof types")
+		}
+		if !batch.Verified {
+			t.Error("expected Verified=true")
+		}
+	})
+
+	t.Run("tampered single proof in batch", func(t *testing.T) {
+		ba2 := NewBatchAggregator(DefaultAggregationConfig(), NewSimpleAggregator())
+		for i := 0; i < 5; i++ {
+			ba2.AddProof(ExecutionProof{
+				StateRoot: types.Hash{byte(i + 1)},
+				BlockHash: types.Hash{byte(i + 0x20)},
+				ProofData: []byte{byte(i), 0xBB},
+				ProverID:  "test",
+				Type:      ProofType(i % 4),
+			})
+		}
+		batch, _ := ba2.AggregateBatch()
+		// Tamper with one proof's data.
+		batch.Proofs[2].ProofData[0] ^= 0xFF
+		valid, err := ba2.VerifyBatch(batch)
+		if err != nil {
+			t.Fatalf("VerifyBatch: %v", err)
+		}
+		if valid {
+			t.Error("expected invalid batch after tampering a proof")
+		}
+	})
+
+	t.Run("empty batch fails", func(t *testing.T) {
+		ba3 := NewBatchAggregator(DefaultAggregationConfig(), NewSimpleAggregator())
+		_, err := ba3.AggregateBatch()
+		if err != ErrBatchEmpty {
+			t.Errorf("expected ErrBatchEmpty, got %v", err)
+		}
+	})
+}
+
 func TestValidateAggregatedProof(t *testing.T) {
 	// Nil batch should fail.
 	if err := ValidateAggregatedProof(nil); err == nil {

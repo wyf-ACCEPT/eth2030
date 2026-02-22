@@ -583,6 +583,84 @@ func ValidateBeaconState(s *UnifiedBeaconState) error {
 	return nil
 }
 
+// LeanBeaconState is a minimal representation of the beacon state used for
+// light clients and lean spec compliance. It contains only the fields
+// essential for verification: slot, epoch, validator count, total balance,
+// and finalization checkpoints.
+type LeanBeaconState struct {
+	Slot               uint64
+	Epoch              Epoch
+	ValidatorCount     uint64
+	TotalActiveBalance uint64
+	FinalizedEpoch     Epoch
+	FinalizedRoot      [32]byte
+	JustifiedEpoch     Epoch
+	JustifiedRoot      [32]byte
+	StateRoot          types.Hash
+}
+
+// MergeBeaconLeanSpecs converts a UnifiedBeaconState to LeanBeaconState and
+// back, enabling round-trip conversion between the full (unified) and lean
+// (minimal) spec representations. This supports the Hogota "beacon & lean
+// specs merge" roadmap item by providing a canonical bridge between the two
+// formats. The lean format strips out per-validator details, keeping only
+// aggregate statistics needed for light client verification.
+func MergeBeaconLeanSpecs(state *UnifiedBeaconState) (*LeanBeaconState, error) {
+	if state == nil {
+		return nil, ErrUnifiedNilState
+	}
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+
+	var totalActive uint64
+	var activeCount uint64
+	for _, v := range state.Validators {
+		if v.IsActiveAt(state.CurrentEpoch) {
+			totalActive += v.EffectiveBalance
+			activeCount++
+		}
+	}
+
+	lean := &LeanBeaconState{
+		Slot:               state.CurrentSlot,
+		Epoch:              state.CurrentEpoch,
+		ValidatorCount:     activeCount,
+		TotalActiveBalance: totalActive,
+		FinalizedEpoch:     state.FinalizedCheckpointU.Epoch,
+		FinalizedRoot:      state.FinalizedCheckpointU.Root,
+		JustifiedEpoch:     state.CurrentJustified.Epoch,
+		JustifiedRoot:      state.CurrentJustified.Root,
+		StateRoot:          state.computeStateRoot(),
+	}
+	return lean, nil
+}
+
+// ApplyLeanState updates a UnifiedBeaconState's finalization checkpoints
+// from a LeanBeaconState, merging lean-format data back into the full state.
+// Only checkpoints that advance finalization are applied.
+func (s *UnifiedBeaconState) ApplyLeanState(lean *LeanBeaconState) error {
+	if lean == nil {
+		return ErrUnifiedNilState
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Only apply if the lean state has more advanced finalization.
+	if lean.FinalizedEpoch > s.FinalizedCheckpointU.Epoch {
+		s.FinalizedCheckpointU = UnifiedCheckpoint{
+			Epoch: lean.FinalizedEpoch,
+			Root:  lean.FinalizedRoot,
+		}
+	}
+	if lean.JustifiedEpoch > s.CurrentJustified.Epoch {
+		s.CurrentJustified = UnifiedCheckpoint{
+			Epoch: lean.JustifiedEpoch,
+			Root:  lean.JustifiedRoot,
+		}
+	}
+	return nil
+}
+
 // computeKeccakStateRoot is an alternative state root using Keccak256
 // for compatibility with v1 FullBeaconState.
 func (s *UnifiedBeaconState) computeKeccakStateRoot() types.Hash {

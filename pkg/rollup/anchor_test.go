@@ -261,6 +261,46 @@ func TestAnchorConstants(t *testing.T) {
 	}
 }
 
+func TestUpdateAnchorAfterExecute(t *testing.T) {
+	t.Run("successful execute advances anchor", func(t *testing.T) {
+		ac := NewAnchorContract()
+		output := &ExecuteOutput{
+			PostStateRoot: types.BytesToHash([]byte{0xAA, 0xBB, 0xCC}),
+			ReceiptsRoot:  types.BytesToHash([]byte{0xDD}),
+			GasUsed:       42000,
+			Success:       true,
+		}
+		if err := ac.UpdateAnchorAfterExecute(output, 1, 1000); err != nil {
+			t.Fatalf("UpdateAnchorAfterExecute: %v", err)
+		}
+		state := ac.GetLatestState()
+		if state.BlockNumber != 1 {
+			t.Errorf("BlockNumber = %d, want 1", state.BlockNumber)
+		}
+		if state.LatestStateRoot != output.PostStateRoot {
+			t.Error("LatestStateRoot mismatch")
+		}
+		if state.Timestamp != 1000 {
+			t.Errorf("Timestamp = %d, want 1000", state.Timestamp)
+		}
+	})
+
+	t.Run("failed execute rejected", func(t *testing.T) {
+		ac := NewAnchorContract()
+		output := &ExecuteOutput{Success: false}
+		if err := ac.UpdateAnchorAfterExecute(output, 1, 1000); err == nil {
+			t.Fatal("expected error for failed output")
+		}
+	})
+
+	t.Run("nil output rejected", func(t *testing.T) {
+		ac := NewAnchorContract()
+		if err := ac.UpdateAnchorAfterExecute(nil, 1, 1000); err == nil {
+			t.Fatal("expected error for nil output")
+		}
+	})
+}
+
 func TestAnchorContractFirstUpdateAllowed(t *testing.T) {
 	ac := NewAnchorContract()
 	// First update with block 0 should work (state.BlockNumber is 0 initially,

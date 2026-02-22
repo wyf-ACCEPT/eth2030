@@ -250,6 +250,37 @@ func TestProofBackend_DeterministicProof(t *testing.T) {
 	}
 }
 
+func TestProofBackend_VerifyWithBackend(t *testing.T) {
+	t.Run("valid proof round-trip", func(t *testing.T) {
+		trace := buildTestTrace(t)
+		program := []byte("test-program-for-backend")
+		result, err := VerifyWithBackend(trace, program, []byte("public-inputs"))
+		if err != nil {
+			t.Fatalf("VerifyWithBackend: %v", err)
+		}
+		if result == nil {
+			t.Fatal("result should not be nil")
+		}
+		if len(result.ProofBytes) != groth16ProofSize {
+			t.Errorf("proof length = %d, want %d", len(result.ProofBytes), groth16ProofSize)
+		}
+	})
+
+	t.Run("nil trace", func(t *testing.T) {
+		_, err := VerifyWithBackend(nil, []byte("prog"), []byte("input"))
+		if err != ErrProofBackendNilTrace {
+			t.Errorf("expected ErrProofBackendNilTrace, got %v", err)
+		}
+	})
+
+	t.Run("empty trace", func(t *testing.T) {
+		_, err := VerifyWithBackend(NewRVWitnessCollector(), []byte("prog"), []byte("input"))
+		if err != ErrProofBackendEmptyTrace {
+			t.Errorf("expected ErrProofBackendEmptyTrace, got %v", err)
+		}
+	})
+}
+
 func TestProofBackend_DifferentInputsProduceDifferentProofs(t *testing.T) {
 	trace := buildTestTrace(t)
 	programHash := HashProgram([]byte("test-program"))

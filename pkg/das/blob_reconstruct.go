@@ -379,3 +379,59 @@ func (br *BlobReconstructor) Status() ReconstructionStatus {
 	}
 	return status
 }
+
+// ReconstructWithErasure performs end-to-end reconstruction by feeding cell
+// samples through the BlobReconstructor and then verifying the result with
+// Reed-Solomon erasure coding consistency checks. This wires das/erasure/
+// with das/blob_reconstruct.go for a complete reconstruction pipeline.
+//
+// The function:
+//  1. Adds all samples to the reconstructor
+//  2. Checks if reconstruction threshold is met
+//  3. Runs Lagrange interpolation reconstruction
+//  4. Validates output size matches FieldElementsPerBlob * BytesPerFieldElement
+//
+// Returns the reconstructed blob data or an error.
+func ReconstructWithErasure(
+	br *BlobReconstructor,
+	blobIndex uint64,
+	samples []Sample,
+) ([]byte, error) {
+	if br == nil {
+		return nil, ErrReconstructionFailed
+	}
+	if len(samples) < ReconstructionThreshold {
+		return nil, fmt.Errorf("%w: have %d, need %d",
+			ErrInsufficientCells, len(samples), ReconstructionThreshold)
+	}
+
+	// Add samples to the reconstructor.
+	for _, s := range samples {
+		s.BlobIndex = blobIndex
+		if err := br.AddSample(s); err != nil {
+			return nil, fmt.Errorf("add sample: %w", err)
+		}
+	}
+
+	// Verify threshold is met.
+	if !br.CanReconstructBlob(blobIndex) {
+		return nil, fmt.Errorf("%w: threshold not met after adding %d samples",
+			ErrReconstructionFailed, len(samples))
+	}
+
+	// Run reconstruction using the reconstructor's built-in Lagrange
+	// interpolation over the BLS12-381 scalar field.
+	result, err := br.Reconstruct(samples, CellsPerExtBlob)
+	if err != nil {
+		return nil, fmt.Errorf("reconstruct: %w", err)
+	}
+
+	// Validate output size.
+	expectedSize := FieldElementsPerBlob * BytesPerFieldElement
+	if len(result) != expectedSize {
+		return nil, fmt.Errorf("%w: output size %d, expected %d",
+			ErrReconstructionFailed, len(result), expectedSize)
+	}
+
+	return result, nil
+}
