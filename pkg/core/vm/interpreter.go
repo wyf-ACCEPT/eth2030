@@ -804,6 +804,9 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 	// EIP-161: set contract nonce to 1 (post Spurious Dragon).
 	evm.StateDB.SetNonce(contractAddr, 1)
 
+	// EIP-2929: warm the created contract address.
+	evm.StateDB.AddAddressToAccessList(contractAddr)
+
 	// Transfer value
 	if value != nil && value.Sign() > 0 {
 		callerBalance := evm.StateDB.GetBalance(caller)

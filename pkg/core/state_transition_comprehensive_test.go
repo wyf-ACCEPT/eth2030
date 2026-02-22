@@ -156,17 +156,10 @@ func TestETHTransferInsufficientGas(t *testing.T) {
 	}
 
 	gp := new(GasPool).AddGas(header.GasLimit)
-	result, err := applyMessage(TestConfig, nil, statedb, header, msg, gp)
-	if err != nil {
-		t.Fatalf("applyMessage should not return protocol error: %v", err)
-	}
-	// The result should indicate failure (intrinsic gas too low).
-	if !result.Failed() {
-		t.Fatal("expected execution failure for intrinsic gas too low")
-	}
-	// All gas should be consumed.
-	if result.UsedGas != msg.GasLimit {
-		t.Errorf("UsedGas = %d, want %d (all gas consumed)", result.UsedGas, msg.GasLimit)
+	_, err := applyMessage(TestConfig, nil, statedb, header, msg, gp)
+	// Intrinsic gas too low is now returned as a protocol error (matching go-ethereum).
+	if err == nil {
+		t.Fatal("expected error for intrinsic gas too low")
 	}
 }
 

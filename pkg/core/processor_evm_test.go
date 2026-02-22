@@ -6,6 +6,7 @@ import (
 
 	"github.com/eth2028/eth2028/core/state"
 	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2028/eth2028/core/vm"
 )
 
 // makeCreationCode wraps runtime code in creation bytecode that copies
@@ -55,11 +56,17 @@ func applyTx(t *testing.T, statedb *state.MemoryStateDB, sender types.Address, t
 	header := newTestHeader()
 	gp := new(GasPool).AddGas(header.GasLimit)
 
-	snapshot := statedb.Snapshot()
 	result, err := applyMessage(TestConfig, nil, statedb, header, &msg, gp)
 	if err != nil {
-		statedb.RevertToSnapshot(snapshot)
-		t.Fatalf("applyMessage protocol error: %v", err)
+		// Pre-execution validation error (intrinsic gas, nonce, balance).
+		// Return a failed result. State is not modified by applyMessage on error.
+		result = &ExecutionResult{
+			UsedGas: msg.GasLimit,
+			Err:     err,
+		}
+		receipt := types.NewReceipt(types.ReceiptStatusFailed, msg.GasLimit)
+		receipt.GasUsed = msg.GasLimit
+		return result, receipt
 	}
 
 	var receiptStatus uint64
@@ -193,7 +200,7 @@ func TestProcessorOutOfGas(t *testing.T) {
 	initCode := makeCreationCode(runtimeCode)
 
 	// Gas limit just barely above intrinsic gas but not enough for EVM execution.
-	// Intrinsic for create: 21000 + 32000 + data gas
+	// Intrinsic for create: 21000 + 32000 + data gas + initcode word gas (EIP-3860)
 	dataGas := uint64(0)
 	for _, b := range initCode {
 		if b == 0 {
@@ -202,9 +209,10 @@ func TestProcessorOutOfGas(t *testing.T) {
 			dataGas += TxDataNonZeroGas
 		}
 	}
-	intrinsic := TxGas + TxCreateGas + dataGas
-	// Give just enough for intrinsic + a tiny bit for EVM, but not enough for
-	// GasCreate (32000) inside EVM.Create + SSTORE.
+	words := (uint64(len(initCode)) + 31) / 32
+	initCodeWordGas := words * vm.InitCodeWordGas
+	intrinsic := TxGas + TxCreateGas + dataGas + initCodeWordGas
+	// Give just enough for intrinsic + a tiny bit for EVM, but not enough for SSTORE.
 	gasLimit := intrinsic + 100
 
 	initialBalance := statedb.GetBalance(sender)

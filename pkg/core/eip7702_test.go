@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/eth2028/eth2028/core/state"
@@ -825,16 +826,13 @@ func TestSetCodeTx_IntrinsicGasTooLow(t *testing.T) {
 	}
 	gp := new(GasPool).AddGas(header.GasLimit)
 
-	result, err := applyMessage(TestConfig, nil, statedb, header, &msg, gp)
-	if err != nil {
-		t.Fatalf("applyMessage should not return protocol error, got: %v", err)
+	_, err := applyMessage(TestConfig, nil, statedb, header, &msg, gp)
+	// Intrinsic gas too low is now returned as a protocol error (matching go-ethereum).
+	if err == nil {
+		t.Fatal("SetCode tx with insufficient gas should return error")
 	}
-	// Should fail with intrinsic gas error, consuming all gas.
-	if !result.Failed() {
-		t.Fatal("SetCode tx with insufficient gas should fail")
-	}
-	if result.UsedGas != TxGas {
-		t.Errorf("all gas should be consumed: got %d, want %d", result.UsedGas, TxGas)
+	if err.Error() == "" || !strings.Contains(err.Error(), "intrinsic gas too low") {
+		t.Errorf("expected intrinsic gas error, got: %v", err)
 	}
 }
 

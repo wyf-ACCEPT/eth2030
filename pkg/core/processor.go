@@ -711,6 +711,24 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		}
 	}
 
+	// EIP-1559: validate gas fee caps for dynamic fee transactions (type 2+).
+	// Legacy and access list txs (types 0, 1) use GasPrice directly.
+	isEIP1559Tx := msg.TxType >= types.DynamicFeeTxType
+	if isEIP1559Tx && header.BaseFee != nil && header.BaseFee.Sign() > 0 {
+		if msg.GasFeeCap != nil && msg.GasTipCap != nil {
+			// Reject if MaxPriorityFeePerGas > MaxFeePerGas.
+			if msg.GasFeeCap.Cmp(msg.GasTipCap) < 0 {
+				gp.AddGas(msg.GasLimit)
+				return nil, fmt.Errorf("max priority fee per gas higher than max fee per gas: tip %s, cap %s", msg.GasTipCap, msg.GasFeeCap)
+			}
+			// Reject if MaxFeePerGas < BaseFee.
+			if msg.GasFeeCap.Cmp(header.BaseFee) < 0 {
+				gp.AddGas(msg.GasLimit)
+				return nil, fmt.Errorf("max fee per gas less than block base fee: fee %s, baseFee %s", msg.GasFeeCap, header.BaseFee)
+			}
+		}
+	}
+
 	// Calculate effective gas price per EIP-1559.
 	gasPrice := msgEffectiveGasPrice(msg, header.BaseFee)
 	gasCost := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(msg.GasLimit))
@@ -725,8 +743,13 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		calldataGasCost = new(big.Int)
 	}
 
-	// Check total cost: value + gasCost + calldataGasCost
-	totalCost := new(big.Int).Add(msg.Value, gasCost)
+	// Balance check: use GasFeeCap (max possible cost) for EIP-1559 txs,
+	// effectiveGasPrice for legacy txs. This matches go-ethereum's buyGas.
+	balanceGasCost := gasCost
+	if isEIP1559Tx && msg.GasFeeCap != nil {
+		balanceGasCost = new(big.Int).Mul(msg.GasFeeCap, new(big.Int).SetUint64(msg.GasLimit))
+	}
+	totalCost := new(big.Int).Add(msg.Value, balanceGasCost)
 	totalCost.Add(totalCost, calldataGasCost)
 	balance := statedb.GetBalance(msg.From)
 	if balance.Cmp(totalCost) < 0 {
@@ -789,13 +812,9 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	}
 
 	if igas > msg.GasLimit {
-		// Intrinsic gas exceeds gas limit — consume all gas
-		gp.AddGas(0) // nothing to return
-		return &ExecutionResult{
-			UsedGas:    msg.GasLimit,
-			Err:        fmt.Errorf("intrinsic gas too low: have %d, want %d", msg.GasLimit, igas),
-			ReturnData: nil,
-		}, nil
+		// Intrinsic gas exceeds gas limit — return as error (matching go-ethereum).
+		gp.AddGas(msg.GasLimit)
+		return nil, fmt.Errorf("intrinsic gas too low: have %d, want %d", msg.GasLimit, igas)
 	}
 
 	gasLeft := msg.GasLimit - igas
