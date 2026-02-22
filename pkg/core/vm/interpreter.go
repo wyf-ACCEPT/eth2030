@@ -575,13 +575,20 @@ func (evm *EVM) StaticCall(caller types.Address, addr types.Address, input []byt
 	evm.readOnly = true
 	defer func() { evm.readOnly = prevReadOnly }()
 
+	// We take a snapshot here. Even a staticcall is considered a 'touch'.
+	// On mainnet, static calls were introduced after all empty accounts
+	// were deleted, so this is not required. However, certain tests (e.g.
+	// stRevertTest/RevertPrecompiledTouchExactOOG) require this behavior.
+	snapshot := evm.StateDB.Snapshot()
+
 	// Check for precompiled contract.
 	if p, ok := evm.precompile(addr); ok {
 		ret, gasLeft, err := runPrecompile(p, input, gas)
+		if err != nil {
+			evm.StateDB.RevertToSnapshot(snapshot)
+		}
 		return ret, gasLeft, err
 	}
-
-	snapshot := evm.StateDB.Snapshot()
 
 	code := evm.StateDB.GetCode(addr)
 	if len(code) == 0 {
@@ -792,20 +799,28 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 	}
 
 	// Collision check: fail if address already has non-zero nonce or non-empty code.
-	if evm.StateDB.GetNonce(contractAddr) != 0 || len(evm.StateDB.GetCode(contractAddr)) > 0 {
-		return nil, types.Address{}, gas, errors.New("contract address collision")
+	// Per go-ethereum, all gas is consumed on collision.
+	contractHash := evm.StateDB.GetCodeHash(contractAddr)
+	if evm.StateDB.GetNonce(contractAddr) != 0 ||
+		(contractHash != (types.Hash{}) && contractHash != types.EmptyCodeHash) {
+		return nil, types.Address{}, 0, errors.New("contract address collision")
 	}
+
+	// EIP-2929: warm the created contract address BEFORE taking snapshot.
+	// Even if the creation fails, the access-list change should not be rolled back.
+	evm.StateDB.AddAddressToAccessList(contractAddr)
 
 	snapshot := evm.StateDB.Snapshot()
 
-	// Create the account
-	evm.StateDB.CreateAccount(contractAddr)
+	// Only create a new account if it doesn't already exist.
+	// It's possible the contract code is deployed to a pre-existent
+	// account with non-zero balance.
+	if !evm.StateDB.Exist(contractAddr) {
+		evm.StateDB.CreateAccount(contractAddr)
+	}
 
 	// EIP-161: set contract nonce to 1 (post Spurious Dragon).
 	evm.StateDB.SetNonce(contractAddr, 1)
-
-	// EIP-2929: warm the created contract address.
-	evm.StateDB.AddAddressToAccessList(contractAddr)
 
 	// Transfer value
 	if value != nil && value.Sign() > 0 {
@@ -838,18 +853,21 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 	ret, err := evm.Run(contract, nil)
 	evm.depth--
 
-	// Return unused gas from subcall.
-	gas += contract.Gas
-
 	if err != nil {
-		// On any error, revert state and return
+		// On any error, revert state and return.
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if !errors.Is(err, ErrExecutionReverted) {
-			// On non-revert error, all gas sent to subcall is consumed.
-			gas += 0 // contract.Gas already added above, but subcall failed
+			// Non-revert error: all gas sent to subcall is consumed.
+			// Only the 1/64 retained by EIP-150 is returned.
+			return ret, types.Address{}, gas, err
 		}
+		// REVERT: return unused gas from subcall.
+		gas += contract.Gas
 		return ret, types.Address{}, gas, err
 	}
+
+	// Success: return unused gas from subcall.
+	gas += contract.Gas
 
 	// Code deposit cost: 200 per byte of deployed code.
 	if len(ret) > 0 {
