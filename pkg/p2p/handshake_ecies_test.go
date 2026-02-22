@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	ethcrypto "github.com/eth2028/eth2028/crypto"
+	ethcrypto "github.com/eth2030/eth2030/crypto"
 )
 
 func generateTestKey(t *testing.T) *ecdsa.PrivateKey {

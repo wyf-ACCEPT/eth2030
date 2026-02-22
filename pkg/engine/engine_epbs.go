@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/eth2028/eth2028/epbs"
+	"github.com/eth2030/eth2030/epbs"
 )
 
 // GetPayloadHeaderV1Response is the response for engine_getPayloadHeaderV1.

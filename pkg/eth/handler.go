@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/p2p"
-	ethsync "github.com/eth2028/eth2028/sync"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/p2p"
+	ethsync "github.com/eth2030/eth2030/sync"
 )
 
 var (

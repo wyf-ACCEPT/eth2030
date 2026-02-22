@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Pipeline algorithm identifiers.
@@ -34,7 +34,7 @@ const (
 	PipelineGasSPHINCS   uint64 = 8000
 )
 
-const pipelineDomainTag = "eth2028-pq-tx-sign-v2"
+const pipelineDomainTag = "eth2030-pq-tx-sign-v2"
 
 var (
 	ErrPipelineNilTx        = errors.New("pq_pipeline: nil transaction")

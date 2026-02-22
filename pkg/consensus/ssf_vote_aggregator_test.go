@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Helper to create a test hash for vote aggregator tests.

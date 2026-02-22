@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // EncodeRLP returns the RLP encoding of the block: [header, [tx1, tx2, ...], [uncle1, uncle2, ...]].

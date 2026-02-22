@@ -14,8 +14,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/crypto/pqc"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/crypto/pqc"
 )
 
 // PQ blob validator algorithm name constants.

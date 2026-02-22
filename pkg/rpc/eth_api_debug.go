@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // DbgTraceConfig configures how a debug trace should be executed.

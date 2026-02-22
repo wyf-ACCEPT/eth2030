@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // testRandaoReveal returns a non-zero 96-byte RANDAO reveal for testing.
@@ -80,7 +80,7 @@ func TestBlockProducerInvalidParent(t *testing.T) {
 
 func TestBlockProducerWithGraffiti(t *testing.T) {
 	graffiti := [GraffitiLength]byte{}
-	copy(graffiti[:], "eth2028-test-graffiti")
+	copy(graffiti[:], "eth2030-test-graffiti")
 	cfg := &BlockProducerConfig{Graffiti: graffiti}
 	bp := NewBlockProducer(cfg, nil)
 

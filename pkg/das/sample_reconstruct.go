@@ -18,7 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/das/erasure"
+	"github.com/eth2030/eth2030/das/erasure"
 )
 
 // SampleReconstructor errors.

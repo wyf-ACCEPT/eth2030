@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // --- 63/64 Gas Forwarding Rule (EIP-150) Tests ---

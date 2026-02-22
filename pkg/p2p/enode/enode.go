@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eth2028/eth2028/p2p/enr"
+	"github.com/eth2030/eth2030/p2p/enr"
 )
 
 // NodeID is a 32-byte unique identifier for a node (keccak256 of compressed pubkey).

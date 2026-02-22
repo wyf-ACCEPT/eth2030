@@ -6,7 +6,7 @@ package bintrie
 import (
 	"crypto/sha256"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // emptyHashOnce caches the SHA-256 hash of the empty node.

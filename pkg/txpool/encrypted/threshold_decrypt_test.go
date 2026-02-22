@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	ethcrypto "github.com/eth2028/eth2028/crypto"
+	ethcrypto "github.com/eth2030/eth2030/crypto"
 )
 
 // helper: create a decryption share for testing.

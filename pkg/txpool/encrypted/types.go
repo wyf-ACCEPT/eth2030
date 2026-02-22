@@ -7,7 +7,7 @@ package encrypted
 import (
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // CommitRevealWindow is the time in seconds between commit and reveal deadline.

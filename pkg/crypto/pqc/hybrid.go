@@ -3,7 +3,7 @@ package pqc
 import (
 	"crypto/ecdsa"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // HybridSignature combines an ECDSA signature with a post-quantum signature.

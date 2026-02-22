@@ -1,6 +1,6 @@
 package proofs
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // MockAggregator is a test aggregator that always returns valid results.
 type MockAggregator struct {

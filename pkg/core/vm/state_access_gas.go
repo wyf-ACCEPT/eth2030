@@ -5,7 +5,7 @@
 package vm
 
 import (
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Leaf access gas cost constants per EIP-4762.

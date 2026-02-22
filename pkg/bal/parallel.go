@@ -3,7 +3,7 @@ package bal
 import (
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // ExecutionGroup represents a set of transactions that can execute in parallel.

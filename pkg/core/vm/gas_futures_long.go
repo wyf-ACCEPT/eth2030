@@ -12,8 +12,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // MaxLongFutureEpochs is the maximum number of epochs a long-dated future can span.

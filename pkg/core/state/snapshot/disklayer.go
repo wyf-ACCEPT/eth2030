@@ -4,8 +4,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/rawdb"
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/rawdb"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // snapshotDB is the database interface required by the snapshot disk layer.

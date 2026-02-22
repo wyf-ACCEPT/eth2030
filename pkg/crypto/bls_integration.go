@@ -329,7 +329,7 @@ func init() {
 	}{
 		{"small_secret_hello", 42, "hello"},
 		{"medium_secret_world", 1337, "world"},
-		{"large_secret_eth2028", 999999, "eth2028 consensus"},
+		{"large_secret_eth2030", 999999, "eth2030 consensus"},
 	}
 	for _, s := range secrets {
 		sk := big.NewInt(s.secret)

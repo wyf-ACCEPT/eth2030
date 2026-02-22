@@ -1,6 +1,6 @@
 package core
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // ExecutionResult holds the outcome of a transaction execution.
 type ExecutionResult struct {

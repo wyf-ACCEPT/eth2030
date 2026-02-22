@@ -7,16 +7,16 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/bal"
-	"github.com/eth2028/eth2028/core"
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/engine"
-	"github.com/eth2028/eth2028/rlp"
-	"github.com/eth2028/eth2028/txpool"
-	"github.com/eth2028/eth2028/verkle"
-	"github.com/eth2028/eth2028/witness"
+	"github.com/eth2030/eth2030/bal"
+	"github.com/eth2030/eth2030/core"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/engine"
+	"github.com/eth2030/eth2030/rlp"
+	"github.com/eth2030/eth2030/txpool"
+	"github.com/eth2030/eth2030/verkle"
+	"github.com/eth2030/eth2030/witness"
 )
 
 // TestEndToEndBlockProcessing builds a block with several value-transfer transactions,

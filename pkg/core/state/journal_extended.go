@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // JournalMetrics tracks journal statistics using atomic counters for

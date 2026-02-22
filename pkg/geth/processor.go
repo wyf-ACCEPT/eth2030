@@ -14,17 +14,17 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 
-	eth2028core "github.com/eth2028/eth2028/core"
-	"github.com/eth2028/eth2028/core/types"
+	eth2030core "github.com/eth2030/eth2030/core"
+	"github.com/eth2030/eth2030/core/types"
 )
 
-// GethBlockProcessor executes eth2028 blocks using go-ethereum's EVM and
+// GethBlockProcessor executes eth2030 blocks using go-ethereum's EVM and
 // state transition engine. It produces correct state roots and gas accounting
-// for all forks from Frontier through Prague, with optional eth2028 custom
+// for all forks from Frontier through Prague, with optional eth2030 custom
 // precompile injection for Glamsterdam+ forks.
 type GethBlockProcessor struct {
 	config      *params.ChainConfig
-	eth2028Cfg  *eth2028core.ChainConfig // optional, for custom precompile injection
+	eth2030Cfg  *eth2030core.ChainConfig // optional, for custom precompile injection
 }
 
 // NewGethBlockProcessor creates a processor for the given chain config.
@@ -32,15 +32,15 @@ func NewGethBlockProcessor(config *params.ChainConfig) *GethBlockProcessor {
 	return &GethBlockProcessor{config: config}
 }
 
-// NewGethBlockProcessorWithEth2028 creates a processor that injects eth2028
+// NewGethBlockProcessorWithEth2028 creates a processor that injects eth2030
 // custom precompiles (NTT, NII, field precompiles, Glamsterdam repricing)
-// based on the eth2028 fork schedule.
-func NewGethBlockProcessorWithEth2028(config *params.ChainConfig, eth2028Cfg *eth2028core.ChainConfig) *GethBlockProcessor {
-	return &GethBlockProcessor{config: config, eth2028Cfg: eth2028Cfg}
+// based on the eth2030 fork schedule.
+func NewGethBlockProcessorWithEth2028(config *params.ChainConfig, eth2030Cfg *eth2030core.ChainConfig) *GethBlockProcessor {
+	return &GethBlockProcessor{config: config, eth2030Cfg: eth2030Cfg}
 }
 
-// ProcessBlock executes all transactions in an eth2028 block against a
-// go-ethereum StateDB. Returns eth2028 receipts and the post-state root.
+// ProcessBlock executes all transactions in an eth2030 block against a
+// go-ethereum StateDB. Returns eth2030 receipts and the post-state root.
 // The caller is responsible for committing the state after processing.
 func (p *GethBlockProcessor) ProcessBlock(
 	statedb *gethstate.StateDB,
@@ -110,7 +110,7 @@ func (p *GethBlockProcessor) ProcessBlock(
 	return receipts, FromGethHash(root), nil
 }
 
-// applyTransaction converts an eth2028 transaction to a go-ethereum message
+// applyTransaction converts an eth2030 transaction to a go-ethereum message
 // and executes it using go-ethereum's state transition.
 func (p *GethBlockProcessor) applyTransaction(
 	statedb *gethstate.StateDB,
@@ -123,9 +123,9 @@ func (p *GethBlockProcessor) applyTransaction(
 
 	evm := gethvm.NewEVM(*blockCtx, statedb, p.config, gethvm.Config{})
 
-	// Inject eth2028 custom precompiles if configured.
-	if p.eth2028Cfg != nil {
-		forkLevel := Eth2028ForkLevelFromConfig(p.eth2028Cfg, header.Time)
+	// Inject eth2030 custom precompiles if configured.
+	if p.eth2030Cfg != nil {
+		forkLevel := Eth2028ForkLevelFromConfig(p.eth2030Cfg, header.Time)
 		if forkLevel > ForkLevelPrague {
 			rules := p.config.Rules(header.Number, true, header.Time)
 			precompiles := InjectCustomPrecompiles(rules, forkLevel)
@@ -140,7 +140,7 @@ func (p *GethBlockProcessor) applyTransaction(
 		return nil, 0, err
 	}
 
-	// Build eth2028 receipt.
+	// Build eth2030 receipt.
 	var status uint64
 	if result.Failed() {
 		status = types.ReceiptStatusFailed
@@ -182,7 +182,7 @@ func (p *GethBlockProcessor) applyTransaction(
 	return receipt, result.UsedGas, nil
 }
 
-// txToGethMessage converts an eth2028 transaction to a go-ethereum Message.
+// txToGethMessage converts an eth2030 transaction to a go-ethereum Message.
 func txToGethMessage(tx *types.Transaction, baseFee *big.Int) *gethcore.Message {
 	var to *gethcommon.Address
 	if txTo := tx.To(); txTo != nil {
@@ -242,7 +242,7 @@ func txToGethMessage(tx *types.Transaction, baseFee *big.Int) *gethcore.Message 
 	return msg
 }
 
-// toGethHashes converts eth2028 hashes to go-ethereum hashes.
+// toGethHashes converts eth2030 hashes to go-ethereum hashes.
 func toGethHashes(hashes []types.Hash) []gethcommon.Hash {
 	if hashes == nil {
 		return nil
@@ -254,7 +254,7 @@ func toGethHashes(hashes []types.Hash) []gethcommon.Hash {
 	return result
 }
 
-// toGethAuthList converts eth2028 authorization list to go-ethereum format.
+// toGethAuthList converts eth2030 authorization list to go-ethereum format.
 func toGethAuthList(auths []types.Authorization) []gethtypes.SetCodeAuthorization {
 	if auths == nil {
 		return nil

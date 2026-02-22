@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eth2028/eth2028/node"
+	"github.com/eth2030/eth2030/node"
 )
 
 // Configuration errors.

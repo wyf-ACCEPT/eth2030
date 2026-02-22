@@ -1,5 +1,5 @@
 // Package rpc provides JSON-RPC 2.0 types and the standard Ethereum
-// JSON-RPC API (eth_ namespace) for the eth2028 execution client.
+// JSON-RPC API (eth_ namespace) for the eth2030 execution client.
 package rpc
 
 import (
@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // BlockNumber represents a block number parameter in JSON-RPC.

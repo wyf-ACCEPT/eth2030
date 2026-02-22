@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Genesis validation errors.
@@ -55,7 +55,7 @@ func DevGenesis() *Genesis {
 		Config:     TestConfig,
 		Nonce:      0,
 		Timestamp:  0,
-		ExtraData:  []byte("eth2028 dev genesis"),
+		ExtraData:  []byte("eth2030 dev genesis"),
 		GasLimit:   30_000_000,
 		Difficulty: big.NewInt(1),
 		Alloc:      alloc,

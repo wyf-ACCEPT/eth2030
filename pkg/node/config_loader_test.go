@@ -56,7 +56,7 @@ func TestDefaultNodeConfigValidates(t *testing.T) {
 func TestLoadConfigFull(t *testing.T) {
 	input := `
 # Top-level settings
-datadir = "/data/eth2028"
+datadir = "/data/eth2030"
 network_id = 11155111
 sync_mode = "full"
 
@@ -85,7 +85,7 @@ format = "json"
 		t.Fatalf("LoadConfig error: %v", err)
 	}
 
-	if cfg.DataDir != "/data/eth2028" {
+	if cfg.DataDir != "/data/eth2030" {
 		t.Errorf("DataDir = %q", cfg.DataDir)
 	}
 	if cfg.NetworkID != 11155111 {

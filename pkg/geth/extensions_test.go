@@ -8,8 +8,8 @@ import (
 	gethvm "github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
-	"github.com/eth2028/eth2028/core"
-	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2030/eth2030/core"
+	"github.com/eth2030/eth2030/core/vm"
 )
 
 // pragueRules returns a params.Rules with all forks through Prague enabled.

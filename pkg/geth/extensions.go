@@ -1,13 +1,13 @@
-// Package geth provides adapters between eth2028 and go-ethereum.
+// Package geth provides adapters between eth2030 and go-ethereum.
 //
-// extensions.go wires eth2028's custom precompiles into go-ethereum's EVM
-// via the SetPrecompiles API. It also maps eth2028 fork rules (Glamsterdam,
+// extensions.go wires eth2030's custom precompiles into go-ethereum's EVM
+// via the SetPrecompiles API. It also maps eth2030 fork rules (Glamsterdam,
 // Hogota) to go-ethereum chain config parameters.
 //
 // Custom opcode injection is NOT possible from an external package because
 // go-ethereum's `operation` struct and `JumpTable` are unexported. Custom
 // opcodes (CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, EOF, AA) remain
-// available only through eth2028's native EVM interpreter.
+// available only through eth2030's native EVM interpreter.
 package geth
 
 import (
@@ -15,24 +15,24 @@ import (
 	gethvm "github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
-	"github.com/eth2028/eth2028/core"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2030/eth2030/core"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
 )
 
-// PrecompileAdapter wraps an eth2028 PrecompiledContract to satisfy
+// PrecompileAdapter wraps an eth2030 PrecompiledContract to satisfy
 // go-ethereum's PrecompiledContract interface (which adds Name()).
 type PrecompileAdapter struct {
 	inner vm.PrecompiledContract
 	name  string
 }
 
-// RequiredGas delegates to the wrapped eth2028 precompile.
+// RequiredGas delegates to the wrapped eth2030 precompile.
 func (a *PrecompileAdapter) RequiredGas(input []byte) uint64 {
 	return a.inner.RequiredGas(input)
 }
 
-// Run delegates to the wrapped eth2028 precompile.
+// Run delegates to the wrapped eth2030 precompile.
 func (a *PrecompileAdapter) Run(input []byte) ([]byte, error) {
 	return a.inner.Run(input)
 }
@@ -42,12 +42,12 @@ func (a *PrecompileAdapter) Name() string {
 	return a.name
 }
 
-// NewPrecompileAdapter wraps an eth2028 precompile for use with go-ethereum.
+// NewPrecompileAdapter wraps an eth2030 precompile for use with go-ethereum.
 func NewPrecompileAdapter(inner vm.PrecompiledContract, name string) gethvm.PrecompiledContract {
 	return &PrecompileAdapter{inner: inner, name: name}
 }
 
-// Eth2028ForkLevel identifies which eth2028 fork is active.
+// Eth2028ForkLevel identifies which eth2030 fork is active.
 type Eth2028ForkLevel int
 
 const (
@@ -65,7 +65,7 @@ type customPrecompileEntry struct {
 	minFork  Eth2028ForkLevel
 }
 
-// customPrecompiles returns the list of eth2028 custom precompiles with their
+// customPrecompiles returns the list of eth2030 custom precompiles with their
 // activation forks. These are precompiles that go-ethereum does not include.
 func customPrecompiles() []customPrecompileEntry {
 	return []customPrecompileEntry{
@@ -160,12 +160,12 @@ func customPrecompiles() []customPrecompileEntry {
 
 // InjectCustomPrecompiles builds a go-ethereum precompile map that includes
 // both go-ethereum's standard precompiles (for the given fork rules) and
-// eth2028's custom precompiles (activated at the appropriate fork level).
+// eth2030's custom precompiles (activated at the appropriate fork level).
 func InjectCustomPrecompiles(rules params.Rules, forkLevel Eth2028ForkLevel) gethvm.PrecompiledContracts {
 	// Start with go-ethereum's standard precompiles for this fork.
 	precompiles := gethvm.ActivePrecompiledContracts(rules)
 
-	// Add eth2028 custom precompiles that are active at this fork level.
+	// Add eth2030 custom precompiles that are active at this fork level.
 	for _, entry := range customPrecompiles() {
 		if forkLevel >= entry.minFork {
 			precompiles[entry.addr] = NewPrecompileAdapter(entry.contract, entry.name)
@@ -175,8 +175,8 @@ func InjectCustomPrecompiles(rules params.Rules, forkLevel Eth2028ForkLevel) get
 	return precompiles
 }
 
-// Eth2028ForkLevelFromConfig determines the active eth2028 fork level based
-// on the eth2028 chain config and block time.
+// Eth2028ForkLevelFromConfig determines the active eth2030 fork level based
+// on the eth2030 chain config and block time.
 func Eth2028ForkLevelFromConfig(config *core.ChainConfig, time uint64) Eth2028ForkLevel {
 	if config == nil {
 		return ForkLevelPrague
@@ -190,8 +190,8 @@ func Eth2028ForkLevelFromConfig(config *core.ChainConfig, time uint64) Eth2028Fo
 	return ForkLevelPrague
 }
 
-// ToGethChainConfigWithEth2028Forks converts an eth2028 ChainConfig to a
-// go-ethereum ChainConfig, mapping eth2028's custom fork timestamps.
+// ToGethChainConfigWithEth2028Forks converts an eth2030 ChainConfig to a
+// go-ethereum ChainConfig, mapping eth2030's custom fork timestamps.
 // Glamsterdam and Hogota are mapped to Prague since they extend Prague.
 func ToGethChainConfigWithEth2028Forks(c *core.ChainConfig) *params.ChainConfig {
 	gc := ToGethChainConfig(c)
@@ -213,7 +213,7 @@ func ToGethChainConfigWithEth2028Forks(c *core.ChainConfig) *params.ChainConfig 
 	return gc
 }
 
-// CustomPrecompileAddresses returns the list of eth2028 custom precompile
+// CustomPrecompileAddresses returns the list of eth2030 custom precompile
 // addresses active at the given fork level. This is used for EIP-2929 access
 // list warming — all precompile addresses must be pre-warmed.
 func CustomPrecompileAddresses(forkLevel Eth2028ForkLevel) []gethcommon.Address {
@@ -242,7 +242,7 @@ func CustomPrecompileCount(forkLevel Eth2028ForkLevel) int {
 //
 // go-ethereum's JumpTable type and operation struct are unexported (lowercase),
 // which means custom opcodes cannot be added from external packages. The
-// following eth2028 custom opcodes are only available through eth2028's
+// following eth2030 custom opcodes are only available through eth2030's
 // native EVM interpreter (pkg/core/vm/):
 //
 //   - CLZ (0x1e): Count leading zeros
@@ -258,9 +258,9 @@ func CustomPrecompileCount(forkLevel Eth2028ForkLevel) int {
 //     EXTSTATICCALL (0xf9), RETURNDATALOAD (0xfb)
 //
 // When using the go-ethereum execution path, transactions that invoke these
-// opcodes will be handled by go-ethereum's standard opcode set. For eth2028-
-// specific opcodes not in go-ethereum, the eth2028 native EVM must be used.
-const OpcodeExtensionNote = "go-ethereum operation struct is unexported; custom opcodes require eth2028 native EVM"
+// opcodes will be handled by go-ethereum's standard opcode set. For eth2030-
+// specific opcodes not in go-ethereum, the eth2030 native EVM must be used.
+const OpcodeExtensionNote = "go-ethereum operation struct is unexported; custom opcodes require eth2030 native EVM"
 
 // PrecompileNames returns a mapping of precompile address to name for all
 // custom precompiles active at the given fork level.
@@ -274,7 +274,7 @@ func PrecompileNames(forkLevel Eth2028ForkLevel) map[gethcommon.Address]string {
 	return names
 }
 
-// Eth2028PrecompileInfo holds metadata about an eth2028 custom precompile.
+// Eth2028PrecompileInfo holds metadata about an eth2030 custom precompile.
 type Eth2028PrecompileInfo struct {
 	Address  gethcommon.Address
 	Name     string
@@ -282,7 +282,7 @@ type Eth2028PrecompileInfo struct {
 	Category string // "repricing", "ntt", "nii", "field"
 }
 
-// ListCustomPrecompiles returns metadata about all eth2028 custom precompiles.
+// ListCustomPrecompiles returns metadata about all eth2030 custom precompiles.
 func ListCustomPrecompiles() []Eth2028PrecompileInfo {
 	entries := customPrecompiles()
 	result := make([]Eth2028PrecompileInfo, len(entries))

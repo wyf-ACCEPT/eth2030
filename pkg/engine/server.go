@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Backend defines the interface that the execution layer must implement
@@ -302,7 +302,7 @@ func (api *EngineAPI) GetClientVersionV1(peerVersion ClientVersionV1) []ClientVe
 	return []ClientVersionV1{
 		{
 			Code:    "ET",
-			Name:    "eth2028",
+			Name:    "eth2030",
 			Version: "v0.1.0",
 			Commit:  "000000",
 		},

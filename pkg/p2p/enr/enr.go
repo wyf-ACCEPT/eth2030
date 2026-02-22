@@ -8,8 +8,8 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // SizeLimit is the maximum encoded size of a node record (EIP-778).

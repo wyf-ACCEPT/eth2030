@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // DebugAPI implements the debug namespace RPC methods.
@@ -205,7 +205,7 @@ func (d *DebugAPI) debugChaindbProperty(req *Request) *Response {
 	case "leveldb.iostats":
 		return successResponse(req.ID, "Read(MB): 0.0\nWrite(MB): 0.0\n")
 	case "version":
-		return successResponse(req.ID, "eth2028/db/v1.0")
+		return successResponse(req.ID, "eth2030/db/v1.0")
 	default:
 		return errorResponse(req.ID, ErrCodeInvalidParams,
 			fmt.Sprintf("unknown property: %q", property))

@@ -3,7 +3,7 @@ package consensus
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // makeTestAttV2 creates a test attestation for the v2 pool with distinct data.

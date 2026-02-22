@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // ethCall executes a read-only EVM call without creating a transaction.

@@ -14,7 +14,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Dilithium-3 (ML-DSA-65) parameter constants per FIPS 204.

@@ -4,3 +4,30 @@ data/
 # Python
 __pycache__/
 *.pyc
+
+# Go build artifacts
+pkg/eth2030
+*.exe
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Coverage
+coverage.out
+coverage.html

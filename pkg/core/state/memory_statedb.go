@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/rlp"
-	"github.com/eth2028/eth2028/trie"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/rlp"
+	"github.com/eth2030/eth2030/trie"
 )
 
 // stateObject represents an Ethereum account with its associated state.

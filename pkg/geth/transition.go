@@ -10,7 +10,7 @@ import (
 	gethvm "github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // ApplyMessage executes a transaction message using go-ethereum's state
@@ -27,7 +27,7 @@ func ApplyMessage(
 	return gethcore.ApplyMessage(evm, msg, gp)
 }
 
-// MakeBlockContext creates a go-ethereum BlockContext from eth2028 header fields.
+// MakeBlockContext creates a go-ethereum BlockContext from eth2030 header fields.
 func MakeBlockContext(header *types.Header, getHash func(uint64) gethcommon.Hash) gethvm.BlockContext {
 	ctx := gethvm.BlockContext{
 		CanTransfer: gethcore.CanTransfer,

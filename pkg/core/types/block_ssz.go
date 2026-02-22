@@ -5,7 +5,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/ssz"
+	"github.com/eth2030/eth2030/ssz"
 )
 
 // SSZ encoding limits for blocks.

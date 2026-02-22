@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // FuzzTransactionRLPRoundtrip creates transactions with fuzz-derived fields,
@@ -364,7 +364,7 @@ func FuzzHeaderRLPRoundtrip(f *testing.F) {
 		GasLimit:    30_000_000,
 		GasUsed:     21_000,
 		Time:        1700000000,
-		Extra:       []byte("eth2028"),
+		Extra:       []byte("eth2030"),
 		BaseFee:     big.NewInt(1_000_000_000),
 	}
 	if enc, err := h.EncodeRLP(); err == nil {

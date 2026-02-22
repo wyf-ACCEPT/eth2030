@@ -12,7 +12,7 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // ChangeType indicates whether an entry was created, modified, or deleted.

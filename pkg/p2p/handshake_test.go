@@ -13,7 +13,7 @@ import (
 func TestHelloPacket_EncodeDecode(t *testing.T) {
 	original := &HelloPacket{
 		Version:    5,
-		Name:       "eth2028/v0.1.0",
+		Name:       "eth2030/v0.1.0",
 		Caps:       []Cap{{Name: "eth", Version: 68}, {Name: "snap", Version: 1}},
 		ListenPort: 30303,
 		ID:         "abcdef0123456789",

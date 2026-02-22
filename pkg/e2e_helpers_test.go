@@ -6,10 +6,10 @@ import (
 	"math/big"
 	"testing"
 
-	e2e "github.com/eth2028/eth2028"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/das"
-	"github.com/eth2028/eth2028/proofs"
+	e2e "github.com/eth2030/eth2030"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/das"
+	"github.com/eth2030/eth2030/proofs"
 )
 
 // ---------------------------------------------------------------------------

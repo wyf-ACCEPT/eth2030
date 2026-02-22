@@ -1,4 +1,4 @@
-module github.com/eth2028/eth2028
+module github.com/eth2030/eth2030
 
 go 1.25
 

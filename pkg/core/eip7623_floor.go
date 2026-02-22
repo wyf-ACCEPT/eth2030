@@ -3,8 +3,8 @@ package core
 import (
 	"fmt"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
 )
 
 // EIP-7623 calldata cost floor.

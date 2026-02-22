@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/eth2028/eth2028/p2p/enode"
+	"github.com/eth2030/eth2030/p2p/enode"
 )
 
 func makeNode(b byte) *enode.Node {

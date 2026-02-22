@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // defaultPriorityFee is 1 Gwei, the suggested default max priority fee.
@@ -366,7 +366,7 @@ func (api *EthAPI) gasPrice(req *Request) *Response {
 }
 
 func (api *EthAPI) clientVersion(req *Request) *Response {
-	return successResponse(req.ID, "eth2028/v0.1.0")
+	return successResponse(req.ID, "eth2030/v0.1.0")
 }
 
 func (api *EthAPI) netVersion(req *Request) *Response {

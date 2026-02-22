@@ -12,7 +12,7 @@ import (
 	gosync "sync"
 	"time"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Blob sync protocol constants from Deneb spec.

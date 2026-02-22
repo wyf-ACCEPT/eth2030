@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/rawdb"
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/rawdb"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // GenesisAccount represents an account in the genesis allocation.
@@ -176,7 +176,7 @@ func (g *Genesis) CommitGenesis(db rawdb.Database) (*Blockchain, error) {
 	// Store genesis config as JSON in rawdb.
 	configData, err := json.Marshal(config)
 	if err == nil {
-		db.Put([]byte("eth2028-chain-config"), configData)
+		db.Put([]byte("eth2030-chain-config"), configData)
 	}
 
 	return bc, nil

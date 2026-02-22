@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/eth2028/eth2028/node"
+	"github.com/eth2030/eth2030/node"
 )
 
 func TestParseFlags_Defaults(t *testing.T) {
@@ -184,7 +184,7 @@ func TestVerbosityMapping(t *testing.T) {
 
 func TestInitDataDir(t *testing.T) {
 	tmp := t.TempDir()
-	dir := filepath.Join(tmp, "eth2028-test")
+	dir := filepath.Join(tmp, "eth2030-test")
 
 	cfg := node.DefaultConfig()
 	cfg.DataDir = dir
@@ -218,7 +218,7 @@ func TestInitDataDir(t *testing.T) {
 
 func TestInitDataDir_Idempotent(t *testing.T) {
 	tmp := t.TempDir()
-	dir := filepath.Join(tmp, "eth2028-test")
+	dir := filepath.Join(tmp, "eth2030-test")
 
 	cfg := node.DefaultConfig()
 	cfg.DataDir = dir

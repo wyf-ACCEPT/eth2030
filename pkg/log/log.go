@@ -1,4 +1,4 @@
-// Package log provides structured logging for the eth2028 Ethereum execution
+// Package log provides structured logging for the eth2030 Ethereum execution
 // client. It wraps Go's log/slog with Ethereum-specific conveniences such as
 // per-module child loggers.
 package log

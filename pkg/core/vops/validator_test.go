@@ -3,8 +3,8 @@ package vops
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/witness"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/witness"
 )
 
 func TestValidateTransition(t *testing.T) {

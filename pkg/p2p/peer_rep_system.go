@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/metrics"
+	"github.com/eth2030/eth2030/metrics"
 )
 
 // Errors returned by PeerRep operations.

@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/triedb"
 	"github.com/holiman/uint256"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // PreAccount holds pre-state for a single account (used by EF tests).

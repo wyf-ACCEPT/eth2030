@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eth2028/eth2028/p2p/enode"
+	"github.com/eth2030/eth2030/p2p/enode"
 )
 
 // Kademlia table constants.

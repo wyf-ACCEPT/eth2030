@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // newBuilderTestAPI creates an EngineAPI with a mock backend for builder API tests.

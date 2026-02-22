@@ -1,6 +1,6 @@
 package metrics
 
-// Pre-defined metrics for the eth2028 Ethereum execution client. All metrics
+// Pre-defined metrics for the eth2030 Ethereum execution client. All metrics
 // live in DefaultRegistry so they are globally accessible without passing a
 // registry around.
 

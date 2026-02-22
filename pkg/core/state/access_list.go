@@ -1,6 +1,6 @@
 package state
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // accessList tracks warm addresses and storage slots per EIP-2929.
 type accessList struct {

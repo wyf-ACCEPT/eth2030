@@ -3,8 +3,8 @@ package consensus
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto/pqc"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto/pqc"
 )
 
 func TestDefaultPQAttestationConfig(t *testing.T) {

@@ -39,10 +39,10 @@ func TestDefaultConfig(t *testing.T) {
 		t.Error("expected metrics false by default")
 	}
 
-	// DataDir should point to ~/.eth2028.
+	// DataDir should point to ~/.eth2030.
 	home, err := os.UserHomeDir()
 	if err == nil {
-		want := filepath.Join(home, ".eth2028")
+		want := filepath.Join(home, ".eth2030")
 		if cfg.DataDir != want {
 			t.Errorf("expected DataDir %q, got %q", want, cfg.DataDir)
 		}
@@ -406,7 +406,7 @@ func TestVerbosityToLogLevel(t *testing.T) {
 }
 
 func TestInitDataDir(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "eth2028-test")
+	dir := filepath.Join(t.TempDir(), "eth2030-test")
 
 	cfg := DefaultConfig()
 	cfg.DataDir = dir
@@ -439,7 +439,7 @@ func TestInitDataDir(t *testing.T) {
 }
 
 func TestInitDataDir_Idempotent(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "eth2028-test")
+	dir := filepath.Join(t.TempDir(), "eth2030-test")
 
 	cfg := DefaultConfig()
 	cfg.DataDir = dir
@@ -474,11 +474,11 @@ func TestInitDataDir_EmptyPath(t *testing.T) {
 
 func TestConfig_ResolvePath(t *testing.T) {
 	cfg := DefaultConfig()
-	cfg.DataDir = "/data/eth2028"
+	cfg.DataDir = "/data/eth2030"
 
 	// Relative path should be resolved under datadir.
 	got := cfg.ResolvePath("chaindata")
-	want := "/data/eth2028/chaindata"
+	want := "/data/eth2030/chaindata"
 	if got != want {
 		t.Errorf("ResolvePath(chaindata) = %q, want %q", got, want)
 	}

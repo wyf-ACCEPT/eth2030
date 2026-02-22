@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 var (

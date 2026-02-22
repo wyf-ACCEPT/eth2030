@@ -5,7 +5,7 @@ import (
 	"hash/crc32"
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // CalcForkID computes the EIP-2124 fork identifier from a genesis hash, the

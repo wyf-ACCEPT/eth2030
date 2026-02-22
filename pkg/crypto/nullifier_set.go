@@ -11,7 +11,7 @@ import (
 	"crypto/sha256"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // SMTDepth is the depth of the sparse Merkle tree (256 bits = SHA-256 output).

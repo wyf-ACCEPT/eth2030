@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // RPC conformance test suite.
@@ -825,8 +825,8 @@ func TestConformance_Web3ClientVersion(t *testing.T) {
 	requireSuccess(t, resp)
 
 	version := mustString(t, resp)
-	if !strings.HasPrefix(version, "eth2028") {
-		t.Fatalf("expected eth2028 prefix, got %s", version)
+	if !strings.HasPrefix(version, "eth2030") {
+		t.Fatalf("expected eth2030 prefix, got %s", version)
 	}
 }
 

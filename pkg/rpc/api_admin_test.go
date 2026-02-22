@@ -18,7 +18,7 @@ type mockAdminBackend struct {
 func newMockAdminBackend() *mockAdminBackend {
 	return &mockAdminBackend{
 		nodeInfo: NodeInfoData{
-			Name:       "eth2028/v0.1.0/linux-amd64/go1.22",
+			Name:       "eth2030/v0.1.0/linux-amd64/go1.22",
 			ID:         "abc123def456",
 			Enode:      "enode://abc123@127.0.0.1:30303",
 			ListenAddr: ":30303",
@@ -47,7 +47,7 @@ func newMockAdminBackend() *mockAdminBackend {
 			},
 		},
 		chainID: 1337,
-		dataDir: "/tmp/eth2028-data",
+		dataDir: "/tmp/eth2030-data",
 	}
 }
 
@@ -68,8 +68,8 @@ func TestAdminNodeInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if info.Name != "eth2028/v0.1.0/linux-amd64/go1.22" {
-		t.Fatalf("want name eth2028/v0.1.0/linux-amd64/go1.22, got %s", info.Name)
+	if info.Name != "eth2030/v0.1.0/linux-amd64/go1.22" {
+		t.Fatalf("want name eth2030/v0.1.0/linux-amd64/go1.22, got %s", info.Name)
 	}
 	if info.ID != "abc123def456" {
 		t.Fatalf("want ID abc123def456, got %s", info.ID)
@@ -261,8 +261,8 @@ func TestAdminDataDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if dir != "/tmp/eth2028-data" {
-		t.Fatalf("want /tmp/eth2028-data, got %s", dir)
+	if dir != "/tmp/eth2030-data" {
+		t.Fatalf("want /tmp/eth2030-data, got %s", dir)
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // ReceiptCodec provides encoding/decoding for receipts with EIP-2718 typed

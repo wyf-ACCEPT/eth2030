@@ -3,7 +3,7 @@ package core
 import (
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Enhanced blob gas constants from EIP-7762, EIP-7918, and EIP-7691

@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // ---------- eth_blockNumber ----------
@@ -372,8 +372,8 @@ func TestWeb3ClientVersion_ReturnsVersion(t *testing.T) {
 	if !ok {
 		t.Fatalf("result not string: %T", resp.Result)
 	}
-	if got != "eth2028/v0.1.0" {
-		t.Fatalf("want eth2028/v0.1.0, got %v", got)
+	if got != "eth2030/v0.1.0" {
+		t.Fatalf("want eth2030/v0.1.0, got %v", got)
 	}
 }
 

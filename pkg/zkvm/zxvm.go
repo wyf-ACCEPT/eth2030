@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // zxVM instruction set (RISC-like opcodes).

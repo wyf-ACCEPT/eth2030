@@ -3,7 +3,7 @@ package types
 import (
 	"math/big"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 	"golang.org/x/crypto/sha3"
 )
 

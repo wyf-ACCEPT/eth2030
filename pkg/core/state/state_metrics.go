@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/metrics"
+	"github.com/eth2030/eth2030/metrics"
 )
 
 // Pre-registered metrics in the default registry for StateDB operations.

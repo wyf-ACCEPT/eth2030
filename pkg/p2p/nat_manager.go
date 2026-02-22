@@ -333,7 +333,7 @@ func (m *NATManager) renewMappings() {
 
 	now := time.Now()
 	for _, pm := range toRenew {
-		err := device.AddMapping(pm.Protocol, pm.InternalPort, pm.ExternalPort, "eth2028", lifetime)
+		err := device.AddMapping(pm.Protocol, pm.InternalPort, pm.ExternalPort, "eth2030", lifetime)
 		if err != nil {
 			continue
 		}

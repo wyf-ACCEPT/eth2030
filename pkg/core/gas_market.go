@@ -9,8 +9,8 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Contract status lifecycle: Open -> Filled -> Settled, or Open -> Expired.

@@ -1,4 +1,4 @@
-// payload_shrinking.go implements payload size reduction for the eth2028 client.
+// payload_shrinking.go implements payload size reduction for the eth2030 client.
 // Part of the EL Sustainability track: reduce block payload size through
 // compression and pruning of redundant data (e.g., trailing zeros, duplicate
 // byte sequences).

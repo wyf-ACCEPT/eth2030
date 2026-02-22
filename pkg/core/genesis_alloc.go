@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // System contract addresses not yet in core/types.
@@ -61,7 +61,7 @@ func TestnetGenesisBlock() *Genesis {
 		Config:     SepoliaConfig,
 		Nonce:      0,
 		Timestamp:  1633267481,
-		ExtraData:  []byte("eth2028 testnet"),
+		ExtraData:  []byte("eth2030 testnet"),
 		GasLimit:   30_000_000,
 		Difficulty: big.NewInt(1),
 		Alloc:      TestnetGenesisAlloc(),

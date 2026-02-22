@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2030/eth2030/core/vm"
 )
 
 // TestEIP8037Constants verifies the EIP-8037 state creation gas constants.

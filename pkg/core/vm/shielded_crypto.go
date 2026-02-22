@@ -13,7 +13,7 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Curve parameters for the Pedersen commitment and ElGamal scheme.

@@ -1,9 +1,9 @@
-// Package proofs provides proof aggregation for the eth2028 client.
+// Package proofs provides proof aggregation for the eth2030 client.
 // It supports multiple proof types (ZK-SNARK, ZK-STARK, IPA, KZG) and
 // allows aggregation and verification of execution proofs.
 package proofs
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // ProofType identifies the cryptographic proof system used.
 type ProofType uint8

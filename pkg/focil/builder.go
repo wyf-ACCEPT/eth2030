@@ -3,7 +3,7 @@ package focil
 import (
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // BuildInclusionList constructs an inclusion list from pending transactions.

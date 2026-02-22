@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/p2p"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/p2p"
 )
 
 // EthPeer wraps a p2p.Peer with eth protocol-specific send/request methods.

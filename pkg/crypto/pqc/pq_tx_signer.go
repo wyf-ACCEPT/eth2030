@@ -9,8 +9,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // PQSignatureType enumerates supported post-quantum signature schemes.
@@ -25,7 +25,7 @@ const (
 	SigSPHINCS128 PQSignatureType = 2
 )
 
-// Canonical signature sizes per scheme as defined by the eth2028 roadmap.
+// Canonical signature sizes per scheme as defined by the eth2030 roadmap.
 const (
 	Dilithium3SignatureSize = 3309
 	Falcon512SignatureSize  = 690

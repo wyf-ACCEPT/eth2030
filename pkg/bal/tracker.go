@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // addrKey is used as a map key for addresses.

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // AccountProof is the response for eth_getProof.

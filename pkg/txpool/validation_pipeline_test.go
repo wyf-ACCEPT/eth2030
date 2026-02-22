@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // vpMakeTx creates a test transaction for validation pipeline tests.

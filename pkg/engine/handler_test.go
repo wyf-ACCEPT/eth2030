@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // newHandlerTestAPI creates an EngineAPI with a mock backend for handler tests.
@@ -154,8 +154,8 @@ func TestHandler_GetClientVersion(t *testing.T) {
 	if versions[0].Code != "ET" {
 		t.Fatalf("want code ET, got %s", versions[0].Code)
 	}
-	if versions[0].Name != "eth2028" {
-		t.Fatalf("want name eth2028, got %s", versions[0].Name)
+	if versions[0].Name != "eth2030" {
+		t.Fatalf("want name eth2030, got %s", versions[0].Name)
 	}
 }
 

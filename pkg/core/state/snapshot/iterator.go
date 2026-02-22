@@ -1,6 +1,6 @@
 package snapshot
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // AccountIterator is an iterator to step over all the accounts in a snapshot.
 type AccountIterator interface {

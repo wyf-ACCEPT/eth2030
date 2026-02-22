@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Beacon API error codes per the Beacon API spec.
@@ -362,7 +362,7 @@ func (api *BeaconAPI) getStateValidators(req *Request) *Response {
 
 func (api *BeaconAPI) getNodeVersion(req *Request) *Response {
 	return successResponse(req.ID, &VersionResponse{
-		Version: "eth2028/v0.1.0-beacon",
+		Version: "eth2030/v0.1.0-beacon",
 	})
 }
 

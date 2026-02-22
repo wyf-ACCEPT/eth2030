@@ -60,7 +60,7 @@ func TestBlstSignVerifyRoundtrip(t *testing.T) {
 		t.Fatalf("BlstKeyGen failed: %v", err)
 	}
 
-	msg := []byte("hello eth2028 consensus layer")
+	msg := []byte("hello eth2030 consensus layer")
 	sig, err := BlstSign(sk, msg)
 	if err != nil {
 		t.Fatalf("BlstSign failed: %v", err)

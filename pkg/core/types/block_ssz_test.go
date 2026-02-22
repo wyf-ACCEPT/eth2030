@@ -20,7 +20,7 @@ func makeTestHeader() *Header {
 		GasLimit:    30000000,
 		GasUsed:     21000,
 		Time:        1700000000,
-		Extra:       []byte("eth2028"),
+		Extra:       []byte("eth2030"),
 		BaseFee:     big.NewInt(1000000000),
 		BlobGasUsed: &bgu,
 		ExcessBlobGas: &ebg,

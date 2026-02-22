@@ -8,10 +8,10 @@ import (
 	"net"
 	"sync"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/p2p/enode"
-	"github.com/eth2028/eth2028/p2p/enr"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/p2p/enode"
+	"github.com/eth2030/eth2030/p2p/enr"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // Discovery V5 message type codes.

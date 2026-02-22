@@ -1,5 +1,5 @@
 // announce_nonce_proto.go implements a nonce announcement protocol for the
-// eth2028 client. This is from EL Throughput: "announce nonce".
+// eth2030 client. This is from EL Throughput: "announce nonce".
 // Peers broadcast their latest account nonces so that other nodes can
 // pre-validate transactions and detect nonce gaps before full propagation.
 package eth
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Nonce announcement errors.

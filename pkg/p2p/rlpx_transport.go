@@ -17,7 +17,7 @@ import (
 	"net"
 	"sync"
 
-	ethcrypto "github.com/eth2028/eth2028/crypto"
+	ethcrypto "github.com/eth2030/eth2030/crypto"
 )
 
 // ECIES handshake constants.

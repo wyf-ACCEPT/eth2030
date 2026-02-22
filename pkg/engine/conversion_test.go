@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 func TestPayloadToHeader(t *testing.T) {
@@ -21,7 +21,7 @@ func TestPayloadToHeader(t *testing.T) {
 					GasLimit:      30_000_000,
 					GasUsed:       21_000,
 					Timestamp:     1700000000,
-					ExtraData:     []byte("eth2028"),
+					ExtraData:     []byte("eth2030"),
 					BaseFeePerGas: big.NewInt(1_000_000_000),
 				},
 			},
@@ -59,8 +59,8 @@ func TestPayloadToHeader(t *testing.T) {
 	if header.Time != 1700000000 {
 		t.Errorf("Time = %d, want 1700000000", header.Time)
 	}
-	if string(header.Extra) != "eth2028" {
-		t.Errorf("Extra = %s, want eth2028", string(header.Extra))
+	if string(header.Extra) != "eth2030" {
+		t.Errorf("Extra = %s, want eth2030", string(header.Extra))
 	}
 	if header.BaseFee.Cmp(big.NewInt(1_000_000_000)) != 0 {
 		t.Errorf("BaseFee = %s, want 1000000000", header.BaseFee)

@@ -13,8 +13,8 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // BLSPubkey is a 48-byte BLS12-381 public key used in sync committee operations.

@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // ---------------------------------------------------------------------------
@@ -20,7 +20,7 @@ func TestETHProtocolHandshake(t *testing.T) {
 
 	localHello := &HelloPacket{
 		Version:    baseProtocolVersion,
-		Name:       "eth2028/v0.1.0",
+		Name:       "eth2030/v0.1.0",
 		Caps:       []Cap{{Name: "eth", Version: 68}},
 		ListenPort: 30303,
 		ID:         "localnode",
@@ -69,7 +69,7 @@ func TestETHProtocolHandshakeNoMatchingCaps(t *testing.T) {
 
 	localHello := &HelloPacket{
 		Version:    baseProtocolVersion,
-		Name:       "eth2028/v0.1.0",
+		Name:       "eth2030/v0.1.0",
 		Caps:       []Cap{{Name: "eth", Version: 68}},
 		ListenPort: 30303,
 		ID:         "localnode",
@@ -431,7 +431,7 @@ func TestHelloPacketRoundTrip(t *testing.T) {
 			name: "single cap",
 			hello: &HelloPacket{
 				Version:    5,
-				Name:       "eth2028/v0.1.0",
+				Name:       "eth2030/v0.1.0",
 				Caps:       []Cap{{Name: "eth", Version: 68}},
 				ListenPort: 30303,
 				ID:         "node123",

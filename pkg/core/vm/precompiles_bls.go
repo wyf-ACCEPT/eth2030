@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // EIP-2537 BLS12-381 precompile addresses (0x0b - 0x13).

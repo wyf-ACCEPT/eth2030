@@ -1,4 +1,4 @@
-# eth2028 Progress Report
+# eth2030 Progress Report
 
 > Last updated: 2026-02-22
 
@@ -20,21 +20,21 @@
 
 ## go-ethereum Integration
 
-eth2028 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
+eth2030 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
 
 | Component | Description |
 |-----------|-------------|
-| `pkg/geth/` | Adapter package bridging eth2028 types to go-ethereum interfaces |
+| `pkg/geth/` | Adapter package bridging eth2030 types to go-ethereum interfaces |
 | `pkg/geth/processor.go` | Block processor using `gethcore.ApplyMessage` for all transactions |
 | `pkg/geth/extensions.go` | Custom precompile injection via `evm.SetPrecompiles()` (13 precompiles) |
 | `pkg/geth/statedb.go` | State creation using go-ethereum's real trie DB |
-| `pkg/geth/config.go` | Chain config mapping (eth2028 forks → go-ethereum params) |
+| `pkg/geth/config.go` | Chain config mapping (eth2030 forks → go-ethereum params) |
 
 **Architecture:**
 ```
-eth2028 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
+eth2030 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
                      |
-              core/types (eth2028's public type system — unchanged)
+              core/types (eth2030's public type system — unchanged)
                      |
               pkg/geth/ (adapter package — only place that imports go-ethereum)
                      |
@@ -50,7 +50,7 @@ eth2028 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
 | NII | 4 | 0x0201-0x0204 | I+ |
 | Field arithmetic | 4 | 0x0205-0x0208 | I+ |
 
-**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes remain eth2028-native-EVM-only.
+**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes remain eth2030-native-EVM-only.
 
 ## EF State Test Validation
 
@@ -113,7 +113,7 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 | `sync` | Complete | Full sync + snap sync + beam sync pipeline, trie sync |
 | `eth` | Complete | ETH protocol handler, codec, EIP-8077 announce nonce (ETH/72) |
 | `node` | Complete | Config, lifecycle, subsystem wiring |
-| `cmd/eth2028` | Complete | CLI flags, signal handling, startup |
+| `cmd/eth2030` | Complete | CLI flags, signal handling, startup |
 | `log` | Complete | Structured JSON/text logging |
 | `metrics` | Complete | Counters, gauges, histograms, Prometheus, EWMA, CPU tracker |
 

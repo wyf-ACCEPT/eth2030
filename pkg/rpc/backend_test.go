@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // TestBackendInterface_ChainID verifies the mock backend implements ChainID.

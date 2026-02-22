@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 func TestPrefetcher_PrefetchAccountScheduling(t *testing.T) {

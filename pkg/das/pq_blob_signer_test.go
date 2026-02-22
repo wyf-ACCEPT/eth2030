@@ -3,7 +3,7 @@ package das
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/crypto/pqc"
+	"github.com/eth2030/eth2030/crypto/pqc"
 )
 
 func TestPQBlobSignerCreation(t *testing.T) {

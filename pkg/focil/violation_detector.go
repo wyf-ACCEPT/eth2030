@@ -1,5 +1,5 @@
 // violation_detector.go implements detection and reporting of FOCIL inclusion
-// list violations for the eth2028 Ethereum client.
+// list violations for the eth2030 Ethereum client.
 //
 // Per EIP-7805, block builders must include transactions from the merged
 // inclusion list or risk attestation penalties. The ViolationDetector:
@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // ViolationType identifies the kind of FOCIL violation.

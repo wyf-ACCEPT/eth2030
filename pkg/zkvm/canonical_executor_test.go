@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // buildHaltProgram constructs a minimal RISC-V program that halts with exit code 0.

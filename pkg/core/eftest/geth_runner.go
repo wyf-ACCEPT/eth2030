@@ -20,8 +20,8 @@ import (
 	gethrlp "github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/geth"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/geth"
 )
 
 // GethRunResult holds the outcome of running a single subtest via go-ethereum.

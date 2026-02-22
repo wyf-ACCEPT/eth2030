@@ -12,7 +12,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // VerkleMultiProof contains a multi-point opening proof for multiple

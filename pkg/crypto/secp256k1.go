@@ -6,7 +6,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // s256 is the secp256k1 curve used throughout Ethereum.

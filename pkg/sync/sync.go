@@ -1,5 +1,5 @@
 // Package sync implements block synchronization protocols for the
-// eth2028 execution client. It provides a header-first sync strategy
+// eth2030 execution client. It provides a header-first sync strategy
 // where headers are downloaded first, validated, then bodies are
 // fetched and blocks are executed.
 package sync
@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Sync mode constants.

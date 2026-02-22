@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // mockBackend is a test implementation of the Backend interface.
@@ -903,8 +903,8 @@ func TestGetClientVersionV1(t *testing.T) {
 	if versions[0].Code != "ET" {
 		t.Errorf("expected code ET, got %s", versions[0].Code)
 	}
-	if versions[0].Name != "eth2028" {
-		t.Errorf("expected name eth2028, got %s", versions[0].Name)
+	if versions[0].Name != "eth2030" {
+		t.Errorf("expected name eth2030, got %s", versions[0].Name)
 	}
 }
 

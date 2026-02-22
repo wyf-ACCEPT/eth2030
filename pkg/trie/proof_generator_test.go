@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // TestGenerateInclusionProof verifies that an inclusion proof can be generated

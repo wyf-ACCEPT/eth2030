@@ -5,9 +5,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // newIntegrationEVM creates an EVM with a real MemoryStateDB for integration tests.

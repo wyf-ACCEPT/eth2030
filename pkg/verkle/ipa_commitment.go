@@ -22,7 +22,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // --- FieldElement: 256-bit scalar mod subgroup order ---

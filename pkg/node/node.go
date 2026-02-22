@@ -8,17 +8,17 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/eth2028/eth2028/core"
-	"github.com/eth2028/eth2028/core/rawdb"
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/engine"
-	"github.com/eth2028/eth2028/p2p"
-	"github.com/eth2028/eth2028/rpc"
-	"github.com/eth2028/eth2028/txpool"
+	"github.com/eth2030/eth2030/core"
+	"github.com/eth2030/eth2030/core/rawdb"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/engine"
+	"github.com/eth2030/eth2030/p2p"
+	"github.com/eth2030/eth2030/rpc"
+	"github.com/eth2030/eth2030/txpool"
 )
 
-// Node is the top-level eth2028 node that manages all subsystems.
+// Node is the top-level eth2030 node that manages all subsystems.
 type Node struct {
 	config *Config
 
@@ -96,7 +96,7 @@ func (n *Node) Start() error {
 		return errors.New("node already running")
 	}
 
-	log.Printf("Starting eth2028 node (network=%s)", n.config.Network)
+	log.Printf("Starting eth2030 node (network=%s)", n.config.Network)
 
 	// Start P2P server.
 	if err := n.p2pServer.Start(); err != nil {
@@ -138,7 +138,7 @@ func (n *Node) Stop() error {
 		return nil
 	}
 
-	log.Println("Stopping eth2028 node...")
+	log.Println("Stopping eth2030 node...")
 
 	// Stop Engine API.
 	if err := n.engineServer.Stop(); err != nil {

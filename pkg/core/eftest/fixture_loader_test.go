@@ -687,7 +687,7 @@ func TestEF_RegressionGates(t *testing.T) {
 }
 
 // TestEF_CategorySummary prints a compact summary of pass rates by category
-// using the native eth2028 EVM. For the authoritative 100% pass rate results
+// using the native eth2030 EVM. For the authoritative 100% pass rate results
 // via go-ethereum's EVM, use TestGethCategorySummary in geth_runner_test.go.
 func TestEF_CategorySummary(t *testing.T) {
 	t.Skip("use TestGethCategorySummary for authoritative EF test results via go-ethereum backend")

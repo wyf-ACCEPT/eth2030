@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	ethcrypto "github.com/eth2028/eth2028/crypto"
+	ethcrypto "github.com/eth2030/eth2030/crypto"
 )
 
 func TestNewRLPxHandshake(t *testing.T) {

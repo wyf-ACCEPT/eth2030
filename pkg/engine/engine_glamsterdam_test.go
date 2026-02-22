@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // mockGlamsterdamBackend implements GlamsterdamBackend for testing.
@@ -505,8 +505,8 @@ func TestGlamsterdam_GetClientVersionV2(t *testing.T) {
 	if v.Code != "ET" {
 		t.Fatalf("expected code ET, got %s", v.Code)
 	}
-	if v.Name != "eth2028" {
-		t.Fatalf("expected name eth2028, got %s", v.Name)
+	if v.Name != "eth2030" {
+		t.Fatalf("expected name eth2030, got %s", v.Name)
 	}
 	if v.OS != "linux" {
 		t.Fatalf("expected OS linux, got %s", v.OS)

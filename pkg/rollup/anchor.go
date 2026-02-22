@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Anchor storage slot constants (similar to EIP-4788 beacon root contract).

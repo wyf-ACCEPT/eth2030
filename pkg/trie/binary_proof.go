@@ -3,8 +3,8 @@ package trie
 import (
 	"errors"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // BinaryProof is a Merkle proof for a key in a binary trie. It contains

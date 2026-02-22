@@ -3,7 +3,7 @@ package p2p
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // FuzzP2PMessageDecode feeds random bytes as P2P message payloads and attempts

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // MaxProofSize is the maximum size of an execution proof (300 KiB per EIP-8025).

@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // BinaryHasher computes SHA-256 Merkle hashes for binary trie nodes.

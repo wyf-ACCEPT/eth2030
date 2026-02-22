@@ -3,7 +3,7 @@ package light
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 func makeLightHeader(slot uint64, parentRoot [32]byte) *LightHeader {

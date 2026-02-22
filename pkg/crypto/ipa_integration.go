@@ -1,4 +1,4 @@
-// IPA integration layer bridging the eth2028 IPA implementation with the
+// IPA integration layer bridging the eth2030 IPA implementation with the
 // go-ipa reference library patterns (github.com/crate-crypto/go-ipa).
 //
 // This file provides:

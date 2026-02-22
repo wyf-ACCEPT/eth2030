@@ -4,10 +4,10 @@ import (
 	"net"
 	"testing"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/p2p/enode"
-	"github.com/eth2028/eth2028/p2p/enr"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/p2p/enode"
+	"github.com/eth2030/eth2030/p2p/enr"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 func makeLocalNode(t *testing.T) (*enode.Node, *net.UDPConn) {

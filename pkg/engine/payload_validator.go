@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Fork identifiers for fork-specific validation rules.

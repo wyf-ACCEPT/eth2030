@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-- Project: eth2028 -- Ethereum client targeting the 2028 roadmap
+- Project: eth2030 -- Ethereum client targeting the 2028 roadmap
 - GitHub issues/comments/PR comments: use literal multiline strings or `-F - <<'EOF'` for real newlines; never embed "\\n".
 
 ## 2028 Roadmap (L1 Strawmap by EF Protocol)
@@ -60,7 +60,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 
 ## Project Structure & Module Organization
 
-- `pkg/` - Go module root (`github.com/eth2028/eth2028`, go.mod here)
+- `pkg/` - Go module root (`github.com/eth2030/eth2030`, go.mod here)
   - `core/types/` - Core types: Header, Transaction (7 types incl. FrameTx, AATx), Receipt, Block, Account, SSZ encoding (EIP-6404/7807), SetCode auth (EIP-7702), tx assertions, EL requests (EIP-7685), log index (EIP-7745), EIP-4844 blob tx utilities, EIP-4895 withdrawals
   - `core/state/` - StateDB interface, in-memory and trie-backed implementations, access events (EIP-4762), stateless StateDB (witness-backed), state prefetcher
   - `core/vm/` - EVM interpreter, 164+ opcodes (incl. CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, CURRENT_ROLE, ACCEPT_ROLE, EOF: EXTCALL/EXTDELEGATECALL/EXTSTATICCALL/RETURNDATALOAD/DATALOAD/DATALOADN/DATASIZE/DATACOPY/EOFCREATE/RETURNCONTRACT), 24 precompiles (incl. 9 BLS12-381, NTT, NII: modexp/field-mul/field-inv/batch-verify), gas tables, EIP-4762 statelessness gas, EIP-7708 ETH transfer logs, EIP-8141 frame opcodes, EIP-7701 AA opcodes, EOF container (EIP-3540)
@@ -70,7 +70,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `core/state/pruner/` - State pruner with bloom filter reachability
   - `core/vops/` - Validity-Only Partial Statelessness: partial executor, validator, witness integration, complete VOPS validator (access lists, storage proofs)
   - `core/eftest/` - EF state test runner: JSON parser, fixture loader, go-ethereum-backed execution (36,126/36,126 = 100%)
-  - `geth/` - go-ethereum adapter: type conversion, chain config mapping, pre-state creation, state transition, block processor, custom precompile injection (13 precompiles: 4 Glamsterdam repriced, 1 NTT, 4 NII, 4 field), eth2028 fork-level detection (imports go-ethereum v1.17.0 as library)
+  - `geth/` - go-ethereum adapter: type conversion, chain config mapping, pre-state creation, state transition, block processor, custom precompile injection (13 precompiles: 4 Glamsterdam repriced, 1 NTT, 4 NII, 4 field), eth2030 fork-level detection (imports go-ethereum v1.17.0 as library)
   - `rlp/` - RLP encoding/decoding
   - `consensus/` - Consensus layer: SSF (single-slot finality), quick slots (6s, 4-slot epochs), 1-epoch finality, EIP-7251 validator balance (2048 ETH max EB), consolidation, APS (committee selection), EIP-7549 attestations, PQ attestations (Dilithium), attester stake cap, endgame finality, UnifiedBeaconState (merged v1/v2/modern), finality BLS adapter, CL proof circuits (SHA-256 Merkle), jeanVM aggregation (Groth16 ZK-circuit BLS), PQ chain security (SHA-3 fork choice)
   - `ssz/` - SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList
@@ -99,7 +99,7 @@ Live at strawmap.org. Three layers, each with sub-tracks:
   - `verkle/` - Verkle tree types, key derivation, Pedersen commitments, state migration, StateDB adapter, witness generation
   - `log/` - Structured logging (JSON/text)
   - `metrics/` - Counters, gauges, histograms, Prometheus export, EWMA, meter, CPU tracker
-- `cmd/eth2028/` - CLI binary with flags, signal handling
+- `cmd/eth2030/` - CLI binary with flags, signal handling
 - `internal/testutil/` - Shared test utilities
 - `refs/` - Reference submodules (30 total, read-only, do NOT modify). Main upstream: https://github.com/orgs/ethereum/repositories
   - **Ethereum specs**: consensus-specs, execution-specs, consensus-spec-tests, execution-spec-tests, execution-apis, beacon-APIs, builder-specs, EIPs, ERCs

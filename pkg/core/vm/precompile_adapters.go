@@ -1,6 +1,6 @@
 // Package vm implements the Ethereum Virtual Machine.
 //
-// precompile_adapters.go provides exported adapter types for eth2028's custom
+// precompile_adapters.go provides exported adapter types for eth2030's custom
 // precompiles, enabling the geth adapter package to reference them. Each
 // adapter wraps the corresponding unexported precompile struct.
 package vm

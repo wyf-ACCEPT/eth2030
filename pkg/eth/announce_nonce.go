@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/rlp"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/rlp"
 )
 
 // Protocol version for EIP-8077 announce nonce extension.

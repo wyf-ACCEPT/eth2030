@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Endgame finality targets sub-slot finality (finality delay of 1 slot or less),

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// NodeConfig holds the full configuration for an eth2028 node,
+// NodeConfig holds the full configuration for an eth2030 node,
 // parsed from a TOML-like configuration file. It is separate from
 // Config to support richer structured configuration with nested sections.
 type NodeConfig struct {

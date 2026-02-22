@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 func TestDefaultGenesis(t *testing.T) {
@@ -68,8 +68,8 @@ func TestDevGenesisToBlock(t *testing.T) {
 	if block.GasLimit() != 30_000_000 {
 		t.Errorf("dev genesis gas limit = %d, want 30000000", block.GasLimit())
 	}
-	if string(block.Extra()) != "eth2028 dev genesis" {
-		t.Errorf("dev genesis extra = %q, want %q", string(block.Extra()), "eth2028 dev genesis")
+	if string(block.Extra()) != "eth2030 dev genesis" {
+		t.Errorf("dev genesis extra = %q, want %q", string(block.Extra()), "eth2030 dev genesis")
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // callDebug is a test helper that dispatches a request through the DebugAPI.
@@ -248,7 +248,7 @@ func TestDebugNS_ChaindbProperty(t *testing.T) {
 	}{
 		{"leveldb.stats", "Compactions"},
 		{"leveldb.iostats", "Read(MB)"},
-		{"version", "eth2028"},
+		{"version", "eth2030"},
 	}
 
 	for _, tt := range tests {

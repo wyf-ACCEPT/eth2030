@@ -6,7 +6,7 @@ package txpool
 import (
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // NonceGap represents a gap in the nonce sequence for a sender.

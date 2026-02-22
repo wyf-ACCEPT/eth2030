@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // makeTestBlock creates a block at the given number with the given parent hash

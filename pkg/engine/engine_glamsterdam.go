@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Engine API post-Glamsterdam handler.
@@ -226,7 +226,7 @@ func (e *EngineGlamsterdam) HandleGetClientVersionV2(_ *ClientVersionV1) []Clien
 	return []ClientVersionV2{
 		{
 			Code:    "ET",
-			Name:    "eth2028",
+			Name:    "eth2030",
 			Version: "v0.2.0",
 			Commit:  "000000",
 			OS:      "linux",

@@ -1,4 +1,4 @@
-# eth2028 Execution Client -- Design Document
+# eth2030 Execution Client -- Design Document
 
 > A minimal, spec-compliant Ethereum execution client targeting the 2028 roadmap.
 > Built in Go, referencing the L1 Strawmap by EF Protocol (Feb 11, 2026).
@@ -616,11 +616,11 @@ All 47 packages are complete and passing tests. Key packages:
 
 ### go-ethereum Integration
 
-eth2028 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` adapter package bridges eth2028 types to go-ethereum's EVM and state transition engine, achieving 100% EF state test pass rate (36,126/36,126).
+eth2030 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` adapter package bridges eth2030 types to go-ethereum's EVM and state transition engine, achieving 100% EF state test pass rate (36,126/36,126).
 
 **Key components:**
 - `GethBlockProcessor` — executes blocks via `gethcore.ApplyMessage`
-- `PrecompileAdapter` — wraps eth2028 precompiles for go-ethereum's interface
+- `PrecompileAdapter` — wraps eth2030 precompiles for go-ethereum's interface
 - `InjectCustomPrecompiles` — injects 13 custom precompiles via `evm.SetPrecompiles()`
 - `MakePreState` — creates go-ethereum `state.StateDB` backed by real trie DB
 

@@ -4,8 +4,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 func makeShieldedTx(sender types.Address, gas uint64, nonce uint64) *ShieldedTx {

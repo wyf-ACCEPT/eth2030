@@ -1,7 +1,7 @@
 package vm
 
 import (
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // WitnessGasTracker maintains the four sets specified by EIP-4762 for tracking

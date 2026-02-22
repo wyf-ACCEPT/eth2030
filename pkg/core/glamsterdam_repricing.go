@@ -15,7 +15,7 @@ package core
 import (
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // GlamsterdamGasTable holds the repriced gas costs for opcodes in the

@@ -7,16 +7,16 @@ import (
 	"math/big"
 	"testing"
 
-	e2e "github.com/eth2028/eth2028"
-	"github.com/eth2028/eth2028/consensus"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/crypto/pqc"
-	"github.com/eth2028/eth2028/das"
-	"github.com/eth2028/eth2028/light"
-	"github.com/eth2028/eth2028/proofs"
-	"github.com/eth2028/eth2028/rollup"
-	"github.com/eth2028/eth2028/trie/bintrie"
+	e2e "github.com/eth2030/eth2030"
+	"github.com/eth2030/eth2030/consensus"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/crypto/pqc"
+	"github.com/eth2030/eth2030/das"
+	"github.com/eth2030/eth2030/light"
+	"github.com/eth2030/eth2030/proofs"
+	"github.com/eth2030/eth2030/rollup"
+	"github.com/eth2030/eth2030/trie/bintrie"
 )
 
 // ==========================================================================

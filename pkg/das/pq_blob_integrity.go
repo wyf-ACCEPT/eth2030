@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/crypto/pqc"
+	"github.com/eth2030/eth2030/crypto/pqc"
 )
 
 // PQ blob integrity algorithm identifiers (distinct from pq_blob_signer.go).

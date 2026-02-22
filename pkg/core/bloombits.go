@@ -1,6 +1,6 @@
 package core
 
-import "github.com/eth2028/eth2028/core/types"
+import "github.com/eth2030/eth2030/core/types"
 
 // BloomFilter provides bloom-based pre-filtering for log queries.
 // Before performing expensive exact matching against every log in a block,

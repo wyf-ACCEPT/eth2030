@@ -8,7 +8,7 @@ package vm
 //   - CallerChain: maintains the full chain of callers through nested calls
 
 import (
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // CallerReference is the interface for entities that can be a caller in the

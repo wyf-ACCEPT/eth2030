@@ -12,7 +12,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Fork name constants used as keys for precompile set selection.

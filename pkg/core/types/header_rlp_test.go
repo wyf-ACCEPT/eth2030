@@ -23,7 +23,7 @@ func TestHeaderRLPRoundTrip(t *testing.T) {
 		GasLimit:         30_000_000,
 		GasUsed:          21_000,
 		Time:             1700000000,
-		Extra:            []byte("eth2028"),
+		Extra:            []byte("eth2030"),
 		BaseFee:          big.NewInt(1_000_000_000),
 		WithdrawalsHash:  &EmptyRootHash,
 		BlobGasUsed:      &blobGasUsed,

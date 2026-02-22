@@ -23,10 +23,10 @@ func TestNewConfigManager(t *testing.T) {
 
 func TestConfigManagerSetDataDir(t *testing.T) {
 	cm := NewConfigManager()
-	cm.SetDataDir("/data/eth2028", SourceCLI)
+	cm.SetDataDir("/data/eth2030", SourceCLI)
 
-	if cm.Config().DataDir != "/data/eth2028" {
-		t.Errorf("DataDir = %q, want /data/eth2028", cm.Config().DataDir)
+	if cm.Config().DataDir != "/data/eth2030" {
+		t.Errorf("DataDir = %q, want /data/eth2030", cm.Config().DataDir)
 	}
 	if cm.Source("datadir") != SourceCLI {
 		t.Errorf("source = %v, want CLI", cm.Source("datadir"))

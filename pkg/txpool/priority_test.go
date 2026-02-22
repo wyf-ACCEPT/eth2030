@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 func makePriorityEntry(hash byte, sender byte, gasPrice uint64, nonce uint64) *PriorityEntry {

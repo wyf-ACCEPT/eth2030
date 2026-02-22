@@ -3,10 +3,10 @@ package rpc
 import (
 	"math/big"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
-	"github.com/eth2028/eth2028/trie"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
+	"github.com/eth2030/eth2030/trie"
 )
 
 // Backend provides access to chain data for the JSON-RPC API.

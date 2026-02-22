@@ -3,8 +3,8 @@ package core
 import (
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
 )
 
 // TestEIP7976Constants verifies the Glamsterdam calldata floor cost constants.

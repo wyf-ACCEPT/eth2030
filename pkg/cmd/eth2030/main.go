@@ -1,12 +1,12 @@
-// Command eth2028 is the main entry point for the eth2028 Ethereum client.
+// Command eth2030 is the main entry point for the eth2030 Ethereum client.
 //
 // Usage:
 //
-//	eth2028 [flags]
+//	eth2030 [flags]
 //
 // Flags:
 //
-//	--datadir      Data directory path (default: ~/.eth2028)
+//	--datadir      Data directory path (default: ~/.eth2030)
 //	--port         P2P listening port (default: 30303)
 //	--http.port    HTTP-RPC port (default: 8545)
 //	--engine.port  Engine API port (default: 8551)
@@ -25,7 +25,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/eth2028/eth2028/node"
+	"github.com/eth2030/eth2030/node"
 )
 
 // Build-time version info, overridable with ldflags:
@@ -55,7 +55,7 @@ func run(args []string) int {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 
 	// Startup banner showing resolved configuration.
-	log.Printf("eth2028 %s starting", version)
+	log.Printf("eth2030 %s starting", version)
 	log.Printf("  datadir:     %s", cfg.DataDir)
 	log.Printf("  network id:  %d", cfg.NetworkID)
 	log.Printf("  p2p port:    %d", cfg.P2PPort)
@@ -122,7 +122,7 @@ func parseFlags(args []string) (node.Config, bool, int) {
 	}
 
 	if *showVersion {
-		fmt.Printf("eth2028 %s (commit %s)\n", version, commit)
+		fmt.Printf("eth2030 %s (commit %s)\n", version, commit)
 		return cfg, true, 0
 	}
 
@@ -133,7 +133,7 @@ func parseFlags(args []string) (node.Config, bool, int) {
 // Config. The FlagSet uses ContinueOnError so callers control the error
 // handling behavior.
 func newFlagSet(cfg *node.Config) *flagSet {
-	fs := newCustomFlagSet("eth2028")
+	fs := newCustomFlagSet("eth2030")
 	fs.StringVar(&cfg.DataDir, "datadir", cfg.DataDir, "data directory path")
 	fs.IntVar(&cfg.P2PPort, "port", cfg.P2PPort, "P2P listening port")
 	fs.IntVar(&cfg.RPCPort, "http.port", cfg.RPCPort, "HTTP-RPC server port")

@@ -5,10 +5,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
-	"github.com/eth2028/eth2028/trie"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
+	"github.com/eth2030/eth2030/trie"
 )
 
 // mockBeaconBackend implements the parts of Backend needed for BeaconAPI tests.
@@ -268,8 +268,8 @@ func TestBeaconGetNodeVersion(t *testing.T) {
 	var ver VersionResponse
 	json.Unmarshal(data, &ver)
 
-	if ver.Version != "eth2028/v0.1.0-beacon" {
-		t.Errorf("version = %q, want eth2028/v0.1.0-beacon", ver.Version)
+	if ver.Version != "eth2030/v0.1.0-beacon" {
+		t.Errorf("version = %q, want eth2030/v0.1.0-beacon", ver.Version)
 	}
 }
 

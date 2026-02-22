@@ -3,7 +3,7 @@ package bintrie
 import (
 	"slices"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Empty represents an empty node in the binary trie.

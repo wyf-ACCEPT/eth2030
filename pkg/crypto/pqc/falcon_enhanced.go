@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // FalconEnhancedParams holds NTRU lattice parameters.

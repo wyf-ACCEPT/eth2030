@@ -3,7 +3,7 @@ package core
 import (
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // GigagasConfig configures the gigagas (1 Ggas/sec) execution infrastructure.

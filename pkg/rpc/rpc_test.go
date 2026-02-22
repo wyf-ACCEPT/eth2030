@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/state"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/core/vm"
-	"github.com/eth2028/eth2028/trie"
+	"github.com/eth2030/eth2030/core/state"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/core/vm"
+	"github.com/eth2030/eth2030/trie"
 )
 
 var errCallFailed = errors.New("execution reverted")
@@ -264,8 +264,8 @@ func TestWeb3ClientVersion(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error: %v", resp.Error.Message)
 	}
-	if resp.Result != "eth2028/v0.1.0" {
-		t.Fatalf("want eth2028/v0.1.0, got %v", resp.Result)
+	if resp.Result != "eth2030/v0.1.0" {
+		t.Fatalf("want eth2030/v0.1.0, got %v", resp.Result)
 	}
 }
 

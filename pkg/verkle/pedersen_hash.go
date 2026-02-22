@@ -25,7 +25,7 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // PedersenConfig holds precomputed generator points for Pedersen hashing.

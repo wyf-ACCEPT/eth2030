@@ -1,6 +1,6 @@
-// Package geth provides an adapter layer between eth2028's type system and
+// Package geth provides an adapter layer between eth2030's type system and
 // go-ethereum's execution engine. This is the only package that imports
-// go-ethereum directly; all other eth2028 packages use eth2028/core/types.
+// go-ethereum directly; all other eth2030 packages use eth2030/core/types.
 package geth
 
 import (
@@ -10,27 +10,27 @@ import (
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // --- Address and Hash conversion (zero-copy, layout-compatible) ---
 
-// ToGethAddress converts an eth2028 Address to a go-ethereum Address.
+// ToGethAddress converts an eth2030 Address to a go-ethereum Address.
 func ToGethAddress(a types.Address) gethcommon.Address {
 	return gethcommon.Address(a)
 }
 
-// FromGethAddress converts a go-ethereum Address to an eth2028 Address.
+// FromGethAddress converts a go-ethereum Address to an eth2030 Address.
 func FromGethAddress(a gethcommon.Address) types.Address {
 	return types.Address(a)
 }
 
-// ToGethHash converts an eth2028 Hash to a go-ethereum Hash.
+// ToGethHash converts an eth2030 Hash to a go-ethereum Hash.
 func ToGethHash(h types.Hash) gethcommon.Hash {
 	return gethcommon.Hash(h)
 }
 
-// FromGethHash converts a go-ethereum Hash to an eth2028 Hash.
+// FromGethHash converts a go-ethereum Hash to an eth2030 Hash.
 func FromGethHash(h gethcommon.Hash) types.Hash {
 	return types.Hash(h)
 }
@@ -56,7 +56,7 @@ func FromUint256(u *uint256.Int) *big.Int {
 
 // --- AccessList conversion ---
 
-// ToGethAccessList converts eth2028 AccessList to go-ethereum AccessList.
+// ToGethAccessList converts eth2030 AccessList to go-ethereum AccessList.
 func ToGethAccessList(al types.AccessList) gethtypes.AccessList {
 	if al == nil {
 		return nil
@@ -77,7 +77,7 @@ func ToGethAccessList(al types.AccessList) gethtypes.AccessList {
 
 // --- Log conversion ---
 
-// FromGethLog converts a go-ethereum Log to an eth2028 Log.
+// FromGethLog converts a go-ethereum Log to an eth2030 Log.
 func FromGethLog(l *gethtypes.Log) *types.Log {
 	if l == nil {
 		return nil

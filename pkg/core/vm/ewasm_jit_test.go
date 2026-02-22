@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // validMinimalWasm returns a minimal valid WASM binary (magic + version only,

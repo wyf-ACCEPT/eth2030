@@ -6,7 +6,7 @@ package vm
 // warm/cold status, and supports pre-population from a transaction access list.
 
 import (
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // AccessListTracker manages EIP-2929 warm/cold access tracking for addresses

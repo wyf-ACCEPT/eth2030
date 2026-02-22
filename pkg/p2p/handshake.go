@@ -32,7 +32,7 @@ const baseProtocolVersion = 5
 // sub-protocol capabilities. The format mirrors go-ethereum's p2p.protoHandshake.
 type HelloPacket struct {
 	Version    uint64 // devp2p base protocol version (5).
-	Name       string // Client identity string (e.g. "eth2028/v0.1.0").
+	Name       string // Client identity string (e.g. "eth2030/v0.1.0").
 	Caps       []Cap  // Supported sub-protocol capabilities.
 	ListenPort uint64 // TCP listening port (0 if not listening).
 	ID         string // Node ID (hex-encoded public key or random).

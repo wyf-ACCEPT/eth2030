@@ -9,12 +9,12 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/eth2028/eth2028/consensus"
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/das"
-	"github.com/eth2028/eth2028/epbs"
-	"github.com/eth2028/eth2028/proofs"
+	"github.com/eth2030/eth2030/consensus"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/das"
+	"github.com/eth2030/eth2030/epbs"
+	"github.com/eth2030/eth2030/proofs"
 )
 
 // ---------------------------------------------------------------------------

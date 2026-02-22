@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/metrics"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/metrics"
 )
 
 // Queue-specific proof type constants. These represent the 5 proof categories

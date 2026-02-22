@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // makeLegacyTx creates a legacy transaction with the given gas price and gas limit.

@@ -1,4 +1,4 @@
-// optional.go implements an optional proof submission system for the eth2028 client.
+// optional.go implements an optional proof submission system for the eth2030 client.
 // This is from EL Throughput: "optional proofs" (before mandatory 3-of-5).
 // Validators and provers can voluntarily submit proofs for blocks, building a
 // reputation and earning rewards before the mandatory proof requirement activates.
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Optional proof system errors.

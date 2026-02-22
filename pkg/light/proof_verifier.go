@@ -1,7 +1,7 @@
 // proof_verifier.go implements a Merkle proof verifier for light clients.
 // It supports single and batch proof verification as well as proof creation,
 // suitable for verifying state inclusion proofs against beacon state roots.
-// This is part of the eth2028 light client infrastructure.
+// This is part of the eth2030 light client infrastructure.
 package light
 
 import (
@@ -9,8 +9,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Proof verifier errors.

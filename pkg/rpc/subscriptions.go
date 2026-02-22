@@ -3,7 +3,7 @@ package rpc
 import (
 	"encoding/json"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // SubType distinguishes the kind of WebSocket subscription.

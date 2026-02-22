@@ -10,7 +10,7 @@ import (
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/eth2028/eth2028/geth"
+	"github.com/eth2030/eth2030/geth"
 )
 
 // testdataDir returns the path to go-ethereum's state test fixtures.

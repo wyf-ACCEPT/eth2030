@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eth2028/eth2028/p2p/discover"
+	"github.com/eth2030/eth2030/p2p/discover"
 )
 
 // DHT routing errors.

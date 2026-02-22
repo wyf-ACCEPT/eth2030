@@ -1,4 +1,4 @@
-// beacon_sync.go implements Beacon & Blob Sync Revamp for the eth2028 client.
+// beacon_sync.go implements Beacon & Blob Sync Revamp for the eth2030 client.
 // It provides a BeaconSyncer for syncing beacon chain data (blocks and blob
 // sidecars) and a BlobRecovery mechanism for recovering missing blobs from
 // partial availability using data availability sampling concepts.
@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Beacon sync errors.

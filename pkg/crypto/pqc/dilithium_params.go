@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"errors"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Dilithium parameter constants (CRYSTALS-Dilithium specification).

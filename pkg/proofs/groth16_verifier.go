@@ -12,7 +12,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 var (

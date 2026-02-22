@@ -7,7 +7,7 @@ package state
 import (
 	"sync"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // Gas cost constants for the access event tracker. These mirror EIP-2929/4762

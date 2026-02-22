@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/eth2028/eth2028/core/types"
+	"github.com/eth2030/eth2030/core/types"
 )
 
 // StemNode represents a group of StemNodeWidth values sharing the same stem.

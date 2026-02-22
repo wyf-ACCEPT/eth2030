@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/eth2028/eth2028/node"
+	"github.com/eth2030/eth2030/node"
 )
 
 func TestLoadConfigDefaults(t *testing.T) {

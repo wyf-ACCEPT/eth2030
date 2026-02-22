@@ -1,4 +1,4 @@
-// snap.go implements the snap sync state download protocol for the eth2028
+// snap.go implements the snap sync state download protocol for the eth2030
 // execution client. Snap sync downloads the world state at a recent "pivot"
 // block instead of replaying every historical transaction, dramatically
 // reducing initial sync time.
@@ -21,8 +21,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Snap sync tuning constants.

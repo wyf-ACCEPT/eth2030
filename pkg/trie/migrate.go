@@ -1,7 +1,7 @@
 package trie
 
 import (
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // MigrateFromMPT converts an MPT trie to a binary Merkle trie. Each key-value

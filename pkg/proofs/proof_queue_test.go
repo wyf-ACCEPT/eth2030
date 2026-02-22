@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eth2028/eth2028/crypto"
-	"github.com/eth2028/eth2028/metrics"
+	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/metrics"
 )
 
 func TestQueueProofTypeString(t *testing.T) {

@@ -15,8 +15,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eth2028/eth2028/core/types"
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Execution request type constants per EIP-7685 (re-exported for execution_requests module).

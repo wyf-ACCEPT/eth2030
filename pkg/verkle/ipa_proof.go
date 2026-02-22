@@ -17,7 +17,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/eth2028/eth2028/crypto"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // IPAProofVerkle is the serializable IPA proof structure for Verkle trees.
