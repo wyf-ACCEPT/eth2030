@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Build-In%20Progress-yellow?style=for-the-badge" alt="Build In Progress" />
 </p>
 
-> **Warning**: This is an experimental research project under active development. It is **not** production-ready. Use at your own risk. APIs, data formats, and behavior may change without notice.
+> **Warning**: This is an experimental research project and **reference implementation** under active development. It is **not** production-ready and is intended primarily for study, research, and prototyping. Use at your own risk. APIs, data formats, and behavior may change without notice.
 
 <p align="center">
   <a href="https://github.com/jiayaoqijia/eth2030/actions/workflows/ci.yml"><img src="https://github.com/jiayaoqijia/eth2030/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI" /></a>
@@ -246,13 +246,13 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 | Phase | Year | Coverage | Highlights |
 |-------|------|----------|------------|
 | Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
-| Hogota | 2026-2027 | **~85%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool |
-| I+ | 2027 | **~80%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync |
-| J+ | 2027-2028 | **~75%** | Verkle migration, light client, block-in-blobs, variable blobs |
-| K+ | 2028 | **~80%** | SSF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs |
-| L+ | 2029 | **~80%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM |
-| M+ | 2029+ | **~75%** | Gigagas, canonical zkVM, gas futures, sharded mempool |
-| 2030++ | Long term | **~75%** | VDF randomness, distributed builders, shielded transfers |
+| Hogota | 2026-2027 | **~95%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool |
+| I+ | 2027 | **~95%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync |
+| J+ | 2027-2028 | **~90%** | Verkle migration, light client, block-in-blobs, variable blobs |
+| K+ | 2028 | **~95%** | SSF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs |
+| L+ | 2029 | **~95%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM |
+| M+ | 2029+ | **~90%** | Gigagas, canonical zkVM, gas futures, sharded mempool |
+| 2030++ | Long term | **~90%** | VDF randomness, distributed builders, shielded transfers |
 
 **Gap analysis:** 65 roadmap items audited -- **65 COMPLETE**, 0 FUNCTIONAL, 0 PARTIAL, 0 MISSING. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
 
@@ -302,9 +302,3 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 **Devops:** ethereum-package, benchmarkoor, erigone, xatu, consensoor
 
----
-
-<p align="center">
-  <a href="https://strawmap.org">EF Protocol L1 Strawmap</a> &middot;
-  <a href="https://ethereum.github.io/yellowpaper/">Ethereum Yellow Paper</a>
-</p>
