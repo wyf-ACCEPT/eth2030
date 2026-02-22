@@ -115,9 +115,10 @@ func SPHINCSSign(sk SPHINCSPrivateKey, msg []byte) SPHINCSSignature {
 		return nil
 	}
 
-	skSeed := sk[:sphincsN]
-	skPrf := sk[sphincsN : 2*sphincsN]
-	pkSeed := sk[2*sphincsN : 3*sphincsN]
+	// Convert named-type slices to []byte for sphincsHash compatibility.
+	skSeed := []byte(sk[:sphincsN])
+	skPrf := []byte(sk[sphincsN : 2*sphincsN])
+	pkSeed := []byte(sk[2*sphincsN : 3*sphincsN])
 
 	// Randomised message hash: R = PRF(SK.prf, msg).
 	optRand := make([]byte, sphincsN)
@@ -125,7 +126,7 @@ func SPHINCSSign(sk SPHINCSPrivateKey, msg []byte) SPHINCSSignature {
 	R := sphincsHash(skPrf, optRand, msg, sphincsN)
 
 	// Digest = H(R || PK.seed || PK.root || msg).
-	pkRoot := sk[3*sphincsN : 4*sphincsN]
+	pkRoot := []byte(sk[3*sphincsN : 4*sphincsN])
 	digest := sphincsHash(R, pkSeed, pkRoot, msg, 2*sphincsN)
 
 	// Split digest into FORS message indices and tree/leaf addresses.
@@ -161,11 +162,11 @@ func SPHINCSVerify(pk SPHINCSPublicKey, msg []byte, sig SPHINCSSignature) bool {
 		return false
 	}
 
-	pkSeed := pk[:sphincsN]
-	pkRoot := pk[sphincsN : 2*sphincsN]
+	pkSeed := []byte(pk[:sphincsN])
+	pkRoot := []byte(pk[sphincsN : 2*sphincsN])
 
-	// Extract R from signature.
-	R := sig[:sphincsN]
+	// Extract R from signature (convert to []byte for sphincsHash compatibility).
+	R := []byte(sig[:sphincsN])
 
 	// Recompute digest.
 	digest := sphincsHash(R, pkSeed, pkRoot, msg, 2*sphincsN)
@@ -186,13 +187,13 @@ func SPHINCSVerify(pk SPHINCSPublicKey, msg []byte, sig SPHINCSSignature) bool {
 	if len(sig) < forsSigEnd {
 		return false
 	}
-	forsSig := sig[sphincsN:forsSigEnd]
+	forsSig := []byte(sig[sphincsN:forsSigEnd])
 
 	// Reconstruct FORS root from signature.
 	forsRoot := sphincsFORSRoot(forsMsgBits, forsSig, pkSeed, treeIdx, leafIdx)
 
 	// Verify hypertree signature.
-	htSig := sig[forsSigEnd:]
+	htSig := []byte(sig[forsSigEnd:])
 	return sphincsHTVerify(forsRoot, htSig, pkSeed, pkRoot, treeIdx, leafIdx)
 }
 
@@ -291,23 +292,27 @@ func wotsChecksumDigits(csum int) []int {
 // sphincsXMSSRoot computes the root of a single XMSS tree.
 func sphincsXMSSRoot(skSeed, pkSeed []byte, adrs *sphincsADRS) []byte {
 	// Simplified: small tree with 8 leaves.
-	numLeaves := 8
+	numLeaves := sphincsXMSSNumLeaves
 	leaves := make([][]byte, numLeaves)
 	for i := 0; i < numLeaves; i++ {
-		adrs.KeyPairIdx = uint32(i)
-		adrs.TypeField = 0
-		leaves[i] = sphincsWOTSPK(skSeed, pkSeed, adrs)
+		leafAdrs := &sphincsADRS{LayerAddr: adrs.LayerAddr, TreeAddr: adrs.TreeAddr, KeyPairIdx: uint32(i), TypeField: 0}
+		leaves[i] = sphincsWOTSPK(skSeed, pkSeed, leafAdrs)
 	}
-	// Build binary Merkle tree.
-	return sphincsMerkleRoot(leaves, pkSeed, adrs)
+	// Build binary Merkle tree using a clean tree ADRS (TypeField 5 = tree hash).
+	treeAdrs := &sphincsADRS{LayerAddr: adrs.LayerAddr, TreeAddr: adrs.TreeAddr, TypeField: 5}
+	return sphincsMerkleRoot(leaves, pkSeed, treeAdrs)
 }
 
 // sphincsWOTSPK computes a WOTS+ public key for a given leaf.
+// Uses the same secret key derivation as sphincsWOTSSign (TypeField=0, HashIdx=0).
 func sphincsWOTSPK(skSeed, pkSeed []byte, adrs *sphincsADRS) []byte {
 	var chains [][]byte
 	for i := 0; i < sphincsWOTSLen; i++ {
 		adrs.ChainIdx = uint32(i)
-		sk := sphincsPRF(skSeed, pkSeed, adrs.toBytes())
+		skAdrs := *adrs
+		skAdrs.TypeField = 0
+		skAdrs.HashIdx = 0
+		sk := sphincsPRF(skSeed, pkSeed, skAdrs.toBytes())
 		chain := sphincsWOTSChain(sk, pkSeed, adrs, 0, sphincsW-1)
 		chains = append(chains, chain)
 	}
@@ -437,9 +442,18 @@ func sphincsFORSMsgIndex(msgBits []byte, treeNum int) int {
 	return val & (sphincsT - 1)
 }
 
+// sphincsXMSSNumLeaves is the number of leaves in each simplified XMSS tree.
+const sphincsXMSSNumLeaves = 8
+
+// sphincsXMSSAuthPathSize is the number of sibling hashes in an auth path
+// (log2(sphincsXMSSNumLeaves) = 3).
+const sphincsXMSSAuthPathSize = 3
+
 // --- Hypertree ---
 
 // sphincsHTSign signs a message (FORS root) through D layers of XMSS.
+// Each layer produces a WOTS+ signature plus an XMSS authentication path
+// so that the verifier can reconstruct the tree root at each layer.
 func sphincsHTSign(msg, skSeed, pkSeed []byte, treeIdx uint64, leafIdx uint32) []byte {
 	sig := make([]byte, 0)
 	currentMsg := msg
@@ -447,38 +461,113 @@ func sphincsHTSign(msg, skSeed, pkSeed []byte, treeIdx uint64, leafIdx uint32) [
 	curLeaf := leafIdx
 
 	for layer := uint32(0); layer < uint32(sphincsD); layer++ {
-		adrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, KeyPairIdx: curLeaf}
-		// WOTS+ sign at this layer.
-		wotsSig := sphincsWOTSSign(currentMsg, skSeed, pkSeed, adrs)
+		leafIdxInTree := int(curLeaf) % sphincsXMSSNumLeaves
+
+		// Build the full XMSS tree at this layer to get leaves and auth path.
+		leaves := make([][]byte, sphincsXMSSNumLeaves)
+		for i := 0; i < sphincsXMSSNumLeaves; i++ {
+			leafAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, KeyPairIdx: uint32(i), TypeField: 0}
+			leaves[i] = sphincsWOTSPK(skSeed, pkSeed, leafAdrs)
+		}
+
+		// Compute authentication path using a clean tree ADRS.
+		treeAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, TypeField: 5}
+		authPath := sphincsComputeAuthPath(leaves, leafIdxInTree, pkSeed, treeAdrs)
+
+		// WOTS+ sign the current message at this leaf.
+		signAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, KeyPairIdx: uint32(leafIdxInTree)}
+		wotsSig := sphincsWOTSSign(currentMsg, skSeed, pkSeed, signAdrs)
 		sig = append(sig, wotsSig...)
 
-		// Next message = WOTS+ public key at this leaf (matches verify-side recovery).
-		currentMsg = sphincsWOTSPK(skSeed, pkSeed, adrs)
+		// Append authentication path.
+		for _, sibling := range authPath {
+			sig = append(sig, sibling...)
+		}
+
+		// Next message is the XMSS tree root (computed with same tree ADRS).
+		rootAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, TypeField: 5}
+		currentMsg = sphincsMerkleRoot(leaves, pkSeed, rootAdrs)
 		curLeaf = uint32(curTree & 0x7)
 		curTree >>= 3
 	}
 	return sig
 }
 
+// sphincsComputeAuthPath computes the Merkle authentication path for a given
+// leaf index in the XMSS tree.
+func sphincsComputeAuthPath(leaves [][]byte, leafIdx int, pkSeed []byte, adrs *sphincsADRS) [][]byte {
+	size := sphincsXMSSNumLeaves
+	// Build the tree.
+	nodes := make([][]byte, 2*size)
+	for i := 0; i < size; i++ {
+		if i < len(leaves) {
+			nodes[size+i] = leaves[i]
+		} else {
+			nodes[size+i] = make([]byte, sphincsN)
+		}
+	}
+	for i := size - 1; i >= 1; i-- {
+		nodes[i] = sphincsHash(pkSeed, adrs.toBytes(), nodes[2*i], nodes[2*i+1], sphincsN)
+	}
+
+	// Extract authentication path (sibling at each level).
+	var path [][]byte
+	idx := leafIdx + size
+	for idx > 1 {
+		siblingIdx := idx ^ 1
+		sib := make([]byte, len(nodes[siblingIdx]))
+		copy(sib, nodes[siblingIdx])
+		path = append(path, sib)
+		idx /= 2
+	}
+	return path
+}
+
 // sphincsHTVerify verifies a hypertree signature.
+// At each layer, it recovers the WOTS+ PK from the signature, then uses
+// the XMSS authentication path to reconstruct the tree root.
 func sphincsHTVerify(msg, htSig, pkSeed, pkRoot []byte, treeIdx uint64, leafIdx uint32) bool {
+	// Size of one layer's signature: WOTS+ sig + auth path.
+	layerSigSize := sphincsWOTSSigSz + sphincsXMSSAuthPathSize*sphincsN
+
 	currentMsg := msg
 	curTree := treeIdx
 	curLeaf := leafIdx
 	off := 0
 
 	for layer := uint32(0); layer < uint32(sphincsD); layer++ {
-		if off+sphincsWOTSSigSz > len(htSig) {
+		if off+layerSigSize > len(htSig) {
 			return false
 		}
 		wotsSig := htSig[off : off+sphincsWOTSSigSz]
 		off += sphincsWOTSSigSz
 
-		adrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, KeyPairIdx: curLeaf}
-		pk := sphincsWOTSPKFromSig(wotsSig, currentMsg, pkSeed, adrs)
+		// Extract authentication path.
+		authPath := make([][]byte, sphincsXMSSAuthPathSize)
+		for i := 0; i < sphincsXMSSAuthPathSize; i++ {
+			authPath[i] = htSig[off : off+sphincsN]
+			off += sphincsN
+		}
 
-		// Next message is the tree root (here simplified).
-		currentMsg = pk
+		leafIdxInTree := int(curLeaf) % sphincsXMSSNumLeaves
+		wotsAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, KeyPairIdx: uint32(leafIdxInTree)}
+		pk := sphincsWOTSPKFromSig(wotsSig, currentMsg, pkSeed, wotsAdrs)
+
+		// Reconstruct the tree root from the WOTS+ PK and auth path,
+		// using the same tree ADRS type as signing.
+		treeAdrs := &sphincsADRS{LayerAddr: layer, TreeAddr: curTree, TypeField: 5}
+		node := pk
+		idx := leafIdxInTree + sphincsXMSSNumLeaves
+		for i := 0; i < sphincsXMSSAuthPathSize; i++ {
+			if (idx & 1) == 0 {
+				node = sphincsHash(pkSeed, treeAdrs.toBytes(), node, authPath[i], sphincsN)
+			} else {
+				node = sphincsHash(pkSeed, treeAdrs.toBytes(), authPath[i], node, sphincsN)
+			}
+			idx /= 2
+		}
+
+		currentMsg = node
 		curLeaf = uint32(curTree & 0x7)
 		curTree >>= 3
 	}

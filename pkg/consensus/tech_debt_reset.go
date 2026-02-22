@@ -43,12 +43,74 @@ type TechDebtConfig struct {
 	AutoMigrate bool
 }
 
-// DefaultTechDebtConfig returns a config with no pre-configured deprecations
-// and auto-migration enabled.
+// Altair upgrade epoch (mainnet epoch 74240). Used as the deprecation epoch
+// for fields replaced by the Altair participation flag scheme.
+const AltairEpoch = 74240
+
+// Phase1RemovalEpoch is a synthetic epoch representing the removal of Phase 1
+// shard-related fields that were never activated on mainnet.
+const Phase1RemovalEpoch = 74240
+
+// DefaultTechDebtConfig returns a config pre-populated with well-known
+// deprecated beacon state fields from real Ethereum spec upgrades and
+// auto-migration enabled.
 func DefaultTechDebtConfig() *TechDebtConfig {
 	return &TechDebtConfig{
 		AutoMigrate: true,
+		KnownDeprecations: []*DeprecatedField{
+			{
+				// Altair replaced per-epoch PendingAttestation lists with
+				// per-validator participation flag bytes.
+				FieldName:            "previous_epoch_attestations",
+				DeprecatedSinceEpoch: AltairEpoch,
+				ReplacedBy:           []string{"previous_epoch_participation"},
+				RemovalEpoch:         AltairEpoch + 8192,
+			},
+			{
+				FieldName:            "current_epoch_attestations",
+				DeprecatedSinceEpoch: AltairEpoch,
+				ReplacedBy:           []string{"current_epoch_participation"},
+				RemovalEpoch:         AltairEpoch + 8192,
+			},
+			{
+				// compact_committees_root was proposed in early Phase 1 designs
+				// but never activated. Removed from the spec entirely.
+				FieldName:            "compact_committees_root",
+				DeprecatedSinceEpoch: Phase1RemovalEpoch,
+				RemovalEpoch:         Phase1RemovalEpoch,
+			},
+			{
+				// shard_states tracked per-shard beacon state in Phase 1
+				// crosslink designs. Removed when Phase 1 was abandoned.
+				FieldName:            "shard_states",
+				DeprecatedSinceEpoch: Phase1RemovalEpoch,
+				RemovalEpoch:         Phase1RemovalEpoch,
+			},
+			{
+				// latest_crosslinks stored the most recent crosslink per shard.
+				// Removed when the crosslink mechanism was replaced by the
+				// data availability sampling approach (EIP-4844+).
+				FieldName:            "latest_crosslinks",
+				DeprecatedSinceEpoch: Phase1RemovalEpoch,
+				RemovalEpoch:         Phase1RemovalEpoch,
+			},
+		},
 	}
+}
+
+// MigrationReport tracks the outcome of a MigrateState operation.
+type MigrationReport struct {
+	// FieldsMigrated counts how many deprecated field values were copied
+	// to their replacement fields.
+	FieldsMigrated int
+
+	// FieldsRemoved counts how many deprecated fields were deleted from
+	// the state because they passed their removal epoch.
+	FieldsRemoved int
+
+	// Errors collects any non-fatal issues encountered during migration
+	// (e.g., a replacement field already existing).
+	Errors []string
 }
 
 // TechDebtTracker tracks deprecated fields in the beacon state and provides
@@ -143,16 +205,19 @@ func (t *TechDebtTracker) GetReplacements(fieldName string) []string {
 // fields. For each deprecated field present in the state whose deprecation
 // epoch has passed, its value is copied to each replacement field (if the
 // replacement does not already exist). If AutoMigrate is enabled, fields
-// past their removal epoch are also cleaned up.
+// past their removal epoch are also deleted.
 //
-// Returns the migrated state and any error encountered.
-func (t *TechDebtTracker) MigrateState(state map[string]interface{}, currentEpoch uint64) (map[string]interface{}, error) {
+// Returns the migrated state, a MigrationReport with statistics, and any
+// fatal error encountered.
+func (t *TechDebtTracker) MigrateState(state map[string]interface{}, currentEpoch uint64) (map[string]interface{}, *MigrationReport, error) {
 	if state == nil {
-		return nil, errors.New("tech_debt: nil state map")
+		return nil, nil, errors.New("tech_debt: nil state map")
 	}
 
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+
+	report := &MigrationReport{}
 
 	// Build a new state map so we do not mutate the input.
 	result := make(map[string]interface{}, len(state))
@@ -172,6 +237,10 @@ func (t *TechDebtTracker) MigrateState(state map[string]interface{}, currentEpoc
 		for _, repl := range field.ReplacedBy {
 			if _, replExists := result[repl]; !replExists {
 				result[repl] = val
+				report.FieldsMigrated++
+			} else {
+				report.Errors = append(report.Errors,
+					"replacement field "+repl+" already exists, skipping migration from "+name)
 			}
 		}
 	}
@@ -183,12 +252,15 @@ func (t *TechDebtTracker) MigrateState(state map[string]interface{}, currentEpoc
 				continue
 			}
 			if currentEpoch >= field.RemovalEpoch {
-				delete(result, name)
+				if _, exists := result[name]; exists {
+					delete(result, name)
+					report.FieldsRemoved++
+				}
 			}
 		}
 	}
 
-	return result, nil
+	return result, report, nil
 }
 
 // DeprecationReport returns all deprecations that are active at the given

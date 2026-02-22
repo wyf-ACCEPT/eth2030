@@ -5,7 +5,8 @@ import (
 )
 
 func TestTechDebtTracker_RegisterAndCount(t *testing.T) {
-	tracker := NewTechDebtTracker(nil)
+	// Use an empty config (no pre-populated deprecations) for this test.
+	tracker := NewTechDebtTracker(&TechDebtConfig{AutoMigrate: true})
 
 	if tracker.FieldCount() != 0 {
 		t.Fatalf("expected 0 fields, got %d", tracker.FieldCount())
@@ -173,9 +174,18 @@ func TestTechDebtTracker_MigrateState(t *testing.T) {
 	}
 
 	// Migrate at epoch 150 (deprecated but not removed).
-	result, err := tracker.MigrateState(state, 150)
+	result, report, err := tracker.MigrateState(state, 150)
 	if err != nil {
 		t.Fatalf("MigrateState: %v", err)
+	}
+	if report == nil {
+		t.Fatal("MigrationReport is nil")
+	}
+	if report.FieldsMigrated != 2 {
+		t.Errorf("FieldsMigrated = %d, want 2", report.FieldsMigrated)
+	}
+	if report.FieldsRemoved != 0 {
+		t.Errorf("FieldsRemoved = %d, want 0", report.FieldsRemoved)
 	}
 
 	// Replacements should be populated.
@@ -194,9 +204,12 @@ func TestTechDebtTracker_MigrateState(t *testing.T) {
 	}
 
 	// Migrate at epoch 250 (old_balance past removal, old_nonce not).
-	result2, err := tracker.MigrateState(state, 250)
+	result2, report2, err := tracker.MigrateState(state, 250)
 	if err != nil {
 		t.Fatalf("MigrateState at 250: %v", err)
+	}
+	if report2.FieldsRemoved != 1 {
+		t.Errorf("FieldsRemoved at epoch 250 = %d, want 1", report2.FieldsRemoved)
 	}
 	if _, exists := result2["old_balance"]; exists {
 		t.Error("old_balance should be removed at epoch 250")
@@ -211,7 +224,7 @@ func TestTechDebtTracker_MigrateState(t *testing.T) {
 	}
 
 	// nil state should error.
-	if _, err := tracker.MigrateState(nil, 100); err == nil {
+	if _, _, err := tracker.MigrateState(nil, 100); err == nil {
 		t.Error("expected error for nil state")
 	}
 }
@@ -231,7 +244,7 @@ func TestTechDebtTracker_MigrateNoOverwrite(t *testing.T) {
 		"new_field": "existing_value", // already exists
 	}
 
-	result, err := tracker.MigrateState(state, 50)
+	result, report, err := tracker.MigrateState(state, 50)
 	if err != nil {
 		t.Fatalf("MigrateState: %v", err)
 	}
@@ -239,6 +252,14 @@ func TestTechDebtTracker_MigrateNoOverwrite(t *testing.T) {
 	// Existing replacement should not be overwritten.
 	if result["new_field"] != "existing_value" {
 		t.Errorf("new_field = %v, want existing_value", result["new_field"])
+	}
+
+	// Report should note that the replacement was skipped.
+	if report.FieldsMigrated != 0 {
+		t.Errorf("FieldsMigrated = %d, want 0 (replacement already existed)", report.FieldsMigrated)
+	}
+	if len(report.Errors) != 1 {
+		t.Errorf("expected 1 report error for skipped replacement, got %d", len(report.Errors))
 	}
 }
 
@@ -373,6 +394,107 @@ func TestTechDebtTracker_IsRemoved(t *testing.T) {
 	}
 	if tracker.IsRemoved("nonexistent", 100) {
 		t.Error("unknown field should not be removed")
+	}
+}
+
+func TestDefaultTechDebtConfig_RealDeprecations(t *testing.T) {
+	config := DefaultTechDebtConfig()
+	if !config.AutoMigrate {
+		t.Error("AutoMigrate should be true by default")
+	}
+	if len(config.KnownDeprecations) < 5 {
+		t.Fatalf("expected at least 5 known deprecations, got %d", len(config.KnownDeprecations))
+	}
+
+	tracker := NewTechDebtTracker(config)
+	if tracker.FieldCount() < 5 {
+		t.Fatalf("expected at least 5 registered fields, got %d", tracker.FieldCount())
+	}
+
+	// Check that the Altair attestation fields are deprecated.
+	if !tracker.IsDeprecated("previous_epoch_attestations", AltairEpoch) {
+		t.Error("previous_epoch_attestations should be deprecated at AltairEpoch")
+	}
+	if !tracker.IsDeprecated("current_epoch_attestations", AltairEpoch) {
+		t.Error("current_epoch_attestations should be deprecated at AltairEpoch")
+	}
+
+	// Check replacements.
+	repls := tracker.GetReplacements("previous_epoch_attestations")
+	if len(repls) != 1 || repls[0] != "previous_epoch_participation" {
+		t.Errorf("replacements for previous_epoch_attestations = %v, want [previous_epoch_participation]", repls)
+	}
+	repls = tracker.GetReplacements("current_epoch_attestations")
+	if len(repls) != 1 || repls[0] != "current_epoch_participation" {
+		t.Errorf("replacements for current_epoch_attestations = %v, want [current_epoch_participation]", repls)
+	}
+
+	// Phase 1 fields should have no replacements (they were just removed).
+	if r := tracker.GetReplacements("compact_committees_root"); r != nil {
+		t.Errorf("compact_committees_root should have no replacements, got %v", r)
+	}
+	if r := tracker.GetReplacements("shard_states"); r != nil {
+		t.Errorf("shard_states should have no replacements, got %v", r)
+	}
+	if r := tracker.GetReplacements("latest_crosslinks"); r != nil {
+		t.Errorf("latest_crosslinks should have no replacements, got %v", r)
+	}
+}
+
+func TestMigrationReport_AltairMigration(t *testing.T) {
+	tracker := NewTechDebtTracker(DefaultTechDebtConfig())
+
+	// Simulate a pre-Altair state with the old attestation fields.
+	state := map[string]interface{}{
+		"previous_epoch_attestations": []string{"att1", "att2"},
+		"current_epoch_attestations":  []string{"att3"},
+		"compact_committees_root":     "0xdead",
+		"shard_states":                "legacy",
+		"latest_crosslinks":           "legacy",
+		"validators":                  "keep_this",
+	}
+
+	// Migrate at an epoch well past Altair and Phase 1 removal.
+	postRemovalEpoch := uint64(AltairEpoch + 10000)
+	result, report, err := tracker.MigrateState(state, postRemovalEpoch)
+	if err != nil {
+		t.Fatalf("MigrateState: %v", err)
+	}
+
+	// The two attestation fields should have been migrated to participation
+	// fields and then removed.
+	if report.FieldsMigrated != 2 {
+		t.Errorf("FieldsMigrated = %d, want 2", report.FieldsMigrated)
+	}
+	// All 5 deprecated fields should be removed (past removal epoch).
+	if report.FieldsRemoved != 5 {
+		t.Errorf("FieldsRemoved = %d, want 5", report.FieldsRemoved)
+	}
+
+	// Replacement fields should exist.
+	if result["previous_epoch_participation"] == nil {
+		t.Error("previous_epoch_participation should exist after migration")
+	}
+	if result["current_epoch_participation"] == nil {
+		t.Error("current_epoch_participation should exist after migration")
+	}
+
+	// Original deprecated fields should be gone.
+	for _, f := range []string{
+		"previous_epoch_attestations",
+		"current_epoch_attestations",
+		"compact_committees_root",
+		"shard_states",
+		"latest_crosslinks",
+	} {
+		if _, exists := result[f]; exists {
+			t.Errorf("deprecated field %q should have been removed", f)
+		}
+	}
+
+	// Non-deprecated fields should be preserved.
+	if result["validators"] != "keep_this" {
+		t.Error("non-deprecated field 'validators' should be preserved")
 	}
 }
 

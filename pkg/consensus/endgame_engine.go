@@ -7,17 +7,21 @@ package consensus
 // thresholds and optimistic confirmation.
 
 import (
+	"encoding/binary"
 	"errors"
 	"sync"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 var (
-	ErrDuplicateVote    = errors.New("endgame: duplicate vote from validator")
-	ErrInvalidSlot      = errors.New("endgame: vote slot too old or too far ahead")
-	ErrZeroWeight       = errors.New("endgame: vote weight must be > 0")
-	ErrUnknownValidator = errors.New("endgame: unknown validator index")
+	ErrDuplicateVote     = errors.New("endgame: duplicate vote from validator")
+	ErrInvalidSlot       = errors.New("endgame: vote slot too old or too far ahead")
+	ErrZeroWeight        = errors.New("endgame: vote weight must be > 0")
+	ErrUnknownValidator  = errors.New("endgame: unknown validator index")
+	ErrInvalidSignature  = errors.New("endgame: BLS signature verification failed")
+	ErrBlockExecFailed   = errors.New("endgame: block execution verification failed")
 )
 
 // EndgameEngineConfig holds the configuration for the endgame finality engine.
@@ -54,7 +58,8 @@ type EndgameVote struct {
 	ValidatorIndex uint64
 	BlockHash      types.Hash
 	Weight         uint64
-	Timestamp      uint64 // unix timestamp in ms when the vote was cast
+	Timestamp      uint64                      // unix timestamp in ms when the vote was cast
+	Signature      [crypto.BLSSignatureSize]byte // BLS signature over slot||block_root
 }
 
 // EndgameResult is the outcome of a finality check for a given slot.
@@ -98,10 +103,13 @@ type EndgameEngine struct {
 	mu               sync.RWMutex
 	config           EndgameEngineConfig
 	slots            map[uint64]*slotState
-	validatorWeights map[uint64]uint64 // validator index -> weight
-	totalWeight      uint64            // sum of all validator weights
-	finalizedChain   []types.Hash      // ordered list of finalized block hashes
-	latestFinalized  uint64            // highest finalized slot
+	validatorWeights map[uint64]uint64                      // validator index -> weight
+	validatorPubkeys map[uint64][crypto.BLSPubkeySize]byte  // validator index -> BLS pubkey
+	totalWeight      uint64                                 // sum of all validator weights
+	finalizedChain   []types.Hash                           // ordered list of finalized block hashes
+	latestFinalized  uint64                                 // highest finalized slot
+	blockExecutor    func(root [32]byte) bool               // optional block execution verifier
+	FinalizedCallback func(slot uint64, root [32]byte)      // called when finality is reached
 }
 
 // NewEndgameEngine creates a new endgame finality engine.
@@ -127,6 +135,37 @@ func (e *EndgameEngine) SetValidatorSet(weights map[uint64]uint64) {
 	}
 }
 
+// SetValidatorPubkeys sets the BLS public keys for validators. When pubkeys
+// are set, SubmitVote will verify BLS signatures on incoming votes.
+func (e *EndgameEngine) SetValidatorPubkeys(pubkeys map[uint64][crypto.BLSPubkeySize]byte) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.validatorPubkeys = make(map[uint64][crypto.BLSPubkeySize]byte, len(pubkeys))
+	for idx, pk := range pubkeys {
+		e.validatorPubkeys[idx] = pk
+	}
+}
+
+// SetBlockExecutor registers a block execution verifier function. When set,
+// the engine calls this function with the candidate block root before
+// declaring finality. If the function returns false, finality is not declared.
+func (e *EndgameEngine) SetBlockExecutor(executor func(root [32]byte) bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.blockExecutor = executor
+}
+
+// VoteMessage constructs the canonical message that validators sign for a
+// finality vote: the 8-byte big-endian slot concatenated with the 32-byte
+// block root.
+func VoteMessage(slot uint64, blockRoot [32]byte) []byte {
+	msg := make([]byte, 8+32)
+	binary.BigEndian.PutUint64(msg[:8], slot)
+	copy(msg[8:], blockRoot[:])
+	return msg
+}
+
 // SubmitVote adds a finality vote. Returns an error if the vote is invalid
 // or a duplicate.
 func (e *EndgameEngine) SubmitVote(vote *EndgameVote) error {
@@ -147,6 +186,17 @@ func (e *EndgameEngine) SubmitVote(vote *EndgameVote) error {
 	if len(e.validatorWeights) > 0 {
 		if _, ok := e.validatorWeights[vote.ValidatorIndex]; !ok {
 			return ErrUnknownValidator
+		}
+	}
+
+	// Verify BLS signature if validator pubkeys are configured.
+	if len(e.validatorPubkeys) > 0 {
+		pubkey, hasPK := e.validatorPubkeys[vote.ValidatorIndex]
+		if hasPK {
+			msg := VoteMessage(vote.Slot, vote.BlockHash)
+			if !crypto.BLSVerify(pubkey, msg, vote.Signature) {
+				return ErrInvalidSignature
+			}
 		}
 	}
 
@@ -204,6 +254,14 @@ func (e *EndgameEngine) checkSlotFinality(slot uint64, ss *slotState) {
 
 	for hash, w := range ss.hashWeights {
 		if w >= threshold {
+			// If a block executor is set, verify block execution before
+			// declaring finality.
+			if e.blockExecutor != nil {
+				if !e.blockExecutor(hash) {
+					continue
+				}
+			}
+
 			ss.finalized = true
 			ss.finalHash = hash
 
@@ -222,6 +280,11 @@ func (e *EndgameEngine) checkSlotFinality(slot uint64, ss *slotState) {
 			if slot > e.latestFinalized {
 				e.latestFinalized = slot
 				e.finalizedChain = append(e.finalizedChain, hash)
+			}
+
+			// Invoke finality callback if set.
+			if e.FinalizedCallback != nil {
+				e.FinalizedCallback(slot, hash)
 			}
 
 			// Prune old slots.

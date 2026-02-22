@@ -45,7 +45,6 @@ func TestSPHINCSKeypairConsistency(t *testing.T) {
 }
 
 func TestSPHINCSSignVerify(t *testing.T) {
-	t.Skip("requires real SPHINCS+ backend (circl) for hash-tree correctness")
 	pk, sk := SPHINCSKeypair()
 	msg := []byte("hash-based post-quantum signatures")
 
@@ -63,7 +62,6 @@ func TestSPHINCSSignVerify(t *testing.T) {
 }
 
 func TestSPHINCSSignDifferentMessages(t *testing.T) {
-	t.Skip("requires real SPHINCS+ backend (circl) for hash-tree correctness")
 	pk, sk := SPHINCSKeypair()
 
 	messages := []string{

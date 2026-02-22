@@ -247,9 +247,10 @@ func sphincsSignerPadSignature(sig []byte, targetSize int) []byte {
 // removing padding. The real signature length is determined by the SPHINCS+
 // parameters and starts at the beginning.
 func sphincsSignerUnpadSignature(sig []byte) []byte {
-	// The minimum valid SPHINCS+ signature contains at least:
-	// R (sphincsN) + FORS sig + HT sig
-	minLen := sphincsN + sphincsK*(sphincsLogT*sphincsN+sphincsN) + sphincsD*sphincsWOTSSigSz
+	// The valid SPHINCS+ signature contains:
+	// R (sphincsN) + FORS sig + HT sig (WOTS+ sigs + XMSS auth paths)
+	htLayerSigSize := sphincsWOTSSigSz + sphincsXMSSAuthPathSize*sphincsN
+	minLen := sphincsN + sphincsK*(sphincsLogT*sphincsN+sphincsN) + sphincsD*htLayerSigSize
 	if len(sig) < minLen {
 		return sig
 	}
@@ -280,11 +281,12 @@ func SPHINCSRandomizedSign(sk SPHINCSPrivateKey, msg []byte) SPHINCSSignature {
 		return nil
 	}
 
-	skPrf := sk[sphincsN : 2*sphincsN]
+	// Convert named-type slices to []byte for sphincsHash compatibility.
+	skPrf := []byte(sk[sphincsN : 2*sphincsN])
 	R := sphincsHash(skPrf, optRand, msg, sphincsN)
 
-	pkSeed := sk[2*sphincsN : 3*sphincsN]
-	pkRoot := sk[3*sphincsN : 4*sphincsN]
+	pkSeed := []byte(sk[2*sphincsN : 3*sphincsN])
+	pkRoot := []byte(sk[3*sphincsN : 4*sphincsN])
 	digest := sphincsHash(R, pkSeed, pkRoot, msg, 2*sphincsN)
 
 	forsMsgBits := digest[:sphincsN]
@@ -293,7 +295,7 @@ func SPHINCSRandomizedSign(sk SPHINCSPrivateKey, msg []byte) SPHINCSSignature {
 	leafIdx := uint32(treeIdx & uint64((1<<3)-1))
 	treeIdx >>= 3
 
-	skSeed := sk[:sphincsN]
+	skSeed := []byte(sk[:sphincsN])
 	forsSig := sphincsFORSSign(forsMsgBits, skSeed, pkSeed, treeIdx, leafIdx)
 	forsRoot := sphincsFORSRoot(forsMsgBits, forsSig, pkSeed, treeIdx, leafIdx)
 	htSig := sphincsHTSign(forsRoot, skSeed, pkSeed, treeIdx, leafIdx)

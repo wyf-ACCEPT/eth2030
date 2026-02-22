@@ -25,11 +25,11 @@ const (
 	SigSPHINCS128 PQSignatureType = 2
 )
 
-// Canonical signature sizes per scheme as defined by the eth2030 roadmap.
+// Canonical signature sizes per scheme, matching actual signer output.
 const (
-	Dilithium3SignatureSize = 3309
-	Falcon512SignatureSize  = 690
-	SPHINCS128SignatureSize = 7856
+	Dilithium3SignatureSize = Dilithium3SigSize    // matches DilithiumSigner output
+	Falcon512SignatureSize  = Falcon512SigSize     // matches FalconSigner output
+	SPHINCS128SignatureSize = SPHINCSSignerSigSize // matches SPHINCSSigner output
 )
 
 // SignatureSizeForType returns the expected signature size for a scheme.
@@ -91,30 +91,47 @@ func (s *PQTxSigner) Scheme() PQSignatureType {
 }
 
 // GenerateKey generates a new PQ key pair for the signer's scheme.
-// Uses crypto/rand for placeholder key material. A production implementation
-// would use a real lattice/hash-based key generation algorithm.
+// For Falcon-512 and SPHINCS+, uses the real lattice/hash-based key generation.
+// For Dilithium3, uses the DilithiumSigner (stub with matching Sign/Verify).
 func (s *PQTxSigner) GenerateKey() (*PQPrivateKey, *PQPublicKey, error) {
 	s.mu.RLock()
 	scheme := s.scheme
 	s.mu.RUnlock()
 
-	privSize, pubSize, err := keySizesForScheme(scheme)
-	if err != nil {
-		return nil, nil, err
+	switch scheme {
+	case SigFalcon512:
+		signer := &FalconSigner{}
+		kp, err := signer.GenerateKey()
+		if err != nil {
+			return nil, nil, err
+		}
+		return &PQPrivateKey{Scheme: scheme, Raw: kp.SecretKey},
+			&PQPublicKey{Scheme: scheme, Raw: kp.PublicKey}, nil
+
+	case SigSPHINCS128:
+		signer := NewSPHINCSSigner()
+		kp, err := signer.GenerateKey()
+		if err != nil {
+			return nil, nil, err
+		}
+		return &PQPrivateKey{Scheme: scheme, Raw: kp.SecretKey},
+			&PQPublicKey{Scheme: scheme, Raw: kp.PublicKey}, nil
+
+	default:
+		// Dilithium3 and others: use random key material with DilithiumSigner stub.
+		privSize, pubSize, err := keySizesForScheme(scheme)
+		if err != nil {
+			return nil, nil, err
+		}
+		privRaw := make([]byte, privSize)
+		if _, err := rand.Read(privRaw); err != nil {
+			return nil, nil, err
+		}
+		pubRaw := make([]byte, pubSize)
+		fillFromSeed(pubRaw, crypto.Keccak256(privRaw))
+		return &PQPrivateKey{Scheme: scheme, Raw: privRaw},
+			&PQPublicKey{Scheme: scheme, Raw: pubRaw}, nil
 	}
-
-	privRaw := make([]byte, privSize)
-	if _, err := rand.Read(privRaw); err != nil {
-		return nil, nil, err
-	}
-
-	// Derive public key deterministically from private key using Keccak256.
-	pubRaw := make([]byte, pubSize)
-	fillFromSeed(pubRaw, crypto.Keccak256(privRaw))
-
-	priv := &PQPrivateKey{Scheme: scheme, Raw: privRaw}
-	pub := &PQPublicKey{Scheme: scheme, Raw: pubRaw}
-	return priv, pub, nil
 }
 
 // SignTransaction signs a transaction using the hash-then-sign pattern:
@@ -210,40 +227,51 @@ func hashTransaction(tx *types.Transaction) types.Hash {
 	return crypto.Keccak256Hash(encoded)
 }
 
-// signHash produces a stub PQ signature over a hash using the given scheme.
-// In a real implementation this would invoke the actual lattice/hash-based
-// signing algorithm.
+// signHash produces a PQ signature over a hash using the given scheme.
+// Dispatches to the real signer for each scheme.
 func signHash(scheme PQSignatureType, privKey, hash []byte) ([]byte, error) {
-	sigSize, err := SignatureSizeForType(scheme)
-	if err != nil {
-		return nil, err
-	}
+	switch scheme {
+	case SigFalcon512:
+		signer := &FalconSigner{}
+		return signer.Sign(privKey, hash)
 
-	// Deterministic stub: sign = fill(keccak256(privKey || hash), sigSize).
-	seed := crypto.Keccak256(append(privKey, hash...))
-	sig := make([]byte, sigSize)
-	fillFromSeed(sig, seed)
-	return sig, nil
+	case SigSPHINCS128:
+		signer := NewSPHINCSSigner()
+		return signer.Sign(privKey, hash)
+
+	case SigDilithium3:
+		// DilithiumSigner uses stub sign (keccak256-based deterministic).
+		d := &DilithiumSigner{}
+		return d.Sign(privKey, hash)
+
+	default:
+		return nil, ErrUnsupportedScheme
+	}
 }
 
-// verifyHash verifies a stub PQ signature over a hash.
-// Checks that the signature has the right length and non-trivial content.
-// In production this would call the real PQ verification algorithm.
+// verifyHash verifies a PQ signature over a hash using the given scheme.
+// Dispatches to the real verifier for each scheme.
 func verifyHash(scheme PQSignatureType, pubKey, hash, sig []byte) bool {
-	sigSize, err := SignatureSizeForType(scheme)
-	if err != nil || len(sig) != sigSize {
+	if len(pubKey) == 0 || len(hash) == 0 || len(sig) == 0 {
 		return false
 	}
-	if len(pubKey) == 0 || len(hash) == 0 {
+	switch scheme {
+	case SigFalcon512:
+		signer := &FalconSigner{}
+		return signer.Verify(pubKey, hash, sig)
+
+	case SigSPHINCS128:
+		signer := NewSPHINCSSigner()
+		return signer.Verify(pubKey, hash, sig)
+
+	case SigDilithium3:
+		// DilithiumSigner uses stub verify (length + non-zero check).
+		d := &DilithiumSigner{}
+		return d.Verify(pubKey, hash, sig)
+
+	default:
 		return false
 	}
-	// Check that signature has non-zero content in the first 32 bytes.
-	for _, b := range sig[:pqMin(32, len(sig))] {
-		if b != 0 {
-			return true
-		}
-	}
-	return false
 }
 
 // keySizesForScheme returns (privateKeySize, publicKeySize) for a scheme.
@@ -270,12 +298,4 @@ func fillFromSeed(buf, seed []byte) {
 		offset += n
 		current = crypto.Keccak256(current)
 	}
-}
-
-// pqMin returns the smaller of two ints.
-func pqMin(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

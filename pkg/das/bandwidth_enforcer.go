@@ -226,6 +226,33 @@ func (be *BandwidthEnforcer) RequestBandwidth(chainID uint64, nBytes uint64) err
 	return nil
 }
 
+// EnforceOnGossip checks the global rate limiter for a gossip-level blob
+// and returns an error if the bandwidth would be exceeded. Unlike
+// RequestBandwidth, this does not require a registered chain -- it only
+// checks the global cap.
+func (be *BandwidthEnforcer) EnforceOnGossip(blobSize uint64) error {
+	// Check backpressure first.
+	globalUtil := be.global.utilization()
+	if globalUtil >= be.config.BackpressureThreshold {
+		be.metrics.BackpressureCount.Add(1)
+		return ErrBackpressureActive
+	}
+
+	effectiveBytes := blobSize
+	if globalUtil >= be.config.CongestionThreshold {
+		be.metrics.CongestionEvents.Add(1)
+		effectiveBytes = uint64(float64(blobSize) * be.config.CongestionMultiplier)
+	}
+
+	if !be.global.tryConsume(effectiveBytes) {
+		be.metrics.TotalBytesDropped.Add(blobSize)
+		return ErrGlobalCapExceeded
+	}
+
+	be.metrics.TotalBytesAllowed.Add(blobSize)
+	return nil
+}
+
 // GlobalUtilization returns the current global bandwidth utilization (0.0-1.0).
 func (be *BandwidthEnforcer) GlobalUtilization() float64 {
 	return be.global.utilization()

@@ -45,7 +45,6 @@ func TestSPHINCSSignerKeyGenUniqueness(t *testing.T) {
 }
 
 func TestSPHINCSSignerSignAndVerify(t *testing.T) {
-	t.Skip("requires real SPHINCS+ backend (circl) for hash-tree correctness")
 	signer := NewSPHINCSSigner()
 	kp, err := signer.GenerateKey()
 	if err != nil {

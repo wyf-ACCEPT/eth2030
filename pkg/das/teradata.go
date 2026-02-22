@@ -5,6 +5,7 @@ package das
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -16,13 +17,14 @@ import (
 
 // Teradata L2 errors.
 var (
-	ErrTeradataDataTooLarge   = errors.New("teradata: data exceeds maximum size")
-	ErrTeradataDataEmpty      = errors.New("teradata: data is empty")
-	ErrTeradataNotFound       = errors.New("teradata: data not found")
-	ErrTeradataTooManyChains  = errors.New("teradata: maximum L2 chains reached")
-	ErrTeradataStorageFull    = errors.New("teradata: total storage limit exceeded")
-	ErrTeradataInvalidReceipt = errors.New("teradata: invalid receipt")
-	ErrTeradataInvalidChainID = errors.New("teradata: invalid chain ID (must be > 0)")
+	ErrTeradataDataTooLarge     = errors.New("teradata: data exceeds maximum size")
+	ErrTeradataDataEmpty        = errors.New("teradata: data is empty")
+	ErrTeradataNotFound         = errors.New("teradata: data not found")
+	ErrTeradataTooManyChains    = errors.New("teradata: maximum L2 chains reached")
+	ErrTeradataStorageFull      = errors.New("teradata: total storage limit exceeded")
+	ErrTeradataInvalidReceipt   = errors.New("teradata: invalid receipt")
+	ErrTeradataInvalidChainID   = errors.New("teradata: invalid chain ID (must be > 0)")
+	ErrTeradataBandwidthDenied  = errors.New("teradata: bandwidth request denied")
 )
 
 // TeradataConfig holds configuration for the TeradataManager.
@@ -81,6 +83,10 @@ type TeradataManager struct {
 
 	config TeradataConfig
 
+	// enforcer is the optional bandwidth enforcer. When set, StoreL2Data
+	// checks bandwidth availability before accepting data.
+	enforcer *BandwidthEnforcer
+
 	// currentSlot is a monotonically increasing slot counter assigned to
 	// each stored blob so that pruning can operate on slot boundaries.
 	currentSlot uint64
@@ -104,6 +110,14 @@ func NewTeradataManager(config TeradataConfig) *TeradataManager {
 	}
 }
 
+// SetBandwidthEnforcer attaches a bandwidth enforcer to the manager. When set,
+// StoreL2Data checks bandwidth availability before accepting data.
+func (m *TeradataManager) SetBandwidthEnforcer(enforcer *BandwidthEnforcer) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.enforcer = enforcer
+}
+
 // StoreL2Data stores L2 data and returns a receipt containing the commitment.
 func (m *TeradataManager) StoreL2Data(l2ChainID uint64, data []byte) (*TeradataReceipt, error) {
 	if l2ChainID == 0 {
@@ -114,6 +128,18 @@ func (m *TeradataManager) StoreL2Data(l2ChainID uint64, data []byte) (*TeradataR
 	}
 	if m.config.MaxDataSize > 0 && uint64(len(data)) > m.config.MaxDataSize {
 		return nil, ErrTeradataDataTooLarge
+	}
+
+	// Check bandwidth before acquiring the write lock to avoid holding the
+	// lock during potentially slow enforcement checks.
+	m.mu.RLock()
+	enforcer := m.enforcer
+	m.mu.RUnlock()
+
+	if enforcer != nil {
+		if err := enforcer.RequestBandwidth(l2ChainID, uint64(len(data))); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrTeradataBandwidthDenied, err)
+		}
 	}
 
 	m.mu.Lock()
