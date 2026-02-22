@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/eth2028/eth2028/core/types"
@@ -748,31 +749,26 @@ func opCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *Sta
 
 	ret, returnGas, err := evm.Call(contract.Address, addr, args, callGas, value)
 
-	// Return unused gas, minus the stipend that was added for free.
-	if transfersValue && returnGas >= CallStipend {
-		returnGas -= CallStipend
-	} else if transfersValue {
-		returnGas = 0
-	}
+	// Refund unused gas to caller (matching go-ethereum: no stipend subtraction).
 	contract.Gas += returnGas
-
-	// Store return data
-	evm.returnData = ret
-
-	// Copy return data to memory
-	if retSize.Uint64() > 0 && len(ret) > 0 {
-		retLen := retSize.Uint64()
-		if uint64(len(ret)) < retLen {
-			retLen = uint64(len(ret))
-		}
-		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
-	}
 
 	// Push success/failure
 	if err != nil {
 		stack.Push(new(big.Int))
 	} else {
 		stack.Push(big.NewInt(1))
+	}
+
+	// Copy return data to memory (only on success or REVERT, per spec).
+	evm.returnData = ret
+	if err == nil || errors.Is(err, ErrExecutionReverted) {
+		if retSize.Uint64() > 0 && len(ret) > 0 {
+			retLen := retSize.Uint64()
+			if uint64(len(ret)) < retLen {
+				retLen = uint64(len(ret))
+			}
+			memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+		}
 	}
 
 	return nil, nil
@@ -802,28 +798,24 @@ func opCallCode(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack 
 
 	ret, returnGas, err := evm.CallCode(contract.Address, addr, args, callGas, value)
 
-	// Return unused gas, minus the stipend that was added for free.
-	if transfersValue && returnGas >= CallStipend {
-		returnGas -= CallStipend
-	} else if transfersValue {
-		returnGas = 0
-	}
+	// Refund unused gas to caller (matching go-ethereum: no stipend subtraction).
 	contract.Gas += returnGas
-
-	evm.returnData = ret
-
-	if retSize.Uint64() > 0 && len(ret) > 0 {
-		retLen := retSize.Uint64()
-		if uint64(len(ret)) < retLen {
-			retLen = uint64(len(ret))
-		}
-		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
-	}
 
 	if err != nil {
 		stack.Push(new(big.Int))
 	} else {
 		stack.Push(big.NewInt(1))
+	}
+
+	evm.returnData = ret
+	if err == nil || errors.Is(err, ErrExecutionReverted) {
+		if retSize.Uint64() > 0 && len(ret) > 0 {
+			retLen := retSize.Uint64()
+			if uint64(len(ret)) < retLen {
+				retLen = uint64(len(ret))
+			}
+			memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+		}
 	}
 
 	return nil, nil
@@ -847,20 +839,22 @@ func opDelegateCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, st
 	ret, returnGas, err := evm.DelegateCall(contract.CallerAddress, addr, args, callGas)
 
 	contract.Gas += returnGas
-	evm.returnData = ret
-
-	if retSize.Uint64() > 0 && len(ret) > 0 {
-		retLen := retSize.Uint64()
-		if uint64(len(ret)) < retLen {
-			retLen = uint64(len(ret))
-		}
-		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
-	}
 
 	if err != nil {
 		stack.Push(new(big.Int))
 	} else {
 		stack.Push(big.NewInt(1))
+	}
+
+	evm.returnData = ret
+	if err == nil || errors.Is(err, ErrExecutionReverted) {
+		if retSize.Uint64() > 0 && len(ret) > 0 {
+			retLen := retSize.Uint64()
+			if uint64(len(ret)) < retLen {
+				retLen = uint64(len(ret))
+			}
+			memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+		}
 	}
 
 	return nil, nil
@@ -884,20 +878,22 @@ func opStaticCall(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stac
 	ret, returnGas, err := evm.StaticCall(contract.Address, addr, args, callGas)
 
 	contract.Gas += returnGas
-	evm.returnData = ret
-
-	if retSize.Uint64() > 0 && len(ret) > 0 {
-		retLen := retSize.Uint64()
-		if uint64(len(ret)) < retLen {
-			retLen = uint64(len(ret))
-		}
-		memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
-	}
 
 	if err != nil {
 		stack.Push(new(big.Int))
 	} else {
 		stack.Push(big.NewInt(1))
+	}
+
+	evm.returnData = ret
+	if err == nil || errors.Is(err, ErrExecutionReverted) {
+		if retSize.Uint64() > 0 && len(ret) > 0 {
+			retLen := retSize.Uint64()
+			if uint64(len(ret)) < retLen {
+				retLen = uint64(len(ret))
+			}
+			memory.Set(retOffset.Uint64(), retLen, ret[:retLen])
+		}
 	}
 
 	return nil, nil
