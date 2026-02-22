@@ -1,21 +1,68 @@
 # eth2028 Progress Report
 
-> Last updated: 2026-02-20
+> Last updated: 2026-02-22
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Packages | 47 |
-| Source files | 719 |
-| Test files | 702 |
-| Source LOC | ~212,000 |
-| Test LOC | ~307,000 |
-| Total LOC | ~519,000 |
+| Packages | 49 |
+| Source files | 986 |
+| Test files | 916 |
+| Source LOC | ~310,000 |
+| Test LOC | ~392,000 |
+| Total LOC | ~702,000 |
 | Passing tests | 18,000+ |
-| Test packages | 47/47 passing |
-| EIPs implemented | 58+ (complete), 5 (substantial) |
-| Roadmap coverage | 98+ items across all phases |
+| Test packages | 49/49 passing |
+| EIPs implemented | 58+ (complete), 6 (substantial) |
+| Roadmap coverage | 65 items (12 COMPLETE, 48 FUNCTIONAL, 5 PARTIAL) |
+| EF State Tests | 36,126/36,126 (100%) via go-ethereum backend |
+
+## go-ethereum Integration
+
+eth2028 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
+
+| Component | Description |
+|-----------|-------------|
+| `pkg/geth/` | Adapter package bridging eth2028 types to go-ethereum interfaces |
+| `pkg/geth/processor.go` | Block processor using `gethcore.ApplyMessage` for all transactions |
+| `pkg/geth/extensions.go` | Custom precompile injection via `evm.SetPrecompiles()` (13 precompiles) |
+| `pkg/geth/statedb.go` | State creation using go-ethereum's real trie DB |
+| `pkg/geth/config.go` | Chain config mapping (eth2028 forks → go-ethereum params) |
+
+**Architecture:**
+```
+eth2028 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
+                     |
+              core/types (eth2028's public type system — unchanged)
+                     |
+              pkg/geth/ (adapter package — only place that imports go-ethereum)
+                     |
+         go-ethereum v1.17.0 (core/vm, core/state, params — imported as library)
+```
+
+**Custom Precompile Injection:**
+
+| Category | Count | Addresses | Activation Fork |
+|----------|-------|-----------|----------------|
+| Glamsterdam repricing | 4 | 0x06, 0x08, 0x09, 0x0a | Glamsterdam |
+| NTT | 1 | 0x15 | I+ |
+| NII | 4 | 0x0201-0x0204 | I+ |
+| Field arithmetic | 4 | 0x0205-0x0208 | I+ |
+
+**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes remain eth2028-native-EVM-only.
+
+## EF State Test Validation
+
+| Metric | Value |
+|--------|-------|
+| **Total tests** | 36,126 |
+| **Passing** | 36,126 (100%) |
+| **Failing** | 0 (0%) |
+| **Test runner** | `pkg/core/eftest/geth_runner.go` |
+| **Backend** | go-ethereum v1.17.0 (imported as Go module) |
+
+All 57 test categories pass at 100%. The go-ethereum backend provides correct gas accounting, state root computation, and EIP-158 empty account cleanup.
 
 ## Package Completion
 
@@ -29,6 +76,8 @@
 | `core/vm` | Complete | 164+ opcodes, 24 precompiles, EOF, gas tables, parallel executor, eWASM optimizer, shielded crypto |
 | `core/rawdb` | Complete | FileDB with WAL, chain DB, block/receipt/tx storage, EIP-4444 history expiry |
 | `core/vops` | Complete | Validity-Only Partial Statelessness: partial executor, validator, witness |
+| `core/eftest` | Complete | EF state test runner: 36,126/36,126 (100%) via go-ethereum backend |
+| `geth` | Complete | go-ethereum adapter: type conversion, block processor, precompile injection, state management |
 | `rlp` | Complete | Full Yellow Paper Appendix B with fuzz testing |
 | `ssz` | Complete | SSZ encode/decode, merkleization, EIP-7916 ProgressiveList |
 | `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381 (incl. aggregate sigs), Banderwagon, IPA, VDF, threshold, shielded |
@@ -95,13 +144,13 @@ EIP-8077, EIP-8079, EIP-8141
 | Phase | Year | Coverage | Key Items |
 |-------|------|----------|-----------|
 | Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool, frame tx |
-| Hogota | 2026-2027 | ~75% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks |
-| I+ | 2027 | ~55% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync |
-| J+ | 2027-2028 | ~40% | Verkle migration, encrypted mempool, light client, variable blobs |
-| K+ | 2028 | ~50% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce |
-| L+ | 2029 | ~55% | Endgame finality, PQ attestations, LETHE, blob streaming, custody proofs |
-| M+ | 2029+ | ~45% | Gigagas, canonical zkVM, gas futures, PQ transactions |
-| 2030++ | Long term | ~30% | VDF, distributed builders, shielded transfers, sharded mempool |
+| Hogota | 2026-2027 | ~85% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks |
+| I+ | 2027 | ~80% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync |
+| J+ | 2027-2028 | ~75% | Verkle migration, encrypted mempool, light client, variable blobs |
+| K+ | 2028 | ~80% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce, CL proof circuits |
+| L+ | 2029 | ~80% | Endgame finality (BLS adapter), PQ attestations, APS, custody proofs, distributed builder, jeanVM aggregation |
+| M+ | 2029+ | ~75% | PQ L1 (ML-DSA-65 signer), gigagas integration, sharded mempool, real-time CL proofs, PQ chain security |
+| 2030++ | Long term | ~75% | VDF randomness, 51% auto-recovery, AA proof circuits, shielded transfers (BN254 ZK proofs), unified beacon state |
 
 ## Remaining Gaps for Production
 
@@ -109,7 +158,7 @@ EIP-8077, EIP-8079, EIP-8141
 
 **Current**: Pure-Go implementations of BLS12-381, Verkle/IPA, KZG, PQC.
 **Needed**: Wire reference submodules (blst, circl, go-ipa, go-eth-kzg, gnark) as backends.
-**Note**: Reference submodules already added to `refs/`.
+**Note**: Reference submodules already added to `refs/`. BLS12-381 (blst) and KZG (go-eth-kzg) adapters wired in `crypto/`.
 
 ### 2. Production Networking (MEDIUM)
 
@@ -126,10 +175,15 @@ EIP-8077, EIP-8079, EIP-8141
 **Current**: SSF, attestations, beacon state, fork choice, epoch processor all implemented.
 **Needed**: Wire consensus components into node lifecycle with real CL client communication.
 
-### 5. Conformance Testing (LOW)
+### 5. Remaining PARTIAL Items (5 of 65)
 
-**Current**: 12,600+ unit/integration tests.
-**Needed**: Run against official `execution-spec-tests` and `consensus-spec-tests` vectors.
+| Gap | Status | What's Missing |
+|-----|--------|----------------|
+| Fast L1 finality (#6) | Partial | Engine targets 500ms; needs real BLS pairing + block execution path |
+| Tech debt reset (#12) | Partial | Tracks deprecated fields; needs automated migration tooling |
+| PQ blobs (#31) | Partial | Lattice commitments work; Falcon/SPHINCS+ Sign() are keccak256 stubs |
+| Teragas L2 (#34) | Partial | Accounting framework; needs real bandwidth enforcement |
+| PQ transactions (#64) | Partial | Type 0x07 exists; ML-DSA-65 real, Falcon/SPHINCS+ stubs |
 
 ## Test Quality
 
@@ -149,4 +203,6 @@ EIP-8077, EIP-8079, EIP-8141
 | Trie (MPT, binary, verkle) | 3 | 500+ | Excellent |
 | Transaction pool (base, encrypted, shared) | 3 | 300+ | Good |
 | Proofs/rollup/zkvm/light | 4 | 400+ | Good |
+| Geth adapter (processor, extensions) | 1 | 200+ | Good |
+| EF State Tests (via geth backend) | 1 | 36,126 | 100% pass |
 | Other (RLP, SSZ, BAL, witness, etc.) | 6 | 500+ | Very Good |

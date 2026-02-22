@@ -581,17 +581,19 @@ Execution Layer State Access interface for external provers and validators:
 
 ## 5. Implementation Status
 
-### Summary (as of 2026-02-20)
+### Summary (as of 2026-02-22)
 
 | Metric | Value |
 |--------|-------|
-| Packages | 47 (all passing) |
-| Source files | 551 |
-| Test files | 525 |
-| Source LOC | ~148,000 |
-| Test LOC | ~237,000 |
-| Passing tests | 12,600+ |
-| EIPs complete | 58 |
+| Packages | 49 (all passing) |
+| Source files | 986 |
+| Test files | 916 |
+| Source LOC | ~310,000 |
+| Test LOC | ~392,000 |
+| Total LOC | ~702,000 |
+| Passing tests | 18,000+ |
+| EIPs complete | 58+ (6 substantial) |
+| EF State Tests | 36,126/36,126 (100%) |
 
 ### Package Completeness
 
@@ -612,12 +614,24 @@ All 47 packages are complete and passing tests. Key packages:
 | `zkvm` | COMPLETE | Guest programs, canonical guest (RISC-V), STF |
 | `proofs` | COMPLETE | Proof aggregation, mandatory 3-of-5 system |
 
+### go-ethereum Integration
+
+eth2028 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` adapter package bridges eth2028 types to go-ethereum's EVM and state transition engine, achieving 100% EF state test pass rate (36,126/36,126).
+
+**Key components:**
+- `GethBlockProcessor` — executes blocks via `gethcore.ApplyMessage`
+- `PrecompileAdapter` — wraps eth2028 precompiles for go-ethereum's interface
+- `InjectCustomPrecompiles` — injects 13 custom precompiles via `evm.SetPrecompiles()`
+- `MakePreState` — creates go-ethereum `state.StateDB` backed by real trie DB
+
+**Custom precompiles injected:** Glamsterdam repricing (4), NTT (1), NII (4), Field arithmetic (4).
+
 ### Remaining Gaps for Production
 
-1. **Real crypto backends** - Wire blst/circl/go-ipa/gnark submodules as backends
+1. **Real crypto backends** - Wire blst/circl/go-ipa/gnark submodules as backends (BLS12-381 and KZG adapters already wired)
 2. **RLPx encryption** - Production P2P encryption layer
 3. **Database backend** - LevelDB/Pebble for production performance
-4. **Conformance testing** - Run against official EF test vectors
+4. **Conformance testing** - EF state tests: 36,126/36,126 (100%) passing via go-ethereum backend
 
 ---
 

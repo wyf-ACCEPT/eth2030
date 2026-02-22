@@ -46,12 +46,13 @@ Live at strawmap.org. Three layers, each with sub-tracks:
 - **STUB**: 0
 
 ### Statistics
-- **Packages**: 48 (all passing)
-- **Source**: 978 files, ~308K LOC
-- **Tests**: 913 files, ~391K LOC, 21,000+ tests
-- **Total**: 1,891 files, ~699K LOC
+- **Packages**: 49 (all passing)
+- **Source**: 986 files, ~310K LOC
+- **Tests**: 916 files, ~392K LOC, 18,000+ tests
+- **Total**: 1,902 files, ~702K LOC
 - **EIPs**: 58 complete, 6 substantial
-- **EF State Tests**: 36,126/36,126 passing (100%) via go-ethereum backend in `pkg/core/eftest/`
+- **EF State Tests**: 36,126/36,126 passing (100%) via go-ethereum v1.17.0 backend in `pkg/core/eftest/`
+- **go-ethereum integration**: `pkg/geth/` adapter with 13 custom precompile injection
 
 ### EIP Implementation Status
 - **Complete** (58): EIP-150, EIP-152, EIP-196/197, EIP-1153, EIP-1559, EIP-2200, EIP-2537, EIP-2718, EIP-2929, EIP-2930, EIP-2935, EIP-3529, EIP-3540, EIP-4444, EIP-4762, EIP-4788, EIP-4844 (incl. KZG), EIP-4895, EIP-5656, EIP-6110, EIP-6404, EIP-6780, EIP-7002, EIP-7069, EIP-7251, EIP-7480, EIP-7547, EIP-7549, EIP-7594, EIP-7620, EIP-7685, EIP-7691, EIP-7698, EIP-7701, EIP-7702, EIP-7706, EIP-7742, EIP-7745, EIP-7807, EIP-7825, EIP-7898, EIP-7904, EIP-7916, EIP-7918, EIP-7928, EIP-7939, EIP-8024, EIP-8070, EIP-8077, EIP-8079, EIP-8141
