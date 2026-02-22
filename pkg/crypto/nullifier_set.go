@@ -67,9 +67,9 @@ func smtHashNode(left, right [32]byte) [32]byte {
 
 // SMTProof is a Merkle proof in the sparse Merkle tree.
 type SMTProof struct {
-	Key      types.Hash    // the key being proved
+	Key      types.Hash         // the key being proved
 	Siblings [SMTDepth][32]byte // sibling hashes along the path
-	Exists   bool          // true if key exists, false for non-inclusion
+	Exists   bool               // true if key exists, false for non-inclusion
 }
 
 // SparseMerkleTree is a memory-efficient sparse Merkle tree that only stores

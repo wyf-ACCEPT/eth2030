@@ -10,15 +10,15 @@ import (
 )
 
 var (
-	ErrOutOfGas              = errors.New("out of gas")
-	ErrStackOverflow         = errors.New("stack overflow")
-	ErrStackUnderflow        = errors.New("stack underflow")
-	ErrInvalidJump           = errors.New("invalid jump destination")
-	ErrWriteProtection       = errors.New("write protection")
-	ErrExecutionReverted     = errors.New("execution reverted")
-	ErrMaxCallDepthExceeded  = errors.New("max call depth exceeded")
-	ErrInvalidOpCode         = errors.New("invalid opcode")
-	ErrReturnDataOutOfBounds = errors.New("return data out of bounds")
+	ErrOutOfGas                = errors.New("out of gas")
+	ErrStackOverflow           = errors.New("stack overflow")
+	ErrStackUnderflow          = errors.New("stack underflow")
+	ErrInvalidJump             = errors.New("invalid jump destination")
+	ErrWriteProtection         = errors.New("write protection")
+	ErrExecutionReverted       = errors.New("execution reverted")
+	ErrMaxCallDepthExceeded    = errors.New("max call depth exceeded")
+	ErrInvalidOpCode           = errors.New("invalid opcode")
+	ErrReturnDataOutOfBounds   = errors.New("return data out of bounds")
 	ErrMaxInitCodeSizeExceeded = errors.New("max initcode size exceeded")
 )
 
@@ -117,8 +117,8 @@ type EVM struct {
 	readOnly    bool
 	jumpTable   JumpTable
 	precompiles map[types.Address]PrecompiledContract
-	returnData  []byte // return data from the last CALL/CREATE
-	callGasTemp uint64 // temporary storage for CALL gas (set by dynamic gas, read by opCall)
+	returnData  []byte             // return data from the last CALL/CREATE
+	callGasTemp uint64             // temporary storage for CALL gas (set by dynamic gas, read by opCall)
 	witnessGas  *WitnessGasTracker // EIP-4762: witness gas tracking (nil if not Verkle)
 	forkRules   ForkRules          // active fork rules for this block
 	FrameCtx    *FrameContext      // EIP-8141: frame transaction approval context (nil if not frame tx)

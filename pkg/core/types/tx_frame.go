@@ -11,9 +11,9 @@ import (
 
 // EIP-8141 Frame Transaction constants.
 const (
-	FrameTxType         byte   = 0x06
+	FrameTxType          byte   = 0x06
 	FrameTxIntrinsicCost uint64 = 15000
-	MaxFrames           int    = 1000
+	MaxFrames            int    = 1000
 
 	// Frame modes.
 	ModeDefault uint8 = 0
@@ -34,28 +34,28 @@ type Frame struct {
 
 // FrameTx represents an EIP-8141 (type 0x06) frame transaction.
 type FrameTx struct {
-	ChainID             *big.Int
-	Nonce               uint64
-	Sender              Address
-	Frames              []Frame
+	ChainID              *big.Int
+	Nonce                uint64
+	Sender               Address
+	Frames               []Frame
 	MaxPriorityFeePerGas *big.Int
-	MaxFeePerGas        *big.Int
-	MaxFeePerBlobGas    *big.Int
-	BlobVersionedHashes []Hash
+	MaxFeePerGas         *big.Int
+	MaxFeePerBlobGas     *big.Int
+	BlobVersionedHashes  []Hash
 }
 
 // TxData interface implementation for FrameTx.
-func (tx *FrameTx) txType() byte      { return FrameTxType }
-func (tx *FrameTx) chainID() *big.Int  { return tx.ChainID }
+func (tx *FrameTx) txType() byte           { return FrameTxType }
+func (tx *FrameTx) chainID() *big.Int      { return tx.ChainID }
 func (tx *FrameTx) accessList() AccessList { return nil }
-func (tx *FrameTx) data() []byte       { return nil }
-func (tx *FrameTx) gas() uint64        { return CalcFrameTxGas(tx) }
-func (tx *FrameTx) gasPrice() *big.Int { return tx.MaxFeePerGas }
-func (tx *FrameTx) gasTipCap() *big.Int { return tx.MaxPriorityFeePerGas }
-func (tx *FrameTx) gasFeeCap() *big.Int { return tx.MaxFeePerGas }
-func (tx *FrameTx) value() *big.Int    { return new(big.Int) }
-func (tx *FrameTx) nonce() uint64      { return tx.Nonce }
-func (tx *FrameTx) to() *Address       { return nil }
+func (tx *FrameTx) data() []byte           { return nil }
+func (tx *FrameTx) gas() uint64            { return CalcFrameTxGas(tx) }
+func (tx *FrameTx) gasPrice() *big.Int     { return tx.MaxFeePerGas }
+func (tx *FrameTx) gasTipCap() *big.Int    { return tx.MaxPriorityFeePerGas }
+func (tx *FrameTx) gasFeeCap() *big.Int    { return tx.MaxFeePerGas }
+func (tx *FrameTx) value() *big.Int        { return new(big.Int) }
+func (tx *FrameTx) nonce() uint64          { return tx.Nonce }
+func (tx *FrameTx) to() *Address           { return nil }
 
 func (tx *FrameTx) copy() TxData {
 	cpy := &FrameTx{
@@ -106,14 +106,14 @@ type frameRLP struct {
 // frameTxRLP is the RLP encoding layout for FrameTx.
 // Fields: [chain_id, nonce, sender, frames, max_priority_fee_per_gas, max_fee_per_gas, max_fee_per_blob_gas, blob_versioned_hashes]
 type frameTxRLP struct {
-	ChainID             *big.Int
-	Nonce               uint64
-	Sender              Address
-	Frames              []frameRLP
+	ChainID              *big.Int
+	Nonce                uint64
+	Sender               Address
+	Frames               []frameRLP
 	MaxPriorityFeePerGas *big.Int
-	MaxFeePerGas        *big.Int
-	MaxFeePerBlobGas    *big.Int
-	BlobVersionedHashes []Hash
+	MaxFeePerGas         *big.Int
+	MaxFeePerBlobGas     *big.Int
+	BlobVersionedHashes  []Hash
 }
 
 // EncodeFrameTx encodes a FrameTx as a typed transaction envelope: 0x06 || RLP([...]).

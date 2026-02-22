@@ -15,16 +15,16 @@ import (
 
 // AA proof errors.
 var (
-	ErrAANilUserOp          = errors.New("aa_proofs: nil user operation")
-	ErrAAEmptyEntryPoint    = errors.New("aa_proofs: empty entry point address")
+	ErrAANilUserOp            = errors.New("aa_proofs: nil user operation")
+	ErrAAEmptyEntryPoint      = errors.New("aa_proofs: empty entry point address")
 	ErrAAEntryPointNotAllowed = errors.New("aa_proofs: entry point not in allowed set")
-	ErrAAExceedsMaxGas      = errors.New("aa_proofs: verification gas exceeds maximum")
-	ErrAANilProof           = errors.New("aa_proofs: nil proof")
-	ErrAAInvalidProof       = errors.New("aa_proofs: proof verification failed")
-	ErrAAEmptyBatch         = errors.New("aa_proofs: empty proof batch")
-	ErrAACompressFailed     = errors.New("aa_proofs: proof compression failed")
-	ErrAADecompressFailed   = errors.New("aa_proofs: proof decompression failed")
-	ErrAADecompressTooShort = errors.New("aa_proofs: compressed data too short")
+	ErrAAExceedsMaxGas        = errors.New("aa_proofs: verification gas exceeds maximum")
+	ErrAANilProof             = errors.New("aa_proofs: nil proof")
+	ErrAAInvalidProof         = errors.New("aa_proofs: proof verification failed")
+	ErrAAEmptyBatch           = errors.New("aa_proofs: empty proof batch")
+	ErrAACompressFailed       = errors.New("aa_proofs: proof compression failed")
+	ErrAADecompressFailed     = errors.New("aa_proofs: proof decompression failed")
+	ErrAADecompressTooShort   = errors.New("aa_proofs: compressed data too short")
 )
 
 // Default AA proof configuration constants.

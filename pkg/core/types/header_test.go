@@ -27,7 +27,7 @@ func TestHeaderFields(t *testing.T) {
 		GasLimit:            30_000_000,
 		GasUsed:             21_000,
 		Time:                1700000000,
-		Extra:               []byte("eth2030"),
+		Extra:               []byte("ETH2030"),
 		BaseFee:             big.NewInt(1_000_000_000),
 		BlobGasUsed:         &blobGasUsed,
 		ExcessBlobGas:       &excessBlobGas,
@@ -57,7 +57,7 @@ func TestHeaderFields(t *testing.T) {
 	if h.Time != 1700000000 {
 		t.Fatal("Time mismatch")
 	}
-	if string(h.Extra) != "eth2030" {
+	if string(h.Extra) != "ETH2030" {
 		t.Fatal("Extra mismatch")
 	}
 	if h.BaseFee.Int64() != 1_000_000_000 {

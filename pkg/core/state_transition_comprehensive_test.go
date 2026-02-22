@@ -396,7 +396,7 @@ func TestContractCreationGas(t *testing.T) {
 	initCode := []byte{
 		0x60, 0x00, // PUSH1 0
 		0x60, 0x00, // PUSH1 0
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 
 	msg := &Message{

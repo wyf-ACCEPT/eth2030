@@ -36,12 +36,12 @@ type AccessEntry struct {
 // within a single transaction. It records warm/cold state transitions and
 // computes gas charges.
 type TxAccessSet struct {
-	addresses    map[types.Address]bool                    // true if warm
-	slots        map[types.Address]map[types.Hash]bool     // addr -> slot -> warm
-	gasCharged   uint64                                    // total gas charged for cold accesses
-	coldAccounts int                                       // count of cold account accesses
-	coldSlots    int                                       // count of cold slot accesses
-	warmAccesses int                                       // count of warm accesses
+	addresses    map[types.Address]bool                // true if warm
+	slots        map[types.Address]map[types.Hash]bool // addr -> slot -> warm
+	gasCharged   uint64                                // total gas charged for cold accesses
+	coldAccounts int                                   // count of cold account accesses
+	coldSlots    int                                   // count of cold slot accesses
+	warmAccesses int                                   // count of warm accesses
 }
 
 // newTxAccessSet creates a new empty per-transaction access set.
@@ -162,12 +162,12 @@ func (tas *TxAccessSet) Entries() []AccessEntry {
 // supports merging them into a block-level aggregate for cross-tx
 // warm/cold state propagation.
 type AccessTracker struct {
-	mu           sync.Mutex
-	blockSet     *TxAccessSet   // block-level aggregated access set
-	txSets       []*TxAccessSet // per-transaction access sets
-	currentTx    *TxAccessSet   // current transaction's access set
-	witnessGas   uint64         // total witness gas charged
-	witnessAE    *AccessEvents  // optional: access events for EIP-4762
+	mu         sync.Mutex
+	blockSet   *TxAccessSet   // block-level aggregated access set
+	txSets     []*TxAccessSet // per-transaction access sets
+	currentTx  *TxAccessSet   // current transaction's access set
+	witnessGas uint64         // total witness gas charged
+	witnessAE  *AccessEvents  // optional: access events for EIP-4762
 }
 
 // NewAccessTracker creates a new block-level access tracker.

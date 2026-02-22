@@ -95,12 +95,12 @@ func (s StackPoolStats) HitRate() float64 {
 // StackProfiler tracks per-opcode stack depth statistics during execution.
 // It is useful for analyzing stack usage patterns in EVM contracts.
 type StackProfiler struct {
-	maxDepth    int
-	minDepth    int
-	totalOps    uint64
-	depthSum    uint64
-	peakOpcode  OpCode // opcode that produced the max depth
-	depthHist   [1025]uint32 // histogram: depthHist[d] = number of steps at depth d
+	maxDepth   int
+	minDepth   int
+	totalOps   uint64
+	depthSum   uint64
+	peakOpcode OpCode       // opcode that produced the max depth
+	depthHist  [1025]uint32 // histogram: depthHist[d] = number of steps at depth d
 
 	// Per-opcode depth tracking.
 	opcodeMaxDepth [256]int

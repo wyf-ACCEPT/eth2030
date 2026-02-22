@@ -11,20 +11,20 @@ import (
 // capped at MaxEffectiveBalance.
 
 var (
-	ErrConsolidationSameValidator   = errors.New("source and target must differ")
-	ErrConsolidationSourceNotActive = errors.New("source validator not active")
-	ErrConsolidationTargetNotActive = errors.New("target validator not active")
-	ErrConsolidationSourceSlashed   = errors.New("source validator is slashed")
-	ErrConsolidationTargetSlashed   = errors.New("target validator is slashed")
+	ErrConsolidationSameValidator       = errors.New("source and target must differ")
+	ErrConsolidationSourceNotActive     = errors.New("source validator not active")
+	ErrConsolidationTargetNotActive     = errors.New("target validator not active")
+	ErrConsolidationSourceSlashed       = errors.New("source validator is slashed")
+	ErrConsolidationTargetSlashed       = errors.New("target validator is slashed")
 	ErrConsolidationCredentialsMismatch = errors.New("withdrawal credentials mismatch")
-	ErrConsolidationNotCompounding  = errors.New("target must have compounding credentials")
-	ErrConsolidationOverflow        = errors.New("balance overflow during consolidation")
+	ErrConsolidationNotCompounding      = errors.New("target must have compounding credentials")
+	ErrConsolidationOverflow            = errors.New("balance overflow during consolidation")
 )
 
 // ConsolidationResult holds the outcome of processing a consolidation request.
 type ConsolidationResult struct {
-	SourcePubkey     [48]byte
-	TargetPubkey     [48]byte
+	SourcePubkey      [48]byte
+	TargetPubkey      [48]byte
 	AmountTransferred uint64 // Gwei moved from source to target
 }
 

@@ -41,7 +41,7 @@ type RevealTx struct {
 
 // CommitEntry tracks the full state of a committed transaction.
 type CommitEntry struct {
-	Commit        *CommitTx
-	State         CommitState
+	Commit         *CommitTx
+	State          CommitState
 	RevealDeadline uint64
 }

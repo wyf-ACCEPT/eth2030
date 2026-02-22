@@ -23,10 +23,10 @@ import (
 const MaxWithdrawalsPerPayload = 16
 
 var (
-	errNilWithdrawal        = errors.New("withdrawal is nil")
-	errZeroAddress          = errors.New("withdrawal address must not be zero")
-	errTooManyWithdrawals   = errors.New("too many withdrawals in payload")
-	errDuplicateWithdrawal  = errors.New("duplicate withdrawal index")
+	errNilWithdrawal       = errors.New("withdrawal is nil")
+	errZeroAddress         = errors.New("withdrawal address must not be zero")
+	errTooManyWithdrawals  = errors.New("too many withdrawals in payload")
+	errDuplicateWithdrawal = errors.New("duplicate withdrawal index")
 )
 
 // withdrawalRLP is the RLP encoding layout for a Withdrawal.

@@ -20,9 +20,9 @@ var (
 
 // ReceiptTrieConfig holds configuration for the receipt trie.
 type ReceiptTrieConfig struct {
-	UseCompactEncoding bool // use compact (non-RLP) encoding for receipts
+	UseCompactEncoding  bool // use compact (non-RLP) encoding for receipts
 	MaxReceiptsPerBlock int  // maximum receipts per block (0 = unlimited)
-	PruneDepth         int  // prune threshold for old entries
+	PruneDepth          int  // prune threshold for old entries
 }
 
 // DefaultReceiptTrieConfig returns sensible defaults.

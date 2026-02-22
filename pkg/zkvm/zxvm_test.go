@@ -214,8 +214,8 @@ func TestExecuteLoadStore(t *testing.T) {
 
 	var code []byte
 	// Store 99 at address 5.
-	code = append(code, BuildZxPush(5)...)   // addr
-	code = append(code, BuildZxPush(99)...)  // val
+	code = append(code, BuildZxPush(5)...)  // addr
+	code = append(code, BuildZxPush(99)...) // val
 	code = append(code, ZxOpSTORE)
 	// Load from address 5.
 	code = append(code, BuildZxPush(5)...)
@@ -366,7 +366,7 @@ func TestExecuteMemoryOverflowStore(t *testing.T) {
 
 	var code []byte
 	code = append(code, BuildZxPush(999999)...) // addr out of bounds
-	code = append(code, BuildZxPush(42)...)      // val
+	code = append(code, BuildZxPush(42)...)     // val
 	code = append(code, ZxOpSTORE)
 
 	prog := &ZxProgram{Code: code, MemoryLayout: 16}
@@ -415,9 +415,9 @@ func TestZxVMExecuteOutOfGas(t *testing.T) {
 	vm := NewZxVM(DefaultZxVMConfig())
 
 	var code []byte
-	code = append(code, BuildZxPush(1)...)  // 1 gas
-	code = append(code, BuildZxPush(2)...)  // 1 gas
-	code = append(code, ZxOpHASH)           // 10 gas -> total 12
+	code = append(code, BuildZxPush(1)...) // 1 gas
+	code = append(code, BuildZxPush(2)...) // 1 gas
+	code = append(code, ZxOpHASH)          // 10 gas -> total 12
 	code = append(code, ZxOpHALT)
 
 	prog := &ZxProgram{Code: code, GasLimit: 5} // only 5 gas
@@ -620,10 +620,10 @@ func TestEstimateGas(t *testing.T) {
 	vm := NewZxVM(DefaultZxVMConfig())
 
 	var code []byte
-	code = append(code, BuildZxPush(10)...)  // 1 gas
-	code = append(code, BuildZxPush(20)...)  // 1 gas
-	code = append(code, ZxOpADD)             // 1 gas
-	code = append(code, ZxOpHALT)            // 0 gas
+	code = append(code, BuildZxPush(10)...) // 1 gas
+	code = append(code, BuildZxPush(20)...) // 1 gas
+	code = append(code, ZxOpADD)            // 1 gas
+	code = append(code, ZxOpHALT)           // 0 gas
 
 	prog := &ZxProgram{Code: code}
 	vm.LoadProgram(prog)
@@ -766,14 +766,14 @@ func TestExecuteComplexProgram(t *testing.T) {
 	var code []byte
 	code = append(code, BuildZxPush(3)...)
 	code = append(code, BuildZxPush(4)...)
-	code = append(code, ZxOpADD)             // 7
+	code = append(code, ZxOpADD) // 7
 	code = append(code, BuildZxPush(5)...)
-	code = append(code, ZxOpMUL)             // 35
-	code = append(code, BuildZxPush(0)...)   // addr
-	code = append(code, BuildZxPush(35)...)  // store 35 to check later
+	code = append(code, ZxOpMUL)            // 35
+	code = append(code, BuildZxPush(0)...)  // addr
+	code = append(code, BuildZxPush(35)...) // store 35 to check later
 	code = append(code, ZxOpSTORE)
-	code = append(code, BuildZxPush(0)...)   // addr
-	code = append(code, ZxOpLOAD)            // load from addr 0
+	code = append(code, BuildZxPush(0)...) // addr
+	code = append(code, ZxOpLOAD)          // load from addr 0
 	code = append(code, ZxOpHALT)
 
 	prog := &ZxProgram{Code: code, MemoryLayout: 64}

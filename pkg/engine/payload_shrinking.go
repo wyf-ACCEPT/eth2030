@@ -22,7 +22,7 @@ const (
 
 // Payload shrinking errors.
 var (
-	ErrShrinkEmptyPayload   = errors.New("payload_shrink: empty payload")
+	ErrShrinkEmptyPayload    = errors.New("payload_shrink: empty payload")
 	ErrShrinkMaxSizeExceeded = errors.New("payload_shrink: payload exceeds max size")
 	ErrShrinkUnknownStrategy = errors.New("payload_shrink: unknown strategy")
 	ErrShrinkCompressFailed  = errors.New("payload_shrink: compression failed")

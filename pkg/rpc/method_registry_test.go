@@ -338,7 +338,7 @@ func TestMethodRegistry_BatchRegistration_StopsOnDuplicate(t *testing.T) {
 	methods := []MethodInfo{
 		{Name: "new_a", Handler: noopHandler},
 		{Name: "existing", Handler: noopHandler}, // duplicate
-		{Name: "new_b", Handler: noopHandler},     // should not be registered
+		{Name: "new_b", Handler: noopHandler},    // should not be registered
 	}
 
 	err := reg.RegisterBatch(methods)

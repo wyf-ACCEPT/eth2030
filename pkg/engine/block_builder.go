@@ -11,19 +11,19 @@ import (
 
 // Block builder errors.
 var (
-	ErrGasLimitExceeded  = errors.New("block builder: transaction exceeds remaining gas")
-	ErrNilTransaction    = errors.New("block builder: nil transaction")
-	ErrZeroGasLimit      = errors.New("block builder: gas limit must be positive")
-	ErrBuilderNotReady   = errors.New("block builder: no transactions added")
+	ErrGasLimitExceeded = errors.New("block builder: transaction exceeds remaining gas")
+	ErrNilTransaction   = errors.New("block builder: nil transaction")
+	ErrZeroGasLimit     = errors.New("block builder: gas limit must be positive")
+	ErrBuilderNotReady  = errors.New("block builder: no transactions added")
 )
 
 // TxBlockBuilder assembles blocks from pending transactions.
 // It tracks gas usage and orders transactions by effective gas price.
 type TxBlockBuilder struct {
-	mu          sync.Mutex
-	pending     []*types.Transaction
-	gasUsed     uint64
-	gasLimit    uint64
+	mu       sync.Mutex
+	pending  []*types.Transaction
+	gasUsed  uint64
+	gasLimit uint64
 }
 
 // NewTxBlockBuilder creates a new block builder.
@@ -126,7 +126,7 @@ func (bb *TxBlockBuilder) BuildBlock(
 		GasUsed:    usedGas,
 		Time:       timestamp,
 		Number:     new(big.Int).SetUint64(0), // caller should set properly
-		Difficulty: new(big.Int),               // post-merge: always 0
+		Difficulty: new(big.Int),              // post-merge: always 0
 	}
 
 	body := &types.Body{

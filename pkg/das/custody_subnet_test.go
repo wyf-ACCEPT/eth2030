@@ -254,7 +254,7 @@ func TestSubnetForColumn(t *testing.T) {
 		{0, 0},
 		{1, 1},
 		{127, 127},
-		{128, 0},   // wraps around since DataColumnSidecarSubnetCount = 128
+		{128, 0}, // wraps around since DataColumnSidecarSubnetCount = 128
 		{129, 1},
 	}
 

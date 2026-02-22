@@ -279,9 +279,9 @@ func TestFirstFailure(t *testing.T) {
 	as := NewAssertionSet()
 	addr := types.HexToAddress("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 
-	as.AddBlockAssertion(100, 200)       // assertions 0,1
+	as.AddBlockAssertion(100, 200)                 // assertions 0,1
 	as.AddBalanceAssertion(addr, big.NewInt(1000)) // assertion 2
-	as.AddNonceAssertion(addr, 5)        // assertion 3
+	as.AddNonceAssertion(addr, 5)                  // assertion 3
 
 	ctx := &AssertionContext{
 		BlockNumber: 150, // passes

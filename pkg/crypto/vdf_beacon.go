@@ -1,11 +1,11 @@
 // VDF chain and beacon randomness (K+ / M+ roadmap).
 //
 // Extends the VDF subsystem with:
-// - VDFChain: chains multiple sequential VDF evaluations, where each step's
-//   output feeds into the next step's input.
-// - VDFBeacon: uses VDF chains to produce unbiasable, unpredictable randomness
-//   for epoch-level beacon duties (proposer selection, committee assignment).
-// - Thread-safe caching of verified chains to avoid redundant re-verification.
+//   - VDFChain: chains multiple sequential VDF evaluations, where each step's
+//     output feeds into the next step's input.
+//   - VDFBeacon: uses VDF chains to produce unbiasable, unpredictable randomness
+//     for epoch-level beacon duties (proposer selection, committee assignment).
+//   - Thread-safe caching of verified chains to avoid redundant re-verification.
 //
 // This targets CL Cryptography: "VDF, secure prequorum" milestone.
 package crypto
@@ -43,10 +43,10 @@ type ChainedVDFProof struct {
 
 // BeaconOutput holds the randomness produced by a VDF beacon for one epoch.
 type BeaconOutput struct {
-	Epoch      uint64        // consensus epoch this randomness applies to
-	Randomness []byte        // 32-byte unbiasable random value
-	VDFProof   []byte        // compact proof derived from the chain
-	Timestamp  uint64        // unix seconds when the beacon was produced
+	Epoch      uint64 // consensus epoch this randomness applies to
+	Randomness []byte // 32-byte unbiasable random value
+	VDFProof   []byte // compact proof derived from the chain
+	Timestamp  uint64 // unix seconds when the beacon was produced
 }
 
 // VDFChain evaluates and verifies multi-step VDF chains.

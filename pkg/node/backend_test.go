@@ -321,7 +321,7 @@ func TestEngineBackendGetPayloadNotFound(t *testing.T) {
 
 func TestGeneratePayloadID(t *testing.T) {
 	_ = [32]byte{0x01, 0x02, 0x03, 0x04} // parentHash placeholder
-	attrs := &big.Int{}                   // placeholder
+	attrs := &big.Int{}                  // placeholder
 	_ = attrs
 
 	// Just test it doesn't panic and returns something non-zero in most cases.

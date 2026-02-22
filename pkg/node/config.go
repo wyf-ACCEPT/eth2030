@@ -1,4 +1,4 @@
-// Package node implements the eth2030 full node lifecycle,
+// Package node implements the ETH2030 full node lifecycle,
 // wiring together blockchain, RPC, Engine API, P2P, and TxPool.
 package node
 
@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-// Config holds all configuration for an eth2030 node.
+// Config holds all configuration for an ETH2030 node.
 type Config struct {
 	// DataDir is the root directory for all data storage.
 	DataDir string
@@ -51,21 +51,21 @@ type Config struct {
 }
 
 // defaultDataDir returns the platform-specific default data directory.
-// Falls back to ".eth2030" in the current directory if the home directory
+// Falls back to ".ETH2030" in the current directory if the home directory
 // cannot be determined.
 func defaultDataDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return ".eth2030"
+		return ".ETH2030"
 	}
-	return filepath.Join(home, ".eth2030")
+	return filepath.Join(home, ".ETH2030")
 }
 
 // DefaultConfig returns a Config with sensible defaults.
 func DefaultConfig() Config {
 	return Config{
 		DataDir:    defaultDataDir(),
-		Name:       "eth2030",
+		Name:       "ETH2030",
 		Network:    "mainnet",
 		NetworkID:  1,
 		SyncMode:   "snap",

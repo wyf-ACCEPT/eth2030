@@ -11,16 +11,16 @@ import (
 
 // Mandatory proof system errors.
 var (
-	ErrMandatoryNilSubmission   = errors.New("mandatory: nil proof submission")
-	ErrMandatoryEmptyProofData  = errors.New("mandatory: empty proof data")
-	ErrMandatoryEmptyProofType  = errors.New("mandatory: empty proof type")
-	ErrMandatoryZeroBlockHash   = errors.New("mandatory: zero block hash")
-	ErrMandatoryZeroProverID    = errors.New("mandatory: zero prover ID")
-	ErrMandatoryProverExists    = errors.New("mandatory: prover already registered")
-	ErrMandatoryProverNotFound  = errors.New("mandatory: prover not registered")
-	ErrMandatoryNoProvers       = errors.New("mandatory: no registered provers")
+	ErrMandatoryNilSubmission    = errors.New("mandatory: nil proof submission")
+	ErrMandatoryEmptyProofData   = errors.New("mandatory: empty proof data")
+	ErrMandatoryEmptyProofType   = errors.New("mandatory: empty proof type")
+	ErrMandatoryZeroBlockHash    = errors.New("mandatory: zero block hash")
+	ErrMandatoryZeroProverID     = errors.New("mandatory: zero prover ID")
+	ErrMandatoryProverExists     = errors.New("mandatory: prover already registered")
+	ErrMandatoryProverNotFound   = errors.New("mandatory: prover not registered")
+	ErrMandatoryNoProvers        = errors.New("mandatory: no registered provers")
 	ErrMandatoryNotEnoughProvers = errors.New("mandatory: not enough registered provers")
-	ErrMandatoryNoProofTypes    = errors.New("mandatory: prover has no proof types")
+	ErrMandatoryNoProofTypes     = errors.New("mandatory: prover has no proof types")
 	ErrMandatoryBlockNotAssigned = errors.New("mandatory: block has no assigned provers")
 )
 
@@ -57,12 +57,12 @@ type ProofSubmission struct {
 
 // ProofRequirementStatus describes the proof requirement state for a block.
 type ProofRequirementStatus struct {
-	BlockHash types.Hash
-	Required  int
-	Submitted int
-	Verified  int
+	BlockHash   types.Hash
+	Required    int
+	Submitted   int
+	Verified    int
 	IsSatisfied bool
-	ProverIDs []types.Hash
+	ProverIDs   []types.Hash
 }
 
 // proverInfo holds registration data for a prover.
@@ -84,8 +84,8 @@ type blockProofState struct {
 type MandatoryProofSystem struct {
 	mu      sync.RWMutex
 	config  MandatoryProofConfig
-	provers map[types.Hash]*proverInfo        // registered provers
-	blocks  map[types.Hash]*blockProofState   // per-block proof state
+	provers map[types.Hash]*proverInfo      // registered provers
+	blocks  map[types.Hash]*blockProofState // per-block proof state
 }
 
 // NewMandatoryProofSystem creates a new mandatory proof system.

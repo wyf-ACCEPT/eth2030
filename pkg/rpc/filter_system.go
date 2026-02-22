@@ -51,16 +51,16 @@ type FSBlockFilter struct {
 type filterKind int
 
 const (
-	filterKindLog   filterKind = iota
+	filterKindLog filterKind = iota
 	filterKindBlock
 )
 
 // filterEntry is the internal representation of an installed filter.
 type filterEntry struct {
-	kind      filterKind
-	logFilter *FSLogFilter
+	kind        filterKind
+	logFilter   *FSLogFilter
 	blockFilter *FSBlockFilter
-	lastPoll  time.Time
+	lastPoll    time.Time
 }
 
 // FilterSystem manages log and block filters for the RPC layer.

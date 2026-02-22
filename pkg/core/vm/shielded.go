@@ -20,19 +20,19 @@ import (
 
 // Shielded execution errors.
 var (
-	ErrShieldedDisabled     = errors.New("shielded: privacy mode disabled")
-	ErrNilShieldedTx        = errors.New("shielded: nil transaction")
-	ErrShieldedGasExceeded  = errors.New("shielded: gas limit exceeds max shielded gas")
-	ErrShieldedGasZero      = errors.New("shielded: gas limit is zero")
-	ErrEmptyEncryptedInput  = errors.New("shielded: empty encrypted input")
-	ErrEmptyShieldingKey    = errors.New("shielded: empty shielding key")
-	ErrNullifierUsed        = errors.New("shielded: nullifier already spent")
-	ErrNilNote              = errors.New("shielded: nil note")
-	ErrEmptyProof           = errors.New("shielded: empty proof")
-	ErrZeroValue            = errors.New("shielded: zero value note")
-	ErrZeroRecipient        = errors.New("shielded: zero recipient address")
-	ErrNullifierSetFull     = errors.New("shielded: nullifier set is full")
-	ErrInvalidProof         = errors.New("shielded: proof verification failed")
+	ErrShieldedDisabled    = errors.New("shielded: privacy mode disabled")
+	ErrNilShieldedTx       = errors.New("shielded: nil transaction")
+	ErrShieldedGasExceeded = errors.New("shielded: gas limit exceeds max shielded gas")
+	ErrShieldedGasZero     = errors.New("shielded: gas limit is zero")
+	ErrEmptyEncryptedInput = errors.New("shielded: empty encrypted input")
+	ErrEmptyShieldingKey   = errors.New("shielded: empty shielding key")
+	ErrNullifierUsed       = errors.New("shielded: nullifier already spent")
+	ErrNilNote             = errors.New("shielded: nil note")
+	ErrEmptyProof          = errors.New("shielded: empty proof")
+	ErrZeroValue           = errors.New("shielded: zero value note")
+	ErrZeroRecipient       = errors.New("shielded: zero recipient address")
+	ErrNullifierSetFull    = errors.New("shielded: nullifier set is full")
+	ErrInvalidProof        = errors.New("shielded: proof verification failed")
 )
 
 // ShieldedConfig configures the shielded execution environment.
@@ -89,7 +89,7 @@ type ShieldedNote struct {
 type ShieldedVM struct {
 	mu         sync.RWMutex
 	config     ShieldedConfig
-	nullifiers map[types.Hash]bool // set of spent nullifiers
+	nullifiers map[types.Hash]bool          // set of spent nullifiers
 	notes      map[types.Hash]*ShieldedNote // commitment -> note
 }
 

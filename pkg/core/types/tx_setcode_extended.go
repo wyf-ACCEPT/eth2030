@@ -25,14 +25,14 @@ const (
 
 // SetCode transaction errors.
 var (
-	ErrSetCodeEmptyAuthList     = errors.New("setcode: authorization list is empty")
-	ErrSetCodeTooManyAuths      = errors.New("setcode: too many authorization entries")
-	ErrSetCodeNilChainID        = errors.New("setcode: nil chain ID in authorization")
-	ErrSetCodeNegativeChainID   = errors.New("setcode: negative chain ID in authorization")
-	ErrSetCodeInvalidAuthSig    = errors.New("setcode: invalid authorization signature")
-	ErrSetCodeZeroAddress       = errors.New("setcode: authorization targets zero address")
-	ErrSetCodeDuplicateAuth     = errors.New("setcode: duplicate authorization for same address")
-	ErrSetCodeSelfDelegation    = errors.New("setcode: cannot delegate to self")
+	ErrSetCodeEmptyAuthList   = errors.New("setcode: authorization list is empty")
+	ErrSetCodeTooManyAuths    = errors.New("setcode: too many authorization entries")
+	ErrSetCodeNilChainID      = errors.New("setcode: nil chain ID in authorization")
+	ErrSetCodeNegativeChainID = errors.New("setcode: negative chain ID in authorization")
+	ErrSetCodeInvalidAuthSig  = errors.New("setcode: invalid authorization signature")
+	ErrSetCodeZeroAddress     = errors.New("setcode: authorization targets zero address")
+	ErrSetCodeDuplicateAuth   = errors.New("setcode: duplicate authorization for same address")
+	ErrSetCodeSelfDelegation  = errors.New("setcode: cannot delegate to self")
 )
 
 // AuthorizationHash computes the EIP-7702 authorization signing hash:

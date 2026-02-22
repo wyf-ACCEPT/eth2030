@@ -22,21 +22,21 @@ import (
 // Glamsterdam fork. Each field represents the new gas cost for the
 // corresponding operation.
 type GlamsterdamGasTable struct {
-	SloadCold   uint64 // SLOAD cold access: 2100 -> 800
-	SloadWarm   uint64 // SLOAD warm access: unchanged at 100
-	SstoreSet   uint64 // SSTORE from zero to non-zero: 20000 -> 5000
-	SstoreReset uint64 // SSTORE from non-zero to non-zero: 2900 -> 1500
-	CallCold    uint64 // CALL cold access: 2600 -> 100
-	CallWarm    uint64 // CALL warm access: unchanged at 100
-	BalanceCold uint64 // BALANCE cold access: 2600 -> 400
-	BalanceWarm uint64 // BALANCE warm access: unchanged at 100
-	Create      uint64 // CREATE base cost: 32000 -> 10000
-	ExtCodeSize uint64 // EXTCODESIZE cold: 2600 -> 400
-	ExtCodeCopy uint64 // EXTCODECOPY cold: 2600 -> 400
-	ExtCodeHash uint64 // EXTCODEHASH cold: 2600 -> 400
+	SloadCold    uint64 // SLOAD cold access: 2100 -> 800
+	SloadWarm    uint64 // SLOAD warm access: unchanged at 100
+	SstoreSet    uint64 // SSTORE from zero to non-zero: 20000 -> 5000
+	SstoreReset  uint64 // SSTORE from non-zero to non-zero: 2900 -> 1500
+	CallCold     uint64 // CALL cold access: 2600 -> 100
+	CallWarm     uint64 // CALL warm access: unchanged at 100
+	BalanceCold  uint64 // BALANCE cold access: 2600 -> 400
+	BalanceWarm  uint64 // BALANCE warm access: unchanged at 100
+	Create       uint64 // CREATE base cost: 32000 -> 10000
+	ExtCodeSize  uint64 // EXTCODESIZE cold: 2600 -> 400
+	ExtCodeCopy  uint64 // EXTCODECOPY cold: 2600 -> 400
+	ExtCodeHash  uint64 // EXTCODEHASH cold: 2600 -> 400
 	Selfdestruct uint64 // SELFDESTRUCT: 5000 -> 5000 (unchanged)
-	Log         uint64 // LOG base: 375 -> 375 (unchanged)
-	Keccak256   uint64 // KECCAK256 base: 30 -> 45 (increased, EIP-7904)
+	Log          uint64 // LOG base: 375 -> 375 (unchanged)
+	Keccak256    uint64 // KECCAK256 base: 30 -> 45 (increased, EIP-7904)
 }
 
 // DefaultGlamsterdamGasTable returns the gas table with Glamsterdam repricing
@@ -97,7 +97,7 @@ func ApplyGlamsterdamRepricing(table *GlamsterdamGasTable) *GlamsterdamGasTable 
 // in the Glamsterdam fork. Useful for logging and auditing.
 func GlamsterdamRepricingEntries() []GasTableEntry {
 	return []GasTableEntry{
-		{Opcode: 0x54, OldCost: 2100, NewCost: 800},   // SLOAD cold
+		{Opcode: 0x54, OldCost: 2100, NewCost: 800},    // SLOAD cold
 		{Opcode: 0x55, OldCost: 20000, NewCost: 5000},  // SSTORE set
 		{Opcode: 0xF1, OldCost: 2600, NewCost: 100},    // CALL cold
 		{Opcode: 0x31, OldCost: 2600, NewCost: 400},    // BALANCE cold

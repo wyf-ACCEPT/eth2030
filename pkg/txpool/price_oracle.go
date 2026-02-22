@@ -64,24 +64,24 @@ type BlockFeeRecord struct {
 
 // FeeRecommendation holds fee suggestions for different urgency levels.
 type FeeRecommendation struct {
-	SlowTip    *big.Int // Conservative priority fee (low percentile).
-	MediumTip  *big.Int // Standard priority fee (median).
-	FastTip    *big.Int // Aggressive priority fee (high percentile).
-	SlowFee    *big.Int // Suggested maxFeePerGas for slow.
-	MediumFee  *big.Int // Suggested maxFeePerGas for medium.
-	FastFee    *big.Int // Suggested maxFeePerGas for fast.
-	BaseFee    *big.Int // Latest known base fee.
+	SlowTip     *big.Int // Conservative priority fee (low percentile).
+	MediumTip   *big.Int // Standard priority fee (median).
+	FastTip     *big.Int // Aggressive priority fee (high percentile).
+	SlowFee     *big.Int // Suggested maxFeePerGas for slow.
+	MediumFee   *big.Int // Suggested maxFeePerGas for medium.
+	FastFee     *big.Int // Suggested maxFeePerGas for fast.
+	BaseFee     *big.Int // Latest known base fee.
 	NextBaseFee *big.Int // Estimated next block base fee.
 }
 
 // FeeHistoryEntry holds fee data for a single block in the fee history.
 type FeeHistoryEntry struct {
-	Number      uint64
-	BaseFee     *big.Int
-	GasUsedPct  float64 // Gas used as percentage of gas limit.
-	Reward10th  *big.Int // 10th percentile tip.
-	Reward50th  *big.Int // 50th percentile tip (median).
-	Reward90th  *big.Int // 90th percentile tip.
+	Number     uint64
+	BaseFee    *big.Int
+	GasUsedPct float64  // Gas used as percentage of gas limit.
+	Reward10th *big.Int // 10th percentile tip.
+	Reward50th *big.Int // 50th percentile tip (median).
+	Reward90th *big.Int // 90th percentile tip.
 }
 
 // PriceOracle tracks recent block fees and provides gas price recommendations.

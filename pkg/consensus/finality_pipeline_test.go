@@ -108,7 +108,7 @@ func fpMakeVote(slot uint64, validatorIdx int, blockHash types.Hash) *FPVote {
 		Weight:         100,
 		Pubkey:         pk,
 		Signature:      sig,
-		SigningData:     []byte("finality-vote-digest"),
+		SigningData:    []byte("finality-vote-digest"),
 	}
 }
 
@@ -235,7 +235,7 @@ func TestFPBLSVerificationReject(t *testing.T) {
 		ValidatorIndex: 0,
 		BlockHash:      blockHash,
 		Weight:         100,
-		SigningData:     nil,
+		SigningData:    nil,
 	}
 	_, err := pipeline.SubmitVote(badVote)
 	if !errors.Is(err, ErrFPBLSFailed) {

@@ -12,7 +12,7 @@ func buildTestTrace(t *testing.T) *RVWitnessCollector {
 		EncodeIType(0x13, 1, 0, 0, 7),    // ADDI x1, x0, 7
 		EncodeIType(0x13, 2, 0, 0, 6),    // ADDI x2, x0, 6
 		EncodeRType(0x33, 3, 0, 1, 2, 1), // MUL x3, x1, x2 (funct7=1)
-		0x00000073,                         // ECALL (halt)
+		0x00000073,                       // ECALL (halt)
 	}
 	code := make([]byte, len(instrs)*4)
 	for i, instr := range instrs {
@@ -299,10 +299,10 @@ func TestProofBackend_EndToEnd(t *testing.T) {
 		EncodeIType(0x13, 1, 0, 0, 100),  // x1 = 100
 		EncodeIType(0x13, 2, 0, 0, 200),  // x2 = 200
 		EncodeRType(0x33, 3, 0, 1, 2, 0), // ADD x3 = x1+x2 = 300
-		EncodeUType(0x37, 4, 0x00001000),  // LUI x4, 0x1000
+		EncodeUType(0x37, 4, 0x00001000), // LUI x4, 0x1000
 		EncodeSType(0x23, 2, 4, 3, 0),    // SW x3, 0(x4)
 		EncodeIType(0x03, 5, 2, 4, 0),    // LW x5, 0(x4)
-		0x00000073,                         // ECALL halt
+		0x00000073,                       // ECALL halt
 	}
 	code := make([]byte, len(instrs)*4)
 	for i, instr := range instrs {

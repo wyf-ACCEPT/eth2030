@@ -27,27 +27,27 @@ const (
 
 // Gas costs per zxVM opcode.
 const (
-	zxGasArith  uint64 = 1
-	zxGasLoad   uint64 = 3
-	zxGasStore  uint64 = 3
-	zxGasJump   uint64 = 2
-	zxGasHalt   uint64 = 0
-	zxGasHash   uint64 = 10
-	zxGasPush   uint64 = 1
+	zxGasArith uint64 = 1
+	zxGasLoad  uint64 = 3
+	zxGasStore uint64 = 3
+	zxGasJump  uint64 = 2
+	zxGasHalt  uint64 = 0
+	zxGasHash  uint64 = 10
+	zxGasPush  uint64 = 1
 )
 
 // zxVM errors.
 var (
-	ErrZxEmptyCode       = errors.New("zxvm: empty program code")
-	ErrZxCycleLimitHit   = errors.New("zxvm: cycle limit exceeded")
-	ErrZxMemoryOverflow  = errors.New("zxvm: memory address out of bounds")
-	ErrZxStackUnderflow  = errors.New("zxvm: stack underflow")
-	ErrZxStackOverflow   = errors.New("zxvm: stack overflow")
-	ErrZxInvalidOpcode   = errors.New("zxvm: invalid opcode")
-	ErrZxOutOfGas        = errors.New("zxvm: out of gas")
+	ErrZxEmptyCode        = errors.New("zxvm: empty program code")
+	ErrZxCycleLimitHit    = errors.New("zxvm: cycle limit exceeded")
+	ErrZxMemoryOverflow   = errors.New("zxvm: memory address out of bounds")
+	ErrZxStackUnderflow   = errors.New("zxvm: stack underflow")
+	ErrZxStackOverflow    = errors.New("zxvm: stack overflow")
+	ErrZxInvalidOpcode    = errors.New("zxvm: invalid opcode")
+	ErrZxOutOfGas         = errors.New("zxvm: out of gas")
 	ErrZxProgramNotLoaded = errors.New("zxvm: no program loaded")
-	ErrZxInvalidJump     = errors.New("zxvm: jump target out of bounds")
-	ErrZxTruncatedPush   = errors.New("zxvm: truncated PUSH immediate")
+	ErrZxInvalidJump      = errors.New("zxvm: jump target out of bounds")
+	ErrZxTruncatedPush    = errors.New("zxvm: truncated PUSH immediate")
 )
 
 // ZxVMConfig holds configuration for a zxVM instance.

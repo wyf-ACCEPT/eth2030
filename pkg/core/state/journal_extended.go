@@ -114,8 +114,8 @@ func (ej *ExtendedJournal) EstimatedSize() int64 {
 }
 
 // Metrics returns a snapshot of the journal metrics.
-func (ej *ExtendedJournal) Metrics() JournalMetrics {
-	var m JournalMetrics
+func (ej *ExtendedJournal) Metrics() *JournalMetrics {
+	m := new(JournalMetrics)
 	m.TotalEntries.Store(ej.metrics.TotalEntries.Load())
 	m.TotalReverts.Store(ej.metrics.TotalReverts.Load())
 	m.TotalSnapshots.Store(ej.metrics.TotalSnapshots.Load())
@@ -136,12 +136,12 @@ func (ej *ExtendedJournal) Reset() {
 // code, and all dirty storage slots. This is used when an account
 // is self-destructed and needs to be fully restored on revert.
 type accountDestructChange struct {
-	addr           types.Address
-	prevAccount    types.Account
-	prevCode       []byte
-	prevCodeHash   []byte
-	prevStorage    map[types.Hash]types.Hash // snapshot of dirty storage
-	wasDestructed  bool
+	addr          types.Address
+	prevAccount   types.Account
+	prevCode      []byte
+	prevCodeHash  []byte
+	prevStorage   map[types.Hash]types.Hash // snapshot of dirty storage
+	wasDestructed bool
 }
 
 func (ch accountDestructChange) revert(s *MemoryStateDB) {
@@ -290,8 +290,8 @@ func estimateEntrySize(entry journalEntry) int64 {
 // estimateStateObjectSize estimates memory for a stateObject.
 func estimateStateObjectSize(obj *stateObject) int64 {
 	var size int64
-	size += 40 // account balance big.Int
-	size += 8  // nonce
+	size += 40                      // account balance big.Int
+	size += 8                       // nonce
 	size += int64(types.HashLength) // root
 	size += int64(len(obj.account.CodeHash))
 	size += int64(len(obj.code))

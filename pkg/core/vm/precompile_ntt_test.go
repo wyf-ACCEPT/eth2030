@@ -101,14 +101,14 @@ func TestNTTPrecompileGasCost(t *testing.T) {
 	p := &nttPrecompile{}
 
 	tests := []struct {
-		name     string
-		nElems   int
-		wantGas  uint64
+		name    string
+		nElems  int
+		wantGas uint64
 	}{
-		{"4 elements", 4, NTTBaseCost + 4*2*NTTPerElementCost},           // log2(4) = 2
-		{"8 elements", 8, NTTBaseCost + 8*3*NTTPerElementCost},           // log2(8) = 3
-		{"16 elements", 16, NTTBaseCost + 16*4*NTTPerElementCost},        // log2(16) = 4
-		{"1 element", 1, NTTBaseCost + 1*1*NTTPerElementCost},            // log2(1) = 0 -> clamped to 1
+		{"4 elements", 4, NTTBaseCost + 4*2*NTTPerElementCost},    // log2(4) = 2
+		{"8 elements", 8, NTTBaseCost + 8*3*NTTPerElementCost},    // log2(8) = 3
+		{"16 elements", 16, NTTBaseCost + 16*4*NTTPerElementCost}, // log2(16) = 4
+		{"1 element", 1, NTTBaseCost + 1*1*NTTPerElementCost},     // log2(1) = 0 -> clamped to 1
 	}
 
 	for _, tt := range tests {

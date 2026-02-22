@@ -30,8 +30,8 @@ const CMMaxEffectiveBalance = 2048 * GweiPerETH
 
 // ConsolidationReq represents a queued consolidation request.
 type ConsolidationReq struct {
-	SourceIndex uint64
-	TargetIndex uint64
+	SourceIndex  uint64
+	TargetIndex  uint64
 	SourcePubkey [48]byte
 	TargetPubkey [48]byte
 	RequestEpoch Epoch

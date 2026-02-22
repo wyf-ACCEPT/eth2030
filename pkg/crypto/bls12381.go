@@ -121,7 +121,7 @@ func decodeFp2(data []byte) (*blsFp2, error) {
 // encodeFp2 writes an Fp2 element as 128 bytes (imaginary part first, then real).
 func encodeFp2(e *blsFp2) []byte {
 	out := make([]byte, 2*blsFpEncSize)
-	copy(out[:blsFpEncSize], encodeFp(e.c1))           // imaginary
+	copy(out[:blsFpEncSize], encodeFp(e.c1))               // imaginary
 	copy(out[blsFpEncSize:2*blsFpEncSize], encodeFp(e.c0)) // real
 	return out
 }
@@ -298,7 +298,8 @@ func BLS12G2MSM(input []byte) ([]byte, error) {
 // Output: 32 bytes, 1 if product of pairings is identity, 0 otherwise.
 //
 // For BLS12-381, the pairing check verifies:
-//   product(e(G1_i, G2_i)) == 1 in GT
+//
+//	product(e(G1_i, G2_i)) == 1 in GT
 //
 // Note: A full pairing implementation requires Fp12 tower arithmetic and the
 // optimal ate pairing algorithm. For correctness without the full pairing,

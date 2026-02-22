@@ -285,8 +285,8 @@ func TestRecoverMatrixSufficientEntries(t *testing.T) {
 func TestCellFieldElementsRoundtrip(t *testing.T) {
 	var cell Cell
 	// Set some bytes in the cell.
-	cell[31] = 42  // last byte of first field element
-	cell[63] = 99  // last byte of second field element
+	cell[31] = 42 // last byte of first field element
+	cell[63] = 99 // last byte of second field element
 
 	elems := cellToFieldElements(&cell)
 	if len(elems) != FieldElementsPerCell {

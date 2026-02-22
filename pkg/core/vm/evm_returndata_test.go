@@ -172,9 +172,9 @@ func TestOpReturnDataCopy(t *testing.T) {
 	st := NewStack()
 
 	// Stack: [destOffset=0, offset=1, size=2]
-	st.Push(big.NewInt(2))  // size
-	st.Push(big.NewInt(1))  // offset
-	st.Push(big.NewInt(0))  // destOffset
+	st.Push(big.NewInt(2)) // size
+	st.Push(big.NewInt(1)) // offset
+	st.Push(big.NewInt(0)) // destOffset
 
 	if err := OpReturnDataCopy(rdm, st, mem); err != nil {
 		t.Fatalf("OpReturnDataCopy failed: %v", err)

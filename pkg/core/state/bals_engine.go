@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	ErrEmptyAccessLists = errors.New("bals: empty access lists")
-	ErrNilTransaction   = errors.New("bals: nil transaction")
-	ErrCyclicGraph      = errors.New("bals: dependency graph contains a cycle")
+	ErrEmptyAccessLists    = errors.New("bals: empty access lists")
+	ErrNilTransaction      = errors.New("bals: nil transaction")
+	ErrCyclicGraph         = errors.New("bals: dependency graph contains a cycle")
 	ErrBALSIndexOutOfRange = errors.New("bals: transaction index out of range")
 )
 
@@ -50,16 +50,16 @@ type DependencyGraph map[int][]int
 
 // ExecutionResult holds the outcome of parallel transaction execution.
 type ExecutionResult struct {
-	TxIndex   int
-	GasUsed   uint64
-	Success   bool
+	TxIndex    int
+	GasUsed    uint64
+	Success    bool
 	OutputData []byte
 }
 
 // BALSEngine manages parallel transaction execution using block access lists.
 type BALSEngine struct {
-	mu           sync.RWMutex
-	maxParallel  int
+	mu          sync.RWMutex
+	maxParallel int
 }
 
 // NewBALSEngine creates a new BALS execution engine.

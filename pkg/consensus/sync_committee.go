@@ -50,7 +50,7 @@ var (
 // SyncCommittee represents a sync committee with member pubkeys and an
 // aggregate public key, per the Altair SyncCommittee container.
 type SyncCommittee struct {
-	Pubkeys      [SyncCommitteeSize]types.Hash
+	Pubkeys         [SyncCommitteeSize]types.Hash
 	AggregatePubkey types.Hash
 }
 
@@ -92,8 +92,8 @@ type SyncCommitteeManager struct {
 	currentIndices [SyncCommitteeSize]ValidatorIndex
 
 	// Participation tracking for the current period.
-	totalBitsSet   uint64 // total participation bits across all processed aggregates
-	totalBitSlots  uint64 // total bit-slots (aggregates * committee size)
+	totalBitsSet  uint64 // total participation bits across all processed aggregates
+	totalBitSlots uint64 // total bit-slots (aggregates * committee size)
 
 	// Reward tracking: accumulated rewards per validator index.
 	rewards map[ValidatorIndex]uint64

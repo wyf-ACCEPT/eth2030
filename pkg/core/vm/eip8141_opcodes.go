@@ -47,17 +47,17 @@ type FrameContext struct {
 	PayerApproved  bool
 
 	// Transaction parameters exposed via TXPARAM* opcodes.
-	TxType             uint64
-	Nonce              uint64
-	Sender             types.Address
-	MaxPriorityFee     *big.Int
-	MaxFee             *big.Int
-	MaxBlobFee         *big.Int
-	MaxCost            *big.Int
-	BlobCount          uint64
-	SigHash            types.Hash
-	Frames             []Frame
-	CurrentFrameIndex  uint64
+	TxType            uint64
+	Nonce             uint64
+	Sender            types.Address
+	MaxPriorityFee    *big.Int
+	MaxFee            *big.Int
+	MaxBlobFee        *big.Int
+	MaxCost           *big.Int
+	BlobCount         uint64
+	SigHash           types.Hash
+	Frames            []Frame
+	CurrentFrameIndex uint64
 }
 
 // opApprove implements the APPROVE opcode (0xaa) per EIP-8141.

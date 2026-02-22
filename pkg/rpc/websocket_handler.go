@@ -339,10 +339,10 @@ func ValidatePong(data []byte) bool {
 
 // WSConnectionInfo provides diagnostic information about a WebSocket connection.
 type WSConnectionInfo struct {
-	ID              uint64 `json:"id"`
-	Subscriptions   int    `json:"subscriptions"`
-	RateRemaining   int    `json:"rateRemaining"`
-	ConnectedSince  int64  `json:"connectedSince"`
+	ID             uint64 `json:"id"`
+	Subscriptions  int    `json:"subscriptions"`
+	RateRemaining  int    `json:"rateRemaining"`
+	ConnectedSince int64  `json:"connectedSince"`
 }
 
 // Info returns diagnostic information about this connection.

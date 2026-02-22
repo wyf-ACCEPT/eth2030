@@ -19,12 +19,12 @@ const (
 	RCV2BaseRewardFactor uint64 = 64
 
 	// Altair reward weight constants (sum to 64).
-	RCV2SourceWeight    uint64 = 14
-	RCV2TargetWeight    uint64 = 26
-	RCV2HeadWeight      uint64 = 14
-	RCV2SyncWeight      uint64 = 2
-	RCV2ProposerWeight  uint64 = 8
-	RCV2WeightDenom     uint64 = 64
+	RCV2SourceWeight   uint64 = 14
+	RCV2TargetWeight   uint64 = 26
+	RCV2HeadWeight     uint64 = 14
+	RCV2SyncWeight     uint64 = 2
+	RCV2ProposerWeight uint64 = 8
+	RCV2WeightDenom    uint64 = 64
 
 	// RCV2SyncCommitteeSize is the sync committee size.
 	RCV2SyncCommitteeSize uint64 = 512
@@ -44,21 +44,21 @@ const (
 
 // Reward calculator v2 errors.
 var (
-	ErrRCV2NilInput       = errors.New("reward_calc_v2: nil input")
-	ErrRCV2NoValidators   = errors.New("reward_calc_v2: no validators")
-	ErrRCV2LenMismatch    = errors.New("reward_calc_v2: length mismatch")
-	ErrRCV2ZeroBalance    = errors.New("reward_calc_v2: zero total active balance")
-	ErrRCV2InvalidIndex   = errors.New("reward_calc_v2: validator index out of range")
+	ErrRCV2NilInput     = errors.New("reward_calc_v2: nil input")
+	ErrRCV2NoValidators = errors.New("reward_calc_v2: no validators")
+	ErrRCV2LenMismatch  = errors.New("reward_calc_v2: length mismatch")
+	ErrRCV2ZeroBalance  = errors.New("reward_calc_v2: zero total active balance")
+	ErrRCV2InvalidIndex = errors.New("reward_calc_v2: validator index out of range")
 )
 
 // RewardInputV2 holds the inputs needed for v2 reward computation.
 type RewardInputV2 struct {
-	Validators       []*ValidatorV2
-	Balances         []uint64
-	InactivityScores []uint64 // per-validator inactivity scores
-	CurrentEpoch     Epoch
-	FinalizedEpoch   Epoch
-	SlotsPerEpoch    uint64
+	Validators        []*ValidatorV2
+	Balances          []uint64
+	InactivityScores  []uint64 // per-validator inactivity scores
+	CurrentEpoch      Epoch
+	FinalizedEpoch    Epoch
+	SlotsPerEpoch     uint64
 	SyncCommitteeSize uint64
 
 	// Participation flags for the previous epoch.

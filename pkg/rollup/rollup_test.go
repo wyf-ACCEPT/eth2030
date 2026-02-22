@@ -164,10 +164,10 @@ func TestExecutePrecompileBlockTooLarge(t *testing.T) {
 
 	// Build input claiming blockDataLen > MaxBlockDataSize.
 	input := make([]byte, minInputLen)
-	binary.BigEndian.PutUint64(input[0:8], 1)                        // chainID
+	binary.BigEndian.PutUint64(input[0:8], 1)                            // chainID
 	binary.BigEndian.PutUint32(input[40:44], uint32(MaxBlockDataSize+1)) // blockDataLen
-	binary.BigEndian.PutUint32(input[44:48], 0)                      // witnessLen
-	binary.BigEndian.PutUint32(input[48:52], 0)                      // anchorLen
+	binary.BigEndian.PutUint32(input[44:48], 0)                          // witnessLen
+	binary.BigEndian.PutUint32(input[48:52], 0)                          // anchorLen
 
 	// Append the oversized data.
 	data := make([]byte, MaxBlockDataSize+1)

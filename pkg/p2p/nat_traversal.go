@@ -490,8 +490,8 @@ func (nt *NATTrav) tryPMPDetect(timeout time.Duration) NATTravDevice {
 
 type natTravUPnP struct{ gateway net.IP }
 
-func (d *natTravUPnP) DeviceType() NATTravType        { return NATTravUPnP }
-func (d *natTravUPnP) GetExternalIP() (net.IP, error)  {
+func (d *natTravUPnP) DeviceType() NATTravType { return NATTravUPnP }
+func (d *natTravUPnP) GetExternalIP() (net.IP, error) {
 	if d.gateway == nil {
 		return nil, errors.New("upnp: no gateway")
 	}

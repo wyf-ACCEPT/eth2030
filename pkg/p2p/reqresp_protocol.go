@@ -160,7 +160,7 @@ func DefaultProtocolConfig() ProtocolConfig {
 		DefaultTimeout: 10 * time.Second,
 		MethodTimeouts: map[MethodID]time.Duration{
 			StatusV1:              5 * time.Second,
-			GoodbyeV1:            3 * time.Second,
+			GoodbyeV1:             3 * time.Second,
 			BeaconBlocksByRangeV2: 30 * time.Second,
 			BeaconBlocksByRootV2:  15 * time.Second,
 			BlobSidecarsByRangeV1: 30 * time.Second,
@@ -173,13 +173,13 @@ func DefaultProtocolConfig() ProtocolConfig {
 
 // Errors for ReqRespProtocol.
 var (
-	ErrProtocolClosed       = errors.New("reqresp_protocol: protocol closed")
-	ErrProtocolNoHandler    = errors.New("reqresp_protocol: no handler registered")
-	ErrProtocolTimeout      = errors.New("reqresp_protocol: request timeout")
-	ErrProtocolRateLimited  = errors.New("reqresp_protocol: rate limited")
-	ErrProtocolConcurrency  = errors.New("reqresp_protocol: max concurrent requests exceeded")
-	ErrProtocolNilPayload   = errors.New("reqresp_protocol: nil response payload")
-	ErrProtocolInvalidResp  = errors.New("reqresp_protocol: invalid response")
+	ErrProtocolClosed      = errors.New("reqresp_protocol: protocol closed")
+	ErrProtocolNoHandler   = errors.New("reqresp_protocol: no handler registered")
+	ErrProtocolTimeout     = errors.New("reqresp_protocol: request timeout")
+	ErrProtocolRateLimited = errors.New("reqresp_protocol: rate limited")
+	ErrProtocolConcurrency = errors.New("reqresp_protocol: max concurrent requests exceeded")
+	ErrProtocolNilPayload  = errors.New("reqresp_protocol: nil response payload")
+	ErrProtocolInvalidResp = errors.New("reqresp_protocol: invalid response")
 )
 
 // rateLimitEntry tracks request timestamps for rate limiting.

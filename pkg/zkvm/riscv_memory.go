@@ -28,11 +28,11 @@ const (
 
 // Memory errors.
 var (
-	ErrRVMemPageLimit    = errors.New("riscv: page allocation limit exceeded")
-	ErrRVMemUnaligned    = errors.New("riscv: unaligned memory access")
-	ErrRVMemMMIOWrite    = errors.New("riscv: write to read-only MMIO region")
-	ErrRVMemSegOverlap   = errors.New("riscv: segment load would overflow")
-	ErrRVMemSegEmpty     = errors.New("riscv: empty segment data")
+	ErrRVMemPageLimit  = errors.New("riscv: page allocation limit exceeded")
+	ErrRVMemUnaligned  = errors.New("riscv: unaligned memory access")
+	ErrRVMemMMIOWrite  = errors.New("riscv: write to read-only MMIO region")
+	ErrRVMemSegOverlap = errors.New("riscv: segment load would overflow")
+	ErrRVMemSegEmpty   = errors.New("riscv: empty segment data")
 )
 
 // RVMemory implements sparse page-based memory for RV32IM.
@@ -83,8 +83,8 @@ func pageOffset(addr uint32) uint32 {
 	return addr & (RVPageSize - 1)
 }
 
-// ReadByte reads a single byte from memory.
-func (m *RVMemory) ReadByte(addr uint32) (byte, error) {
+// ReadByteAt reads a single byte from memory at the given address.
+func (m *RVMemory) ReadByteAt(addr uint32) (byte, error) {
 	if isMMIO(addr) && m.mmioRead != nil {
 		return byte(m.mmioRead(addr)), nil
 	}
@@ -95,8 +95,8 @@ func (m *RVMemory) ReadByte(addr uint32) (byte, error) {
 	return page[pageOffset(addr)], nil
 }
 
-// WriteByte writes a single byte to memory.
-func (m *RVMemory) WriteByte(addr uint32, val byte) error {
+// WriteByteAt writes a single byte to memory at the given address.
+func (m *RVMemory) WriteByteAt(addr uint32, val byte) error {
 	if isMMIO(addr) {
 		if m.mmioWrite != nil {
 			m.mmioWrite(addr, uint32(val))
@@ -117,11 +117,11 @@ func (m *RVMemory) ReadHalfword(addr uint32) (uint16, error) {
 	if isMMIO(addr) && m.mmioRead != nil {
 		return uint16(m.mmioRead(addr)), nil
 	}
-	b0, err := m.ReadByte(addr)
+	b0, err := m.ReadByteAt(addr)
 	if err != nil {
 		return 0, err
 	}
-	b1, err := m.ReadByte(addr + 1)
+	b1, err := m.ReadByteAt(addr + 1)
 	if err != nil {
 		return 0, err
 	}
@@ -137,10 +137,10 @@ func (m *RVMemory) WriteHalfword(addr uint32, val uint16) error {
 		}
 		return nil
 	}
-	if err := m.WriteByte(addr, byte(val)); err != nil {
+	if err := m.WriteByteAt(addr, byte(val)); err != nil {
 		return err
 	}
-	return m.WriteByte(addr+1, byte(val>>8))
+	return m.WriteByteAt(addr+1, byte(val>>8))
 }
 
 // ReadWord reads a 32-bit little-endian value from memory.
@@ -160,7 +160,7 @@ func (m *RVMemory) ReadWord(addr uint32) (uint32, error) {
 	// Cross-page read: byte-by-byte.
 	var buf [4]byte
 	for i := uint32(0); i < 4; i++ {
-		b, err := m.ReadByte(addr + i)
+		b, err := m.ReadByteAt(addr + i)
 		if err != nil {
 			return 0, err
 		}
@@ -192,7 +192,7 @@ func (m *RVMemory) WriteWord(addr uint32, val uint32) error {
 	var buf [4]byte
 	binary.LittleEndian.PutUint32(buf[:], val)
 	for i := uint32(0); i < 4; i++ {
-		if err := m.WriteByte(addr+i, buf[i]); err != nil {
+		if err := m.WriteByteAt(addr+i, buf[i]); err != nil {
 			return err
 		}
 	}
@@ -211,7 +211,7 @@ func (m *RVMemory) LoadSegment(base uint32, data []byte) error {
 		return ErrRVMemSegOverlap
 	}
 	for i, b := range data {
-		if err := m.WriteByte(base+uint32(i), b); err != nil {
+		if err := m.WriteByteAt(base+uint32(i), b); err != nil {
 			return err
 		}
 	}

@@ -1,4 +1,4 @@
-// native_rollup.go implements native rollup support for the eth2030 client.
+// native_rollup.go implements native rollup support for the ETH2030 client.
 // This aligns with the EL EVM roadmap: native rollups, providing a registry
 // for managing registered native rollups, batch submission, state transition
 // verification, and L1<->L2 deposit/withdrawal processing.

@@ -155,11 +155,11 @@ func TestCalcLogGas(t *testing.T) {
 	calc := NewDefaultGasCalculator()
 
 	tests := []struct {
-		name       string
-		topics     int
-		dataSize   uint64
-		wantGas    uint64
-		wantErr    bool
+		name     string
+		topics   int
+		dataSize uint64
+		wantGas  uint64
+		wantErr  bool
 	}{
 		{"LOG0 no data", 0, 0, 375, false},
 		{"LOG0 with data", 0, 100, 1175, false},

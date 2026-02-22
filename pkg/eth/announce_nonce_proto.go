@@ -43,7 +43,7 @@ type announcementEntry struct {
 
 // AnnounceStats holds statistics about the announcement pool.
 type AnnounceStats struct {
-	TotalAddresses    int
+	TotalAddresses     int
 	TotalAnnouncements int
 	OldestAnnouncement time.Time
 	NewestAnnouncement time.Time

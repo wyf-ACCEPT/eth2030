@@ -208,8 +208,8 @@ func TestPeerScorer_TopPeersMoreThanAvailable(t *testing.T) {
 func TestPeerScorer_Prune(t *testing.T) {
 	ps := defaultScorer()
 
-	ps.RecordEvent("good", ScoreValidBlock) // 105
-	ps.RecordEvent("ok", ScoreValidTx)      // 101
+	ps.RecordEvent("good", ScoreValidBlock)  // 105
+	ps.RecordEvent("ok", ScoreValidTx)       // 101
 	ps.RecordEvent("bad", ScoreInvalidBlock) // 80
 
 	pruned := ps.PruneLowScoring(90.0)

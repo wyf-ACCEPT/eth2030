@@ -277,7 +277,7 @@ func (dt *DepositTracker) Track(msg *DepositMessage) (types.Hash, error) {
 	// Store a copy.
 	stored := &DepositMessage{
 		From: msg.From, To: msg.To,
-		Amount: new(big.Int).Set(msg.Amount),
+		Amount:  new(big.Int).Set(msg.Amount),
 		L1Block: msg.L1Block, Nonce: msg.Nonce,
 	}
 	dt.deposits[msgHash] = stored

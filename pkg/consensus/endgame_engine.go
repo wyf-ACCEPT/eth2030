@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrDuplicateVote   = errors.New("endgame: duplicate vote from validator")
-	ErrInvalidSlot     = errors.New("endgame: vote slot too old or too far ahead")
-	ErrZeroWeight      = errors.New("endgame: vote weight must be > 0")
+	ErrDuplicateVote    = errors.New("endgame: duplicate vote from validator")
+	ErrInvalidSlot      = errors.New("endgame: vote slot too old or too far ahead")
+	ErrZeroWeight       = errors.New("endgame: vote weight must be > 0")
 	ErrUnknownValidator = errors.New("endgame: unknown validator index")
 )
 
@@ -59,12 +59,12 @@ type EndgameVote struct {
 
 // EndgameResult is the outcome of a finality check for a given slot.
 type EndgameResult struct {
-	Slot            uint64
-	IsFinalized     bool
-	FinalizedHash   types.Hash
-	TotalWeight     uint64
-	Threshold       uint64
-	TimeToFinality  uint64 // ms from first vote to finalization, 0 if not finalized
+	Slot           uint64
+	IsFinalized    bool
+	FinalizedHash  types.Hash
+	TotalWeight    uint64
+	Threshold      uint64
+	TimeToFinality uint64 // ms from first vote to finalization, 0 if not finalized
 }
 
 // OptimisticResult is the outcome of an optimistic confirmation check.
@@ -95,13 +95,13 @@ func newSlotState() *slotState {
 // EndgameEngine is the core engine for sub-second endgame finality.
 // It is fully thread-safe.
 type EndgameEngine struct {
-	mu             sync.RWMutex
-	config         EndgameEngineConfig
-	slots          map[uint64]*slotState
+	mu               sync.RWMutex
+	config           EndgameEngineConfig
+	slots            map[uint64]*slotState
 	validatorWeights map[uint64]uint64 // validator index -> weight
-	totalWeight    uint64              // sum of all validator weights
-	finalizedChain []types.Hash       // ordered list of finalized block hashes
-	latestFinalized uint64            // highest finalized slot
+	totalWeight      uint64            // sum of all validator weights
+	finalizedChain   []types.Hash      // ordered list of finalized block hashes
+	latestFinalized  uint64            // highest finalized slot
 }
 
 // NewEndgameEngine creates a new endgame finality engine.

@@ -127,20 +127,20 @@ type SlotSamplingStatus struct {
 
 // columnState tracks the sampling state of a single column within a slot.
 type columnState struct {
-	column    uint64
-	peer      string
-	success   bool
-	failed    bool
-	retries   int
-	latency   time.Duration
+	column     uint64
+	peer       string
+	success    bool
+	failed     bool
+	retries    int
+	latency    time.Duration
 	triedPeers map[string]bool
 }
 
 // slotState tracks the sampling state of an entire slot.
 type slotState struct {
-	slot       uint64
-	columns    map[uint64]*columnState
-	createdAt  time.Time
+	slot      uint64
+	columns   map[uint64]*columnState
+	createdAt time.Time
 }
 
 // PeerSamplingScheduler orchestrates DAS sampling by selecting optimal peers

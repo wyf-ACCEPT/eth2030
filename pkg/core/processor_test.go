@@ -383,7 +383,7 @@ func TestContractCreation(t *testing.T) {
 		0x52,       // MSTORE (stores 0x42 at memory[0:32])
 		0x60, 0x01, // PUSH1 0x01 (return size = 1 byte)
 		0x60, 0x1f, // PUSH1 0x1f (return offset = 31, to get last byte of the word)
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 	tx := types.NewTransaction(&types.LegacyTx{
 		Nonce:    0,
@@ -436,7 +436,7 @@ func TestContractCall(t *testing.T) {
 		0x52,       // MSTORE
 		0x60, 0x20, // PUSH1 0x20 (32 bytes)
 		0x60, 0x00, // PUSH1 0x00
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 	statedb.CreateAccount(contractAddr)
 	statedb.SetCode(contractAddr, contractCode)

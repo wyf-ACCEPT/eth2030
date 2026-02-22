@@ -44,13 +44,13 @@ type StateRootProof struct {
 
 // ValidatorBalanceProof is the output of the balance proof circuit.
 type ValidatorBalanceProof struct {
-	ValidatorIndex uint64
-	Balance        uint64
+	ValidatorIndex   uint64
+	Balance          uint64
 	EffectiveBalance uint64
-	StateRoot      types.Hash
-	BalanceRoot    types.Hash
-	MerkleBranch   []types.Hash
-	Timestamp      time.Time
+	StateRoot        types.Hash
+	BalanceRoot      types.Hash
+	MerkleBranch     []types.Hash
+	Timestamp        time.Time
 }
 
 // AttestationValidityProof is the output of the attestation circuit.

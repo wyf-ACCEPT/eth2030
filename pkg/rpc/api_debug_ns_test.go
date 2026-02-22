@@ -248,7 +248,7 @@ func TestDebugNS_ChaindbProperty(t *testing.T) {
 	}{
 		{"leveldb.stats", "Compactions"},
 		{"leveldb.iostats", "Read(MB)"},
-		{"version", "eth2030"},
+		{"version", "ETH2030"},
 	}
 
 	for _, tt := range tests {

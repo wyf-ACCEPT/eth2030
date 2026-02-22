@@ -12,11 +12,11 @@ import (
 
 // Errors returned by RequestManager operations.
 var (
-	ErrReqMgrClosed      = errors.New("p2p: request manager closed")
-	ErrReqMgrMaxPending  = errors.New("p2p: max pending requests reached")
-	ErrReqMgrNotFound    = errors.New("p2p: request not found")
-	ErrReqMgrMaxRetries  = errors.New("p2p: max retries exceeded")
-	ErrReqMgrDupRequest  = errors.New("p2p: duplicate request ID")
+	ErrReqMgrClosed     = errors.New("p2p: request manager closed")
+	ErrReqMgrMaxPending = errors.New("p2p: max pending requests reached")
+	ErrReqMgrNotFound   = errors.New("p2p: request not found")
+	ErrReqMgrMaxRetries = errors.New("p2p: max retries exceeded")
+	ErrReqMgrDupRequest = errors.New("p2p: duplicate request ID")
 )
 
 // RequestManagerConfig configures the RequestManager.

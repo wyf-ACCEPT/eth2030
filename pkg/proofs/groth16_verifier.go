@@ -68,8 +68,8 @@ type BLSGroth16Backend interface {
 }
 
 var (
-	groth16BackendMu     sync.RWMutex
-	activeGroth16Backend BLSGroth16Backend
+	groth16BackendMu      sync.RWMutex
+	activeGroth16Backend  BLSGroth16Backend
 	defaultGroth16Backend = &PureGoGroth16Backend{}
 )
 
@@ -357,7 +357,13 @@ func g16PutG2(dst []byte, p *crypto.BlsG2Point) {
 		yc0.Mod(yc0, blsP381)
 		yc1.Mod(yc1, blsP381)
 	}
-	w64 := func(d []byte, v *big.Int) { for i := range d { d[i] = 0 }; b := v.Bytes(); copy(d[64-len(b):], b) }
+	w64 := func(d []byte, v *big.Int) {
+		for i := range d {
+			d[i] = 0
+		}
+		b := v.Bytes()
+		copy(d[64-len(b):], b)
+	}
 	w64(dst[0:64], xc1)
 	w64(dst[64:128], xc0)
 	w64(dst[128:192], yc1)

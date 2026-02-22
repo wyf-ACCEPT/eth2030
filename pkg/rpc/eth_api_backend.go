@@ -43,13 +43,13 @@ type LogFilterParams struct {
 
 // GasEstimateArgs holds arguments for gas estimation.
 type GasEstimateArgs struct {
-	From     types.Address
-	To       *types.Address
-	Gas      uint64
-	Value    *big.Int
-	Data     []byte
-	GasTip   *big.Int // EIP-1559 max priority fee
-	GasCap   *big.Int // EIP-1559 max fee per gas
+	From   types.Address
+	To     *types.Address
+	Gas    uint64
+	Value  *big.Int
+	Data   []byte
+	GasTip *big.Int // EIP-1559 max priority fee
+	GasCap *big.Int // EIP-1559 max fee per gas
 }
 
 // PendingTxInfo holds pending transaction information.

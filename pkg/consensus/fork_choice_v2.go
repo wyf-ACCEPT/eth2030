@@ -30,14 +30,14 @@ const invalidIndex = ^uint64(0)
 // block and stores its ancestry, checkpoint epochs, accumulated weight, and
 // best-descendant pointers for O(1) head lookup after weight propagation.
 type ProtoNode struct {
-	Slot            uint64
-	Root            types.Hash
-	Parent          uint64 // index in ProtoArray.nodes, or invalidIndex
-	JustifiedEpoch  Epoch
-	FinalizedEpoch  Epoch
-	Weight          uint64 // direct attestation weight on this node
-	BestChild       uint64 // index of the best child, or invalidIndex
-	BestDescendant  uint64 // index of the best leaf descendant, or invalidIndex
+	Slot           uint64
+	Root           types.Hash
+	Parent         uint64 // index in ProtoArray.nodes, or invalidIndex
+	JustifiedEpoch Epoch
+	FinalizedEpoch Epoch
+	Weight         uint64 // direct attestation weight on this node
+	BestChild      uint64 // index of the best child, or invalidIndex
+	BestDescendant uint64 // index of the best leaf descendant, or invalidIndex
 }
 
 // ProtoArray is the backing store for the proto-array fork choice.
@@ -76,7 +76,7 @@ type ForkChoiceV2 struct {
 
 // fcVote tracks a validator's latest fork choice vote.
 type fcVote struct {
-	currentRoot types.Hash
+	currentRoot  types.Hash
 	currentEpoch Epoch
 	nextRoot     types.Hash
 	nextEpoch    Epoch

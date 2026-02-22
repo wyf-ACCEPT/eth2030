@@ -23,11 +23,11 @@ import (
 
 // SampleReconstructor errors.
 var (
-	ErrReconstructorClosed    = errors.New("das/reconstruct: reconstructor is closed")
-	ErrBlobAlreadyComplete    = errors.New("das/reconstruct: blob already reconstructed")
-	ErrInvalidSamplePayload   = errors.New("das/reconstruct: invalid sample data size")
-	ErrCannotReconstruct      = errors.New("das/reconstruct: insufficient samples for reconstruction")
-	ErrErasureRecoveryFailed  = errors.New("das/reconstruct: erasure recovery failed")
+	ErrReconstructorClosed   = errors.New("das/reconstruct: reconstructor is closed")
+	ErrBlobAlreadyComplete   = errors.New("das/reconstruct: blob already reconstructed")
+	ErrInvalidSamplePayload  = errors.New("das/reconstruct: invalid sample data size")
+	ErrCannotReconstruct     = errors.New("das/reconstruct: insufficient samples for reconstruction")
+	ErrErasureRecoveryFailed = errors.New("das/reconstruct: erasure recovery failed")
 )
 
 // SampleReconstructorConfig configures the sample reconstructor.
@@ -50,7 +50,7 @@ type SampleReconstructorConfig struct {
 func DefaultSampleReconstructorConfig() SampleReconstructorConfig {
 	return SampleReconstructorConfig{
 		MaxBlobs:         MaxBlobCommitmentsPerBlock,
-		CellsPerBlob:    CellsPerExtBlob,
+		CellsPerBlob:     CellsPerExtBlob,
 		DataCells:        ReconstructionThreshold,
 		UseErasureCoding: false,
 	}
@@ -83,14 +83,14 @@ type BlobProgress struct {
 
 // ReconstructorMetrics tracks sample reconstruction statistics.
 type ReconstructorMetrics struct {
-	SamplesReceived    atomic.Int64
-	SamplesDuplicate   atomic.Int64
-	SamplesInvalid     atomic.Int64
-	BlobsComplete      atomic.Int64
-	BlobsFailed        atomic.Int64
-	ReconstructionNs   atomic.Int64
-	LastReconstructNs  atomic.Int64
-	ErasureRecoveries  atomic.Int64
+	SamplesReceived   atomic.Int64
+	SamplesDuplicate  atomic.Int64
+	SamplesInvalid    atomic.Int64
+	BlobsComplete     atomic.Int64
+	BlobsFailed       atomic.Int64
+	ReconstructionNs  atomic.Int64
+	LastReconstructNs atomic.Int64
+	ErasureRecoveries atomic.Int64
 }
 
 // AvgReconstructMs returns the average reconstruction latency in milliseconds.

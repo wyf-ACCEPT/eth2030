@@ -11,11 +11,11 @@ import (
 
 // Blob futures errors.
 var (
-	ErrFutureNotFound  = errors.New("das: future not found")
-	ErrFutureExpired   = errors.New("das: future already expired")
-	ErrFutureSettled   = errors.New("das: future already settled")
-	ErrInvalidExpiry   = errors.New("das: expiry slot must be in the future")
-	ErrInvalidPrice    = errors.New("das: price must be positive")
+	ErrFutureNotFound = errors.New("das: future not found")
+	ErrFutureExpired  = errors.New("das: future already expired")
+	ErrFutureSettled  = errors.New("das: future already settled")
+	ErrInvalidExpiry  = errors.New("das: expiry slot must be in the future")
+	ErrInvalidPrice   = errors.New("das: price must be positive")
 )
 
 // BlobFuture represents a short-dated futures contract on blob availability.
@@ -42,12 +42,12 @@ type BlobFuture struct {
 
 // FuturesMarket manages blob availability futures.
 type FuturesMarket struct {
-	mu              sync.Mutex
-	active          map[types.Hash]*BlobFuture // ID -> future
-	byExpiry        map[uint64][]*BlobFuture   // expirySlot -> futures
-	currentSlot     uint64
-	totalVolume     *big.Int
-	settledCount    uint64
+	mu           sync.Mutex
+	active       map[types.Hash]*BlobFuture // ID -> future
+	byExpiry     map[uint64][]*BlobFuture   // expirySlot -> futures
+	currentSlot  uint64
+	totalVolume  *big.Int
+	settledCount uint64
 }
 
 // NewFuturesMarket creates a new futures market starting at the given slot.

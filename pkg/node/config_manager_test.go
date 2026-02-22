@@ -23,10 +23,10 @@ func TestNewConfigManager(t *testing.T) {
 
 func TestConfigManagerSetDataDir(t *testing.T) {
 	cm := NewConfigManager()
-	cm.SetDataDir("/data/eth2030", SourceCLI)
+	cm.SetDataDir("/data/ETH2030", SourceCLI)
 
-	if cm.Config().DataDir != "/data/eth2030" {
-		t.Errorf("DataDir = %q, want /data/eth2030", cm.Config().DataDir)
+	if cm.Config().DataDir != "/data/ETH2030" {
+		t.Errorf("DataDir = %q, want /data/ETH2030", cm.Config().DataDir)
 	}
 	if cm.Source("datadir") != SourceCLI {
 		t.Errorf("source = %v, want CLI", cm.Source("datadir"))
@@ -48,8 +48,8 @@ func TestConfigManagerSetLogLevel(t *testing.T) {
 func TestConfigManagerSetNetworkConfig(t *testing.T) {
 	cm := NewConfigManager()
 	cm.SetNetworkConfig(NetworkConfig{
-		ChainID:   11155111,
-		NetworkID: 11155111,
+		ChainID:     11155111,
+		NetworkID:   11155111,
 		GenesisHash: "0x25a5cc106eea7138acab33231d7160d69cb777ee0c2c553fcddf5138993e6dd9",
 	}, SourceFile)
 
@@ -286,9 +286,9 @@ func TestConfigValidatorForkOrder(t *testing.T) {
 	cfg := DefaultManagedConfig()
 	cfg.Engine.JWTSecret = "0xtest"
 	cfg.Network.ForkSchedule = map[string]uint64{
-		"london":  12965000,
-		"merge":   15537393,
-		"cancun":  10000000, // before merge: invalid
+		"london": 12965000,
+		"merge":  15537393,
+		"cancun": 10000000, // before merge: invalid
 	}
 
 	errs := cv.Validate(cfg)
@@ -308,9 +308,9 @@ func TestConfigValidatorValidForkOrder(t *testing.T) {
 	cfg := DefaultManagedConfig()
 	cfg.Engine.JWTSecret = "0xtest"
 	cfg.Network.ForkSchedule = map[string]uint64{
-		"london":  12965000,
-		"merge":   15537393,
-		"cancun":  19426587,
+		"london": 12965000,
+		"merge":  15537393,
+		"cancun": 19426587,
 	}
 
 	errs := cv.Validate(cfg)
@@ -439,9 +439,9 @@ func TestForkScheduleActivationBlock(t *testing.T) {
 
 func TestForkScheduleActiveForks(t *testing.T) {
 	fs := NewForkSchedule(map[string]uint64{
-		"london":  12965000,
-		"merge":   15537393,
-		"cancun":  19426587,
+		"london": 12965000,
+		"merge":  15537393,
+		"cancun": 19426587,
 	})
 
 	active := fs.ActiveForks(15600000)
@@ -466,8 +466,8 @@ func TestForkScheduleActiveForks(t *testing.T) {
 
 func TestForkScheduleCount(t *testing.T) {
 	fs := NewForkSchedule(map[string]uint64{
-		"london":  12965000,
-		"merge":   15537393,
+		"london": 12965000,
+		"merge":  15537393,
 	})
 	if fs.ForkCount() != 2 {
 		t.Errorf("ForkCount() = %d, want 2", fs.ForkCount())

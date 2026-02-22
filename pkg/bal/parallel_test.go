@@ -205,15 +205,15 @@ func TestBalanceConflict(t *testing.T) {
 
 	// Tx 0 changes balance
 	bal.AddEntry(AccessEntry{
-		Address:      addr,
-		AccessIndex:  1,
+		Address:       addr,
+		AccessIndex:   1,
 		BalanceChange: &BalanceChange{OldValue: nil, NewValue: nil},
 	})
 
 	// Tx 1 also changes balance of same address
 	bal.AddEntry(AccessEntry{
-		Address:      addr,
-		AccessIndex:  2,
+		Address:       addr,
+		AccessIndex:   2,
 		BalanceChange: &BalanceChange{OldValue: nil, NewValue: nil},
 	})
 

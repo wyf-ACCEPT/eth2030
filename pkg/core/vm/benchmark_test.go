@@ -51,14 +51,14 @@ func (b *benchStateDB) SubBalance(addr types.Address, amount *big.Int) {
 	b.balances[addr].Sub(b.balances[addr], amount)
 }
 
-func (b *benchStateDB) GetNonce(addr types.Address) uint64 { return b.nonces[addr] }
+func (b *benchStateDB) GetNonce(addr types.Address) uint64    { return b.nonces[addr] }
 func (b *benchStateDB) SetNonce(addr types.Address, n uint64) { b.nonces[addr] = n }
 
 func (b *benchStateDB) GetCode(addr types.Address) []byte    { return b.codes[addr] }
 func (b *benchStateDB) SetCode(addr types.Address, c []byte) { b.codes[addr] = c }
 
-func (b *benchStateDB) Exist(addr types.Address) bool  { return b.warmAddrs[addr] }
-func (b *benchStateDB) Empty(addr types.Address) bool  { return !b.warmAddrs[addr] }
+func (b *benchStateDB) Exist(addr types.Address) bool { return b.warmAddrs[addr] }
+func (b *benchStateDB) Empty(addr types.Address) bool { return !b.warmAddrs[addr] }
 
 func (b *benchStateDB) CreateAccount(addr types.Address) {
 	b.warmAddrs[addr] = true
@@ -358,7 +358,7 @@ func TestEVM_GasAccounting(t *testing.T) {
 			code: []byte{
 				byte(PUSH1), 1, // 3 gas
 				byte(PUSH1), 2, // 3 gas
-				byte(ADD),      // 3 gas = 9 total
+				byte(ADD), // 3 gas = 9 total
 				byte(STOP),
 			},
 			gasGive: 8, // not enough

@@ -19,20 +19,20 @@ import (
 
 // Auction engine errors.
 var (
-	ErrAuctionNoRound         = errors.New("auction: no active round")
-	ErrAuctionAlreadyOpen     = errors.New("auction: round already open")
-	ErrAuctionNotOpen         = errors.New("auction: round is not open for bidding")
-	ErrAuctionNotClosed       = errors.New("auction: bidding has not been closed")
+	ErrAuctionNoRound          = errors.New("auction: no active round")
+	ErrAuctionAlreadyOpen      = errors.New("auction: round already open")
+	ErrAuctionNotOpen          = errors.New("auction: round is not open for bidding")
+	ErrAuctionNotClosed        = errors.New("auction: bidding has not been closed")
 	ErrAuctionAlreadyFinalized = errors.New("auction: round already finalized")
-	ErrAuctionNoWinner        = errors.New("auction: no winner selected")
-	ErrAuctionNoBids          = errors.New("auction: no bids submitted")
-	ErrAuctionNilBid          = errors.New("auction: nil bid")
-	ErrAuctionZeroValue       = errors.New("auction: bid value must be > 0")
-	ErrAuctionInvalidSlot     = errors.New("auction: invalid slot")
-	ErrAuctionSlotMismatch    = errors.New("auction: bid slot does not match round")
-	ErrAuctionEmptyPubkey     = errors.New("auction: builder pubkey is empty")
-	ErrAuctionEmptyPayload    = errors.New("auction: payload hash is empty")
-	ErrAuctionWinnerNotSet    = errors.New("auction: winner not yet selected")
+	ErrAuctionNoWinner         = errors.New("auction: no winner selected")
+	ErrAuctionNoBids           = errors.New("auction: no bids submitted")
+	ErrAuctionNilBid           = errors.New("auction: nil bid")
+	ErrAuctionZeroValue        = errors.New("auction: bid value must be > 0")
+	ErrAuctionInvalidSlot      = errors.New("auction: invalid slot")
+	ErrAuctionSlotMismatch     = errors.New("auction: bid slot does not match round")
+	ErrAuctionEmptyPubkey      = errors.New("auction: builder pubkey is empty")
+	ErrAuctionEmptyPayload     = errors.New("auction: payload hash is empty")
+	ErrAuctionWinnerNotSet     = errors.New("auction: winner not yet selected")
 )
 
 // AuctionState represents the lifecycle state of an auction round.
@@ -73,22 +73,22 @@ type AuctionBid struct {
 
 // AuctionRound tracks the state of a single slot's auction.
 type AuctionRound struct {
-	OpeningSlot  uint64
-	ClosingSlot  uint64 // slot when bidding closes (may equal opening)
-	State        AuctionState
-	Bids         []*AuctionBid
-	WinningBid   *AuctionBid
-	OpenedAt     time.Time
-	ClosedAt     time.Time
-	FinalizedAt  time.Time
+	OpeningSlot uint64
+	ClosingSlot uint64 // slot when bidding closes (may equal opening)
+	State       AuctionState
+	Bids        []*AuctionBid
+	WinningBid  *AuctionBid
+	OpenedAt    time.Time
+	ClosedAt    time.Time
+	FinalizedAt time.Time
 }
 
 // AuctionResult stores the outcome of a finalized auction.
 type AuctionResult struct {
-	Slot          uint64
-	WinningBid    *AuctionBid
-	TotalBids     int
-	FinalizedAt   time.Time
+	Slot             uint64
+	WinningBid       *AuctionBid
+	TotalBids        int
+	FinalizedAt      time.Time
 	PayloadDelivered bool
 }
 
@@ -270,10 +270,10 @@ func (ae *AuctionEngine) FinalizeAuction() error {
 	ae.round.FinalizedAt = now
 
 	result := &AuctionResult{
-		Slot:       ae.round.OpeningSlot,
-		WinningBid: ae.round.WinningBid,
-		TotalBids:  len(ae.round.Bids),
-		FinalizedAt: now,
+		Slot:             ae.round.OpeningSlot,
+		WinningBid:       ae.round.WinningBid,
+		TotalBids:        len(ae.round.Bids),
+		FinalizedAt:      now,
 		PayloadDelivered: true, // assumed until violation recorded
 	}
 	ae.history = append(ae.history, result)

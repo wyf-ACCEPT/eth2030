@@ -253,9 +253,9 @@ func P256UnmarshalPubkey(data []byte) (*ecdsa.PublicKey, error) {
 // P256RecoverPubkey attempts to recover the P-256 public key from a hash,
 // compact signature [R(32)||S(32)], and recovery ID (0 or 1).
 // This uses the ECDSA public key recovery algorithm:
-//   1. Parse R, S from the signature.
-//   2. Compute candidate R point from r and recID.
-//   3. Compute the public key Q = r^{-1} * (s*R - e*G).
+//  1. Parse R, S from the signature.
+//  2. Compute candidate R point from r and recID.
+//  3. Compute the public key Q = r^{-1} * (s*R - e*G).
 func P256RecoverPubkey(hash []byte, sig []byte, recID byte) (*ecdsa.PublicKey, error) {
 	if len(hash) != 32 || len(sig) != 64 || recID > 1 {
 		return nil, errP256RecoveryFail

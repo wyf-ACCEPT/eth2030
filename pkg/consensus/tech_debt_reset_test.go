@@ -12,10 +12,10 @@ func TestTechDebtTracker_RegisterAndCount(t *testing.T) {
 	}
 
 	err := tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_balance_field",
+		FieldName:            "old_balance_field",
 		DeprecatedSinceEpoch: 100,
-		ReplacedBy:          []string{"new_balance_field"},
-		RemovalEpoch:        200,
+		ReplacedBy:           []string{"new_balance_field"},
+		RemovalEpoch:         200,
 	})
 	if err != nil {
 		t.Fatalf("RegisterDeprecation: %v", err)
@@ -25,9 +25,9 @@ func TestTechDebtTracker_RegisterAndCount(t *testing.T) {
 	}
 
 	err = tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_nonce_field",
+		FieldName:            "old_nonce_field",
 		DeprecatedSinceEpoch: 150,
-		RemovalEpoch:        300,
+		RemovalEpoch:         300,
 	})
 	if err != nil {
 		t.Fatalf("RegisterDeprecation: %v", err)
@@ -52,20 +52,20 @@ func TestTechDebtTracker_RegisterErrors(t *testing.T) {
 
 	// invalid epochs (removal before deprecation)
 	if err := tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "bad_epochs",
+		FieldName:            "bad_epochs",
 		DeprecatedSinceEpoch: 200,
-		RemovalEpoch:        100,
+		RemovalEpoch:         100,
 	}); err != ErrTechDebtInvalidEpochs {
 		t.Errorf("invalid epochs: got %v, want %v", err, ErrTechDebtInvalidEpochs)
 	}
 
 	// duplicate
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "dup_field",
+		FieldName:            "dup_field",
 		DeprecatedSinceEpoch: 10,
 	})
 	if err := tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "dup_field",
+		FieldName:            "dup_field",
 		DeprecatedSinceEpoch: 20,
 	}); err != ErrTechDebtDuplicate {
 		t.Errorf("duplicate: got %v, want %v", err, ErrTechDebtDuplicate)
@@ -76,9 +76,9 @@ func TestTechDebtTracker_IsDeprecated(t *testing.T) {
 	tracker := NewTechDebtTracker(nil)
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_field",
+		FieldName:            "old_field",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        200,
+		RemovalEpoch:         200,
 	})
 
 	// Before deprecation epoch.
@@ -112,13 +112,13 @@ func TestTechDebtTracker_GetReplacements(t *testing.T) {
 	tracker := NewTechDebtTracker(nil)
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_a",
+		FieldName:            "old_a",
 		DeprecatedSinceEpoch: 10,
-		ReplacedBy:          []string{"new_a1", "new_a2"},
+		ReplacedBy:           []string{"new_a1", "new_a2"},
 	})
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_b",
+		FieldName:            "old_b",
 		DeprecatedSinceEpoch: 20,
 		// no replacements
 	})
@@ -153,17 +153,17 @@ func TestTechDebtTracker_MigrateState(t *testing.T) {
 	tracker := NewTechDebtTracker(&TechDebtConfig{AutoMigrate: true})
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_balance",
+		FieldName:            "old_balance",
 		DeprecatedSinceEpoch: 100,
-		ReplacedBy:          []string{"new_balance"},
-		RemovalEpoch:        200,
+		ReplacedBy:           []string{"new_balance"},
+		RemovalEpoch:         200,
 	})
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_nonce",
+		FieldName:            "old_nonce",
 		DeprecatedSinceEpoch: 100,
-		ReplacedBy:          []string{"new_nonce"},
-		RemovalEpoch:        300,
+		ReplacedBy:           []string{"new_nonce"},
+		RemovalEpoch:         300,
 	})
 
 	state := map[string]interface{}{
@@ -220,10 +220,10 @@ func TestTechDebtTracker_MigrateNoOverwrite(t *testing.T) {
 	tracker := NewTechDebtTracker(&TechDebtConfig{AutoMigrate: false})
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "old_field",
+		FieldName:            "old_field",
 		DeprecatedSinceEpoch: 10,
-		ReplacedBy:          []string{"new_field"},
-		RemovalEpoch:        100,
+		ReplacedBy:           []string{"new_field"},
+		RemovalEpoch:         100,
 	})
 
 	state := map[string]interface{}{
@@ -246,19 +246,19 @@ func TestTechDebtTracker_DeprecationReport(t *testing.T) {
 	tracker := NewTechDebtTracker(nil)
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "field_c",
+		FieldName:            "field_c",
 		DeprecatedSinceEpoch: 300,
-		RemovalEpoch:        500,
+		RemovalEpoch:         500,
 	})
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "field_a",
+		FieldName:            "field_a",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        200,
+		RemovalEpoch:         200,
 	})
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "field_b",
+		FieldName:            "field_b",
 		DeprecatedSinceEpoch: 200,
-		RemovalEpoch:        400,
+		RemovalEpoch:         400,
 	})
 
 	// At epoch 150: only field_a is deprecated and not removed.
@@ -299,19 +299,19 @@ func TestTechDebtTracker_CleanupRemovedFields(t *testing.T) {
 	tracker := NewTechDebtTracker(nil)
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "remove_me",
+		FieldName:            "remove_me",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        200,
+		RemovalEpoch:         200,
 	})
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "keep_me",
+		FieldName:            "keep_me",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        500,
+		RemovalEpoch:         500,
 	})
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "no_removal",
+		FieldName:            "no_removal",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        0, // never removed
+		RemovalEpoch:         0, // never removed
 	})
 
 	state := map[string]interface{}{
@@ -349,14 +349,14 @@ func TestTechDebtTracker_IsRemoved(t *testing.T) {
 	tracker := NewTechDebtTracker(nil)
 
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "removable",
+		FieldName:            "removable",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        200,
+		RemovalEpoch:         200,
 	})
 	tracker.RegisterDeprecation(&DeprecatedField{
-		FieldName:           "permanent",
+		FieldName:            "permanent",
 		DeprecatedSinceEpoch: 100,
-		RemovalEpoch:        0,
+		RemovalEpoch:         0,
 	})
 
 	if tracker.IsRemoved("removable", 150) {
@@ -381,16 +381,16 @@ func TestTechDebtTracker_KnownDeprecations(t *testing.T) {
 		AutoMigrate: true,
 		KnownDeprecations: []*DeprecatedField{
 			{
-				FieldName:           "legacy_slot_count",
+				FieldName:            "legacy_slot_count",
 				DeprecatedSinceEpoch: 50,
-				ReplacedBy:          []string{"modern_slot_count"},
-				RemovalEpoch:        100,
+				ReplacedBy:           []string{"modern_slot_count"},
+				RemovalEpoch:         100,
 			},
 			{
-				FieldName:           "legacy_epoch_length",
+				FieldName:            "legacy_epoch_length",
 				DeprecatedSinceEpoch: 50,
-				ReplacedBy:          []string{"epoch_slot_count"},
-				RemovalEpoch:        100,
+				ReplacedBy:           []string{"epoch_slot_count"},
+				RemovalEpoch:         100,
 			},
 		},
 	}

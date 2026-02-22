@@ -92,7 +92,7 @@ func TestCalcBlobFee(t *testing.T) {
 		{
 			name:          "large excess increases price",
 			excessBlobGas: BlobBaseFeeUpdateFraction, // one full fraction = e^1 ~ 2.71
-			want:          big.NewInt(2),              // integer Taylor expansion truncation
+			want:          big.NewInt(2),             // integer Taylor expansion truncation
 		},
 	}
 
@@ -163,9 +163,9 @@ func TestFakeExponential(t *testing.T) {
 		denominator int64
 		want        int64
 	}{
-		{1, 0, 1, 1},              // e^0 = 1
-		{1, 1, 1, 2},              // floor(e^1) = floor(2.718...) = 2 -- but Taylor series integer math gives 2
-		{38, 0, 1000, 38},         // 38 * e^0 = 38
+		{1, 0, 1, 1},                             // e^0 = 1
+		{1, 1, 1, 2},                             // floor(e^1) = floor(2.718...) = 2 -- but Taylor series integer math gives 2
+		{38, 0, 1000, 38},                        // 38 * e^0 = 38
 		{100, 0, BlobBaseFeeUpdateFraction, 100}, // factor * e^0 = factor
 	}
 

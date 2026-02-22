@@ -161,8 +161,8 @@ type ComplianceTrackerConfig struct {
 // DefaultComplianceTrackerConfig returns production defaults.
 func DefaultComplianceTrackerConfig() ComplianceTrackerConfig {
 	return ComplianceTrackerConfig{
-		InitialScore:         1000,
-		MaxScore:             1000,
+		InitialScore:           1000,
+		MaxScore:               1000,
 		MissedSubmissionWeight: 3,
 		LateSubmissionWeight:   1,
 		ConflictingWeight:      5,
@@ -369,8 +369,8 @@ func (ct *ComplianceTracker) GenerateReport(startSlot, endSlot uint64) (*Complia
 	defer ct.mu.RUnlock()
 
 	report := &ComplianceReport{
-		StartSlot:      startSlot,
-		EndSlot:        endSlot,
+		StartSlot:        startSlot,
+		EndSlot:          endSlot,
 		ViolationsByKind: make(map[ComplianceViolationKind]int),
 	}
 

@@ -14,11 +14,11 @@ import (
 
 // Checkpoint manager errors.
 var (
-	ErrCheckpointNilStore      = errors.New("checkpoint: nil store")
-	ErrCheckpointZeroStake     = errors.New("checkpoint: total stake is zero")
-	ErrCheckpointEpochRegress  = errors.New("checkpoint: epoch cannot regress")
-	ErrCheckpointNotFound      = errors.New("checkpoint: not found")
-	ErrCheckpointAlreadyFinal  = errors.New("checkpoint: epoch already finalized")
+	ErrCheckpointNilStore     = errors.New("checkpoint: nil store")
+	ErrCheckpointZeroStake    = errors.New("checkpoint: total stake is zero")
+	ErrCheckpointEpochRegress = errors.New("checkpoint: epoch cannot regress")
+	ErrCheckpointNotFound     = errors.New("checkpoint: not found")
+	ErrCheckpointAlreadyFinal = errors.New("checkpoint: epoch already finalized")
 )
 
 // JustificationResult captures the outcome of a justification attempt for
@@ -137,8 +137,8 @@ type CheckpointManager struct {
 	store *CheckpointStore
 
 	// Stats.
-	justificationsCount  uint64
-	finalizationsCount   uint64
+	justificationsCount uint64
+	finalizationsCount  uint64
 }
 
 // NewCheckpointManager creates a new checkpoint manager with the given store.

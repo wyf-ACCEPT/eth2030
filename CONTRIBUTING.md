@@ -1,6 +1,6 @@
-# Contributing to eth2030
+# Contributing to ETH2030
 
-Thank you for your interest in contributing to eth2030! We welcome contributions
+Thank you for your interest in contributing to ETH2030! We welcome contributions
 from anyone and are grateful for even the smallest improvements.
 
 ## Development Setup
@@ -31,7 +31,7 @@ go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
 
 ### 1. EIP Implementations
 
-eth2030 implements 58+ EIPs across the Ethereum 2028 roadmap. To add or improve
+ETH2030 implements 58+ EIPs across the Ethereum 2028 roadmap. To add or improve
 an EIP implementation:
 
 1. Check `docs/EIP_SPEC_IMPL.md` for current implementation status

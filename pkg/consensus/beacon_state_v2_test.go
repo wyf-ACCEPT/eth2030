@@ -38,10 +38,10 @@ func TestNewBeaconStateV2(t *testing.T) {
 func TestAddValidatorV2(t *testing.T) {
 	s := NewBeaconStateV2(32)
 	v := &ValidatorV2{
-		Pubkey:           [48]byte{1},
-		EffectiveBalance: MaxEffectiveBalanceV2,
-		ActivationEpoch:  0,
-		ExitEpoch:        FarFutureEpoch,
+		Pubkey:            [48]byte{1},
+		EffectiveBalance:  MaxEffectiveBalanceV2,
+		ActivationEpoch:   0,
+		ExitEpoch:         FarFutureEpoch,
 		WithdrawableEpoch: FarFutureEpoch,
 	}
 	idx := s.AddValidatorV2(v, MaxEffectiveBalanceV2)
@@ -344,10 +344,10 @@ func TestHashTreeRootV2DifferentStates(t *testing.T) {
 
 func TestValidatorV2HashTreeRoot(t *testing.T) {
 	v := &ValidatorV2{
-		Pubkey:           [48]byte{1, 2, 3},
-		EffectiveBalance: MaxEffectiveBalanceV2,
-		ActivationEpoch:  0,
-		ExitEpoch:        FarFutureEpoch,
+		Pubkey:            [48]byte{1, 2, 3},
+		EffectiveBalance:  MaxEffectiveBalanceV2,
+		ActivationEpoch:   0,
+		ExitEpoch:         FarFutureEpoch,
 		WithdrawableEpoch: FarFutureEpoch,
 	}
 	root := v.HashTreeRoot()
@@ -466,10 +466,10 @@ func TestBeaconStateV2ThreadSafety(t *testing.T) {
 			var pk [48]byte
 			pk[0] = byte(100 + n)
 			v := &ValidatorV2{
-				Pubkey:           pk,
-				EffectiveBalance: MaxEffectiveBalanceV2,
-				ActivationEpoch:  0,
-				ExitEpoch:        FarFutureEpoch,
+				Pubkey:            pk,
+				EffectiveBalance:  MaxEffectiveBalanceV2,
+				ActivationEpoch:   0,
+				ExitEpoch:         FarFutureEpoch,
 				WithdrawableEpoch: FarFutureEpoch,
 			}
 			s.AddValidatorV2(v, MaxEffectiveBalanceV2)

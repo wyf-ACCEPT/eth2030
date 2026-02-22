@@ -14,11 +14,11 @@ import (
 
 // Bandwidth enforcer errors.
 var (
-	ErrBandwidthExceeded   = errors.New("das: bandwidth limit exceeded")
-	ErrChainNotRegistered  = errors.New("das: L2 chain not registered for bandwidth")
-	ErrGlobalCapExceeded   = errors.New("das: global bandwidth cap exceeded")
-	ErrBackpressureActive  = errors.New("das: backpressure active, slow down")
-	ErrZeroBandwidthCap    = errors.New("das: bandwidth cap must be > 0")
+	ErrBandwidthExceeded  = errors.New("das: bandwidth limit exceeded")
+	ErrChainNotRegistered = errors.New("das: L2 chain not registered for bandwidth")
+	ErrGlobalCapExceeded  = errors.New("das: global bandwidth cap exceeded")
+	ErrBackpressureActive = errors.New("das: backpressure active, slow down")
+	ErrZeroBandwidthCap   = errors.New("das: bandwidth cap must be > 0")
 )
 
 // BandwidthConfig configures the bandwidth enforcer.
@@ -49,7 +49,7 @@ type BandwidthConfig struct {
 // DefaultBandwidthConfig returns a default configuration targeting 1 Gbyte/sec.
 func DefaultBandwidthConfig() BandwidthConfig {
 	return BandwidthConfig{
-		GlobalCapBytesPerSec:  1 << 30, // 1 GiB/sec
+		GlobalCapBytesPerSec:  1 << 30,   // 1 GiB/sec
 		DefaultChainQuota:     128 << 20, // 128 MiB/sec per chain
 		CongestionThreshold:   0.80,
 		CongestionMultiplier:  2.0,
@@ -70,7 +70,7 @@ type tokenBucket struct {
 // newTokenBucket creates a token bucket with the given rate (bytes/sec).
 func newTokenBucket(rate uint64) *tokenBucket {
 	return &tokenBucket{
-		tokens:   float64(rate), // start full for one second
+		tokens:   float64(rate),     // start full for one second
 		capacity: float64(rate) * 2, // allow a burst of 2 seconds
 		rate:     float64(rate),
 		lastTime: time.Now(),

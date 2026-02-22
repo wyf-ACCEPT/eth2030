@@ -39,12 +39,12 @@ type StateProofNode struct {
 
 // AccountStateProof proves an account's state at a particular state root.
 type AccountStateProof struct {
-	StateRoot   types.Hash
-	Address     types.Address
-	AccountKey  types.Hash       // Keccak256(address)
-	AccountRLP  []byte           // RLP-encoded account data.
-	ProofNodes  []StateProofNode // Merkle branch from root to account leaf.
-	Exists      bool             // Whether the account exists in the trie.
+	StateRoot  types.Hash
+	Address    types.Address
+	AccountKey types.Hash       // Keccak256(address)
+	AccountRLP []byte           // RLP-encoded account data.
+	ProofNodes []StateProofNode // Merkle branch from root to account leaf.
+	Exists     bool             // Whether the account exists in the trie.
 }
 
 // StorageStateProof proves a storage slot's value at a particular storage root.

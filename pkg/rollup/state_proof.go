@@ -30,12 +30,12 @@ const MaxBatchProofs = 256
 // StateTransitionProof represents a complete state transition proof for a
 // native rollup batch.
 type StateTransitionProof struct {
-	RollupID      uint64       // Rollup chain ID.
-	PreStateRoot  types.Hash   // State root before execution.
-	PostStateRoot types.Hash   // State root after execution.
-	Transactions  [][]byte     // RLP-encoded transaction list.
-	Witness       []byte       // State witness for stateless verification.
-	BlockNumber   uint64       // L2 block number.
+	RollupID      uint64        // Rollup chain ID.
+	PreStateRoot  types.Hash    // State root before execution.
+	PostStateRoot types.Hash    // State root after execution.
+	Transactions  [][]byte      // RLP-encoded transaction list.
+	Witness       []byte        // State witness for stateless verification.
+	BlockNumber   uint64        // L2 block number.
 	StateChanges  []StateChange // Individual state modifications.
 }
 

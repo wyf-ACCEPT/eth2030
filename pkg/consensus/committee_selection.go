@@ -28,12 +28,12 @@ const (
 
 // Committee selection errors.
 var (
-	ErrCSNilState        = errors.New("committee_selection: nil state")
-	ErrCSNoValidators    = errors.New("committee_selection: no active validators")
-	ErrCSInvalidIndex    = errors.New("committee_selection: index out of range")
-	ErrCSInvalidSeed     = errors.New("committee_selection: invalid seed")
-	ErrCSZeroIndexCount  = errors.New("committee_selection: zero index count")
-	ErrCSInvalidCommIdx  = errors.New("committee_selection: committee index out of range")
+	ErrCSNilState       = errors.New("committee_selection: nil state")
+	ErrCSNoValidators   = errors.New("committee_selection: no active validators")
+	ErrCSInvalidIndex   = errors.New("committee_selection: index out of range")
+	ErrCSInvalidSeed    = errors.New("committee_selection: invalid seed")
+	ErrCSZeroIndexCount = errors.New("committee_selection: zero index count")
+	ErrCSInvalidCommIdx = errors.New("committee_selection: committee index out of range")
 )
 
 // ComputeShuffledIndex implements the swap-or-not shuffle from the beacon

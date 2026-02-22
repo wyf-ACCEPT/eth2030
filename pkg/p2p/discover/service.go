@@ -31,19 +31,19 @@ type DiscoveredNode struct {
 
 // DiscoveryService coordinates peer discovery across protocols.
 type DiscoveryService struct {
-	mu              sync.RWMutex
-	config          DiscoveryServiceConfig
-	nodes           map[string]*DiscoveredNode
-	bootnodes       map[string]bool // set of bootnode IDs
-	protocolFilter  []string        // if non-empty, only track matching nodes
+	mu             sync.RWMutex
+	config         DiscoveryServiceConfig
+	nodes          map[string]*DiscoveredNode
+	bootnodes      map[string]bool // set of bootnode IDs
+	protocolFilter []string        // if non-empty, only track matching nodes
 }
 
 // Errors returned by the discovery service.
 var (
-	ErrNodeExists    = errors.New("discover: node already exists")
-	ErrTableFull     = errors.New("discover: node table full")
-	ErrEmptyID       = errors.New("discover: empty node ID")
-	ErrInvalidPort   = errors.New("discover: invalid port")
+	ErrNodeExists  = errors.New("discover: node already exists")
+	ErrTableFull   = errors.New("discover: node table full")
+	ErrEmptyID     = errors.New("discover: empty node ID")
+	ErrInvalidPort = errors.New("discover: invalid port")
 )
 
 // NewDiscoveryService creates a new discovery service with the given config.

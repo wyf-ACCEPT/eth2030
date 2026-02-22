@@ -27,18 +27,18 @@ var (
 type SubKind int
 
 const (
-	SubKindNewHeads  SubKind = iota // New block header notifications.
-	SubKindLogs                     // Matching log event notifications.
-	SubKindPendingTx                // Pending transaction notifications.
-	SubKindSyncStatus               // Sync progress notifications.
+	SubKindNewHeads   SubKind = iota // New block header notifications.
+	SubKindLogs                      // Matching log event notifications.
+	SubKindPendingTx                 // Pending transaction notifications.
+	SubKindSyncStatus                // Sync progress notifications.
 )
 
 // subKindNames maps SubKind to its eth_subscribe parameter name.
 var subKindNames = map[string]SubKind{
-	"newHeads":                SubKindNewHeads,
-	"logs":                    SubKindLogs,
-	"newPendingTransactions":  SubKindPendingTx,
-	"syncing":                 SubKindSyncStatus,
+	"newHeads":               SubKindNewHeads,
+	"logs":                   SubKindLogs,
+	"newPendingTransactions": SubKindPendingTx,
+	"syncing":                SubKindSyncStatus,
 }
 
 // ParseSubKind converts a subscription type name to a SubKind.
@@ -53,12 +53,12 @@ func ParseSubKind(name string) (SubKind, error) {
 
 // SubEntry is a single registered subscription.
 type SubEntry struct {
-	ID         string
-	Kind       SubKind
-	ConnID     string      // connection identifier for grouping
-	Query      FilterQuery // only used for logs subscriptions
-	CreatedAt  time.Time
-	ch         chan interface{}
+	ID        string
+	Kind      SubKind
+	ConnID    string      // connection identifier for grouping
+	Query     FilterQuery // only used for logs subscriptions
+	CreatedAt time.Time
+	ch        chan interface{}
 }
 
 // Channel returns the notification channel.
@@ -91,13 +91,13 @@ type connTracker struct {
 
 // SubRegistry manages active subscriptions across multiple connections.
 type SubRegistry struct {
-	mu          sync.Mutex
-	subs        map[string]*SubEntry
+	mu           sync.Mutex
+	subs         map[string]*SubEntry
 	connTrackers map[string]*connTracker
-	rateConfig  SubRateLimitConfig
-	bufferSize  int
-	nextSeq     uint64
-	closed      bool
+	rateConfig   SubRateLimitConfig
+	bufferSize   int
+	nextSeq      uint64
+	closed       bool
 }
 
 // NewSubRegistry creates a new subscription registry.

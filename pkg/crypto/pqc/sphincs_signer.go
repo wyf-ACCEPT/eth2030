@@ -3,7 +3,8 @@
 // and verification using the FORS + Hypertree construction from sphincs_sign.go.
 //
 // Parameters (SHA-256-128f instantiation):
-//   n=16, h=60, d=20, k=14, w=16, a=12
+//
+//	n=16, h=60, d=20, k=14, w=16, a=12
 //
 // The signer connects the low-level SPHINCS+ functions to the Ethereum
 // post-quantum transaction and attestation pipeline.
@@ -214,7 +215,7 @@ func SPHINCSSignerEstimateGas() uint64 {
 	// Base cost + per-byte cost + hypertree traversal cost.
 	baseCost := uint64(2000)
 	perByteCost := uint64(SPHINCSSignerSigSize) * 3 // 3 gas per sig byte
-	treeCost := uint64(sphincsSHA256D) * 200         // 200 gas per tree layer
+	treeCost := uint64(sphincsSHA256D) * 200        // 200 gas per tree layer
 	return baseCost + perByteCost + treeCost
 }
 

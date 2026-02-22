@@ -15,17 +15,17 @@ import (
 
 // Message validation errors.
 var (
-	ErrMsgValNilMessage    = errors.New("msgval: nil message")
-	ErrMsgValEmptyPayload  = errors.New("msgval: empty payload")
-	ErrMsgValTooLarge      = errors.New("msgval: message exceeds max size")
-	ErrMsgValStale         = errors.New("msgval: message is stale")
-	ErrMsgValFuture        = errors.New("msgval: message timestamp in the future")
-	ErrMsgValDuplicate     = errors.New("msgval: duplicate message")
-	ErrMsgValRateLimited   = errors.New("msgval: peer rate limit exceeded")
-	ErrMsgValInvalidSig    = errors.New("msgval: invalid signature")
-	ErrMsgValZeroSender    = errors.New("msgval: zero sender")
-	ErrMsgValZeroMsgID     = errors.New("msgval: zero message ID")
-	ErrMsgValUnknownTopic  = errors.New("msgval: unknown topic")
+	ErrMsgValNilMessage   = errors.New("msgval: nil message")
+	ErrMsgValEmptyPayload = errors.New("msgval: empty payload")
+	ErrMsgValTooLarge     = errors.New("msgval: message exceeds max size")
+	ErrMsgValStale        = errors.New("msgval: message is stale")
+	ErrMsgValFuture       = errors.New("msgval: message timestamp in the future")
+	ErrMsgValDuplicate    = errors.New("msgval: duplicate message")
+	ErrMsgValRateLimited  = errors.New("msgval: peer rate limit exceeded")
+	ErrMsgValInvalidSig   = errors.New("msgval: invalid signature")
+	ErrMsgValZeroSender   = errors.New("msgval: zero sender")
+	ErrMsgValZeroMsgID    = errors.New("msgval: zero message ID")
+	ErrMsgValUnknownTopic = errors.New("msgval: unknown topic")
 )
 
 // MsgValidatorConfig configures the MsgValidator.
@@ -55,9 +55,9 @@ func DefaultMsgValidatorConfig() MsgValidatorConfig {
 
 // bloomFilter is a simple bloom filter for message deduplication.
 type bloomFilter struct {
-	bits     []uint64
-	size     uint32
-	hashN    uint32
+	bits  []uint64
+	size  uint32
+	hashN uint32
 }
 
 func newBloomFilter(size, hashCount uint32) *bloomFilter {
@@ -124,7 +124,7 @@ func (bf *bloomFilter) count() int {
 
 // peerRateState tracks rate limiting state for a single peer.
 type peerRateState struct {
-	count     int
+	count       int
 	windowStart time.Time
 }
 
@@ -134,26 +134,26 @@ type GossipMsgEnvelope struct {
 	Payload   []byte
 	SenderID  types.Hash
 	MessageID types.Hash
-	Timestamp uint64     // Unix seconds.
-	Signature []byte     // Optional signature over the payload.
+	Timestamp uint64 // Unix seconds.
+	Signature []byte // Optional signature over the payload.
 }
 
 // ValidationResult holds the outcome of message validation.
 type ValidationResult struct {
-	Valid   bool
-	Reason  error
+	Valid  bool
+	Reason error
 }
 
 // MsgValidator validates incoming gossip messages. It enforces size limits,
 // freshness, deduplication, per-peer rate limits, and optional signature
 // verification. All methods are safe for concurrent use.
 type MsgValidator struct {
-	mu       sync.RWMutex
-	config   MsgValidatorConfig
-	bloom    *bloomFilter
-	rates    map[types.Hash]*peerRateState // sender -> rate state
-	topics   map[string]bool               // allowed topics (empty = all allowed)
-	stats    MsgValidatorStats
+	mu     sync.RWMutex
+	config MsgValidatorConfig
+	bloom  *bloomFilter
+	rates  map[types.Hash]*peerRateState // sender -> rate state
+	topics map[string]bool               // allowed topics (empty = all allowed)
+	stats  MsgValidatorStats
 }
 
 // MsgValidatorStats tracks validation statistics.

@@ -19,20 +19,20 @@ import (
 
 // Batch verifier errors.
 var (
-	ErrBatchVerifyEmpty      = errors.New("batch_verify: no proofs submitted")
-	ErrBatchVerifyTimeout    = errors.New("batch_verify: verification timed out")
+	ErrBatchVerifyEmpty       = errors.New("batch_verify: no proofs submitted")
+	ErrBatchVerifyTimeout     = errors.New("batch_verify: verification timed out")
 	ErrBatchVerifyUnknownType = errors.New("batch_verify: unknown proof type")
-	ErrBatchVerifyClosed     = errors.New("batch_verify: verifier is closed")
-	ErrBatchVerifyNilProof   = errors.New("batch_verify: nil proof in batch")
+	ErrBatchVerifyClosed      = errors.New("batch_verify: verifier is closed")
+	ErrBatchVerifyNilProof    = errors.New("batch_verify: nil proof in batch")
 )
 
 // VerifiableProof wraps a proof with metadata for batch routing.
 type VerifiableProof struct {
-	ID        string       // Unique identifier for failure attribution.
-	Type      ProofType    // Proof type: ZKSNARK, ZKSTARK, IPA, KZG.
-	Data      []byte       // Serialized proof data.
-	PublicIn  []byte       // Public inputs for verification.
-	BlockHash types.Hash   // Associated block hash.
+	ID        string     // Unique identifier for failure attribution.
+	Type      ProofType  // Proof type: ZKSNARK, ZKSTARK, IPA, KZG.
+	Data      []byte     // Serialized proof data.
+	PublicIn  []byte     // Public inputs for verification.
+	BlockHash types.Hash // Associated block hash.
 }
 
 // VerificationResult records the outcome of verifying a single proof.

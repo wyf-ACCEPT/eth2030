@@ -80,7 +80,7 @@ func TestBlockProducerInvalidParent(t *testing.T) {
 
 func TestBlockProducerWithGraffiti(t *testing.T) {
 	graffiti := [GraffitiLength]byte{}
-	copy(graffiti[:], "eth2030-test-graffiti")
+	copy(graffiti[:], "ETH2030-test-graffiti")
 	cfg := &BlockProducerConfig{Graffiti: graffiti}
 	bp := NewBlockProducer(cfg, nil)
 

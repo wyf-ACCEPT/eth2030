@@ -424,8 +424,8 @@ func TestIdentifyBackrunOpportunities(t *testing.T) {
 	backrunner := types.HexToAddress("0xBBBB000000000000000000000000000000000000")
 
 	txs := []*types.Transaction{
-		mevTestTx(0, 100, contract, trigger),    // original tx
-		mevTestTx(0, 50, contract, backrunner),  // backrun with lower gas price
+		mevTestTx(0, 100, contract, trigger),   // original tx
+		mevTestTx(0, 50, contract, backrunner), // backrun with lower gas price
 	}
 
 	opps := IdentifyBackrunOpportunities(txs)

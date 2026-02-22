@@ -218,7 +218,7 @@ func ParseTreeLink(txt string) (*TreeLink, error) {
 
 	return &TreeLink{
 		PublicKey: rest[:atIdx],
-		Domain:   rest[atIdx+1:],
+		Domain:    rest[atIdx+1:],
 	}, nil
 }
 

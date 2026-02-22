@@ -28,7 +28,7 @@ type Config struct {
 	EnableRLPx bool
 
 	// Name is the client identity string sent in the hello handshake.
-	// Defaults to "eth2030" if empty.
+	// Defaults to "ETH2030" if empty.
 	Name string
 
 	// NodeID is the local node identifier sent during handshake.
@@ -126,7 +126,7 @@ func NewServer(cfg Config) *Server {
 		cfg.MaxPeers = 25
 	}
 	if cfg.Name == "" {
-		cfg.Name = "eth2030"
+		cfg.Name = "ETH2030"
 	}
 	localID := cfg.NodeID
 	if localID == "" {

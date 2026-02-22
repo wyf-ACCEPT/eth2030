@@ -368,8 +368,8 @@ func ContainerSize(c *EOFContainer) int {
 	if c == nil {
 		return 0
 	}
-	size := 3 // magic + version
-	size += 3 // type section header (kind + type_size)
+	size := 3                             // magic + version
+	size += 3                             // type section header (kind + type_size)
 	size += 1 + 2 + 2*len(c.CodeSections) // code section header (kind + num_code + code_sizes)
 	if len(c.ContainerSections) > 0 {
 		size += 1 + 2 + 4*len(c.ContainerSections) // container header (kind + num + sizes)

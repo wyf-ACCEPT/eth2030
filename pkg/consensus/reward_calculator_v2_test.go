@@ -21,16 +21,16 @@ func makeRewardInput(n int, currentEpoch, finalizedEpoch Epoch) *RewardInputV2 {
 	}
 
 	return &RewardInputV2{
-		Validators:       validators,
-		Balances:         balances,
-		InactivityScores: inactScores,
-		CurrentEpoch:     currentEpoch,
-		FinalizedEpoch:   finalizedEpoch,
-		SlotsPerEpoch:    32,
+		Validators:        validators,
+		Balances:          balances,
+		InactivityScores:  inactScores,
+		CurrentEpoch:      currentEpoch,
+		FinalizedEpoch:    finalizedEpoch,
+		SlotsPerEpoch:     32,
 		SyncCommitteeSize: 512,
-		PrevSource:       make(map[ValidatorIndex]bool),
-		PrevTarget:       make(map[ValidatorIndex]bool),
-		PrevHead:         make(map[ValidatorIndex]bool),
+		PrevSource:        make(map[ValidatorIndex]bool),
+		PrevTarget:        make(map[ValidatorIndex]bool),
+		PrevHead:          make(map[ValidatorIndex]bool),
 	}
 }
 

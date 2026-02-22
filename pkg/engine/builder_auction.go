@@ -96,8 +96,8 @@ type registeredBuilder struct {
 type BuilderAuction struct {
 	mu       sync.RWMutex
 	config   AuctionConfig
-	builders map[types.Hash]*registeredBuilder  // builder ID -> registration
-	bids     map[uint64][]*AuctionBid           // slot -> ordered bids
+	builders map[types.Hash]*registeredBuilder // builder ID -> registration
+	bids     map[uint64][]*AuctionBid          // slot -> ordered bids
 }
 
 // NewBuilderAuction creates a new builder auction with the given configuration.

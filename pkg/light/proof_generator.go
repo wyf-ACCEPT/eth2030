@@ -13,17 +13,17 @@ import (
 
 // CL proof type constants for the real-time CL proof system (I+ upgrade).
 const (
-	CLProofTypeStateRoot  = 0
-	CLProofTypeValidator  = 1
-	CLProofTypeBalance    = 2
-	CLProofTypeCommittee  = 3
+	CLProofTypeStateRoot = 0
+	CLProofTypeValidator = 1
+	CLProofTypeBalance   = 2
+	CLProofTypeCommittee = 3
 )
 
 // CL proof errors.
 var (
-	ErrCLProofInvalidType  = errors.New("light: invalid CL proof type")
-	ErrCLProofNilRoot      = errors.New("light: state root must not be zero")
-	ErrCLProofEmptyPubkey  = errors.New("light: validator pubkey must not be empty")
+	ErrCLProofInvalidType = errors.New("light: invalid CL proof type")
+	ErrCLProofNilRoot     = errors.New("light: state root must not be zero")
+	ErrCLProofEmptyPubkey = errors.New("light: validator pubkey must not be empty")
 )
 
 // CLProofConfig configures the CL proof generator.

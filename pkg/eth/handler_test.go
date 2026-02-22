@@ -36,11 +36,11 @@ func (bc *mockBlockchain) addBlock(b *types.Block) {
 	}
 }
 
-func (bc *mockBlockchain) CurrentBlock() *types.Block          { return bc.current }
-func (bc *mockBlockchain) GetBlock(hash types.Hash) *types.Block { return bc.blocks[hash] }
+func (bc *mockBlockchain) CurrentBlock() *types.Block             { return bc.current }
+func (bc *mockBlockchain) GetBlock(hash types.Hash) *types.Block  { return bc.blocks[hash] }
 func (bc *mockBlockchain) GetBlockByNumber(n uint64) *types.Block { return bc.byNumber[n] }
-func (bc *mockBlockchain) HasBlock(hash types.Hash) bool       { _, ok := bc.blocks[hash]; return ok }
-func (bc *mockBlockchain) Genesis() *types.Block               { return bc.genesis }
+func (bc *mockBlockchain) HasBlock(hash types.Hash) bool          { _, ok := bc.blocks[hash]; return ok }
+func (bc *mockBlockchain) Genesis() *types.Block                  { return bc.genesis }
 func (bc *mockBlockchain) InsertBlock(b *types.Block) error {
 	bc.addBlock(b)
 	return nil

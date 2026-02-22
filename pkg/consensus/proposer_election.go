@@ -42,27 +42,27 @@ const (
 
 // Proposer election errors.
 var (
-	ErrPENilState      = errors.New("proposer_election: nil beacon state")
-	ErrPENoValidators  = errors.New("proposer_election: no active validators")
-	ErrPENoProposer    = errors.New("proposer_election: failed to select proposer")
-	ErrPEInvalidSlot   = errors.New("proposer_election: invalid slot")
+	ErrPENilState     = errors.New("proposer_election: nil beacon state")
+	ErrPENoValidators = errors.New("proposer_election: no active validators")
+	ErrPENoProposer   = errors.New("proposer_election: failed to select proposer")
+	ErrPEInvalidSlot  = errors.New("proposer_election: invalid slot")
 )
 
 // ProposerElectionConfig configures the proposer election process.
 type ProposerElectionConfig struct {
-	SlotsPerEpoch      uint64
+	SlotsPerEpoch       uint64
 	MaxEffectiveBalance uint64
-	ShuffleRounds      uint64
-	ProposerBoostPct   uint64 // proposer boost percentage (0-100)
+	ShuffleRounds       uint64
+	ProposerBoostPct    uint64 // proposer boost percentage (0-100)
 }
 
 // DefaultProposerElectionConfig returns mainnet default config.
 func DefaultProposerElectionConfig() *ProposerElectionConfig {
 	return &ProposerElectionConfig{
-		SlotsPerEpoch:      32,
+		SlotsPerEpoch:       32,
 		MaxEffectiveBalance: PEMaxEffectiveBalance,
-		ShuffleRounds:      PEShuffleRounds,
-		ProposerBoostPct:   PEProposerBoostFraction,
+		ShuffleRounds:       PEShuffleRounds,
+		ProposerBoostPct:    PEProposerBoostFraction,
 	}
 }
 
@@ -228,9 +228,9 @@ func IsEligibleProposer(v *ValidatorV2, epoch Epoch) bool {
 // ProposerDutyElection represents a proposer assignment for a slot,
 // including the proposer's public key.
 type ProposerDutyElection struct {
-	Slot           Slot
-	ValidatorIdx   ValidatorIndex
-	Pubkey         [48]byte
+	Slot         Slot
+	ValidatorIdx ValidatorIndex
+	Pubkey       [48]byte
 }
 
 // GetProposerDuties returns proposer duties for all slots in an epoch.

@@ -11,13 +11,13 @@ import (
 
 // Distributed builder network errors.
 var (
-	ErrDistBuilderNotFound     = errors.New("distributed builder: builder not found")
-	ErrDistBuilderExists       = errors.New("distributed builder: builder already registered")
-	ErrDistBuilderInactive     = errors.New("distributed builder: builder is inactive")
-	ErrDistBuilderMaxReached   = errors.New("distributed builder: maximum builders reached")
-	ErrDistBidInvalid          = errors.New("distributed builder: invalid bid")
-	ErrDistBidZeroValue        = errors.New("distributed builder: bid value must be > 0")
-	ErrDistBidBuilderNotFound  = errors.New("distributed builder: bid from unregistered builder")
+	ErrDistBuilderNotFound    = errors.New("distributed builder: builder not found")
+	ErrDistBuilderExists      = errors.New("distributed builder: builder already registered")
+	ErrDistBuilderInactive    = errors.New("distributed builder: builder is inactive")
+	ErrDistBuilderMaxReached  = errors.New("distributed builder: maximum builders reached")
+	ErrDistBidInvalid         = errors.New("distributed builder: invalid bid")
+	ErrDistBidZeroValue       = errors.New("distributed builder: bid value must be > 0")
+	ErrDistBidBuilderNotFound = errors.New("distributed builder: bid from unregistered builder")
 )
 
 // BuilderConfig configures the distributed builder network.
@@ -68,8 +68,8 @@ type BuilderBid struct {
 type BuilderNetwork struct {
 	mu       sync.RWMutex
 	config   *BuilderConfig
-	builders map[types.Hash]*DistBuilder       // id -> builder
-	bids     map[uint64][]*BuilderBid          // slot -> bids
+	builders map[types.Hash]*DistBuilder // id -> builder
+	bids     map[uint64][]*BuilderBid    // slot -> bids
 }
 
 // NewBuilderNetwork creates a new distributed builder network.

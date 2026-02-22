@@ -229,8 +229,8 @@ func TestMergeFragments_ByGasPrice(t *testing.T) {
 	cfg.GasLimit = 100_000
 	db := NewDistBlockBuilder(cfg)
 
-	db.SubmitFragment(9, makeFrag("low", 1, 50_000, 10))  // 1tx/50k = low efficiency
-	db.SubmitFragment(9, makeFrag("high", 5, 30_000, 1))  // 5tx/30k = high efficiency
+	db.SubmitFragment(9, makeFrag("low", 1, 50_000, 10)) // 1tx/50k = low efficiency
+	db.SubmitFragment(9, makeFrag("high", 5, 30_000, 1)) // 5tx/30k = high efficiency
 
 	merged, err := db.MergeFragments(9)
 	if err != nil {

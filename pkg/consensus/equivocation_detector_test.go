@@ -212,10 +212,10 @@ func TestCheckAttestationNil(t *testing.T) {
 
 func TestIsSurroundVoteCheck(t *testing.T) {
 	tests := []struct {
-		name    string
-		s1, t1  Epoch
-		s2, t2  Epoch
-		want    bool
+		name   string
+		s1, t1 Epoch
+		s2, t2 Epoch
+		want   bool
 	}{
 		{"no_surround", 1, 2, 3, 4, false},
 		{"equal", 1, 4, 1, 4, false},

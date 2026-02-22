@@ -156,11 +156,11 @@ func TestDefaultBlobBaseFeePricing(t *testing.T) {
 
 func TestComputeHogotaBlobFee(t *testing.T) {
 	tests := []struct {
-		name           string
-		excessBlobGas  uint64
-		blobCount      uint64
-		wantMin        uint64
-		wantNonZero    bool
+		name          string
+		excessBlobGas uint64
+		blobCount     uint64
+		wantMin       uint64
+		wantNonZero   bool
 	}{
 		{
 			name:          "zero blobs",
@@ -252,10 +252,10 @@ func TestComputeHogotaExcessBlobGas(t *testing.T) {
 	targetGas := pricing.TargetBlobsPerBlock * GasPerBlob
 
 	tests := []struct {
-		name          string
-		parentExcess  uint64
-		parentUsed    uint64
-		want          uint64
+		name         string
+		parentExcess uint64
+		parentUsed   uint64
+		want         uint64
 	}{
 		{
 			name:         "both zero",
@@ -279,7 +279,7 @@ func TestComputeHogotaExcessBlobGas(t *testing.T) {
 			name:         "above target",
 			parentExcess: 0,
 			parentUsed:   targetGas + GasPerBlob, // 7 blobs
-			want:         GasPerBlob,              // 1 blob excess
+			want:         GasPerBlob,             // 1 blob excess
 		},
 		{
 			name:         "accumulated excess",

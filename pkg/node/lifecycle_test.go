@@ -237,9 +237,9 @@ func TestPriorityOrder(t *testing.T) {
 	seqCounter = 0
 	seqMu.Unlock()
 
-	low := &orderedMockService{name: "low"}    // priority 10
-	mid := &orderedMockService{name: "mid"}    // priority 5
-	high := &orderedMockService{name: "high"}  // priority 1
+	low := &orderedMockService{name: "low"}   // priority 10
+	mid := &orderedMockService{name: "mid"}   // priority 5
+	high := &orderedMockService{name: "high"} // priority 1
 
 	// Register in non-sorted order.
 	lm.Register(low, 10)

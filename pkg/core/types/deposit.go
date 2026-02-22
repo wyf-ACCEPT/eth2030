@@ -44,11 +44,11 @@ const (
 
 // Deposit-specific errors.
 var (
-	ErrDepositLogInvalid    = errors.New("deposit: invalid log format")
-	ErrDepositLogTopic      = errors.New("deposit: wrong event topic")
-	ErrDepositDataTooShort  = errors.New("deposit: log data too short")
-	ErrDepositSSZSize       = errors.New("deposit: invalid SSZ data size")
-	ErrTooManyDeposits      = errors.New("deposit: too many deposits in payload")
+	ErrDepositLogInvalid   = errors.New("deposit: invalid log format")
+	ErrDepositLogTopic     = errors.New("deposit: wrong event topic")
+	ErrDepositDataTooShort = errors.New("deposit: log data too short")
+	ErrDepositSSZSize      = errors.New("deposit: invalid SSZ data size")
+	ErrTooManyDeposits     = errors.New("deposit: too many deposits in payload")
 )
 
 // ParseDepositLog extracts a DepositRequest from a deposit contract log.

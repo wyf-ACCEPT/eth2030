@@ -13,7 +13,7 @@ import (
 // Gas cost constants for the access event tracker. These mirror EIP-2929/4762
 // gas costs and are used by the tracker to compute gas charges.
 const (
-	TrackerWarmStorageReadCost    uint64 = 100
+	TrackerWarmStorageReadCost   uint64 = 100
 	TrackerColdAccountAccessCost uint64 = 2600
 	TrackerColdSloadCost         uint64 = 2100
 	TrackerColdCodeAccessCost    uint64 = 2600
@@ -63,11 +63,11 @@ type BranchAccessCounter struct {
 // transaction. It tracks total gas consumed and the number of unique
 // cold and warm accesses.
 type AccessWitness struct {
-	TotalGas    uint64
-	ColdReads   uint64
-	WarmReads   uint64
-	ColdWrites  uint64
-	WarmWrites  uint64
+	TotalGas   uint64
+	ColdReads  uint64
+	WarmReads  uint64
+	ColdWrites uint64
+	WarmWrites uint64
 }
 
 // NewAccessEventTracker creates a new tracker with empty state.

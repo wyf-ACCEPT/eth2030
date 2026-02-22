@@ -239,8 +239,8 @@ func TestAccessTrackerTxAccessSetCounters(t *testing.T) {
 	slot1 := makeATHash(0x30)
 	slot2 := makeATHash(0x31)
 
-	tas.TouchAddress(addr) // cold
-	tas.TouchAddress(addr) // warm
+	tas.TouchAddress(addr)     // cold
+	tas.TouchAddress(addr)     // warm
 	tas.TouchSlot(addr, slot1) // cold
 	tas.TouchSlot(addr, slot2) // cold
 	tas.TouchSlot(addr, slot1) // warm
@@ -268,8 +268,8 @@ func TestAccessTrackerTxAccessSetGasCharged(t *testing.T) {
 	addr2 := makeATAddr(0x10)
 	slot := makeATHash(0x40)
 
-	tas.TouchAddress(addr1) // 2600
-	tas.TouchAddress(addr2) // 2600
+	tas.TouchAddress(addr1)    // 2600
+	tas.TouchAddress(addr2)    // 2600
 	tas.TouchSlot(addr1, slot) // 2100
 
 	expected := uint64(2600 + 2600 + 2100)

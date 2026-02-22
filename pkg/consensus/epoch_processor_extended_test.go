@@ -434,11 +434,11 @@ func TestEP_TotalActiveBalance_MinimumGuard(t *testing.T) {
 func TestEP_FinalityDelay_Cases(t *testing.T) {
 	ep := NewEpochProcessor()
 	tests := []struct {
-		name       string
-		slot       uint64
-		spe        uint64
-		finEpoch   Epoch
-		wantDelay  uint64
+		name      string
+		slot      uint64
+		spe       uint64
+		finEpoch  Epoch
+		wantDelay uint64
 	}{
 		{"no_delay", 64, 32, 1, 0},
 		{"delay_5", 320, 32, 4, 5},
@@ -458,4 +458,3 @@ func TestEP_FinalityDelay_Cases(t *testing.T) {
 		})
 	}
 }
-

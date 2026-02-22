@@ -34,10 +34,10 @@ const RVRegCount = 32
 
 // RVCPU represents a RISC-V RV32IM processor.
 type RVCPU struct {
-	Regs    [RVRegCount]uint32
-	PC      uint32
-	Memory  *RVMemory
-	Halted  bool
+	Regs     [RVRegCount]uint32
+	PC       uint32
+	Memory   *RVMemory
+	Halted   bool
 	ExitCode uint32
 
 	// Gas metering: 1 gas per instruction.
@@ -198,7 +198,7 @@ func (cpu *RVCPU) execute(instr uint32) ([]MemOp, error) {
 		var val uint32
 		switch funct3 {
 		case 0: // LB
-			b, err := cpu.Memory.ReadByte(addr)
+			b, err := cpu.Memory.ReadByteAt(addr)
 			if err != nil {
 				return nil, fmt.Errorf("%w: load byte at 0x%08x", ErrRVMemoryFault, addr)
 			}
@@ -216,7 +216,7 @@ func (cpu *RVCPU) execute(instr uint32) ([]MemOp, error) {
 			}
 			val = w
 		case 4: // LBU
-			b, err := cpu.Memory.ReadByte(addr)
+			b, err := cpu.Memory.ReadByteAt(addr)
 			if err != nil {
 				return nil, fmt.Errorf("%w: load byte unsigned at 0x%08x", ErrRVMemoryFault, addr)
 			}
@@ -241,7 +241,7 @@ func (cpu *RVCPU) execute(instr uint32) ([]MemOp, error) {
 		val := cpu.Regs[rs2]
 		switch funct3 {
 		case 0: // SB
-			if err := cpu.Memory.WriteByte(addr, byte(val)); err != nil {
+			if err := cpu.Memory.WriteByteAt(addr, byte(val)); err != nil {
 				return nil, fmt.Errorf("%w: store byte at 0x%08x", ErrRVMemoryFault, addr)
 			}
 		case 1: // SH

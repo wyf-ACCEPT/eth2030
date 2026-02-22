@@ -16,15 +16,15 @@ import (
 
 // Forward-cast errors.
 var (
-	ErrAnnouncementSlotPast    = errors.New("das: announcement slot is in the past")
-	ErrAnnouncementSlotTooFar  = errors.New("das: announcement slot exceeds max lead slots")
-	ErrAnnouncementSlotFull    = errors.New("das: slot has reached max announcements")
-	ErrAnnouncementExpired     = errors.New("das: announcement has expired")
-	ErrAnnouncementNotFound    = errors.New("das: announcement not found")
-	ErrAnnouncementFulfilled   = errors.New("das: announcement already fulfilled")
-	ErrBlobDataTooLarge        = errors.New("das: blob data exceeds max size")
-	ErrBlobCommitmentMismatch  = errors.New("das: blob data does not match commitment")
-	ErrInvalidCommitment       = errors.New("das: commitment must not be zero")
+	ErrAnnouncementSlotPast   = errors.New("das: announcement slot is in the past")
+	ErrAnnouncementSlotTooFar = errors.New("das: announcement slot exceeds max lead slots")
+	ErrAnnouncementSlotFull   = errors.New("das: slot has reached max announcements")
+	ErrAnnouncementExpired    = errors.New("das: announcement has expired")
+	ErrAnnouncementNotFound   = errors.New("das: announcement not found")
+	ErrAnnouncementFulfilled  = errors.New("das: announcement already fulfilled")
+	ErrBlobDataTooLarge       = errors.New("das: blob data exceeds max size")
+	ErrBlobCommitmentMismatch = errors.New("das: blob data does not match commitment")
+	ErrInvalidCommitment      = errors.New("das: commitment must not be zero")
 )
 
 // ForwardCastConfig configures the forward-cast blob subsystem.

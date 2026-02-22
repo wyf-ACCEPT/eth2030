@@ -18,11 +18,11 @@ import (
 
 // Peer set errors.
 var (
-	ErrPeerSetFull    = errors.New("eth: peer set at capacity")
-	ErrPeerSetClosed  = errors.New("eth: peer set closed")
-	ErrPeerExists     = errors.New("eth: peer already registered")
-	ErrPeerMissing    = errors.New("eth: peer not registered")
-	ErrMinVersion     = errors.New("eth: peer below minimum protocol version")
+	ErrPeerSetFull   = errors.New("eth: peer set at capacity")
+	ErrPeerSetClosed = errors.New("eth: peer set closed")
+	ErrPeerExists    = errors.New("eth: peer already registered")
+	ErrPeerMissing   = errors.New("eth: peer not registered")
+	ErrMinVersion    = errors.New("eth: peer below minimum protocol version")
 )
 
 // PeerEvent describes a peer lifecycle event type.

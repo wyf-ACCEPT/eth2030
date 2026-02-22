@@ -14,11 +14,11 @@ import (
 
 // Log operation errors.
 var (
-	ErrLogReadOnly        = errors.New("log: write operation in read-only context")
-	ErrLogNoState         = errors.New("log: no state database for log accumulation")
-	ErrLogTopicCount      = errors.New("log: invalid topic count, must be 0-4")
-	ErrLogGasOverflow     = errors.New("log: gas cost calculation overflow")
-	ErrLogMemoryOverflow  = errors.New("log: data size exceeds memory capacity")
+	ErrLogReadOnly         = errors.New("log: write operation in read-only context")
+	ErrLogNoState          = errors.New("log: no state database for log accumulation")
+	ErrLogTopicCount       = errors.New("log: invalid topic count, must be 0-4")
+	ErrLogGasOverflow      = errors.New("log: gas cost calculation overflow")
+	ErrLogMemoryOverflow   = errors.New("log: data size exceeds memory capacity")
 	ErrLogDataSizeTooLarge = errors.New("log: data size too large")
 )
 
@@ -177,7 +177,7 @@ func (h *LogOpHandler) ExecLog(
 // LogAccumulator collects log entries during EVM execution and provides
 // them for receipt generation. It supports snapshots for revert handling.
 type LogAccumulator struct {
-	logs           []*types.Log
+	logs            []*types.Log
 	snapshotLengths []int
 }
 

@@ -69,27 +69,27 @@ type ContentEntry struct {
 
 // ContentDBMetrics tracks content database statistics.
 type ContentDBMetrics struct {
-	Puts        atomic.Int64
-	Gets        atomic.Int64
-	Hits        atomic.Int64
-	Misses      atomic.Int64
-	Evictions   atomic.Int64
-	UsedBytes   atomic.Int64
-	ItemCount   atomic.Int64
-	GossipSent  atomic.Int64
-	GossipRecv  atomic.Int64
+	Puts       atomic.Int64
+	Gets       atomic.Int64
+	Hits       atomic.Int64
+	Misses     atomic.Int64
+	Evictions  atomic.Int64
+	UsedBytes  atomic.Int64
+	ItemCount  atomic.Int64
+	GossipSent atomic.Int64
+	GossipRecv atomic.Int64
 }
 
 // ContentDB is a persistent content store with LRU eviction and
 // XOR distance-based content radius management. It implements the
 // ContentStore interface for use with the Portal routing table.
 type ContentDB struct {
-	mu       sync.Mutex
-	config   ContentDBConfig
-	items    map[ContentID]*list.Element
-	lruList  *list.List
-	closed   bool
-	radius   NodeRadius
+	mu      sync.Mutex
+	config  ContentDBConfig
+	items   map[ContentID]*list.Element
+	lruList *list.List
+	closed  bool
+	radius  NodeRadius
 
 	// Metrics for monitoring.
 	Metrics ContentDBMetrics

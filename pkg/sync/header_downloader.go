@@ -17,8 +17,8 @@ import (
 
 // Header downloader configuration constants.
 const (
-	DefaultHDLBatchSize    = 192  // Headers per batch request.
-	DefaultHDLRetryLimit   = 3    // Maximum retries per batch.
+	DefaultHDLBatchSize    = 192 // Headers per batch request.
+	DefaultHDLRetryLimit   = 3   // Maximum retries per batch.
 	DefaultHDLTimeout      = 10 * time.Second
 	DefaultHDLPivotMargin  = 64   // Blocks behind head for pivot selection.
 	DefaultHDLAnchorStride = 2048 // Blocks between skeleton anchors.
@@ -27,14 +27,14 @@ const (
 
 // Header downloader errors.
 var (
-	ErrHDLClosed       = errors.New("header downloader: closed")
-	ErrHDLRunning      = errors.New("header downloader: already running")
-	ErrHDLNoPeers      = errors.New("header downloader: no peers available")
-	ErrHDLReorg        = errors.New("header downloader: chain reorg detected")
-	ErrHDLBatchFailed  = errors.New("header downloader: batch request failed after retries")
-	ErrHDLBadChain     = errors.New("header downloader: invalid header chain")
-	ErrHDLPivotTooOld  = errors.New("header downloader: pivot block too old")
-	ErrHDLGapMismatch  = errors.New("header downloader: gap fill does not link to anchor")
+	ErrHDLClosed      = errors.New("header downloader: closed")
+	ErrHDLRunning     = errors.New("header downloader: already running")
+	ErrHDLNoPeers     = errors.New("header downloader: no peers available")
+	ErrHDLReorg       = errors.New("header downloader: chain reorg detected")
+	ErrHDLBatchFailed = errors.New("header downloader: batch request failed after retries")
+	ErrHDLBadChain    = errors.New("header downloader: invalid header chain")
+	ErrHDLPivotTooOld = errors.New("header downloader: pivot block too old")
+	ErrHDLGapMismatch = errors.New("header downloader: gap fill does not link to anchor")
 )
 
 // HDLPeerInfo tracks a peer's state for header downloading.
@@ -68,16 +68,16 @@ func DefaultHDLConfig() HDLConfig {
 
 // HDLProgress reports header download status.
 type HDLProgress struct {
-	Anchor       uint64  // Lowest skeleton anchor.
-	Pivot        uint64  // Selected pivot block number.
-	Target       uint64  // Target block number.
-	Downloaded   uint64  // Headers successfully downloaded.
-	Verified     uint64  // Headers verified.
-	GapsFilled   int     // Gap segments completed.
-	GapsTotal    int     // Total gap segments.
-	StartTime    time.Time
-	PeersUsed    int     // Number of peers utilized.
-	Reorgs       int     // Number of reorgs detected.
+	Anchor     uint64 // Lowest skeleton anchor.
+	Pivot      uint64 // Selected pivot block number.
+	Target     uint64 // Target block number.
+	Downloaded uint64 // Headers successfully downloaded.
+	Verified   uint64 // Headers verified.
+	GapsFilled int    // Gap segments completed.
+	GapsTotal  int    // Total gap segments.
+	StartTime  time.Time
+	PeersUsed  int // Number of peers utilized.
+	Reorgs     int // Number of reorgs detected.
 }
 
 // Percentage returns the header download completion percentage.

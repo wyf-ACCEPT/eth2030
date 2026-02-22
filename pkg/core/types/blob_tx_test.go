@@ -16,11 +16,11 @@ func TestNewBlobTx(t *testing.T) {
 		42,    // nonce
 		21000, // gas
 		&to,
-		big.NewInt(1000),          // value
+		big.NewInt(1000),           // value
 		big.NewInt(50_000_000_000), // maxFee
 		big.NewInt(1_000_000_000),  // maxPriority
 		big.NewInt(5_000_000),      // maxBlobFee
-		[]byte{0xca, 0xfe},        // data
+		[]byte{0xca, 0xfe},         // data
 		hashes,
 	)
 

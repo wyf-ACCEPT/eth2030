@@ -330,9 +330,12 @@ func (r *PQBlobIntegrityReport) RecordSign(algID uint8) {
 	defer r.mu.Unlock()
 	r.TotalSigned++
 	switch algID {
-	case IntegrityAlgMLDSA:  r.MLDSASigned++
-	case IntegrityAlgFalcon: r.FalconSigned++
-	case IntegrityAlgSPHINCS: r.SPHINCSSigned++
+	case IntegrityAlgMLDSA:
+		r.MLDSASigned++
+	case IntegrityAlgFalcon:
+		r.FalconSigned++
+	case IntegrityAlgSPHINCS:
+		r.SPHINCSSigned++
 	}
 }
 
@@ -342,16 +345,22 @@ func (r *PQBlobIntegrityReport) RecordVerify(algID uint8, valid bool) {
 	if valid {
 		r.TotalVerified++
 		switch algID {
-		case IntegrityAlgMLDSA:  r.MLDSAVerified++
-		case IntegrityAlgFalcon: r.FalconVerified++
-		case IntegrityAlgSPHINCS: r.SPHINCSVerified++
+		case IntegrityAlgMLDSA:
+			r.MLDSAVerified++
+		case IntegrityAlgFalcon:
+			r.FalconVerified++
+		case IntegrityAlgSPHINCS:
+			r.SPHINCSVerified++
 		}
 	} else {
 		r.TotalFailed++
 		switch algID {
-		case IntegrityAlgMLDSA:  r.MLDSAFailed++
-		case IntegrityAlgFalcon: r.FalconFailed++
-		case IntegrityAlgSPHINCS: r.SPHINCSFailed++
+		case IntegrityAlgMLDSA:
+			r.MLDSAFailed++
+		case IntegrityAlgFalcon:
+			r.FalconFailed++
+		case IntegrityAlgSPHINCS:
+			r.SPHINCSFailed++
 		}
 	}
 }
@@ -458,31 +467,53 @@ func EncodeIntegritySig(sig *PQBlobIntegritySig) []byte {
 	}
 	buf := make([]byte, 1+8+PQCommitmentSize+2+len(sig.PublicKey)+2+len(sig.SignatureBytes))
 	o := 0
-	buf[o] = sig.Algorithm; o++
-	for i := 0; i < 8; i++ { buf[o+i] = byte(uint64(sig.Timestamp) >> (56 - 8*uint(i))) }
+	buf[o] = sig.Algorithm
+	o++
+	for i := 0; i < 8; i++ {
+		buf[o+i] = byte(uint64(sig.Timestamp) >> (56 - 8*uint(i)))
+	}
 	o += 8
-	copy(buf[o:], sig.CommitmentDigest[:]); o += PQCommitmentSize
-	buf[o], buf[o+1] = byte(len(sig.PublicKey)>>8), byte(len(sig.PublicKey)); o += 2
-	copy(buf[o:], sig.PublicKey); o += len(sig.PublicKey)
-	buf[o], buf[o+1] = byte(len(sig.SignatureBytes)>>8), byte(len(sig.SignatureBytes)); o += 2
+	copy(buf[o:], sig.CommitmentDigest[:])
+	o += PQCommitmentSize
+	buf[o], buf[o+1] = byte(len(sig.PublicKey)>>8), byte(len(sig.PublicKey))
+	o += 2
+	copy(buf[o:], sig.PublicKey)
+	o += len(sig.PublicKey)
+	buf[o], buf[o+1] = byte(len(sig.SignatureBytes)>>8), byte(len(sig.SignatureBytes))
+	o += 2
 	copy(buf[o:], sig.SignatureBytes)
 	return buf
 }
 
 // DecodeIntegritySig deserializes a PQBlobIntegritySig from bytes.
 func DecodeIntegritySig(data []byte) (*PQBlobIntegritySig, error) {
-	if len(data) < 1+8+PQCommitmentSize+4 { return nil, ErrIntegrityBadSignature }
+	if len(data) < 1+8+PQCommitmentSize+4 {
+		return nil, ErrIntegrityBadSignature
+	}
 	sig := &PQBlobIntegritySig{Algorithm: data[0]}
 	o := 1
 	var ts uint64
-	for i := 0; i < 8; i++ { ts = (ts << 8) | uint64(data[o+i]) }
-	sig.Timestamp = int64(ts); o += 8
-	copy(sig.CommitmentDigest[:], data[o:o+PQCommitmentSize]); o += PQCommitmentSize
-	pkLen := int(data[o])<<8 | int(data[o+1]); o += 2
-	if o+pkLen+2 > len(data) { return nil, ErrIntegrityBadSignature }
-	sig.PublicKey = make([]byte, pkLen); copy(sig.PublicKey, data[o:o+pkLen]); o += pkLen
-	sigLen := int(data[o])<<8 | int(data[o+1]); o += 2
-	if o+sigLen > len(data) { return nil, ErrIntegrityBadSignature }
-	sig.SignatureBytes = make([]byte, sigLen); copy(sig.SignatureBytes, data[o:o+sigLen])
+	for i := 0; i < 8; i++ {
+		ts = (ts << 8) | uint64(data[o+i])
+	}
+	sig.Timestamp = int64(ts)
+	o += 8
+	copy(sig.CommitmentDigest[:], data[o:o+PQCommitmentSize])
+	o += PQCommitmentSize
+	pkLen := int(data[o])<<8 | int(data[o+1])
+	o += 2
+	if o+pkLen+2 > len(data) {
+		return nil, ErrIntegrityBadSignature
+	}
+	sig.PublicKey = make([]byte, pkLen)
+	copy(sig.PublicKey, data[o:o+pkLen])
+	o += pkLen
+	sigLen := int(data[o])<<8 | int(data[o+1])
+	o += 2
+	if o+sigLen > len(data) {
+		return nil, ErrIntegrityBadSignature
+	}
+	sig.SignatureBytes = make([]byte, sigLen)
+	copy(sig.SignatureBytes, data[o:o+sigLen])
 	return sig, nil
 }

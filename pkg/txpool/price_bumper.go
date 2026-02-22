@@ -65,11 +65,11 @@ func DefaultBumperConfig() BumperConfig {
 // BumperBlockFeeData captures the fee-relevant data from a single block needed
 // for gas price estimation.
 type BumperBlockFeeData struct {
-	BaseFee       *big.Int // EIP-1559 base fee, nil for pre-London
-	GasUsedRatio  float64  // gasUsed / gasLimit
+	BaseFee       *big.Int   // EIP-1559 base fee, nil for pre-London
+	GasUsedRatio  float64    // gasUsed / gasLimit
 	Tips          []*big.Int // effective priority fees of all transactions
-	BlobBaseFee   *big.Int // EIP-4844 blob base fee, nil if not applicable
-	ExcessBlobGas uint64   // excess blob gas from header
+	BlobBaseFee   *big.Int   // EIP-4844 blob base fee, nil if not applicable
+	ExcessBlobGas uint64     // excess blob gas from header
 	BlockNumber   uint64
 }
 
@@ -104,8 +104,8 @@ type PriceBumper struct {
 	mu      sync.RWMutex
 	config  BumperConfig
 	history []BumperBlockFeeData // circular buffer of recent blocks
-	head    int            // next write position in history
-	count   int            // number of entries in history
+	head    int                  // next write position in history
+	count   int                  // number of entries in history
 
 	// latestBaseFee caches the most recent block's base fee.
 	latestBaseFee *big.Int

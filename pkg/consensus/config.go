@@ -4,18 +4,18 @@ import "fmt"
 
 // ConsensusConfig holds consensus-layer parameters.
 type ConsensusConfig struct {
-	SecondsPerSlot   uint64 // slot duration in seconds
-	SlotsPerEpoch    uint64 // number of slots per epoch
-	MinGenesisTime   uint64 // minimum genesis timestamp
+	SecondsPerSlot    uint64 // slot duration in seconds
+	SlotsPerEpoch     uint64 // number of slots per epoch
+	MinGenesisTime    uint64 // minimum genesis timestamp
 	EpochsForFinality uint64 // epochs required for finalization (2 = Casper FFG, 1 = single-epoch)
 }
 
 // DefaultConfig returns the standard Ethereum mainnet consensus config.
 func DefaultConfig() *ConsensusConfig {
 	return &ConsensusConfig{
-		SecondsPerSlot:   12,
-		SlotsPerEpoch:    32,
-		MinGenesisTime:   0,
+		SecondsPerSlot:    12,
+		SlotsPerEpoch:     32,
+		MinGenesisTime:    0,
 		EpochsForFinality: 2,
 	}
 }
@@ -23,9 +23,9 @@ func DefaultConfig() *ConsensusConfig {
 // QuickSlotsConfig returns the config for the quick-slots + 1-epoch finality upgrade.
 func QuickSlotsConfig() *ConsensusConfig {
 	return &ConsensusConfig{
-		SecondsPerSlot:   6,
-		SlotsPerEpoch:    4,
-		MinGenesisTime:   0,
+		SecondsPerSlot:    6,
+		SlotsPerEpoch:     4,
+		MinGenesisTime:    0,
 		EpochsForFinality: 1,
 	}
 }

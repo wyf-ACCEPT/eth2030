@@ -138,9 +138,9 @@ func SignBlobCommitment(commitment [PQCommitmentSize]byte, signer *PQBlobSigner)
 	commitHash := crypto.Keccak256Hash(commitment[:])
 
 	result := PQBlobSignature{
-		Algorithm:  algID,
-		PublicKey:  make([]byte, len(kp.PublicKey)),
-		Signature:  sig,
+		Algorithm: algID,
+		PublicKey: make([]byte, len(kp.PublicKey)),
+		Signature: sig,
 	}
 	copy(result.PublicKey, kp.PublicKey)
 	copy(result.Commitment[:], commitHash[:])

@@ -35,7 +35,7 @@ func TestConversionFactorApply(t *testing.T) {
 		{"three_quarters", 3, 4, 100, 75},
 		{"double", 2, 1, 100, 200},
 		{"zero gas", 1, 2, 0, 0},
-		{"result rounds down", 1, 3, 10, 3}, // 10/3 = 3.33 -> 3
+		{"result rounds down", 1, 3, 10, 3},      // 10/3 = 3.33 -> 3
 		{"minimum 1 for tiny gas", 1, 100, 1, 1}, // 1/100 = 0 -> min 1
 		{"tenth", 1, 10, 1000, 100},
 	}
@@ -250,16 +250,16 @@ func TestApplyConversion(t *testing.T) {
 		got  uint64
 		want uint64
 	}{
-		{"SloadCold", table.SloadCold, 100},   // 200/2
-		{"SloadWarm", table.SloadWarm, 50},    // 100/2
-		{"SstoreCold", table.SstoreCold, 1250}, // 2500/2
-		{"SstoreWarm", table.SstoreWarm, 50},  // 100/2
-		{"CallCold", table.CallCold, 50},      // 100/2
+		{"SloadCold", table.SloadCold, 100},     // 200/2
+		{"SloadWarm", table.SloadWarm, 50},      // 100/2
+		{"SstoreCold", table.SstoreCold, 1250},  // 2500/2
+		{"SstoreWarm", table.SstoreWarm, 50},    // 100/2
+		{"CallCold", table.CallCold, 50},        // 100/2
 		{"BalanceCold", table.BalanceCold, 100}, // 200/2
-		{"Create", table.Create, 4000},         // 8000/2
+		{"Create", table.Create, 4000},          // 8000/2
 		{"ExtCodeSize", table.ExtCodeSize, 100}, // 200/2
-		{"Log", table.Log, 150},                // 300/2
-		{"LogData", table.LogData, 3},          // 6/2
+		{"Log", table.Log, 150},                 // 300/2
+		{"LogData", table.LogData, 3},           // 6/2
 	}
 
 	for _, c := range checks {
@@ -362,7 +362,7 @@ func TestConversionSummary(t *testing.T) {
 
 func TestSafeMulDiv(t *testing.T) {
 	tests := []struct {
-		name string
+		name    string
 		a, b, c uint64
 		want    uint64
 	}{

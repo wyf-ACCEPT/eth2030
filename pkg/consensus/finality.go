@@ -6,15 +6,15 @@ import (
 
 // FinalityTracker tracks justification and finalization state across epochs.
 type FinalityTracker struct {
-	config            *ConsensusConfig
-	state             BeaconState
-	singleEpochMode  bool // if true, finalize in 1 epoch instead of 2
+	config          *ConsensusConfig
+	state           BeaconState
+	singleEpochMode bool // if true, finalize in 1 epoch instead of 2
 }
 
 // NewFinalityTracker creates a tracker with the given config.
 func NewFinalityTracker(cfg *ConsensusConfig) *FinalityTracker {
 	return &FinalityTracker{
-		config:           cfg,
+		config:          cfg,
 		singleEpochMode: cfg.IsSingleEpochFinality(),
 	}
 }

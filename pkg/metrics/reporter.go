@@ -21,8 +21,8 @@ type MetricsReporter struct {
 	backends map[string]ReportBackend
 	metrics  map[string]float64
 
-	stopCh chan struct{}
-	doneCh chan struct{}
+	stopCh  chan struct{}
+	doneCh  chan struct{}
 	running bool
 }
 

@@ -13,17 +13,17 @@ import (
 // the p2p package but are re-exported here for ergonomic use by callers
 // that only depend on the eth package.
 const (
-	MsgStatus                    uint64 = 0x00
-	MsgNewBlockHashes            uint64 = 0x01
-	MsgTransactions              uint64 = 0x02
-	MsgGetBlockHeaders           uint64 = 0x03
-	MsgBlockHeaders              uint64 = 0x04
-	MsgGetBlockBodies            uint64 = 0x05
-	MsgBlockBodies               uint64 = 0x06
-	MsgNewBlock                  uint64 = 0x07
+	MsgStatus                     uint64 = 0x00
+	MsgNewBlockHashes             uint64 = 0x01
+	MsgTransactions               uint64 = 0x02
+	MsgGetBlockHeaders            uint64 = 0x03
+	MsgBlockHeaders               uint64 = 0x04
+	MsgGetBlockBodies             uint64 = 0x05
+	MsgBlockBodies                uint64 = 0x06
+	MsgNewBlock                   uint64 = 0x07
 	MsgNewPooledTransactionHashes uint64 = 0x08
-	MsgGetPooledTransactions     uint64 = 0x09
-	MsgPooledTransactions        uint64 = 0x0a
+	MsgGetPooledTransactions      uint64 = 0x09
+	MsgPooledTransactions         uint64 = 0x0a
 )
 
 // StatusMessage is the eth/68 status handshake message. It is exchanged once

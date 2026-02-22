@@ -46,13 +46,13 @@ type BlockAssemblerConfig struct {
 
 // AssembledBlock holds the result of block assembly.
 type AssembledBlock struct {
-	Transactions []*types.Transaction
-	GasUsed      uint64
-	BlobGasUsed  uint64
+	Transactions   []*types.Transaction
+	GasUsed        uint64
+	BlobGasUsed    uint64
 	CoinbaseReward *big.Int // total tips accumulated for coinbase
-	TxCount      int
-	Elapsed      time.Duration
-	TimedOut     bool
+	TxCount        int
+	Elapsed        time.Duration
+	TimedOut       bool
 }
 
 // BlockAssembler selects and orders transactions for inclusion in a new block.

@@ -8,8 +8,8 @@ import (
 
 // Server is a JSON-RPC HTTP server that dispatches requests to the EthAPI.
 type Server struct {
-	api  *EthAPI
-	mux  *http.ServeMux
+	api *EthAPI
+	mux *http.ServeMux
 }
 
 // NewServer creates a new JSON-RPC server.

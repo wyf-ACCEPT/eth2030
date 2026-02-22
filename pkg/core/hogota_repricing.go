@@ -101,16 +101,16 @@ func ApplyHogotaRepricing(table *HogotaGasTable) *HogotaGasTable {
 // and Hogota for each modified opcode. Positive values indicate reductions.
 func HogotaRepricingDeltas() map[string]int64 {
 	return map[string]int64{
-		"SLOAD_COLD":    800 - 200,   // 600 reduction
-		"SSTORE_COLD":   5000 - 2500, // 2500 reduction
-		"SSTORE_WARM":   1500 - 100,  // 1400 reduction
-		"BALANCE_COLD":  400 - 200,   // 200 reduction
+		"SLOAD_COLD":    800 - 200,    // 600 reduction
+		"SSTORE_COLD":   5000 - 2500,  // 2500 reduction
+		"SSTORE_WARM":   1500 - 100,   // 1400 reduction
+		"BALANCE_COLD":  400 - 200,    // 200 reduction
 		"CREATE":        10000 - 8000, // 2000 reduction
-		"EXTCODESIZE":   400 - 200,   // 200 reduction
-		"EXTCODECOPY":   400 - 200,   // 200 reduction
-		"EXTCODEHASH":   400 - 200,   // 200 reduction
-		"LOG_BASE":      375 - 300,   // 75 reduction
-		"LOG_DATA_BYTE": 8 - 6,       // 2 reduction per byte
+		"EXTCODESIZE":   400 - 200,    // 200 reduction
+		"EXTCODECOPY":   400 - 200,    // 200 reduction
+		"EXTCODEHASH":   400 - 200,    // 200 reduction
+		"LOG_BASE":      375 - 300,    // 75 reduction
+		"LOG_DATA_BYTE": 8 - 6,        // 2 reduction per byte
 	}
 }
 
@@ -136,8 +136,8 @@ type BlobBaseFeePricing struct {
 // for the Hogota fork.
 func DefaultBlobBaseFeePricing() *BlobBaseFeePricing {
 	return &BlobBaseFeePricing{
-		MinBlobBaseFee:            1 << 25,  // 33554432 (EIP-7762)
-		BlobBaseFeeUpdateFraction: 5376681,  // Fusaka value
+		MinBlobBaseFee:            1 << 25, // 33554432 (EIP-7762)
+		BlobBaseFeeUpdateFraction: 5376681, // Fusaka value
 		TargetBlobsPerBlock:       6,
 		MaxBlobsPerBlock:          9,
 	}

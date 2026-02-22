@@ -46,19 +46,19 @@ func DefaultBehaviorScorerConfig() BehaviorScorerConfig {
 
 // BehaviorMetrics holds tracked metrics for a single peer.
 type BehaviorMetrics struct {
-	PeerID          string
-	IP              string    // Peer's IP address for colocation checks.
-	Score           float64   // Composite score.
-	ValidBlocks     int       // Count of valid blocks delivered.
-	InvalidMsgs     int       // Count of invalid messages received.
-	TimedOut        int       // Count of request timeouts.
-	AvgLatencyMs    float64   // Exponentially weighted average latency.
-	LatencySamples  int       // Number of latency samples recorded.
-	BanCount        int       // Number of times this peer has been banned.
-	Banned          bool      // Whether the peer is currently banned.
-	BannedAt        time.Time // When the peer was last banned.
-	FirstSeen       time.Time // When the peer was first tracked.
-	LastActivity    time.Time // When the last event was recorded.
+	PeerID         string
+	IP             string    // Peer's IP address for colocation checks.
+	Score          float64   // Composite score.
+	ValidBlocks    int       // Count of valid blocks delivered.
+	InvalidMsgs    int       // Count of invalid messages received.
+	TimedOut       int       // Count of request timeouts.
+	AvgLatencyMs   float64   // Exponentially weighted average latency.
+	LatencySamples int       // Number of latency samples recorded.
+	BanCount       int       // Number of times this peer has been banned.
+	Banned         bool      // Whether the peer is currently banned.
+	BannedAt       time.Time // When the peer was last banned.
+	FirstSeen      time.Time // When the peer was first tracked.
+	LastActivity   time.Time // When the last event was recorded.
 }
 
 // BehaviorScorer computes composite peer reputation scores from message

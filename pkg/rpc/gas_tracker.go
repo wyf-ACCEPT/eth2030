@@ -34,19 +34,19 @@ type GasBlockRecord struct {
 
 // GasFeeEstimate contains fee estimates derived from recent block history.
 type GasFeeEstimate struct {
-	BaseFeeEstimate  uint64
-	PriorityFeeLow   uint64
+	BaseFeeEstimate   uint64
+	PriorityFeeLow    uint64
 	PriorityFeeMedium uint64
-	PriorityFeeHigh  uint64
-	NextBlockBaseFee uint64
+	PriorityFeeHigh   uint64
+	NextBlockBaseFee  uint64
 }
 
 // GasTracker tracks gas usage patterns for EIP-1559 fee estimation and
 // gas price analytics. All methods are safe for concurrent use.
 type GasTracker struct {
-	mu             sync.RWMutex
-	config         GasTrackerConfig
-	blocks         []*GasBlockRecord
+	mu              sync.RWMutex
+	config          GasTrackerConfig
+	blocks          []*GasBlockRecord
 	percentileCache map[float64]uint64
 }
 
@@ -128,11 +128,11 @@ func (gt *GasTracker) EstimateFees() (*GasFeeEstimate, error) {
 	allPrices := gt.collectAllPrices()
 	if len(allPrices) == 0 {
 		return &GasFeeEstimate{
-			BaseFeeEstimate:  baseFeeEstimate,
-			PriorityFeeLow:   0,
+			BaseFeeEstimate:   baseFeeEstimate,
+			PriorityFeeLow:    0,
 			PriorityFeeMedium: 0,
-			PriorityFeeHigh:  0,
-			NextBlockBaseFee: nextBaseFee,
+			PriorityFeeHigh:   0,
+			NextBlockBaseFee:  nextBaseFee,
 		}, nil
 	}
 
@@ -141,11 +141,11 @@ func (gt *GasTracker) EstimateFees() (*GasFeeEstimate, error) {
 	high := gt.percentileFromSorted(allPrices, 90)
 
 	return &GasFeeEstimate{
-		BaseFeeEstimate:  baseFeeEstimate,
-		PriorityFeeLow:   low,
+		BaseFeeEstimate:   baseFeeEstimate,
+		PriorityFeeLow:    low,
 		PriorityFeeMedium: medium,
-		PriorityFeeHigh:  high,
-		NextBlockBaseFee: nextBaseFee,
+		PriorityFeeHigh:   high,
+		NextBlockBaseFee:  nextBaseFee,
 	}, nil
 }
 

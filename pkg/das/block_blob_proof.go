@@ -16,8 +16,8 @@ import (
 
 // Block-blob proof errors.
 var (
-	ErrBlockBlobTooLarge      = errors.New("das-proof: block data exceeds maximum size")
-	ErrBlockBlobInvalidProof  = errors.New("das-proof: proof verification failed")
+	ErrBlockBlobTooLarge       = errors.New("das-proof: block data exceeds maximum size")
+	ErrBlockBlobInvalidProof   = errors.New("das-proof: proof verification failed")
 	ErrBlockBlobEncodingFailed = errors.New("das-proof: encoding failed")
 )
 
@@ -61,10 +61,10 @@ type BlockBlobProof struct {
 
 // BlockBlobEncodingMeta stores encoding parameters for proof verification.
 type BlockBlobEncodingMeta struct {
-	OriginalSize     uint64
-	ChunkSize        uint64
-	ChunkCount       uint64
-	PaddingBytes     uint64
+	OriginalSize uint64
+	ChunkSize    uint64
+	ChunkCount   uint64
+	PaddingBytes uint64
 }
 
 // BlockBlobProver creates and verifies Merkle proofs over block-in-blob encodings.

@@ -13,12 +13,12 @@ import (
 
 // Extended parallel executor errors.
 var (
-	ErrDepGraphEmpty        = errors.New("depgraph: no transactions provided")
-	ErrDepGraphNilTx        = errors.New("depgraph: nil transaction in slice")
-	ErrExecGroupEmpty       = errors.New("execgroup: empty execution group")
-	ErrSpeculativeRollback  = errors.New("speculative: execution rolled back due to conflict")
-	ErrMergeStateNil        = errors.New("merge: nil state database")
-	ErrMergeConflict        = errors.New("merge: conflicting writes during merge")
+	ErrDepGraphEmpty       = errors.New("depgraph: no transactions provided")
+	ErrDepGraphNilTx       = errors.New("depgraph: nil transaction in slice")
+	ErrExecGroupEmpty      = errors.New("execgroup: empty execution group")
+	ErrSpeculativeRollback = errors.New("speculative: execution rolled back due to conflict")
+	ErrMergeStateNil       = errors.New("merge: nil state database")
+	ErrMergeConflict       = errors.New("merge: conflicting writes during merge")
 )
 
 // AccessPair represents a single address+slot that a transaction accesses.
@@ -31,15 +31,15 @@ type AccessPair struct {
 // TxAccessProfile summarizes the read/write access set for a transaction,
 // derived from EIP-7928 Block Access Lists.
 type TxAccessProfile struct {
-	TxIndex  int
-	Reads    []AccessPair
-	Writes   []AccessPair
+	TxIndex int
+	Reads   []AccessPair
+	Writes  []AccessPair
 }
 
 // DependencyEdge represents a dependency from one tx to another.
 type DependencyEdge struct {
-	From int // tx index that must execute first
-	To   int // tx index that depends on From
+	From int    // tx index that must execute first
+	To   int    // tx index that depends on From
 	Kind string // "RAW", "WAW", or "WAR"
 }
 
@@ -174,7 +174,7 @@ func (da *DependencyAnalyzer) BuildGraph() (*DependencyGraph, error) {
 // ExecutionGroup represents a set of transactions that can execute in parallel
 // because they have no mutual dependencies.
 type ExecutionGroup struct {
-	Level    int   // execution level (0 = first batch, 1 = second, etc.)
+	Level     int   // execution level (0 = first batch, 1 = second, etc.)
 	TxIndices []int // transaction indices in this group
 }
 
@@ -334,9 +334,9 @@ func (se *SpeculativeExecutor) Results() map[int]*SpeculativeResult {
 
 // StateDelta represents accumulated state changes from parallel execution.
 type StateDelta struct {
-	mu      sync.Mutex
-	writes  map[storageKey]types.Hash
-	count   int
+	mu     sync.Mutex
+	writes map[storageKey]types.Hash
+	count  int
 }
 
 // NewStateDelta creates an empty state delta.

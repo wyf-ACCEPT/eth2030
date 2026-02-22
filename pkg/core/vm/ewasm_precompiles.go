@@ -28,17 +28,17 @@ var (
 // eWASM rather than as native Go code. The WasmCode field holds the compiled
 // WASM module bytecode, and GasCostFn computes the gas cost for a given input.
 type EWASMPrecompile struct {
-	Address   byte                       // precompile address (0x01-0x0a)
-	Name      string                     // human-readable name (e.g., "ecRecover")
-	WasmCode  []byte                     // WASM module bytecode
-	GasCostFn func(input []byte) uint64  // gas cost calculator
+	Address   byte                      // precompile address (0x01-0x0a)
+	Name      string                    // human-readable name (e.g., "ecRecover")
+	WasmCode  []byte                    // WASM module bytecode
+	GasCostFn func(input []byte) uint64 // gas cost calculator
 }
 
 // EWASMPrecompileRegistry manages eWASM-backed precompiles. It supports
 // registration, execution via the JIT cache, gas calculation, and migration
 // tracking. All methods are safe for concurrent use.
 type EWASMPrecompileRegistry struct {
-	mu         sync.RWMutex
+	mu          sync.RWMutex
 	precompiles map[byte]*EWASMPrecompile
 	migrated    map[byte]bool // tracks which native precompiles have been migrated
 	cache       *JITCache     // JIT compilation cache for WASM modules

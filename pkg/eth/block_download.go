@@ -45,10 +45,10 @@ var (
 type DownloadState int
 
 const (
-	DownloadPending   DownloadState = iota // Header known, body not yet requested.
-	DownloadActive                         // Body download in progress.
-	DownloadComplete                       // Body received, awaiting import.
-	DownloadImported                       // Block successfully imported.
+	DownloadPending  DownloadState = iota // Header known, body not yet requested.
+	DownloadActive                        // Body download in progress.
+	DownloadComplete                      // Body received, awaiting import.
+	DownloadImported                      // Block successfully imported.
 )
 
 // BlockTask tracks a single block through the download pipeline.

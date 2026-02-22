@@ -32,7 +32,7 @@ var (
 type SyncState uint32
 
 const (
-	StateCheckpointIdle               SyncState = iota
+	StateCheckpointIdle SyncState = iota
 	StateCheckpointDownloadingHeaders
 	StateCheckpointDownloadingBodies
 	StateCheckpointDownloadingReceipts

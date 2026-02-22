@@ -26,13 +26,13 @@ import (
 
 // Bid validation errors.
 var (
-	ErrBidValidatorNilBid          = errors.New("bid_validator: nil bid")
-	ErrBidCommitmentMismatch       = errors.New("bid_validator: commitment hash mismatch")
-	ErrBidInsufficientCollateral   = errors.New("bid_validator: insufficient collateral")
-	ErrBidValueTooLow              = errors.New("bid_validator: bid value below minimum")
-	ErrBidValueTooHigh             = errors.New("bid_validator: bid value above maximum")
-	ErrBidNoBids                   = errors.New("bid_validator: no bids to select from")
-	ErrBidScorerNilConfig          = errors.New("bid_validator: nil scorer config")
+	ErrBidValidatorNilBid        = errors.New("bid_validator: nil bid")
+	ErrBidCommitmentMismatch     = errors.New("bid_validator: commitment hash mismatch")
+	ErrBidInsufficientCollateral = errors.New("bid_validator: insufficient collateral")
+	ErrBidValueTooLow            = errors.New("bid_validator: bid value below minimum")
+	ErrBidValueTooHigh           = errors.New("bid_validator: bid value above maximum")
+	ErrBidNoBids                 = errors.New("bid_validator: no bids to select from")
+	ErrBidScorerNilConfig        = errors.New("bid_validator: nil scorer config")
 )
 
 // BidValidatorConfig configures the bid validation parameters.
@@ -52,8 +52,8 @@ type BidValidatorConfig struct {
 // DefaultBidValidatorConfig returns sensible production defaults.
 func DefaultBidValidatorConfig() BidValidatorConfig {
 	return BidValidatorConfig{
-		MinCollateral: 32_000_000_000, // 32 ETH in Gwei
-		MinBidValue:   1,              // 1 Gwei minimum
+		MinCollateral: 32_000_000_000,        // 32 ETH in Gwei
+		MinBidValue:   1,                     // 1 Gwei minimum
 		MaxBidValue:   1_000_000_000_000_000, // ~1M ETH in Gwei (sanity ceiling)
 	}
 }

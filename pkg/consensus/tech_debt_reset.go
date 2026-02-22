@@ -24,10 +24,10 @@ var (
 // It records when the field was deprecated, what replaces it, and when it
 // will be fully removed.
 type DeprecatedField struct {
-	FieldName           string   // canonical field name being deprecated
-	DeprecatedSinceEpoch uint64  // epoch at which the field became deprecated
-	ReplacedBy          []string // zero or more replacement field names
-	RemovalEpoch        uint64   // epoch at which the field will be removed (0 = no planned removal)
+	FieldName            string   // canonical field name being deprecated
+	DeprecatedSinceEpoch uint64   // epoch at which the field became deprecated
+	ReplacedBy           []string // zero or more replacement field names
+	RemovalEpoch         uint64   // epoch at which the field will be removed (0 = no planned removal)
 }
 
 // TechDebtConfig holds configuration for the tech debt reset system,
@@ -271,9 +271,9 @@ func (t *TechDebtTracker) IsRemoved(fieldName string, currentEpoch uint64) bool 
 // copyDeprecatedField returns a deep copy of a DeprecatedField.
 func copyDeprecatedField(f *DeprecatedField) *DeprecatedField {
 	cp := &DeprecatedField{
-		FieldName:           f.FieldName,
+		FieldName:            f.FieldName,
 		DeprecatedSinceEpoch: f.DeprecatedSinceEpoch,
-		RemovalEpoch:        f.RemovalEpoch,
+		RemovalEpoch:         f.RemovalEpoch,
 	}
 	if len(f.ReplacedBy) > 0 {
 		cp.ReplacedBy = make([]string, len(f.ReplacedBy))

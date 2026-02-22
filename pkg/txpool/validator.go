@@ -10,8 +10,8 @@ import (
 
 // Validator-specific error codes.
 var (
-	ErrTxGasTooLow   = errors.New("tx gas price below minimum")
-	ErrTxGasTooHigh  = errors.New("tx gas limit exceeds maximum")
+	ErrTxGasTooLow    = errors.New("tx gas price below minimum")
+	ErrTxGasTooHigh   = errors.New("tx gas limit exceeds maximum")
 	ErrTxDataTooLarge = errors.New("tx data exceeds maximum size")
 	ErrTxValueTooHigh = errors.New("tx value exceeds maximum")
 	ErrTxNoSignature  = errors.New("tx has no signature")

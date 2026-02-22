@@ -102,9 +102,9 @@ func TestAAProofValidationResult(t *testing.T) {
 	// Valid validation result: status=0x01, validAfter=100, validUntil=200.
 	input := make([]byte, 18)
 	input[0] = AAProofValidationResult
-	input[1] = 0x01 // status
-	binary.BigEndian.PutUint64(input[2:10], 100)   // validAfter
-	binary.BigEndian.PutUint64(input[10:18], 200)   // validUntil
+	input[1] = 0x01                               // status
+	binary.BigEndian.PutUint64(input[2:10], 100)  // validAfter
+	binary.BigEndian.PutUint64(input[10:18], 200) // validUntil
 
 	out, err := p.Run(input)
 	if err != nil {

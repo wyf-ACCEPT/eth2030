@@ -18,19 +18,19 @@ import (
 
 // Gossip protocol errors.
 var (
-	ErrGossipClosed         = errors.New("gossip: manager is closed")
-	ErrGossipNilMsg         = errors.New("gossip: nil message")
-	ErrGossipEmptyTopic     = errors.New("gossip: empty topic")
-	ErrGossipEmptyData      = errors.New("gossip: empty data")
-	ErrGossipMsgTooLarge    = errors.New("gossip: message exceeds max size")
-	ErrGossipZeroSender     = errors.New("gossip: sender ID must not be zero")
-	ErrGossipZeroTimestamp  = errors.New("gossip: timestamp must not be zero")
-	ErrGossipZeroMessageID  = errors.New("gossip: message ID must not be zero")
-	ErrGossipSubNotFound    = errors.New("gossip: subscription not found")
-	ErrGossipSubInactive    = errors.New("gossip: subscription already inactive")
-	ErrGossipPeerBanned     = errors.New("gossip: peer is banned")
-	ErrGossipPeerNotFound   = errors.New("gossip: peer not found")
-	ErrGossipTopicMismatch  = errors.New("gossip: message topic does not match")
+	ErrGossipClosed        = errors.New("gossip: manager is closed")
+	ErrGossipNilMsg        = errors.New("gossip: nil message")
+	ErrGossipEmptyTopic    = errors.New("gossip: empty topic")
+	ErrGossipEmptyData     = errors.New("gossip: empty data")
+	ErrGossipMsgTooLarge   = errors.New("gossip: message exceeds max size")
+	ErrGossipZeroSender    = errors.New("gossip: sender ID must not be zero")
+	ErrGossipZeroTimestamp = errors.New("gossip: timestamp must not be zero")
+	ErrGossipZeroMessageID = errors.New("gossip: message ID must not be zero")
+	ErrGossipSubNotFound   = errors.New("gossip: subscription not found")
+	ErrGossipSubInactive   = errors.New("gossip: subscription already inactive")
+	ErrGossipPeerBanned    = errors.New("gossip: peer is banned")
+	ErrGossipPeerNotFound  = errors.New("gossip: peer not found")
+	ErrGossipTopicMismatch = errors.New("gossip: message topic does not match")
 )
 
 // GossipConfig configures the gossip protocol manager.

@@ -62,10 +62,10 @@ func (m *mockBeaconBackend) CurrentHeader() *types.Header { return m.current }
 func (m *mockBeaconBackend) ChainID() *big.Int            { return big.NewInt(1) }
 
 // Unused Backend methods for beacon tests.
-func (m *mockBeaconBackend) BlockByNumber(BlockNumber) *types.Block                { return nil }
-func (m *mockBeaconBackend) BlockByHash(types.Hash) *types.Block                   { return nil }
-func (m *mockBeaconBackend) StateAt(types.Hash) (state.StateDB, error)             { return nil, nil }
-func (m *mockBeaconBackend) SendTransaction(*types.Transaction) error              { return nil }
+func (m *mockBeaconBackend) BlockByNumber(BlockNumber) *types.Block    { return nil }
+func (m *mockBeaconBackend) BlockByHash(types.Hash) *types.Block       { return nil }
+func (m *mockBeaconBackend) StateAt(types.Hash) (state.StateDB, error) { return nil, nil }
+func (m *mockBeaconBackend) SendTransaction(*types.Transaction) error  { return nil }
 func (m *mockBeaconBackend) GetTransaction(types.Hash) (*types.Transaction, uint64, uint64) {
 	return nil, 0, 0
 }
@@ -268,8 +268,8 @@ func TestBeaconGetNodeVersion(t *testing.T) {
 	var ver VersionResponse
 	json.Unmarshal(data, &ver)
 
-	if ver.Version != "eth2030/v0.1.0-beacon" {
-		t.Errorf("version = %q, want eth2030/v0.1.0-beacon", ver.Version)
+	if ver.Version != "ETH2030/v0.1.0-beacon" {
+		t.Errorf("version = %q, want ETH2030/v0.1.0-beacon", ver.Version)
 	}
 }
 

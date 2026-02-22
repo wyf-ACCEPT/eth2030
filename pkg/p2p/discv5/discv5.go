@@ -14,8 +14,8 @@ import (
 
 // Kademlia DHT constants.
 const (
-	NumBuckets    = 256 // one bucket per possible log distance (1-256)
-	BucketSize    = 16  // max nodes per bucket
+	NumBuckets            = 256 // one bucket per possible log distance (1-256)
+	BucketSize            = 16  // max nodes per bucket
 	DefaultMaxPeers       = 256
 	DefaultRefreshSeconds = 30
 	DefaultPingTimeout    = 5 * time.Second

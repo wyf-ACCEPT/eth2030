@@ -44,25 +44,25 @@ type SubnetHealth struct {
 
 // SubnetConfig configures the subnet router.
 type SubnetConfig struct {
-	SubnetCount        int // number of subnets (default 64)
+	SubnetCount         int // number of subnets (default 64)
 	ValidatorsPerSubnet int // expected validators per subnet
-	MaxPendingPerSlot  int // max pending attestations per slot per subnet
+	MaxPendingPerSlot   int // max pending attestations per slot per subnet
 }
 
 // DefaultSubnetConfig returns the default subnet configuration.
 func DefaultSubnetConfig() *SubnetConfig {
 	return &SubnetConfig{
-		SubnetCount:        DefaultSubnetCount,
+		SubnetCount:         DefaultSubnetCount,
 		ValidatorsPerSubnet: DefaultValidatorsPerSubnet,
-		MaxPendingPerSlot:  SubnetMaxPendingPerSlot,
+		MaxPendingPerSlot:   SubnetMaxPendingPerSlot,
 	}
 }
 
 // Subnet represents a single attestation subnet that collects and
 // aggregates attestations from its assigned validators.
 type Subnet struct {
-	ID     uint64
-	mu     sync.Mutex
+	ID uint64
+	mu sync.Mutex
 	// pending holds attestations indexed by slot.
 	pending map[Slot][]*AggregateAttestation
 	// aggregates holds the per-slot aggregate output.

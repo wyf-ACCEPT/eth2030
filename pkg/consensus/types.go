@@ -51,12 +51,12 @@ func (j *JustificationBits) Shift(n uint) {
 // BeaconState holds minimal beacon state fields relevant for consensus timing
 // and finality tracking.
 type BeaconState struct {
-	Slot                 Slot
-	Epoch                Epoch
-	FinalizedCheckpoint  Checkpoint
-	JustifiedCheckpoint  Checkpoint
-	PreviousJustified    Checkpoint
-	JustificationBits    JustificationBits
+	Slot                Slot
+	Epoch               Epoch
+	FinalizedCheckpoint Checkpoint
+	JustifiedCheckpoint Checkpoint
+	PreviousJustified   Checkpoint
+	JustificationBits   JustificationBits
 }
 
 // SlotToEpoch returns the epoch number for a given slot.

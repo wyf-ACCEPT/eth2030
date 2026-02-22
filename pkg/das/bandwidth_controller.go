@@ -14,14 +14,14 @@ import (
 
 // Bandwidth controller errors.
 var (
-	ErrBWInsufficientTokens = errors.New("das/bw: insufficient tokens for allocation")
-	ErrBWReservationExpired = errors.New("das/bw: reservation deadline has passed")
+	ErrBWInsufficientTokens  = errors.New("das/bw: insufficient tokens for allocation")
+	ErrBWReservationExpired  = errors.New("das/bw: reservation deadline has passed")
 	ErrBWReservationTooLarge = errors.New("das/bw: reservation exceeds capacity")
-	ErrBWPeerNotFound       = errors.New("das/bw: peer not found")
-	ErrBWPeerLimitExceeded  = errors.New("das/bw: peer bandwidth limit exceeded")
-	ErrBWPolicyViolation    = errors.New("das/bw: bandwidth policy violation")
-	ErrBWControllerStopped  = errors.New("das/bw: controller is stopped")
-	ErrBWZeroRate           = errors.New("das/bw: rate must be positive")
+	ErrBWPeerNotFound        = errors.New("das/bw: peer not found")
+	ErrBWPeerLimitExceeded   = errors.New("das/bw: peer bandwidth limit exceeded")
+	ErrBWPolicyViolation     = errors.New("das/bw: bandwidth policy violation")
+	ErrBWControllerStopped   = errors.New("das/bw: controller is stopped")
+	ErrBWZeroRate            = errors.New("das/bw: rate must be positive")
 )
 
 // TeragasBandwidthTarget is the teragas L2 target: 1 GiB/sec.
@@ -133,8 +133,8 @@ func (r *Reservation) IsConsumed() bool {
 // ThroughputReport contains real-time throughput monitoring data.
 type ThroughputReport struct {
 	CurrentBps, PeakBps, AverageBps, Utilization float64
-	DroppedBytes                                  int64
-	WindowSize                                    time.Duration
+	DroppedBytes                                 int64
+	WindowSize                                   time.Duration
 }
 
 type throughputSample struct {
@@ -156,10 +156,10 @@ type BandwidthPolicy struct {
 func DefaultBandwidthPolicy() BandwidthPolicy {
 	return BandwidthPolicy{
 		MaxGlobalBps:      TeragasBandwidthTarget,      // 1 GiB/sec
-		MaxPeerBps:        TeragasBandwidthTarget / 8,   // 128 MiB/sec per peer
-		MaxBlobBps:        TeragasBandwidthTarget / 16,  // 64 MiB/sec per blob stream
-		MinAllocationSize: 512,                          // 512 bytes
-		MaxAllocationSize: 16 * 1024 * 1024,             // 16 MiB
+		MaxPeerBps:        TeragasBandwidthTarget / 8,  // 128 MiB/sec per peer
+		MaxBlobBps:        TeragasBandwidthTarget / 16, // 64 MiB/sec per blob stream
+		MinAllocationSize: 512,                         // 512 bytes
+		MaxAllocationSize: 16 * 1024 * 1024,            // 16 MiB
 		ReservationTTL:    30 * time.Second,
 	}
 }
@@ -349,7 +349,7 @@ func NewBandwidthController(policy BandwidthPolicy) (*BandwidthController, error
 	peerTracker := NewPeerBandwidthTracker(policy.MaxPeerBps)
 
 	limiter, err := NewAdaptiveRateLimiter(
-		policy.MaxGlobalBps/10,   // min = 10% of target
+		policy.MaxGlobalBps/10, // min = 10% of target
 		policy.MaxGlobalBps,
 	)
 	if err != nil {

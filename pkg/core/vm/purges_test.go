@@ -127,8 +127,8 @@ func TestPurgeStats(t *testing.T) {
 
 	// Check some accounts.
 	pm.ShouldPurgeAccount(addr, big.NewInt(0), 0, 0)   // empty -> purge candidate
-	pm.ShouldPurgeAccount(addr, big.NewInt(100), 0, 0)  // non-empty
-	pm.ShouldPurgeAccount(addr, big.NewInt(0), 0, 0)    // empty -> purge candidate
+	pm.ShouldPurgeAccount(addr, big.NewInt(100), 0, 0) // non-empty
+	pm.ShouldPurgeAccount(addr, big.NewInt(0), 0, 0)   // empty -> purge candidate
 
 	// Run a batch purge to actually count purged.
 	accounts := map[types.Address]bool{

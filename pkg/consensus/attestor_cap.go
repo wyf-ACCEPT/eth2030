@@ -33,12 +33,12 @@ const (
 
 // Attestor cap errors.
 var (
-	ErrAttestorNil             = errors.New("attestor_cap: nil attestation")
-	ErrAttestorOversized       = errors.New("attestor_cap: attestation exceeds size cap")
-	ErrAttestorAggOversized    = errors.New("attestor_cap: aggregate exceeds size cap")
-	ErrAttestorNoAttestations  = errors.New("attestor_cap: no attestations to aggregate")
-	ErrAttestorDataTooLarge    = errors.New("attestor_cap: data field too large to trim")
-	ErrAttestorEmptyAggBits    = errors.New("attestor_cap: empty aggregation bits")
+	ErrAttestorNil              = errors.New("attestor_cap: nil attestation")
+	ErrAttestorOversized        = errors.New("attestor_cap: attestation exceeds size cap")
+	ErrAttestorAggOversized     = errors.New("attestor_cap: aggregate exceeds size cap")
+	ErrAttestorNoAttestations   = errors.New("attestor_cap: no attestations to aggregate")
+	ErrAttestorDataTooLarge     = errors.New("attestor_cap: data field too large to trim")
+	ErrAttestorEmptyAggBits     = errors.New("attestor_cap: empty aggregation bits")
 	ErrAttestorLowParticipation = errors.New("attestor_cap: aggregate participation below minimum")
 )
 

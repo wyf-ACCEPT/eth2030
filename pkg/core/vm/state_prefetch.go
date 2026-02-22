@@ -31,8 +31,8 @@ type PrefetchStats struct {
 // stateCache is a concurrent-safe cache for pre-warmed state data.
 type stateCache struct {
 	mu       sync.RWMutex
-	accounts map[types.Address]bool       // true if warmed
-	slots    map[storageSlotKey]bool      // true if warmed
+	accounts map[types.Address]bool  // true if warmed
+	slots    map[storageSlotKey]bool // true if warmed
 }
 
 // storageSlotKey uniquely identifies a storage slot.

@@ -6,9 +6,9 @@
 // participant honestly destroyed their secret.
 //
 // Each participant:
-//   1. Generates a random tau
-//   2. Multiplies existing G1/G2 points by successive powers of tau
-//   3. Provides a proof of knowledge (discrete log proof) that they know tau
+//  1. Generates a random tau
+//  2. Multiplies existing G1/G2 points by successive powers of tau
+//  3. Provides a proof of knowledge (discrete log proof) that they know tau
 //
 // The final SRS consists of [tau^0]G1, [tau^1]G1, ..., [tau^n]G1 and
 // [tau]G2 for pairing-based verification.

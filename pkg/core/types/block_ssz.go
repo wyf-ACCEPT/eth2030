@@ -25,11 +25,12 @@ var (
 // Fixed fields are encoded in order; Extra is a variable-length field.
 //
 // Layout:
-//   ParentHash(32) | UncleHash(32) | Coinbase(20) | Root(32) | TxHash(32) |
-//   ReceiptHash(32) | Bloom(256) | Difficulty(32) | Number(32) | GasLimit(8) |
-//   GasUsed(8) | Time(8) | MixDigest(32) | Nonce(8) | BaseFee(32) |
-//   WithdrawalsHash(32) | BlobGasUsed(8) | ExcessBlobGas(8) |
-//   ParentBeaconRoot(32) | RequestsHash(32) | Extra_offset(4)
+//
+//	ParentHash(32) | UncleHash(32) | Coinbase(20) | Root(32) | TxHash(32) |
+//	ReceiptHash(32) | Bloom(256) | Difficulty(32) | Number(32) | GasLimit(8) |
+//	GasUsed(8) | Time(8) | MixDigest(32) | Nonce(8) | BaseFee(32) |
+//	WithdrawalsHash(32) | BlobGasUsed(8) | ExcessBlobGas(8) |
+//	ParentBeaconRoot(32) | RequestsHash(32) | Extra_offset(4)
 func HeaderToSSZ(header *Header) ([]byte, error) {
 	parentHash := header.ParentHash[:]
 	uncleHash := header.UncleHash[:]

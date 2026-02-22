@@ -27,10 +27,10 @@ import (
 
 // Slashing errors.
 var (
-	ErrSlashingNilBid        = errors.New("slashing: nil bid")
-	ErrSlashingNilEvidence   = errors.New("slashing: nil evidence")
-	ErrSlashingNoConditions  = errors.New("slashing: no conditions registered")
-	ErrSlashingNilPayload    = errors.New("slashing: nil payload")
+	ErrSlashingNilBid         = errors.New("slashing: nil bid")
+	ErrSlashingNilEvidence    = errors.New("slashing: nil evidence")
+	ErrSlashingNoConditions   = errors.New("slashing: no conditions registered")
+	ErrSlashingNilPayload     = errors.New("slashing: nil payload")
 	ErrSlashingInvalidPenalty = errors.New("slashing: invalid penalty multiplier")
 )
 

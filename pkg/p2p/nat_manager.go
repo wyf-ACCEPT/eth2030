@@ -45,13 +45,13 @@ func (t NATType) String() string {
 
 // PortMapping represents an active port mapping through a NAT gateway.
 type PortMapping struct {
-	Protocol    string    // "tcp" or "udp"
-	InternalIP  net.IP    // local address
-	InternalPort uint16   // local port
-	ExternalPort uint16   // externally visible port
-	Lifetime    time.Duration // requested lease duration
-	CreatedAt   time.Time
-	ExpiresAt   time.Time
+	Protocol     string        // "tcp" or "udp"
+	InternalIP   net.IP        // local address
+	InternalPort uint16        // local port
+	ExternalPort uint16        // externally visible port
+	Lifetime     time.Duration // requested lease duration
+	CreatedAt    time.Time
+	ExpiresAt    time.Time
 }
 
 // IsExpired returns whether the mapping lease has expired.
@@ -333,7 +333,7 @@ func (m *NATManager) renewMappings() {
 
 	now := time.Now()
 	for _, pm := range toRenew {
-		err := device.AddMapping(pm.Protocol, pm.InternalPort, pm.ExternalPort, "eth2030", lifetime)
+		err := device.AddMapping(pm.Protocol, pm.InternalPort, pm.ExternalPort, "ETH2030", lifetime)
 		if err != nil {
 			continue
 		}
@@ -417,7 +417,7 @@ func discoverUPnP(timeout time.Duration) (NATDevice, error) {
 // upnpDevice implements NATDevice via UPnP IGD SOAP calls.
 type upnpDevice struct{ gateway net.IP }
 
-func (d *upnpDevice) Type() NATType                       { return NATUPnP }
+func (d *upnpDevice) Type() NATType { return NATUPnP }
 func (d *upnpDevice) ExternalIP() (net.IP, error) {
 	if d.gateway == nil {
 		return nil, ErrNoExternalIP

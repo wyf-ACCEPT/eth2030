@@ -32,8 +32,8 @@ const (
 
 // PayloadStatus constants for payload attestation.
 const (
-	PayloadAbsent  uint8 = 0 // payload not seen
-	PayloadPresent uint8 = 1 // payload was revealed on time
+	PayloadAbsent   uint8 = 0 // payload not seen
+	PayloadPresent  uint8 = 1 // payload was revealed on time
 	PayloadWithheld uint8 = 2 // payload was withheld by builder
 )
 
@@ -94,7 +94,7 @@ type PayloadAttestationData struct {
 
 // PayloadAttestation is an aggregated PTC attestation.
 type PayloadAttestation struct {
-	AggregationBits [PTC_SIZE / 8]byte `json:"aggregationBits"`
+	AggregationBits [PTC_SIZE / 8]byte     `json:"aggregationBits"`
 	Data            PayloadAttestationData `json:"data"`
 	Signature       BLSSignature           `json:"signature"`
 }

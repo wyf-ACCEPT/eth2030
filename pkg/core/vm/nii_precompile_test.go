@@ -279,7 +279,7 @@ func TestBatchVerifyMixedResults(t *testing.T) {
 	root, path := buildMerkleProof(key, value, siblings, leafIdx)
 
 	items := []NIIInclusionItem{
-		{Key: key, Value: value, ProofPath: path, LeafIndex: 0},                          // valid
+		{Key: key, Value: value, ProofPath: path, LeafIndex: 0},                                 // valid
 		{Key: []byte("bad_key_1234567"), Value: []byte("wrong"), ProofPath: path, LeafIndex: 0}, // invalid
 	}
 

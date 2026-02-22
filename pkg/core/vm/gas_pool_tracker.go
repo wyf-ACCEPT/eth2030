@@ -52,11 +52,11 @@ func (d GasDimension) Valid() bool {
 
 // Gas pool tracker errors.
 var (
-	ErrGasPoolOutOfGas      = errors.New("gas_pool_tracker: out of gas")
-	ErrGasPoolInvalidDim    = errors.New("gas_pool_tracker: invalid dimension")
-	ErrGasPoolOverflow      = errors.New("gas_pool_tracker: gas overflow")
-	ErrGasPoolInvalidSnap   = errors.New("gas_pool_tracker: invalid snapshot")
-	ErrGasPoolSnapReverted  = errors.New("gas_pool_tracker: snapshot already reverted")
+	ErrGasPoolOutOfGas     = errors.New("gas_pool_tracker: out of gas")
+	ErrGasPoolInvalidDim   = errors.New("gas_pool_tracker: invalid dimension")
+	ErrGasPoolOverflow     = errors.New("gas_pool_tracker: gas overflow")
+	ErrGasPoolInvalidSnap  = errors.New("gas_pool_tracker: invalid snapshot")
+	ErrGasPoolSnapReverted = errors.New("gas_pool_tracker: snapshot already reverted")
 )
 
 // dimState holds the per-dimension gas state within a call frame.

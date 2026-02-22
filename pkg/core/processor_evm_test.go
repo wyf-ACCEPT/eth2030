@@ -13,14 +13,15 @@ import (
 // the runtime code into memory and returns it.
 //
 // Layout:
-//   PUSH1 <len>    // runtime code length
-//   DUP1           // duplicate length for RETURN
-//   PUSH1 <offset> // offset of runtime code in this bytecode
-//   PUSH1 0x00     // memory destination
-//   CODECOPY       // copy runtime code to memory[0:]
-//   PUSH1 0x00     // memory offset for RETURN
-//   RETURN         // return memory[0:len]
-//   <runtime code>
+//
+//	PUSH1 <len>    // runtime code length
+//	DUP1           // duplicate length for RETURN
+//	PUSH1 <offset> // offset of runtime code in this bytecode
+//	PUSH1 0x00     // memory destination
+//	CODECOPY       // copy runtime code to memory[0:]
+//	PUSH1 0x00     // memory offset for RETURN
+//	RETURN         // return memory[0:len]
+//	<runtime code>
 //
 // The creation prefix is 10 bytes, so runtime code starts at offset 10.
 func makeCreationCode(runtime []byte) []byte {
@@ -32,7 +33,7 @@ func makeCreationCode(runtime []byte) []byte {
 		0x60, 0x00, // PUSH1 0x00 (memory offset)
 		0x39,       // CODECOPY
 		0x60, 0x00, // PUSH1 0x00 (memory offset)
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 	code = append(code, runtime...)
 	return code
@@ -91,8 +92,8 @@ func TestProcessorContractCreation(t *testing.T) {
 	runtimeCode := []byte{
 		0x60, 0x42, // PUSH1 0x42
 		0x60, 0x00, // PUSH1 0x00
-		0x55,       // SSTORE
-		0x00,       // STOP
+		0x55, // SSTORE
+		0x00, // STOP
 	}
 	initCode := makeCreationCode(runtimeCode)
 
@@ -150,7 +151,7 @@ func TestProcessorContractCall(t *testing.T) {
 		0x52,       // MSTORE
 		0x60, 0x20, // PUSH1 0x20 (32 bytes)
 		0x60, 0x00, // PUSH1 0x00
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 	statedb.CreateAccount(contractAddr)
 	statedb.SetCode(contractAddr, contractCode)
@@ -194,8 +195,8 @@ func TestProcessorOutOfGas(t *testing.T) {
 	runtimeCode := []byte{
 		0x60, 0x42, // PUSH1 0x42
 		0x60, 0x00, // PUSH1 0x00
-		0x55,       // SSTORE
-		0x00,       // STOP
+		0x55, // SSTORE
+		0x00, // STOP
 	}
 	initCode := makeCreationCode(runtimeCode)
 
@@ -291,7 +292,7 @@ func TestProcessorRevert(t *testing.T) {
 	contractCode := []byte{
 		0x60, 0x00, // PUSH1 0x00 (return data size)
 		0x60, 0x00, // PUSH1 0x00 (return data offset)
-		0xfd,       // REVERT
+		0xfd, // REVERT
 	}
 	statedb.CreateAccount(contractAddr)
 	statedb.SetCode(contractAddr, contractCode)

@@ -78,11 +78,11 @@ func TestValidateAttestation_Nil(t *testing.T) {
 func TestValidateAttestation_Valid(t *testing.T) {
 	m := NewAttesterCapManager(*DefaultAttestorCapConfig())
 	att := &CappedAttestation{
-		ValidatorIndex: 1,
-		Slot:           10,
-		CommitteeIndex: 0,
-		Data:           make([]byte, 256),
-		Signature:      make([]byte, 96),
+		ValidatorIndex:  1,
+		Slot:            10,
+		CommitteeIndex:  0,
+		Data:            make([]byte, 256),
+		Signature:       make([]byte, 96),
 		AggregationBits: []byte{0xff},
 	}
 	if err := m.ValidateAttestation(att); err != nil {
@@ -191,10 +191,10 @@ func TestTrimAttestation_TrimsData(t *testing.T) {
 		data[i] = byte(i % 256)
 	}
 	att := &CappedAttestation{
-		ValidatorIndex: 42,
-		Slot:           99,
-		Data:           data,
-		Signature:      make([]byte, 96),
+		ValidatorIndex:  42,
+		Slot:            99,
+		Data:            data,
+		Signature:       make([]byte, 96),
 		AggregationBits: make([]byte, 8),
 	}
 
@@ -379,7 +379,7 @@ func TestCountSetBits(t *testing.T) {
 		{"zero", []byte{0x00}, 0},
 		{"one", []byte{0x01}, 1},
 		{"all set byte", []byte{0xff}, 8},
-		{"mixed", []byte{0xaa}, 4},       // 10101010
+		{"mixed", []byte{0xaa}, 4}, // 10101010
 		{"multi byte", []byte{0xff, 0x01}, 9},
 	}
 	for _, tt := range tests {

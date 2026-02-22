@@ -27,11 +27,11 @@ import (
 
 // Bid scoring errors.
 var (
-	ErrBSNilBid            = errors.New("bid_scoring: nil bid")
-	ErrBSNoBids            = errors.New("bid_scoring: no bids to rank")
-	ErrBSBidBelowMinimum   = errors.New("bid_scoring: bid value below minimum")
-	ErrBSInvalidWeight     = errors.New("bid_scoring: invalid scoring weight")
-	ErrBSBuilderNotFound   = errors.New("bid_scoring: builder not found in reputation tracker")
+	ErrBSNilBid          = errors.New("bid_scoring: nil bid")
+	ErrBSNoBids          = errors.New("bid_scoring: no bids to rank")
+	ErrBSBidBelowMinimum = errors.New("bid_scoring: bid value below minimum")
+	ErrBSInvalidWeight   = errors.New("bid_scoring: invalid scoring weight")
+	ErrBSBuilderNotFound = errors.New("bid_scoring: builder not found in reputation tracker")
 )
 
 // ScoreComponents holds the individual factors that contribute to a bid score.
@@ -150,9 +150,9 @@ func clampFloat(v, min, max float64) float64 {
 
 // BuilderReputationEntry holds reputation data for a single builder.
 type BuilderReputationEntry struct {
-	BuilderAddr      types.Address
-	Score            float64 // 0-100
-	TotalBids        uint64
+	BuilderAddr       types.Address
+	Score             float64 // 0-100
+	TotalBids         uint64
 	SuccessfulReveals uint64
 }
 

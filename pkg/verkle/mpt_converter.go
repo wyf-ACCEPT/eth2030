@@ -64,10 +64,10 @@ type MPTConverter struct {
 	pedConfig    *PedersenConfig
 
 	// Progress tracking.
-	converted  int
-	remaining  int
-	errors     int
-	lastErr    error
+	converted int
+	remaining int
+	errors    int
+	lastErr   error
 
 	// Pending batch buffer.
 	pendingKeys   [][]byte

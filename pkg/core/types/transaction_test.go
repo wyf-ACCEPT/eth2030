@@ -211,8 +211,8 @@ func TestDeriveChainID(t *testing.T) {
 	}{
 		{big.NewInt(27), 0},
 		{big.NewInt(28), 0},
-		{big.NewInt(37), 1},  // chainID=1 => v = 1*2+35 = 37
-		{big.NewInt(38), 1},  // chainID=1 => v = 1*2+36 = 38
+		{big.NewInt(37), 1}, // chainID=1 => v = 1*2+35 = 37
+		{big.NewInt(38), 1}, // chainID=1 => v = 1*2+36 = 38
 		{nil, 0},
 	}
 	for _, tt := range tests {

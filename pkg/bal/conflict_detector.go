@@ -51,11 +51,11 @@ func (ct ConflictType) String() string {
 // Conflict records a single conflict between two transactions identified
 // by their BAL access indices. TxA always has the lower index.
 type Conflict struct {
-	TxA      int
-	TxB      int
-	Type     ConflictType
-	Address  types.Address
-	Slot     types.Hash // zero for account-level conflicts
+	TxA     int
+	TxB     int
+	Type    ConflictType
+	Address types.Address
+	Slot    types.Hash // zero for account-level conflicts
 }
 
 // ResolutionStrategy determines how to handle detected conflicts.

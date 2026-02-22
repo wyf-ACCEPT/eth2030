@@ -12,13 +12,13 @@ import (
 
 // Extended gas cap errors.
 var (
-	ErrTxGasLimitZero          = errors.New("transaction gas limit is zero")
-	ErrBlockGasLimitTooLow     = errors.New("block gas limit below minimum")
-	ErrBlockGasLimitTooHigh    = errors.New("block gas limit exceeds maximum")
-	ErrBlockGasLimitDelta      = errors.New("block gas limit change exceeds allowed delta")
-	ErrCalldataGasCapExceeded  = errors.New("transaction calldata gas exceeds cap")
-	ErrBlobCountCapExceeded    = errors.New("transaction blob count exceeds per-tx cap")
-	ErrTotalBlockGasExceeded   = errors.New("transactions exceed block gas limit")
+	ErrTxGasLimitZero         = errors.New("transaction gas limit is zero")
+	ErrBlockGasLimitTooLow    = errors.New("block gas limit below minimum")
+	ErrBlockGasLimitTooHigh   = errors.New("block gas limit exceeds maximum")
+	ErrBlockGasLimitDelta     = errors.New("block gas limit change exceeds allowed delta")
+	ErrCalldataGasCapExceeded = errors.New("transaction calldata gas exceeds cap")
+	ErrBlobCountCapExceeded   = errors.New("transaction blob count exceeds per-tx cap")
+	ErrTotalBlockGasExceeded  = errors.New("transactions exceed block gas limit")
 )
 
 // Gas cap constants for multi-dimensional caps.

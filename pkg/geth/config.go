@@ -9,8 +9,8 @@ import (
 	"github.com/eth2030/eth2030/core"
 )
 
-// ToGethChainConfig converts an eth2030 ChainConfig to a go-ethereum ChainConfig.
-// eth2030-specific forks (Glamsterdan, Hogota, etc.) are ignored since
+// ToGethChainConfig converts an ETH2030 ChainConfig to a go-ethereum ChainConfig.
+// ETH2030-specific forks (Glamsterdan, Hogota, etc.) are ignored since
 // go-ethereum doesn't know about them.
 func ToGethChainConfig(c *core.ChainConfig) *params.ChainConfig {
 	if c == nil {
@@ -44,23 +44,23 @@ func ToGethChainConfig(c *core.ChainConfig) *params.ChainConfig {
 
 // efForkLevel maps fork names to numeric ordering for building cumulative configs.
 var efForkLevel = map[string]int{
-	"Frontier":            0,
-	"Homestead":           1,
-	"EIP150":              2,
-	"EIP158":              3,
-	"SpuriousDragon":      3,
-	"TangerineWhistle":    2,
-	"Byzantium":           4,
-	"Constantinople":      5,
-	"ConstantinopleFix":   5,
-	"Istanbul":            6,
-	"Berlin":              7,
-	"London":              8,
-	"Merge":               9,
-	"Paris":               9,
-	"Shanghai":            10,
-	"Cancun":              11,
-	"Prague":              12,
+	"Frontier":          0,
+	"Homestead":         1,
+	"EIP150":            2,
+	"EIP158":            3,
+	"SpuriousDragon":    3,
+	"TangerineWhistle":  2,
+	"Byzantium":         4,
+	"Constantinople":    5,
+	"ConstantinopleFix": 5,
+	"Istanbul":          6,
+	"Berlin":            7,
+	"London":            8,
+	"Merge":             9,
+	"Paris":             9,
+	"Shanghai":          10,
+	"Cancun":            11,
+	"Prague":            12,
 }
 
 // EFTestChainConfig returns a go-ethereum ChainConfig for a named EF test fork.

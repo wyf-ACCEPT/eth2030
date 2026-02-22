@@ -55,22 +55,22 @@ var (
 // ShieldedNote represents a note in the shielded transfer system.
 // Each note is an output commitment with encrypted data for the recipient.
 type ShieldedNote struct {
-	Commitment       types.Hash // Pedersen commitment C = amount*G + randomness*H
-	Nullifier        types.Hash // Derived from secret key + commitment index
-	EncryptedAmount  []byte     // Encrypted amount for the recipient
-	EncryptedRandom  []byte     // Encrypted randomness for the recipient
-	CommitmentIndex  uint64     // Position in the commitment tree
+	Commitment      types.Hash // Pedersen commitment C = amount*G + randomness*H
+	Nullifier       types.Hash // Derived from secret key + commitment index
+	EncryptedAmount []byte     // Encrypted amount for the recipient
+	EncryptedRandom []byte     // Encrypted randomness for the recipient
+	CommitmentIndex uint64     // Position in the commitment tree
 }
 
 // ShieldedTransferWitness contains the private inputs for proof generation.
 type ShieldedTransferWitness struct {
-	SecretKey       [32]byte     // Sender's secret key
-	Amount          uint64       // Transfer amount
-	Randomness      [32]byte     // Commitment randomness (blinding factor)
-	CommitmentIndex uint64       // Index of input commitment in tree
-	MerklePath      [][32]byte   // Merkle path siblings from commitment to root
-	MerkleRoot      types.Hash   // Current commitment tree root
-	RecipientPK     [32]byte     // Recipient's public key
+	SecretKey       [32]byte   // Sender's secret key
+	Amount          uint64     // Transfer amount
+	Randomness      [32]byte   // Commitment randomness (blinding factor)
+	CommitmentIndex uint64     // Index of input commitment in tree
+	MerklePath      [][32]byte // Merkle path siblings from commitment to root
+	MerkleRoot      types.Hash // Current commitment tree root
+	RecipientPK     [32]byte   // Recipient's public key
 }
 
 // ShieldedTransferCircuit defines the ZK circuit for a shielded transfer.

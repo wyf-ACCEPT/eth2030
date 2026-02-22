@@ -37,9 +37,9 @@ type DAValidatorConfig struct {
 // based on the Fulu consensus spec parameters.
 func DefaultDAValidatorConfig() DAValidatorConfig {
 	return DAValidatorConfig{
-		MinCustodyGroups: CustodyRequirement,           // 4
-		ColumnCount:      NumberOfColumns,               // 128
-		SamplesPerSlot:   SamplesPerSlot,                // 8
+		MinCustodyGroups: CustodyRequirement,              // 4
+		ColumnCount:      NumberOfColumns,                 // 128
+		SamplesPerSlot:   SamplesPerSlot,                  // 8
 		MaxBlobsPerBlock: int(MaxBlobCommitmentsPerBlock), // 9
 	}
 }

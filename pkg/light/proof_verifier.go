@@ -1,7 +1,7 @@
 // proof_verifier.go implements a Merkle proof verifier for light clients.
 // It supports single and batch proof verification as well as proof creation,
 // suitable for verifying state inclusion proofs against beacon state roots.
-// This is part of the eth2030 light client infrastructure.
+// This is part of the ETH2030 light client infrastructure.
 package light
 
 import (
@@ -15,14 +15,14 @@ import (
 
 // Proof verifier errors.
 var (
-	ErrProofNilRoot       = errors.New("proof verifier: root must not be zero")
-	ErrProofNilLeaf       = errors.New("proof verifier: leaf must not be zero")
-	ErrProofEmptyPath     = errors.New("proof verifier: path must not be empty")
-	ErrProofDepthExceeded = errors.New("proof verifier: proof depth exceeds maximum")
-	ErrProofEmptyBatch    = errors.New("proof verifier: empty proof batch")
-	ErrProofNoLeaves      = errors.New("proof verifier: no leaves provided")
+	ErrProofNilRoot         = errors.New("proof verifier: root must not be zero")
+	ErrProofNilLeaf         = errors.New("proof verifier: leaf must not be zero")
+	ErrProofEmptyPath       = errors.New("proof verifier: path must not be empty")
+	ErrProofDepthExceeded   = errors.New("proof verifier: proof depth exceeds maximum")
+	ErrProofEmptyBatch      = errors.New("proof verifier: empty proof batch")
+	ErrProofNoLeaves        = errors.New("proof verifier: no leaves provided")
 	ErrProofIndexOutOfRange = errors.New("proof verifier: index out of range")
-	ErrProofNotPowerOfTwo = errors.New("proof verifier: leaf count must be a power of two")
+	ErrProofNotPowerOfTwo   = errors.New("proof verifier: leaf count must be a power of two")
 )
 
 // ProofVerifierConfig configures the ProofVerifier.

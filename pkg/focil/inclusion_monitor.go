@@ -97,9 +97,9 @@ type builderRecord struct {
 // InclusionMonitor tracks per-slot compliance and per-builder behavior.
 // All public methods are safe for concurrent use.
 type InclusionMonitor struct {
-	mu      sync.RWMutex
-	config  MonitorConfig
-	slots   map[uint64]*slotRecord
+	mu       sync.RWMutex
+	config   MonitorConfig
+	slots    map[uint64]*slotRecord
 	builders map[[20]byte]*builderRecord
 }
 

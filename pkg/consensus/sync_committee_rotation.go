@@ -73,10 +73,10 @@ type SyncCommitteeContribution struct {
 
 // SyncCommitteeRotationConfig holds configuration for the rotation manager.
 type SyncCommitteeRotationConfig struct {
-	CommitteeSize        int
-	EpochsPerPeriod      uint64
-	PeriodsPerCommittee  uint64
-	SlotsPerEpoch        uint64
+	CommitteeSize       int
+	EpochsPerPeriod     uint64
+	PeriodsPerCommittee uint64
+	SlotsPerEpoch       uint64
 }
 
 // DefaultSyncCommitteeRotationConfig returns the mainnet default config.

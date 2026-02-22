@@ -16,14 +16,14 @@ import (
 
 // State transition errors.
 var (
-	ErrSTBlobGasExceeded    = errors.New("blob gas limit exceeded")
-	ErrSTBlobGasUsedInvalid = errors.New("blob gas used mismatch")
-	ErrSTStateRootMismatch  = errors.New("post-state root mismatch")
+	ErrSTBlobGasExceeded     = errors.New("blob gas limit exceeded")
+	ErrSTBlobGasUsedInvalid  = errors.New("blob gas used mismatch")
+	ErrSTStateRootMismatch   = errors.New("post-state root mismatch")
 	ErrSTReceiptRootMismatch = errors.New("receipt root mismatch")
-	ErrSTBloomMismatch      = errors.New("logs bloom mismatch")
-	ErrSTGasUsedMismatch    = errors.New("gas used mismatch")
-	ErrSTInvalidSender      = errors.New("transaction sender not set")
-	ErrSTMaxBlobGas         = errors.New("max blob gas per block exceeded")
+	ErrSTBloomMismatch       = errors.New("logs bloom mismatch")
+	ErrSTGasUsedMismatch     = errors.New("gas used mismatch")
+	ErrSTInvalidSender       = errors.New("transaction sender not set")
+	ErrSTMaxBlobGas          = errors.New("max blob gas per block exceeded")
 )
 
 // stBlobGasPerBlob is the gas cost per blob (EIP-4844).

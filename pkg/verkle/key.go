@@ -13,11 +13,11 @@ import (
 // Different suffixes within the stem correspond to different fields.
 const (
 	// Header fields (suffixes 0-63).
-	VersionLeafKey    byte = 0
-	BalanceLeafKey    byte = 1
-	NonceLeafKey      byte = 2
-	CodeHashLeafKey   byte = 3
-	CodeSizeLeafKey   byte = 4
+	VersionLeafKey  byte = 0
+	BalanceLeafKey  byte = 1
+	NonceLeafKey    byte = 2
+	CodeHashLeafKey byte = 3
+	CodeSizeLeafKey byte = 4
 
 	// Code chunks start at suffix 128.
 	CodeOffset byte = 128

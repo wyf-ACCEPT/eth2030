@@ -26,11 +26,11 @@ import (
 
 // MEV burn errors.
 var (
-	ErrMEVBurnInvalidFraction   = errors.New("mev_burn: burn fraction must be in [0.0, 1.0]")
-	ErrMEVBurnInvalidSmoothing  = errors.New("mev_burn: smoothing factor must be in (0.0, 1.0]")
-	ErrMEVBurnValidationFailed  = errors.New("mev_burn: burn amount validation failed")
-	ErrMEVBurnNoBids            = errors.New("mev_burn: no bids for smoothed estimate")
-	ErrMEVBurnInvalidTolerance  = errors.New("mev_burn: tolerance must be in [0.0, 1.0]")
+	ErrMEVBurnInvalidFraction  = errors.New("mev_burn: burn fraction must be in [0.0, 1.0]")
+	ErrMEVBurnInvalidSmoothing = errors.New("mev_burn: smoothing factor must be in (0.0, 1.0]")
+	ErrMEVBurnValidationFailed = errors.New("mev_burn: burn amount validation failed")
+	ErrMEVBurnNoBids           = errors.New("mev_burn: no bids for smoothed estimate")
+	ErrMEVBurnInvalidTolerance = errors.New("mev_burn: tolerance must be in [0.0, 1.0]")
 )
 
 // MEVBurnConfig configures the MEV-burn mechanism.
@@ -126,10 +126,10 @@ func ComputeMEVBurn(bidValue uint64, config MEVBurnConfig) MEVBurnResult {
 
 // EpochBurnStats tracks cumulative burn statistics for an epoch.
 type EpochBurnStats struct {
-	Epoch          uint64 `json:"epoch"`
-	TotalBurned    uint64 `json:"totalBurned"`
-	TotalBidValue  uint64 `json:"totalBidValue"`
-	BidCount       uint64 `json:"bidCount"`
+	Epoch         uint64 `json:"epoch"`
+	TotalBurned   uint64 `json:"totalBurned"`
+	TotalBidValue uint64 `json:"totalBidValue"`
+	BidCount      uint64 `json:"bidCount"`
 }
 
 // BurnRate returns the fraction of total bid value that was burned
@@ -144,13 +144,13 @@ func (s *EpochBurnStats) BurnRate() float64 {
 // MEVBurnTracker tracks MEV burn statistics across epochs and maintains
 // an exponential moving average of bid values. Thread-safe.
 type MEVBurnTracker struct {
-	mu            sync.RWMutex
-	config        MEVBurnConfig
-	epochs        map[uint64]*EpochBurnStats // epoch -> stats
-	ema           float64                    // current EMA of bid values
+	mu             sync.RWMutex
+	config         MEVBurnConfig
+	epochs         map[uint64]*EpochBurnStats // epoch -> stats
+	ema            float64                    // current EMA of bid values
 	emaInitialized bool
-	totalBurned   uint64 // lifetime cumulative burn
-	totalBids     uint64 // lifetime bid count
+	totalBurned    uint64 // lifetime cumulative burn
+	totalBids      uint64 // lifetime bid count
 }
 
 // NewMEVBurnTracker creates a new MEV burn tracker.

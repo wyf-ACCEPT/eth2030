@@ -1,6 +1,6 @@
 ---
 name: Report a bug
-about: Something with eth2030 is not working as expected
+about: Something with ETH2030 is not working as expected
 title: '[BUG] '
 labels: 'bug'
 assignees: ''
@@ -8,7 +8,7 @@ assignees: ''
 
 #### System information
 
-eth2030 version: `git describe --tags`
+ETH2030 version: `git describe --tags`
 Go version: `go version`
 OS & Version: Windows/Linux/macOS
 Commit hash: (if building from source)

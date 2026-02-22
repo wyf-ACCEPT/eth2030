@@ -8,8 +8,8 @@ import (
 
 // Auction errors.
 var (
-	ErrNoBidsForSlot    = errors.New("no bids available for slot")
-	ErrBidValidation    = errors.New("bid failed validation")
+	ErrNoBidsForSlot = errors.New("no bids available for slot")
+	ErrBidValidation = errors.New("bid failed validation")
 )
 
 // PayloadAuction tracks builder bids per slot and selects winners.

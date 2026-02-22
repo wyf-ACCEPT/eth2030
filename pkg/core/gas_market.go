@@ -22,14 +22,14 @@ const (
 )
 
 var (
-	ErrZeroGasAmount        = errors.New("gas_market: gas amount must be > 0")
-	ErrZeroPricePerGas      = errors.New("gas_market: price per gas must be > 0")
-	ErrZeroSettlementSlot   = errors.New("gas_market: settlement slot must be > 0")
-	ErrExpiryBeforeSettle   = errors.New("gas_market: expiry slot must be > settlement slot")
-	ErrContractNotFound     = errors.New("gas_market: contract not found")
-	ErrContractNotOpen      = errors.New("gas_market: contract is not open")
-	ErrContractNotFilled    = errors.New("gas_market: contract is not filled")
-	ErrSettlementTooEarly   = errors.New("gas_market: current slot < settlement slot")
+	ErrZeroGasAmount      = errors.New("gas_market: gas amount must be > 0")
+	ErrZeroPricePerGas    = errors.New("gas_market: price per gas must be > 0")
+	ErrZeroSettlementSlot = errors.New("gas_market: settlement slot must be > 0")
+	ErrExpiryBeforeSettle = errors.New("gas_market: expiry slot must be > settlement slot")
+	ErrContractNotFound   = errors.New("gas_market: contract not found")
+	ErrContractNotOpen    = errors.New("gas_market: contract is not open")
+	ErrContractNotFilled  = errors.New("gas_market: contract is not filled")
+	ErrSettlementTooEarly = errors.New("gas_market: current slot < settlement slot")
 )
 
 // FuturesContract represents a single gas futures agreement between a buyer

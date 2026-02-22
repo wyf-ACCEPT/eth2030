@@ -42,15 +42,15 @@ func TestDefaultGlamsterdamGasTable(t *testing.T) {
 func TestApplyGlamsterdamRepricing(t *testing.T) {
 	// Start with a table that has pre-Glamsterdam values.
 	table := &GlamsterdamGasTable{
-		SloadCold:    2100,
-		SstoreSet:    20000,
-		CallCold:     2600,
-		BalanceCold:  2600,
-		Create:       32000,
-		ExtCodeSize:  2600,
-		ExtCodeCopy:  2600,
-		ExtCodeHash:  2600,
-		Keccak256:    30,
+		SloadCold:   2100,
+		SstoreSet:   20000,
+		CallCold:    2600,
+		BalanceCold: 2600,
+		Create:      32000,
+		ExtCodeSize: 2600,
+		ExtCodeCopy: 2600,
+		ExtCodeHash: 2600,
+		Keccak256:   30,
 	}
 
 	result := ApplyGlamsterdamRepricing(table)

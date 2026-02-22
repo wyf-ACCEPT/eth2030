@@ -17,16 +17,16 @@ import (
 
 // Recursive aggregation errors.
 var (
-	ErrRecAggNoProofs       = errors.New("rec_agg: no proofs to aggregate")
-	ErrRecAggNilProof       = errors.New("rec_agg: nil aggregated proof")
-	ErrRecAggEmptyRoots     = errors.New("rec_agg: empty individual roots")
-	ErrRecAggRootMismatch   = errors.New("rec_agg: aggregate root mismatch")
-	ErrRecAggCountMismatch  = errors.New("rec_agg: count mismatch")
-	ErrRecAggBatchSizeZero  = errors.New("rec_agg: batch size must be positive")
-	ErrRecAggNoVerifier     = errors.New("rec_agg: no verifier for proof type")
-	ErrRecAggVerifyFailed   = errors.New("rec_agg: proof verification failed")
-	ErrRecAggEmptyData      = errors.New("rec_agg: empty proof data")
-	ErrRecAggInvalidType    = errors.New("rec_agg: invalid proof type")
+	ErrRecAggNoProofs      = errors.New("rec_agg: no proofs to aggregate")
+	ErrRecAggNilProof      = errors.New("rec_agg: nil aggregated proof")
+	ErrRecAggEmptyRoots    = errors.New("rec_agg: empty individual roots")
+	ErrRecAggRootMismatch  = errors.New("rec_agg: aggregate root mismatch")
+	ErrRecAggCountMismatch = errors.New("rec_agg: count mismatch")
+	ErrRecAggBatchSizeZero = errors.New("rec_agg: batch size must be positive")
+	ErrRecAggNoVerifier    = errors.New("rec_agg: no verifier for proof type")
+	ErrRecAggVerifyFailed  = errors.New("rec_agg: proof verification failed")
+	ErrRecAggEmptyData     = errors.New("rec_agg: empty proof data")
+	ErrRecAggInvalidType   = errors.New("rec_agg: invalid proof type")
 )
 
 // AggregationStrategy defines how proofs are combined.
@@ -60,8 +60,8 @@ func (s AggregationStrategy) String() string {
 // Proof represents a single proof to be aggregated. It wraps the existing
 // proof type constants with raw proof data and a cryptographic root.
 type Proof struct {
-	Type     string // "SNARK", "STARK", "IPA", or other identifier.
-	Data     []byte // Raw proof bytes.
+	Type     string   // "SNARK", "STARK", "IPA", or other identifier.
+	Data     []byte   // Raw proof bytes.
 	Root     [32]byte // Hash root of this proof for aggregation.
 	ProverID string   // Identity of the prover.
 }

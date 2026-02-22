@@ -17,9 +17,10 @@ import (
 
 const (
 	authMsgSize           = 32 + 65 + 65 + 1 // nonce + ephemeral + static + version
-	ackMsgSize            = 32 + 65 + 1       // nonce + ephemeral + version
+	ackMsgSize            = 32 + 65 + 1      // nonce + ephemeral + version
 	eciesHandshakeVersion = 5
 )
+
 var (
 	ErrECIESAuthFailed = errors.New("p2p: ecies auth message verification failed")
 	ErrECIESAckFailed  = errors.New("p2p: ecies ack message verification failed")

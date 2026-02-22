@@ -35,13 +35,13 @@ type StateAccess struct {
 type WitnessEntry struct {
 	Address     types.Address
 	Type        AccessType
-	Slot        types.Hash   // for storage accesses
-	Nonce       uint64       // for account accesses
-	Balance     *big.Int     // for account accesses
-	CodeHash    types.Hash   // for account/code accesses
-	StorageRoot types.Hash   // for account accesses
-	Value       types.Hash   // for storage accesses
-	Code        []byte       // for code accesses
+	Slot        types.Hash // for storage accesses
+	Nonce       uint64     // for account accesses
+	Balance     *big.Int   // for account accesses
+	CodeHash    types.Hash // for account/code accesses
+	StorageRoot types.Hash // for account accesses
+	Value       types.Hash // for storage accesses
+	Code        []byte     // for code accesses
 }
 
 // AccumulatedWitness contains all state accesses and their values,

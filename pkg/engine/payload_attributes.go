@@ -128,9 +128,11 @@ func ValidateBeaconRoot(root types.Hash) error {
 
 // DerivePayloadID computes a deterministic 8-byte PayloadID from the
 // payload attributes following the execution-apis spec convention:
-//   PayloadID = first 8 bytes of keccak256(
-//     parentHash || timestamp || prevRandao || suggestedFeeRecipient || [withdrawals] || parentBeaconBlockRoot
-//   )
+//
+//	PayloadID = first 8 bytes of keccak256(
+//	  parentHash || timestamp || prevRandao || suggestedFeeRecipient || [withdrawals] || parentBeaconBlockRoot
+//	)
+//
 // This ensures that two identical forkchoiceUpdated calls with the same
 // attributes produce the same payload ID, enabling idempotent builds.
 func DerivePayloadID(

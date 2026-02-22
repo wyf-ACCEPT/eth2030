@@ -261,7 +261,7 @@ func TestE2EContractDeployAndCall(t *testing.T) {
 		0x52,       // MSTORE
 		0x60, 0x01, // PUSH1 0x01
 		0x60, 0x1f, // PUSH1 0x1f
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 
 	// Contract creation tx.

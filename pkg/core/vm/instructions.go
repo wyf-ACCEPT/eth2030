@@ -13,9 +13,9 @@ type executionFunc func(pc *uint64, evm *EVM, contract *Contract, memory *Memory
 
 var (
 	big0    = new(big.Int)
-	tt256   = new(big.Int).Lsh(big.NewInt(1), 256)    // 2^256
-	tt256m1 = new(big.Int).Sub(tt256, big.NewInt(1))   // 2^256 - 1
-	tt255   = new(big.Int).Lsh(big.NewInt(1), 255)     // 2^255
+	tt256   = new(big.Int).Lsh(big.NewInt(1), 256)   // 2^256
+	tt256m1 = new(big.Int).Sub(tt256, big.NewInt(1)) // 2^256 - 1
+	tt255   = new(big.Int).Lsh(big.NewInt(1), 255)   // 2^255
 )
 
 // toU256 masks val to 256 bits (unsigned).

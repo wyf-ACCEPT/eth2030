@@ -87,10 +87,10 @@ func TestQuickSlotToEpoch(t *testing.T) {
 		{1, 0},
 		{2, 0},
 		{3, 0},
-		{4, 1},  // epoch 1 starts at slot 4
+		{4, 1}, // epoch 1 starts at slot 4
 		{5, 1},
 		{7, 1},
-		{8, 2},  // epoch 2 starts at slot 8
+		{8, 2}, // epoch 2 starts at slot 8
 		{15, 3},
 		{16, 4},
 		{100, 25},
@@ -138,14 +138,14 @@ func TestIsFirstSlotOfEpoch(t *testing.T) {
 		slot uint64
 		want bool
 	}{
-		{0, true},   // epoch 0, slot 0
+		{0, true}, // epoch 0, slot 0
 		{1, false},
 		{2, false},
 		{3, false},
-		{4, true},   // epoch 1, slot 0
+		{4, true}, // epoch 1, slot 0
 		{5, false},
-		{8, true},   // epoch 2, slot 0
-		{12, true},  // epoch 3, slot 0
+		{8, true},  // epoch 2, slot 0
+		{12, true}, // epoch 3, slot 0
 		{13, false},
 		{100, true}, // epoch 25, slot 0
 		{101, false},

@@ -32,18 +32,18 @@ func DefaultNonceTrackerConfig() NonceTrackerConfig {
 
 // accountNonceState holds nonce tracking state for a single account.
 type accountNonceState struct {
-	stateNonce   uint64            // nonce from the blockchain state
-	pendingMax   uint64            // highest nonce seen in pool txs
-	hasPending   bool              // whether any pool nonce has been set
-	knownNonces  map[uint64]bool   // set of nonces currently in the pool
+	stateNonce  uint64          // nonce from the blockchain state
+	pendingMax  uint64          // highest nonce seen in pool txs
+	hasPending  bool            // whether any pool nonce has been set
+	knownNonces map[uint64]bool // set of nonces currently in the pool
 }
 
 // NonceTracker manages expected nonces for transaction senders. It tracks
 // both the on-chain state nonce and the pool's pending nonce to detect gaps
 // and determine whether a transaction's nonce is valid.
 type NonceTracker struct {
-	config   NonceTrackerConfig
-	state    StateReader
+	config NonceTrackerConfig
+	state  StateReader
 
 	mu       sync.RWMutex
 	accounts map[types.Address]*accountNonceState

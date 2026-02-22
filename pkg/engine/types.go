@@ -97,7 +97,7 @@ type PayloadAttributesV3 struct {
 // PayloadAttributesV4 extends V3 with slot number and inclusion list (Amsterdam/FOCIL).
 type PayloadAttributesV4 struct {
 	PayloadAttributesV3
-	SlotNumber               uint64   `json:"slotNumber"`
+	SlotNumber                uint64   `json:"slotNumber"`
 	InclusionListTransactions [][]byte `json:"inclusionListTransactions,omitempty"` // EIP-7805 FOCIL
 }
 
@@ -138,9 +138,9 @@ const (
 
 // PayloadStatusV1 is the response to engine_newPayload.
 type PayloadStatusV1 struct {
-	Status          string     `json:"status"`
+	Status          string      `json:"status"`
 	LatestValidHash *types.Hash `json:"latestValidHash,omitempty"`
-	ValidationError *string    `json:"validationError,omitempty"`
+	ValidationError *string     `json:"validationError,omitempty"`
 }
 
 // ForkchoiceUpdatedResult is the response to engine_forkchoiceUpdated.

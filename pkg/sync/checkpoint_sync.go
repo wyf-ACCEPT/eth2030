@@ -16,14 +16,14 @@ import (
 
 // Checkpoint sync errors.
 var (
-	ErrCheckpointNotSet     = errors.New("checkpoint sync: no checkpoint configured")
-	ErrCheckpointZeroHash   = errors.New("checkpoint sync: block hash must not be zero")
-	ErrCheckpointZeroState  = errors.New("checkpoint sync: state root must not be zero")
-	ErrCheckpointZeroBlock  = errors.New("checkpoint sync: block number must not be zero")
-	ErrCheckpointInvalid    = errors.New("checkpoint sync: checkpoint is inconsistent")
-	ErrCheckpointSyncing    = errors.New("checkpoint sync: already syncing")
-	ErrCheckpointComplete   = errors.New("checkpoint sync: sync already complete")
-	ErrCheckpointNoTarget   = errors.New("checkpoint sync: target block not set")
+	ErrCheckpointNotSet    = errors.New("checkpoint sync: no checkpoint configured")
+	ErrCheckpointZeroHash  = errors.New("checkpoint sync: block hash must not be zero")
+	ErrCheckpointZeroState = errors.New("checkpoint sync: state root must not be zero")
+	ErrCheckpointZeroBlock = errors.New("checkpoint sync: block number must not be zero")
+	ErrCheckpointInvalid   = errors.New("checkpoint sync: checkpoint is inconsistent")
+	ErrCheckpointSyncing   = errors.New("checkpoint sync: already syncing")
+	ErrCheckpointComplete  = errors.New("checkpoint sync: sync already complete")
+	ErrCheckpointNoTarget  = errors.New("checkpoint sync: target block not set")
 )
 
 // Checkpoint represents a trusted point in the chain that the client can

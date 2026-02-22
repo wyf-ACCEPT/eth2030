@@ -24,14 +24,14 @@ var (
 
 // BlockExecutionProof represents a complete execution proof for a block.
 type BlockExecutionProof struct {
-	BlockHash     types.Hash                    // Block this proof covers.
-	BlockNumber   uint64                        // Block number.
-	StateRoot     types.Hash                    // Pre-execution state root.
-	PostStateRoot types.Hash                    // Post-execution state root.
-	TxTraces      []TxTrace                     // Per-transaction execution traces.
-	AccessLog     *StateAccessLog               // All state reads/writes during execution.
-	MerkleProofs  map[types.Address][][]byte    // Merkle proof per accessed account.
-	Commitment    types.Hash                    // Hash binding all proof components.
+	BlockHash     types.Hash                 // Block this proof covers.
+	BlockNumber   uint64                     // Block number.
+	StateRoot     types.Hash                 // Pre-execution state root.
+	PostStateRoot types.Hash                 // Post-execution state root.
+	TxTraces      []TxTrace                  // Per-transaction execution traces.
+	AccessLog     *StateAccessLog            // All state reads/writes during execution.
+	MerkleProofs  map[types.Address][][]byte // Merkle proof per accessed account.
+	Commitment    types.Hash                 // Hash binding all proof components.
 }
 
 // TxTrace records the execution trace of a single transaction.
@@ -216,14 +216,14 @@ func GenerateExecutionProof(block *types.Block, stateRoot types.Hash) (*BlockExe
 	commitment := computeExecutionCommitment(block.Hash(), stateRoot, postState, accessLog)
 
 	return &BlockExecutionProof{
-		BlockHash:    block.Hash(),
-		BlockNumber:  block.NumberU64(),
-		StateRoot:    stateRoot,
+		BlockHash:     block.Hash(),
+		BlockNumber:   block.NumberU64(),
+		StateRoot:     stateRoot,
 		PostStateRoot: postState,
-		TxTraces:     traces,
-		AccessLog:    accessLog,
-		MerkleProofs: merkleProofs,
-		Commitment:   commitment,
+		TxTraces:      traces,
+		AccessLog:     accessLog,
+		MerkleProofs:  merkleProofs,
+		Commitment:    commitment,
 	}, nil
 }
 

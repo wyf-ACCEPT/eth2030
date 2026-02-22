@@ -30,9 +30,9 @@ const BaseFeeBufferPercent = 1125 // 112.5% expressed as 1125/1000
 // InclusionListStore holds inclusion lists received for pending slots.
 // Thread-safe for concurrent access from P2P and block validation.
 type InclusionListStore struct {
-	mu              sync.RWMutex
-	inclusionLists  map[inclusionListKey][]*types.InclusionList
-	equivocators    map[inclusionListKey]map[uint64]struct{} // validator indices that equivocated
+	mu             sync.RWMutex
+	inclusionLists map[inclusionListKey][]*types.InclusionList
+	equivocators   map[inclusionListKey]map[uint64]struct{} // validator indices that equivocated
 }
 
 // inclusionListKey identifies ILs by slot and committee root.

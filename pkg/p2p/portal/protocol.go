@@ -219,15 +219,15 @@ func (r NodeRadius) Contains(nodeID, contentID [32]byte) bool {
 
 // Ping is sent to check liveness and exchange radius information.
 type Ping struct {
-	RequestID    uint64
-	ENRSeq       uint64 // local ENR sequence number
+	RequestID     uint64
+	ENRSeq        uint64 // local ENR sequence number
 	CustomPayload []byte // SSZ-encoded radius
 }
 
 // Pong is the response to Ping.
 type Pong struct {
-	RequestID    uint64
-	ENRSeq       uint64
+	RequestID     uint64
+	ENRSeq        uint64
 	CustomPayload []byte // SSZ-encoded radius
 }
 

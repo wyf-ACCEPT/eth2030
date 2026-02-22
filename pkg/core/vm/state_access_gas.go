@@ -146,9 +146,9 @@ func chunkToTreeKeys(chunkNum uint64) (uint64, uint8) {
 
 // WitnessGasCharger computes gas costs based on witness data size.
 type WitnessGasCharger struct {
-	totalBytes   uint64
-	totalGas     uint64
-	chargeCount  uint64
+	totalBytes  uint64
+	totalGas    uint64
+	chargeCount uint64
 }
 
 // NewWitnessGasCharger creates a new witness gas charger.

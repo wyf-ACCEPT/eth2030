@@ -143,8 +143,8 @@ func TestAdminDispatch_NodeInfo(t *testing.T) {
 	if !ok {
 		t.Fatalf("result not *NodeInfoData: %T", resp.Result)
 	}
-	if info.Name != "eth2030/v0.1.0/linux-amd64/go1.22" {
-		t.Fatalf("want eth2030 name, got %s", info.Name)
+	if info.Name != "ETH2030/v0.1.0/linux-amd64/go1.22" {
+		t.Fatalf("want ETH2030 name, got %s", info.Name)
 	}
 	if info.Enode != "enode://abc123@127.0.0.1:30303" {
 		t.Fatalf("want enode string, got %s", info.Enode)
@@ -171,8 +171,8 @@ func TestAdminDispatch_Datadir(t *testing.T) {
 	if !ok {
 		t.Fatalf("result not string: %T", resp.Result)
 	}
-	if dir != "/tmp/eth2030-data" {
-		t.Fatalf("want /tmp/eth2030-data, got %s", dir)
+	if dir != "/tmp/ETH2030-data" {
+		t.Fatalf("want /tmp/ETH2030-data, got %s", dir)
 	}
 }
 

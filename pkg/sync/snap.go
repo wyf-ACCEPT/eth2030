@@ -52,12 +52,12 @@ const (
 
 // Snap sync phases.
 const (
-	PhaseIdle       uint32 = 0
-	PhaseAccounts   uint32 = 1
-	PhaseStorage    uint32 = 2
-	PhaseBytecode   uint32 = 3
-	PhaseHealing    uint32 = 4
-	PhaseComplete   uint32 = 5
+	PhaseIdle     uint32 = 0
+	PhaseAccounts uint32 = 1
+	PhaseStorage  uint32 = 2
+	PhaseBytecode uint32 = 3
+	PhaseHealing  uint32 = 4
+	PhaseComplete uint32 = 5
 )
 
 // PhaseName returns the human-readable name for a snap sync phase.
@@ -95,12 +95,12 @@ var (
 
 // AccountData represents a downloaded account with its address hash and state.
 type AccountData struct {
-	Hash    types.Hash     // Keccak256 of the account address.
-	Address types.Address  // Original address (may be zero if unknown).
-	Nonce   uint64
-	Balance *big.Int
-	Root    types.Hash     // Storage trie root.
-	CodeHash types.Hash    // Keccak256 of bytecode.
+	Hash     types.Hash    // Keccak256 of the account address.
+	Address  types.Address // Original address (may be zero if unknown).
+	Nonce    uint64
+	Balance  *big.Int
+	Root     types.Hash // Storage trie root.
+	CodeHash types.Hash // Keccak256 of bytecode.
 }
 
 // StorageData represents a downloaded storage slot.
@@ -129,8 +129,8 @@ type AccountRangeRequest struct {
 type AccountRangeResponse struct {
 	ID       uint64
 	Accounts []AccountData
-	Proof    [][]byte   // Merkle proof for the range boundaries.
-	More     bool       // True if more accounts exist beyond Limit.
+	Proof    [][]byte // Merkle proof for the range boundaries.
+	More     bool     // True if more accounts exist beyond Limit.
 }
 
 // StorageRangeRequest requests storage trie leaves for a set of accounts.
@@ -145,10 +145,10 @@ type StorageRangeRequest struct {
 
 // StorageRangeResponse is the response to a StorageRangeRequest.
 type StorageRangeResponse struct {
-	ID      uint64
-	Slots   []StorageData
-	Proof   [][]byte
-	More    bool
+	ID    uint64
+	Slots []StorageData
+	Proof [][]byte
+	More  bool
 }
 
 // BytecodeRequest requests contract bytecodes by code hash.
@@ -208,24 +208,24 @@ type StateWriter interface {
 
 // SnapProgress tracks the progress of snap sync.
 type SnapProgress struct {
-	Phase            uint32    // Current phase.
-	PivotBlock       uint64    // Pivot block number.
-	PivotRoot        types.Hash // Pivot state root.
+	Phase      uint32     // Current phase.
+	PivotBlock uint64     // Pivot block number.
+	PivotRoot  types.Hash // Pivot state root.
 
-	AccountsTotal    uint64    // Total accounts discovered.
-	AccountsDone     uint64    // Accounts fully synced (storage + code).
-	AccountBytes     uint64    // Total account data bytes downloaded.
+	AccountsTotal uint64 // Total accounts discovered.
+	AccountsDone  uint64 // Accounts fully synced (storage + code).
+	AccountBytes  uint64 // Total account data bytes downloaded.
 
-	StorageTotal     uint64    // Total storage slots downloaded.
-	StorageBytes     uint64    // Total storage data bytes downloaded.
+	StorageTotal uint64 // Total storage slots downloaded.
+	StorageBytes uint64 // Total storage data bytes downloaded.
 
-	BytecodesTotal   uint64    // Total bytecodes downloaded.
-	BytecodeBytes    uint64    // Total bytecode bytes downloaded.
+	BytecodesTotal uint64 // Total bytecodes downloaded.
+	BytecodeBytes  uint64 // Total bytecode bytes downloaded.
 
-	HealTrieNodes    uint64    // Trie nodes healed.
-	HealBytes        uint64    // Trie node bytes healed.
+	HealTrieNodes uint64 // Trie nodes healed.
+	HealBytes     uint64 // Trie node bytes healed.
 
-	StartTime        time.Time // When snap sync started.
+	StartTime time.Time // When snap sync started.
 }
 
 // Elapsed returns how long snap sync has been running.

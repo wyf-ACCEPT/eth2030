@@ -66,9 +66,9 @@ type ModernBeaconState struct {
 	mu sync.RWMutex
 
 	// Current slot and epoch.
-	slot       uint64
-	epoch      uint64
-	lastEpoch  uint64
+	slot      uint64
+	epoch     uint64
+	lastEpoch uint64
 
 	// Validator registry, indexed by validator index.
 	validators map[uint64]*ModernValidator

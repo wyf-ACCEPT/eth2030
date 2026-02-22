@@ -15,14 +15,14 @@ import (
 
 // Blob validation errors.
 var (
-	ErrBlobValidateNil         = errors.New("das/blobval: blob data is nil")
-	ErrBlobValidateEmpty       = errors.New("das/blobval: blob data is empty")
-	ErrBlobValidateSizeMax     = errors.New("das/blobval: blob exceeds maximum size")
-	ErrBlobValidateSizeMin     = errors.New("das/blobval: blob below minimum size")
-	ErrBlobValidateFormat      = errors.New("das/blobval: invalid blob format")
-	ErrBlobValidateCommitment  = errors.New("das/blobval: commitment mismatch")
-	ErrBlobValidateExpiry      = errors.New("das/blobval: blob has expired")
-	ErrBlobValidateNoRules     = errors.New("das/blobval: no validation rules configured")
+	ErrBlobValidateNil        = errors.New("das/blobval: blob data is nil")
+	ErrBlobValidateEmpty      = errors.New("das/blobval: blob data is empty")
+	ErrBlobValidateSizeMax    = errors.New("das/blobval: blob exceeds maximum size")
+	ErrBlobValidateSizeMin    = errors.New("das/blobval: blob below minimum size")
+	ErrBlobValidateFormat     = errors.New("das/blobval: invalid blob format")
+	ErrBlobValidateCommitment = errors.New("das/blobval: commitment mismatch")
+	ErrBlobValidateExpiry     = errors.New("das/blobval: blob has expired")
+	ErrBlobValidateNoRules    = errors.New("das/blobval: no validation rules configured")
 )
 
 // BlobMeta contains metadata associated with a blob for validation.

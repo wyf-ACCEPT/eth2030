@@ -797,8 +797,8 @@ func TestGetClientVersionV1_ReturnsVersion(t *testing.T) {
 	if versions[0].Code != "ET" {
 		t.Errorf("expected code ET, got %s", versions[0].Code)
 	}
-	if versions[0].Name != "eth2030" {
-		t.Errorf("expected name eth2030, got %s", versions[0].Name)
+	if versions[0].Name != "ETH2030" {
+		t.Errorf("expected name ETH2030, got %s", versions[0].Name)
 	}
 	if versions[0].Version != "v0.1.0" {
 		t.Errorf("expected version v0.1.0, got %s", versions[0].Version)

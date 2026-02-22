@@ -17,16 +17,16 @@ import (
 
 // Chain inserter errors.
 var (
-	ErrCIClosedState      = errors.New("chain inserter: closed")
-	ErrCIRunning          = errors.New("chain inserter: already running")
-	ErrCIStateRoot        = errors.New("chain inserter: state root mismatch")
-	ErrCIReceiptRoot      = errors.New("chain inserter: receipt root mismatch")
-	ErrCILogsBloom        = errors.New("chain inserter: logs bloom mismatch")
-	ErrCIGasUsed          = errors.New("chain inserter: gas used mismatch")
-	ErrCIParentMismatch   = errors.New("chain inserter: parent hash mismatch")
-	ErrCIEmptyBatch       = errors.New("chain inserter: empty block batch")
-	ErrCIExecutionFailed  = errors.New("chain inserter: block execution failed")
-	ErrCIInsertFailed     = errors.New("chain inserter: block insert failed")
+	ErrCIClosedState     = errors.New("chain inserter: closed")
+	ErrCIRunning         = errors.New("chain inserter: already running")
+	ErrCIStateRoot       = errors.New("chain inserter: state root mismatch")
+	ErrCIReceiptRoot     = errors.New("chain inserter: receipt root mismatch")
+	ErrCILogsBloom       = errors.New("chain inserter: logs bloom mismatch")
+	ErrCIGasUsed         = errors.New("chain inserter: gas used mismatch")
+	ErrCIParentMismatch  = errors.New("chain inserter: parent hash mismatch")
+	ErrCIEmptyBatch      = errors.New("chain inserter: empty block batch")
+	ErrCIExecutionFailed = errors.New("chain inserter: block execution failed")
+	ErrCIInsertFailed    = errors.New("chain inserter: block insert failed")
 )
 
 // ChainInserterConfig configures the chain inserter.

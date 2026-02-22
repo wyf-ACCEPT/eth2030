@@ -88,8 +88,8 @@ func DefaultDispatcherConfig() DispatcherConfig {
 
 // clientState tracks per-client rate limiting and subscription counts.
 type clientState struct {
-	subCount   int
-	eventCount int
+	subCount    int
+	eventCount  int
 	windowStart time.Time
 }
 
@@ -110,7 +110,7 @@ type SubscriptionDispatcher struct {
 	mu      sync.Mutex
 	config  DispatcherConfig
 	subs    map[string]*DispatchSubscription // Keyed by subscription ID.
-	clients map[string]*clientState           // Keyed by client ID.
+	clients map[string]*clientState          // Keyed by client ID.
 	nextSeq uint64
 	closed  bool
 }

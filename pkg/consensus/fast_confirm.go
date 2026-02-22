@@ -69,11 +69,11 @@ type FastConfirmation struct {
 
 // slotAttestation tracks per-slot attestation state internally.
 type slotAttestation struct {
-	blockRoot types.Hash
-	attesters map[ValidatorIndex]struct{} // set of attester indices
-	confirmed bool
+	blockRoot   types.Hash
+	attesters   map[ValidatorIndex]struct{} // set of attester indices
+	confirmed   bool
 	confirmedAt time.Time
-	createdAt time.Time
+	createdAt   time.Time
 }
 
 // FastConfirmTracker collects attestations and confirms blocks when quorum is met.

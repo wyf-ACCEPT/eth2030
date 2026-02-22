@@ -45,15 +45,15 @@ const (
 
 // BlobTxPool errors.
 var (
-	ErrBlobTxPoolFull       = errors.New("blob tx pool is full")
-	ErrBlobTxNotType3       = errors.New("transaction is not a blob transaction (type 3)")
-	ErrBlobTxDuplicate      = errors.New("blob transaction already in pool")
-	ErrBlobTxNonceLow       = errors.New("blob tx nonce below state nonce")
-	ErrBlobTxNoHashes       = errors.New("blob tx has no versioned hashes")
-	ErrBlobTxFeeTooLow      = errors.New("blob fee cap below current blob base fee")
-	ErrBlobTxGasExceeded    = errors.New("blob gas exceeds per-block maximum")
-	ErrBlobTxAccountMax     = errors.New("blob tx per-account limit exceeded")
-	ErrBlobTxReplaceTooLow  = errors.New("replacement blob tx gas price too low")
+	ErrBlobTxPoolFull      = errors.New("blob tx pool is full")
+	ErrBlobTxNotType3      = errors.New("transaction is not a blob transaction (type 3)")
+	ErrBlobTxDuplicate     = errors.New("blob transaction already in pool")
+	ErrBlobTxNonceLow      = errors.New("blob tx nonce below state nonce")
+	ErrBlobTxNoHashes      = errors.New("blob tx has no versioned hashes")
+	ErrBlobTxFeeTooLow     = errors.New("blob fee cap below current blob base fee")
+	ErrBlobTxGasExceeded   = errors.New("blob gas exceeds per-block maximum")
+	ErrBlobTxAccountMax    = errors.New("blob tx per-account limit exceeded")
+	ErrBlobTxReplaceTooLow = errors.New("replacement blob tx gas price too low")
 )
 
 // BlobTxPoolConfig configures the BlobTxPool.
@@ -82,14 +82,14 @@ type blobTxEntry struct {
 // the main transaction pool. It enforces blob gas limits, per-account
 // caps, and tracks excess blob gas for blob base fee computation.
 type BlobTxPool struct {
-	config       BlobTxPoolConfig
-	state        StateReader
-	blobBaseFee  *big.Int // current blob base fee
-	excessBlobGas uint64  // excess blob gas from the latest block
+	config        BlobTxPoolConfig
+	state         StateReader
+	blobBaseFee   *big.Int // current blob base fee
+	excessBlobGas uint64   // excess blob gas from the latest block
 
-	mu       sync.RWMutex
-	txs      map[types.Hash]*blobTxEntry            // hash -> entry
-	byNonce  map[types.Address][]*types.Transaction  // sender -> nonce-sorted txs
+	mu      sync.RWMutex
+	txs     map[types.Hash]*blobTxEntry            // hash -> entry
+	byNonce map[types.Address][]*types.Transaction // sender -> nonce-sorted txs
 }
 
 // NewBlobTxPool creates a new dedicated blob transaction pool.

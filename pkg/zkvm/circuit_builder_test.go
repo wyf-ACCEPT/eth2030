@@ -517,7 +517,7 @@ func TestCircuitArithmeticChain(t *testing.T) {
 	b, _ := c.AllocatePrivate(big.NewInt(4))
 	cv, _ := c.AllocatePrivate(big.NewInt(5))
 
-	sum, _ := c.Add(a, b) // 3 + 4 = 7
+	sum, _ := c.Add(a, b)     // 3 + 4 = 7
 	prod, _ := c.Mul(sum, cv) // 7 * 5 = 35
 
 	val := c.GetWitness(prod)

@@ -1,4 +1,4 @@
-// optional.go implements an optional proof submission system for the eth2030 client.
+// optional.go implements an optional proof submission system for the ETH2030 client.
 // This is from EL Throughput: "optional proofs" (before mandatory 3-of-5).
 // Validators and provers can voluntarily submit proofs for blocks, building a
 // reputation and earning rewards before the mandatory proof requirement activates.
@@ -14,13 +14,13 @@ import (
 
 // Optional proof system errors.
 var (
-	ErrOptionalNilSubmission    = errors.New("optional: nil proof submission")
-	ErrOptionalEmptyProofData   = errors.New("optional: empty proof data")
-	ErrOptionalEmptyProofType   = errors.New("optional: empty proof type")
-	ErrOptionalZeroBlockHash    = errors.New("optional: zero block hash")
-	ErrOptionalEmptySubmitter   = errors.New("optional: empty submitter address")
+	ErrOptionalNilSubmission        = errors.New("optional: nil proof submission")
+	ErrOptionalEmptyProofData       = errors.New("optional: empty proof data")
+	ErrOptionalEmptyProofType       = errors.New("optional: empty proof type")
+	ErrOptionalZeroBlockHash        = errors.New("optional: zero block hash")
+	ErrOptionalEmptySubmitter       = errors.New("optional: empty submitter address")
 	ErrOptionalProofTypeNotAccepted = errors.New("optional: proof type not accepted by policy")
-	ErrOptionalDuplicateProof   = errors.New("optional: duplicate proof from same submitter for same block")
+	ErrOptionalDuplicateProof       = errors.New("optional: duplicate proof from same submitter for same block")
 )
 
 // OptionalProofSubmission represents a voluntarily submitted proof for a block.

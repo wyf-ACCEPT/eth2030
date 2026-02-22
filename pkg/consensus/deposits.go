@@ -87,8 +87,8 @@ type ActivatedValidator struct {
 type DepositProcessor struct {
 	mu            sync.RWMutex
 	config        DepositConfig
-	deposits      []*ValidatorDeposit          // all deposits in order
-	depositsByIdx map[uint64]*ValidatorDeposit // index -> deposit
+	deposits      []*ValidatorDeposit            // all deposits in order
+	depositsByIdx map[uint64]*ValidatorDeposit   // index -> deposit
 	byPubkey      map[string]*depositAccumulator // hex(pubkey) -> accumulator
 	depositCount  uint64
 	pending       []*ValidatorDeposit // deposits not yet activated

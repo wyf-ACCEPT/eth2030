@@ -311,16 +311,16 @@ func TestProofRewardCalculator_ProofTypeMultiplier(t *testing.T) {
 		first     bool
 		expected  uint64
 	}{
-		{"ZK-SNARK", false, 300},   // 100 * 3
-		{"ZK-SNARK", true, 600},    // 100 * 3 * 2
-		{"ZK-STARK", false, 300},   // 100 * 3
-		{"ZK-STARK", true, 600},    // 100 * 3 * 2
-		{"IPA", false, 200},        // 100 * 2
-		{"IPA", true, 400},         // 100 * 2 * 2
-		{"KZG", false, 200},        // 100 * 2
-		{"KZG", true, 400},         // 100 * 2 * 2
-		{"unknown", false, 100},    // 100 * 1
-		{"unknown", true, 200},     // 100 * 1 * 2
+		{"ZK-SNARK", false, 300}, // 100 * 3
+		{"ZK-SNARK", true, 600},  // 100 * 3 * 2
+		{"ZK-STARK", false, 300}, // 100 * 3
+		{"ZK-STARK", true, 600},  // 100 * 3 * 2
+		{"IPA", false, 200},      // 100 * 2
+		{"IPA", true, 400},       // 100 * 2 * 2
+		{"KZG", false, 200},      // 100 * 2
+		{"KZG", true, 400},       // 100 * 2 * 2
+		{"unknown", false, 100},  // 100 * 1
+		{"unknown", true, 200},   // 100 * 1 * 2
 	}
 
 	for _, tt := range tests {
@@ -339,8 +339,8 @@ func TestProofRewardCalculator_RewardPool(t *testing.T) {
 		t.Fatalf("initial pool should be 0, got %d", calc.RewardPool())
 	}
 
-	calc.CalculateReward("unknown", false) // 100
-	calc.CalculateReward("unknown", true)  // 200
+	calc.CalculateReward("unknown", false)  // 100
+	calc.CalculateReward("unknown", true)   // 200
 	calc.CalculateReward("ZK-SNARK", false) // 300
 
 	expected := uint64(600)

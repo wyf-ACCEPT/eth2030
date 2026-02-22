@@ -79,9 +79,9 @@ type PrequorumStatus struct {
 // slotData holds per-slot preconfirmation tracking data.
 type slotData struct {
 	preconfs   []*Preconfirmation
-	validators map[uint64]bool          // set of unique validator indices
-	txSet      map[types.Hash]bool      // set of confirmed tx hashes
-	seen       map[preconfKey]bool      // dedup key (validator + txHash)
+	validators map[uint64]bool     // set of unique validator indices
+	txSet      map[types.Hash]bool // set of confirmed tx hashes
+	seen       map[preconfKey]bool // dedup key (validator + txHash)
 }
 
 // preconfKey is a deduplication key for (validator, tx) pairs within a slot.

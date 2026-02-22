@@ -41,11 +41,11 @@ type BuilderCommitment struct {
 	Slot           uint64
 	BuilderIndex   BuilderIndex
 	BuilderAddr    types.Address
-	BidAmount      uint64        // in Gwei
-	CommitmentHash types.Hash    // keccak256(bid fields)
-	BlockRoot      types.Hash    // committed block root
+	BidAmount      uint64     // in Gwei
+	CommitmentHash types.Hash // keccak256(bid fields)
+	BlockRoot      types.Hash // committed block root
 	Revealed       bool
-	RevealedAt     uint64        // slot at which payload was revealed
+	RevealedAt     uint64 // slot at which payload was revealed
 }
 
 // RevealWindow defines the time window for revealing payloads.

@@ -17,15 +17,15 @@ import (
 
 // IndexedAttestation errors.
 var (
-	ErrIndexedAttNil            = errors.New("eip7549: nil indexed attestation")
-	ErrIndexedAttEmptyBits      = errors.New("eip7549: empty aggregation bits")
-	ErrIndexedAttSourceNil      = errors.New("eip7549: nil source checkpoint")
-	ErrIndexedAttTargetNil      = errors.New("eip7549: nil target checkpoint")
-	ErrIndexedAttSourceAfter    = errors.New("eip7549: source epoch after target epoch")
-	ErrIndexedAttCommitteeRange = errors.New("eip7549: committee index out of range")
+	ErrIndexedAttNil             = errors.New("eip7549: nil indexed attestation")
+	ErrIndexedAttEmptyBits       = errors.New("eip7549: empty aggregation bits")
+	ErrIndexedAttSourceNil       = errors.New("eip7549: nil source checkpoint")
+	ErrIndexedAttTargetNil       = errors.New("eip7549: nil target checkpoint")
+	ErrIndexedAttSourceAfter     = errors.New("eip7549: source epoch after target epoch")
+	ErrIndexedAttCommitteeRange  = errors.New("eip7549: committee index out of range")
 	ErrIndexedAttNotAggregatable = errors.New("eip7549: attestations are not aggregatable")
-	ErrIndexedAttPoolDuplicate  = errors.New("eip7549: duplicate attestation in pool")
-	ErrIndexedAttValidatorRange = errors.New("eip7549: aggregation bits exceed validator count")
+	ErrIndexedAttPoolDuplicate   = errors.New("eip7549: duplicate attestation in pool")
+	ErrIndexedAttValidatorRange  = errors.New("eip7549: aggregation bits exceed validator count")
 )
 
 // Checkpoint7549 represents a finality checkpoint used in indexed attestations.

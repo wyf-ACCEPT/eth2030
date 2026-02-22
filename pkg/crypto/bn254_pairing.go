@@ -184,7 +184,9 @@ func lineFunctionAdd(r *twistPointJ, px, py *fp2, qx, qy *big.Int, r2 *fp2) (a, 
 // where (c0, c1, c2) means c0 + c1*v + c2*v^2.
 //
 // Reference mapping from cloudflare/bn256 gfP6{x,y,z} = x*tau^2 + y*tau + z:
-//   ref.x = our c2, ref.y = our c1, ref.z = our c0
+//
+//	ref.x = our c2, ref.y = our c1, ref.z = our c0
+//
 // So ref's a2 = {x:0, y:a, z:b} = our fp6{c0:b, c1:a, c2:0}.
 func mulLine(ret *fp12, a, b, c *fp2) *fp12 {
 	// The line's Fp6 representation for the w-coefficient:
@@ -264,7 +266,7 @@ func millerLoop(px, py *big.Int, qx, qy *fp2) *fp12 {
 	// For Q2: x gets multiplied by xiToPSqMinus1Over3, y stays the same.
 	// This gives -Q2 (the minus comes from the p^2 Frobenius on y).
 	minusQ2x := fp2MulScalar(qx, frobSqXa0) // xiToPSqMinus1Over3 is a scalar in Fp
-	minusQ2y := newFp2(qy.a0, qy.a1)         // y unchanged = -Q2's y
+	minusQ2y := newFp2(qy.a0, qy.a1)        // y unchanged = -Q2's y
 
 	r2 = fp2Sqr(minusQ2y)
 	a, b, c, _ = lineFunctionAdd(r, minusQ2x, minusQ2y, px, py, r2)
@@ -298,7 +300,7 @@ var (
 func finalExp(f *fp12) *fp12 {
 	// Easy part: f^((p^6-1)*(p^2+1))
 	fInv := fp12Inv(f)
-	f1 := fp12Mul(fp12Conj(f), fInv) // f^(p^6-1)
+	f1 := fp12Mul(fp12Conj(f), fInv)  // f^(p^6-1)
 	f2 := fp12Mul(fp12FrobSq(f1), f1) // f1^(p^2+1)
 	return finalExpHard(f2)
 }
@@ -345,4 +347,3 @@ func fp12FrobSq(f *fp12) *fp12 { return fp12FrobeniusSqEfficient(f) }
 
 // fp12Frob3 computes f^(p^3) using precomputed constants.
 func fp12Frob3(f *fp12) *fp12 { return fp12FrobeniusCubeEfficient(f) }
-

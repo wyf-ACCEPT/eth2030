@@ -11,12 +11,12 @@ import (
 
 // Stack operation errors.
 var (
-	ErrStackOpOverflow       = errors.New("stack op: push would exceed 1024 limit")
-	ErrStackOpUnderflow      = errors.New("stack op: insufficient items on stack")
-	ErrStackOpDupOutOfBounds = errors.New("stack op: DUP position exceeds stack depth")
+	ErrStackOpOverflow        = errors.New("stack op: push would exceed 1024 limit")
+	ErrStackOpUnderflow       = errors.New("stack op: insufficient items on stack")
+	ErrStackOpDupOutOfBounds  = errors.New("stack op: DUP position exceeds stack depth")
 	ErrStackOpSwapOutOfBounds = errors.New("stack op: SWAP position exceeds stack depth")
-	ErrStackOpPushTooLarge   = errors.New("stack op: push size exceeds 32 bytes")
-	ErrStackOpInvalidPC      = errors.New("stack op: program counter out of code bounds")
+	ErrStackOpPushTooLarge    = errors.New("stack op: push size exceeds 32 bytes")
+	ErrStackOpInvalidPC       = errors.New("stack op: program counter out of code bounds")
 )
 
 // StackOpConfig holds gas cost and limit parameters for stack operations.
@@ -32,10 +32,10 @@ type StackOpConfig struct {
 // DefaultStackOpConfig returns a StackOpConfig with standard Ethereum gas costs.
 func DefaultStackOpConfig() StackOpConfig {
 	return StackOpConfig{
-		GasPush0:    GasPush0,  // 2
-		GasPushN:    GasPush,   // 3
-		GasDupN:     GasDup,    // 3
-		GasSwapN:    GasSwap,   // 3
+		GasPush0:    GasPush0, // 2
+		GasPushN:    GasPush,  // 3
+		GasDupN:     GasDup,   // 3
+		GasSwapN:    GasSwap,  // 3
 		MaxStack:    1024,
 		MaxPushSize: 32,
 	}

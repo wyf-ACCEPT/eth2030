@@ -155,11 +155,11 @@ type AccountRangeResult struct {
 
 // AccountEntry represents a single account in the debug_accountRange response.
 type AccountEntry struct {
-	Balance string  `json:"balance"`
-	Nonce   uint64  `json:"nonce"`
-	Code    string  `json:"code"`
-	Root    string  `json:"root"`
-	HasCode bool    `json:"hasCode"`
+	Balance string `json:"balance"`
+	Nonce   uint64 `json:"nonce"`
+	Code    string `json:"code"`
+	Root    string `json:"root"`
+	HasCode bool   `json:"hasCode"`
 }
 
 // debugAccountRange returns a range of accounts in the state trie at a
@@ -286,8 +286,8 @@ func (d *DebugExtAPI) debugSetHeadExt(req *Request) *Response {
 
 // DumpBlockResult contains the dumped state of a block.
 type DumpBlockResult struct {
-	Root     string                    `json:"root"`
-	Accounts map[string]DumpAccount    `json:"accounts"`
+	Root     string                 `json:"root"`
+	Accounts map[string]DumpAccount `json:"accounts"`
 }
 
 // DumpAccount is a single account in a block dump.

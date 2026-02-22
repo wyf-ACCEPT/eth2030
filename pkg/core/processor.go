@@ -633,7 +633,7 @@ func accessListDataTokens(accessList types.AccessList) uint64 {
 func accessListGas(accessList types.AccessList) uint64 {
 	var gas uint64
 	for _, tuple := range accessList {
-		gas += 2400 // TxAccessListAddressGas
+		gas += 2400                                  // TxAccessListAddressGas
 		gas += uint64(len(tuple.StorageKeys)) * 1900 // TxAccessListStorageKeyGas
 	}
 	return gas
@@ -894,10 +894,10 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 	}
 
 	var (
-		execErr       error
-		returnData    []byte
-		gasRemaining  uint64
-		contractAddr  types.Address
+		execErr      error
+		returnData   []byte
+		gasRemaining uint64
+		contractAddr types.Address
 	)
 
 	if isCreate {

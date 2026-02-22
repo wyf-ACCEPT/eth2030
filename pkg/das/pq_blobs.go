@@ -207,10 +207,10 @@ func BatchVerifyProofs(proofs []*PQBlobProof, commitments []*PQBlobCommitment) b
 // batchVerifyParallel verifies proofs in parallel using goroutines.
 func batchVerifyParallel(proofs []*PQBlobProof, commitments []*PQBlobCommitment) bool {
 	var (
-		wg     sync.WaitGroup
-		valid  = true
-		mu     sync.Mutex
-		n      = len(proofs)
+		wg      sync.WaitGroup
+		valid   = true
+		mu      sync.Mutex
+		n       = len(proofs)
 		workers = 4
 	)
 	if n < workers {

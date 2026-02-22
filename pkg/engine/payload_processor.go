@@ -13,8 +13,8 @@ import (
 
 // Payload processing errors.
 var (
-	ErrPPNilPayload       = errors.New("payload_processor: nil payload")
-	ErrPPGasExceedsLimit  = errors.New("payload_processor: gas used exceeds gas limit")
+	ErrPPNilPayload        = errors.New("payload_processor: nil payload")
+	ErrPPGasExceedsLimit   = errors.New("payload_processor: gas used exceeds gas limit")
 	ErrPPBlockHashMismatch = errors.New("payload_processor: block hash mismatch")
 	ErrPPTimestampNotAfter = errors.New("payload_processor: timestamp not after parent")
 	ErrPPGasLimitDelta     = errors.New("payload_processor: gas limit change exceeds allowed delta")

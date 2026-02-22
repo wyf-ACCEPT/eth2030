@@ -37,18 +37,18 @@ const (
 
 // EpochBoundaryConfig configures the epoch boundary processor.
 type EpochBoundaryConfig struct {
-	SlotsPerEpoch      uint64
-	ActivationChurn    uint64
-	EjectionThreshold  uint64
+	SlotsPerEpoch       uint64
+	ActivationChurn     uint64
+	EjectionThreshold   uint64
 	MaxEffectiveBalance uint64
 }
 
 // DefaultEpochBoundaryConfig returns default epoch boundary config.
 func DefaultEpochBoundaryConfig() EpochBoundaryConfig {
 	return EpochBoundaryConfig{
-		SlotsPerEpoch:      32,
-		ActivationChurn:    EBActivationChurnLimit,
-		EjectionThreshold:  EBEjectionThreshold,
+		SlotsPerEpoch:       32,
+		ActivationChurn:     EBActivationChurnLimit,
+		EjectionThreshold:   EBEjectionThreshold,
 		MaxEffectiveBalance: MaxEffectiveBalance,
 	}
 }
@@ -75,9 +75,9 @@ type EpochSummary struct {
 	HeadParticipation   float64
 
 	// Validator lifecycle changes.
-	Activated  []ValidatorIndex
-	Ejected    []ValidatorIndex
-	Exited     []ValidatorIndex
+	Activated []ValidatorIndex
+	Ejected   []ValidatorIndex
+	Exited    []ValidatorIndex
 
 	// Balance updates.
 	EffBalUpdated int

@@ -18,10 +18,10 @@ import (
 
 // ValidatorRegistry errors.
 var (
-	ErrRegistryFull          = errors.New("validator_registry: registry at capacity")
+	ErrRegistryFull            = errors.New("validator_registry: registry at capacity")
 	ErrRegistryDuplicatePubkey = errors.New("validator_registry: duplicate pubkey")
-	ErrRegistryIndexMismatch = errors.New("validator_registry: index mismatch")
-	ErrRegistryEmpty         = errors.New("validator_registry: no validators in registry")
+	ErrRegistryIndexMismatch   = errors.New("validator_registry: index mismatch")
+	ErrRegistryEmpty           = errors.New("validator_registry: no validators in registry")
 )
 
 // ValidatorRegistryConfig configures the validator registry.
@@ -52,15 +52,15 @@ func DefaultValidatorRegistryConfig() ValidatorRegistryConfig {
 // ValidatorEntry represents a single validator in the registry with full
 // lifecycle fields and a sequential index.
 type ValidatorEntry struct {
-	Index                ValidatorIndex
-	Pubkey               [48]byte
-	EffectiveBalance     uint64
-	Balance              uint64
-	Slashed              bool
-	ActivationEligible   Epoch
-	ActivationEpoch      Epoch
-	ExitEpoch            Epoch
-	WithdrawableEpoch    Epoch
+	Index              ValidatorIndex
+	Pubkey             [48]byte
+	EffectiveBalance   uint64
+	Balance            uint64
+	Slashed            bool
+	ActivationEligible Epoch
+	ActivationEpoch    Epoch
+	ExitEpoch          Epoch
+	WithdrawableEpoch  Epoch
 }
 
 // IsActiveAt returns true if the validator is active at the given epoch.

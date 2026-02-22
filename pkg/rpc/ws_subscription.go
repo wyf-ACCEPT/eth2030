@@ -30,7 +30,7 @@ func DefaultSubscriptionConfig() SubscriptionConfig {
 
 // supportedSubTypes lists the valid subscription types.
 var supportedSubTypes = map[string]bool{
-	"newHeads":                true,
+	"newHeads":               true,
 	"logs":                   true,
 	"newPendingTransactions": true,
 	"syncing":                true,

@@ -39,13 +39,13 @@ const (
 
 // VRF election errors.
 var (
-	ErrVRFNilKey         = errors.New("vrf_election: nil key")
-	ErrVRFInvalidProof   = errors.New("vrf_election: invalid proof")
-	ErrVRFInvalidOutput  = errors.New("vrf_election: output does not match proof")
-	ErrVRFNoValidators   = errors.New("vrf_election: no validators")
-	ErrVRFDoubleReveal   = errors.New("vrf_election: double reveal detected (slashable)")
-	ErrVRFNoReveal       = errors.New("vrf_election: no reveal for slot")
-	ErrVRFSlotMismatch   = errors.New("vrf_election: slot mismatch in reveal")
+	ErrVRFNilKey          = errors.New("vrf_election: nil key")
+	ErrVRFInvalidProof    = errors.New("vrf_election: invalid proof")
+	ErrVRFInvalidOutput   = errors.New("vrf_election: output does not match proof")
+	ErrVRFNoValidators    = errors.New("vrf_election: no validators")
+	ErrVRFDoubleReveal    = errors.New("vrf_election: double reveal detected (slashable)")
+	ErrVRFNoReveal        = errors.New("vrf_election: no reveal for slot")
+	ErrVRFSlotMismatch    = errors.New("vrf_election: slot mismatch in reveal")
 	ErrVRFAlreadyRevealed = errors.New("vrf_election: already revealed for this slot")
 )
 

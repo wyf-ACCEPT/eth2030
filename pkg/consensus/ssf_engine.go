@@ -16,12 +16,12 @@ import (
 
 // SSFEngine errors.
 var (
-	ErrSSFEngineNilAttestation  = errors.New("ssf-engine: nil attestation")
-	ErrSSFEngineSlotFinalized   = errors.New("ssf-engine: slot already finalized")
-	ErrSSFEngineDuplicateVote   = errors.New("ssf-engine: duplicate attestation from validator")
+	ErrSSFEngineNilAttestation   = errors.New("ssf-engine: nil attestation")
+	ErrSSFEngineSlotFinalized    = errors.New("ssf-engine: slot already finalized")
+	ErrSSFEngineDuplicateVote    = errors.New("ssf-engine: duplicate attestation from validator")
 	ErrSSFEngineUnknownValidator = errors.New("ssf-engine: unknown validator (no weight)")
-	ErrSSFEngineInvalidConfig   = errors.New("ssf-engine: invalid configuration")
-	ErrSSFEngineZeroStake       = errors.New("ssf-engine: total stake is zero")
+	ErrSSFEngineInvalidConfig    = errors.New("ssf-engine: invalid configuration")
+	ErrSSFEngineZeroStake        = errors.New("ssf-engine: total stake is zero")
 )
 
 // Default finality threshold: 2/3 supermajority.
@@ -107,7 +107,7 @@ type SSFEngine struct {
 	slots map[uint64]*slotRecord
 
 	// Finality history (LRU-style bounded cache).
-	historySlots []uint64              // ordered list of finalized slots
+	historySlots []uint64               // ordered list of finalized slots
 	historyMap   map[uint64]*slotRecord // slot -> finality record
 }
 

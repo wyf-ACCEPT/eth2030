@@ -27,13 +27,13 @@ const (
 
 // Attester slashing errors.
 var (
-	ErrASNilEvidence       = errors.New("attester_slashing: nil evidence")
-	ErrASEmptyIndices      = errors.New("attester_slashing: empty attesting indices")
-	ErrASNoIntersection    = errors.New("attester_slashing: no intersecting validator indices")
-	ErrASNotSlashable      = errors.New("attester_slashing: attestations are not slashable")
-	ErrASAlreadySlashed    = errors.New("attester_slashing: validator already slashed")
-	ErrASDuplicate         = errors.New("attester_slashing: duplicate slashing evidence")
-	ErrASInvalidIndices    = errors.New("attester_slashing: attesting indices not sorted unique")
+	ErrASNilEvidence    = errors.New("attester_slashing: nil evidence")
+	ErrASEmptyIndices   = errors.New("attester_slashing: empty attesting indices")
+	ErrASNoIntersection = errors.New("attester_slashing: no intersecting validator indices")
+	ErrASNotSlashable   = errors.New("attester_slashing: attestations are not slashable")
+	ErrASAlreadySlashed = errors.New("attester_slashing: validator already slashed")
+	ErrASDuplicate      = errors.New("attester_slashing: duplicate slashing evidence")
+	ErrASInvalidIndices = errors.New("attester_slashing: attesting indices not sorted unique")
 )
 
 // SlashableVoteType categorizes the slashable attestation violation.
@@ -71,11 +71,11 @@ type SlashableAttestationData struct {
 // conflicting indexed attestations and the set of validators that are
 // slashable as a result.
 type AttesterSlashingRecord struct {
-	Attestation1      BlockIndexedAttestation
-	Attestation2      BlockIndexedAttestation
-	VoteType          SlashableVoteType
-	SlashableIndices  []ValidatorIndex // intersection of attesting indices
-	DetectedAt        Slot
+	Attestation1     BlockIndexedAttestation
+	Attestation2     BlockIndexedAttestation
+	VoteType         SlashableVoteType
+	SlashableIndices []ValidatorIndex // intersection of attesting indices
+	DetectedAt       Slot
 }
 
 // IsDoubleVote checks if two attestation data entries constitute a double
@@ -251,11 +251,11 @@ func ComputeAttesterSlashingPenalties(
 
 // attesterSlashingKey uniquely identifies a slashing for deduplication.
 type attesterSlashingKey struct {
-	voteType    SlashableVoteType
-	att1Source  Epoch
-	att1Target  Epoch
-	att2Source  Epoch
-	att2Target  Epoch
+	voteType   SlashableVoteType
+	att1Source Epoch
+	att1Target Epoch
+	att2Source Epoch
+	att2Target Epoch
 }
 
 // AttesterSlashingPool manages pending attester slashings with surround
@@ -407,7 +407,9 @@ func (p *AttesterSlashingPool) GetPending(maxCount int) []*AttesterSlashingRecor
 
 // MarkSlashed records that a validator has been slashed.
 func (p *AttesterSlashingPool) MarkSlashed(idx ValidatorIndex) {
-	p.mu.Lock(); defer p.mu.Unlock(); p.slashedSet[idx] = true
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.slashedSet[idx] = true
 }
 
 // MarkIncluded removes a slashing from the pool by marking validators.
@@ -423,21 +425,31 @@ func (p *AttesterSlashingPool) MarkIncluded(indices []ValidatorIndex) {
 	for _, rec := range p.pending {
 		allDone := true
 		for _, idx := range rec.SlashableIndices {
-			if !removeSet[idx] { allDone = false; break }
+			if !removeSet[idx] {
+				allDone = false
+				break
+			}
 		}
-		if !allDone { p.pending[n] = rec; n++ }
+		if !allDone {
+			p.pending[n] = rec
+			n++
+		}
 	}
 	p.pending = p.pending[:n]
 }
 
 // PendingCount returns the number of pending attester slashings.
 func (p *AttesterSlashingPool) PendingCount() int {
-	p.mu.RLock(); defer p.mu.RUnlock(); return len(p.pending)
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return len(p.pending)
 }
 
 // SlashedCount returns the number of validators marked as slashed.
 func (p *AttesterSlashingPool) SlashedCount() int {
-	p.mu.RLock(); defer p.mu.RUnlock(); return len(p.slashedSet)
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return len(p.slashedSet)
 }
 
 // TrackedValidators returns a sorted list of validator indices with history.
@@ -454,9 +466,12 @@ func (p *AttesterSlashingPool) TrackedValidators() []ValidatorIndex {
 
 // HistorySize returns total attestation records across all validators.
 func (p *AttesterSlashingPool) HistorySize() int {
-	p.mu.RLock(); defer p.mu.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	total := 0
-	for _, h := range p.history { total += len(h) }
+	for _, h := range p.history {
+		total += len(h)
+	}
 	return total
 }
 

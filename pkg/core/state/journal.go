@@ -128,9 +128,9 @@ func (ch storageChange) revert(s *MemoryStateDB) {
 }
 
 type selfDestructChange struct {
-	addr            types.Address
-	prevDestructed  bool
-	prevBalance     *big.Int
+	addr           types.Address
+	prevDestructed bool
+	prevBalance    *big.Int
 }
 
 func (ch selfDestructChange) revert(s *MemoryStateDB) {

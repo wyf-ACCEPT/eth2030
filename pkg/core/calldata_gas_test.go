@@ -178,9 +178,9 @@ func TestCalcCalldataBaseFee(t *testing.T) {
 	calldataGasLimit := uint64(7_500_000)
 
 	tests := []struct {
-		name     string
-		excess   uint64
-		wantMin  int64
+		name    string
+		excess  uint64
+		wantMin int64
 	}{
 		{
 			name:    "zero excess returns minimum",

@@ -366,7 +366,7 @@ func (api *EthAPI) gasPrice(req *Request) *Response {
 }
 
 func (api *EthAPI) clientVersion(req *Request) *Response {
-	return successResponse(req.ID, "eth2030/v0.1.0")
+	return successResponse(req.ID, "ETH2030/v0.1.0")
 }
 
 func (api *EthAPI) netVersion(req *Request) *Response {
@@ -404,10 +404,10 @@ func (api *EthAPI) maxPriorityFeePerGas(req *Request) *Response {
 
 // FeeHistoryResult is the response for eth_feeHistory.
 type FeeHistoryResult struct {
-	OldestBlock  string     `json:"oldestBlock"`
-	BaseFeePerGas []string  `json:"baseFeePerGas"`
-	GasUsedRatio []float64  `json:"gasUsedRatio"`
-	Reward       [][]string `json:"reward,omitempty"`
+	OldestBlock   string     `json:"oldestBlock"`
+	BaseFeePerGas []string   `json:"baseFeePerGas"`
+	GasUsedRatio  []float64  `json:"gasUsedRatio"`
+	Reward        [][]string `json:"reward,omitempty"`
 }
 
 // feeHistory returns base fee and gas usage history over a range of blocks.

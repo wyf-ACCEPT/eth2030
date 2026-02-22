@@ -15,12 +15,12 @@ import (
 
 // Shuffling constants.
 const (
-	ShufShuffleRoundCount      = 90
-	ShufMaxCommitteesPerSlot   = 64
-	ShufTargetCommitteeSize    = 128
-	ShufMaxRandomByte     uint64 = 255
-	ShufDomainBeaconAttester    = 0x01000000
-	ShufDomainBeaconProposer    = 0x00000000
+	ShufShuffleRoundCount           = 90
+	ShufMaxCommitteesPerSlot        = 64
+	ShufTargetCommitteeSize         = 128
+	ShufMaxRandomByte        uint64 = 255
+	ShufDomainBeaconAttester        = 0x01000000
+	ShufDomainBeaconProposer        = 0x00000000
 )
 
 // Shuffling errors.

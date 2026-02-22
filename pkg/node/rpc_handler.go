@@ -104,10 +104,10 @@ type rateLimiter struct {
 }
 
 type tokenBucket struct {
-	tokens    float64
-	lastTime  time.Time
+	tokens     float64
+	lastTime   time.Time
 	ratePerSec float64
-	burst     float64
+	burst      float64
 }
 
 func newRateLimiter(rate, burst int) *rateLimiter {

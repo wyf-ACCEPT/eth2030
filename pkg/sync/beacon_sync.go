@@ -80,10 +80,10 @@ func DefaultBeaconSyncConfig() BeaconSyncConfig {
 
 // SyncStatus reports the current state of beacon sync.
 type SyncStatus struct {
-	CurrentSlot    uint64
-	TargetSlot     uint64
+	CurrentSlot     uint64
+	TargetSlot      uint64
 	BlobsDownloaded uint64
-	IsComplete     bool
+	IsComplete      bool
 }
 
 // BeaconBlockFetcher is the interface for fetching beacon blocks from the network.

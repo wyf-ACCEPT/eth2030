@@ -19,12 +19,12 @@ import (
 
 // Fork choice store errors.
 var (
-	ErrFCSEmptyStore       = errors.New("fcs: empty store")
-	ErrFCSUnknownBlock     = errors.New("fcs: unknown block")
-	ErrFCSUnknownParent    = errors.New("fcs: unknown parent block")
-	ErrFCSDuplicateBlock   = errors.New("fcs: duplicate block")
-	ErrFCSStaleAttestation = errors.New("fcs: stale attestation")
-	ErrFCSFutureSlot       = errors.New("fcs: block slot is in the future")
+	ErrFCSEmptyStore        = errors.New("fcs: empty store")
+	ErrFCSUnknownBlock      = errors.New("fcs: unknown block")
+	ErrFCSUnknownParent     = errors.New("fcs: unknown parent block")
+	ErrFCSDuplicateBlock    = errors.New("fcs: duplicate block")
+	ErrFCSStaleAttestation  = errors.New("fcs: stale attestation")
+	ErrFCSFutureSlot        = errors.New("fcs: block slot is in the future")
 	ErrFCSInvalidCheckpoint = errors.New("fcs: invalid checkpoint")
 )
 

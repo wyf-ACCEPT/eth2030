@@ -168,55 +168,55 @@ func TestValidateBlobTx_NilFeeCap(t *testing.T) {
 
 func TestCalcExcessBlobGas(t *testing.T) {
 	tests := []struct {
-		name       string
+		name         string
 		parentExcess uint64
 		parentUsed   uint64
 		want         uint64
 	}{
 		{
-			name:       "zero parent values",
+			name:         "zero parent values",
 			parentExcess: 0,
 			parentUsed:   0,
 			want:         0,
 		},
 		{
-			name:       "below target returns zero",
+			name:         "below target returns zero",
 			parentExcess: 0,
 			parentUsed:   GasPerBlob, // 1 blob = 131072
 			want:         0,
 		},
 		{
-			name:       "exactly at target returns zero",
+			name:         "exactly at target returns zero",
 			parentExcess: 0,
 			parentUsed:   TargetBlobGasPerBlock,
 			want:         0,
 		},
 		{
-			name:       "one blob above target",
+			name:         "one blob above target",
 			parentExcess: 0,
 			parentUsed:   TargetBlobGasPerBlock + GasPerBlob,
 			want:         GasPerBlob,
 		},
 		{
-			name:       "full block above target",
+			name:         "full block above target",
 			parentExcess: 0,
 			parentUsed:   MaxBlobGasPerBlock,
 			want:         MaxBlobGasPerBlock - TargetBlobGasPerBlock,
 		},
 		{
-			name:       "carry forward excess",
+			name:         "carry forward excess",
 			parentExcess: GasPerBlob * 2,
 			parentUsed:   TargetBlobGasPerBlock,
 			want:         GasPerBlob * 2,
 		},
 		{
-			name:       "excess decreases with low usage",
+			name:         "excess decreases with low usage",
 			parentExcess: GasPerBlob * 2,
 			parentUsed:   0,
 			want:         0, // 2*131072 = 262144 < 393216 = target
 		},
 		{
-			name:       "excess partially consumed",
+			name:         "excess partially consumed",
 			parentExcess: TargetBlobGasPerBlock,
 			parentUsed:   GasPerBlob, // 131072
 			want:         GasPerBlob, // 393216 + 131072 - 393216 = 131072

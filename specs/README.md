@@ -1,6 +1,6 @@
 # Specs
 
-EIP specifications and roadmap reference documents used in eth2030.
+EIP specifications and roadmap reference documents used in ETH2030.
 
 ## EIPs (`eips/`)
 

@@ -91,7 +91,7 @@ func TestTracingEVM_SimpleCode(t *testing.T) {
 	code := []byte{
 		byte(PUSH1), 0x42, // PUSH1 0x42
 		byte(PUSH1), 0x00, // PUSH1 0x00
-		byte(MSTORE),       // MSTORE
+		byte(MSTORE),      // MSTORE
 		byte(PUSH1), 0x20, // PUSH1 0x20
 		byte(PUSH1), 0x00, // PUSH1 0x00
 		byte(RETURN), // RETURN

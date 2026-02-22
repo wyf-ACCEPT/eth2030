@@ -178,8 +178,8 @@ func TestDualEpochFinality_GapBreaksFinality(t *testing.T) {
 func TestFinalityTracker_SetState(t *testing.T) {
 	ft := NewFinalityTracker(DefaultConfig())
 	s := BeaconState{
-		Slot:  100,
-		Epoch: 3,
+		Slot:                100,
+		Epoch:               3,
 		FinalizedCheckpoint: Checkpoint{Epoch: 1, Root: makeRoot(0x01)},
 		JustifiedCheckpoint: Checkpoint{Epoch: 2, Root: makeRoot(0x02)},
 	}

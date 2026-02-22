@@ -32,18 +32,18 @@ var (
 // StreamSessionConfig holds per-session configuration.
 type StreamSessionConfig struct {
 	MaxConcurrentStreams int
-	DefaultChunkSize    uint64
-	StreamTimeout       time.Duration
-	MaxBlobSize         uint64
+	DefaultChunkSize     uint64
+	StreamTimeout        time.Duration
+	MaxBlobSize          uint64
 }
 
 // DefaultSessionConfig returns sensible defaults for session management.
 func DefaultSessionConfig() StreamSessionConfig {
 	return StreamSessionConfig{
 		MaxConcurrentStreams: 16,
-		DefaultChunkSize:    uint64(BytesPerCell), // 2048
-		StreamTimeout:       30 * time.Second,
-		MaxBlobSize:         128 * 1024, // 128 KiB
+		DefaultChunkSize:     uint64(BytesPerCell), // 2048
+		StreamTimeout:        30 * time.Second,
+		MaxBlobSize:          128 * 1024, // 128 KiB
 	}
 }
 

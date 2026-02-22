@@ -45,9 +45,9 @@ const (
 
 // Gas cost table for PQ signature verification (per EIP-8051 draft).
 const (
-	PQGasMLDSA65  uint64 = 4500
-	PQGasFalcon   uint64 = 6000
-	PQGasSPHINCS  uint64 = 8000
+	PQGasMLDSA65 uint64 = 4500
+	PQGasFalcon  uint64 = 6000
+	PQGasSPHINCS uint64 = 8000
 
 	// PQBaseGas is the base gas for any PQ transaction (type prefix, decoding).
 	PQBaseGas uint64 = 500

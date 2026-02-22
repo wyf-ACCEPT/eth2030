@@ -43,21 +43,21 @@ const (
 
 // Committee assignment errors.
 var (
-	ErrCANoValidators   = errors.New("committee_assignment: no active validators")
-	ErrCAInvalidSlot    = errors.New("committee_assignment: invalid slot")
-	ErrCAInvalidIndex   = errors.New("committee_assignment: invalid committee index")
-	ErrCANilRegistry    = errors.New("committee_assignment: nil registry")
-	ErrCAZeroCount      = errors.New("committee_assignment: zero index count")
+	ErrCANoValidators = errors.New("committee_assignment: no active validators")
+	ErrCAInvalidSlot  = errors.New("committee_assignment: invalid slot")
+	ErrCAInvalidIndex = errors.New("committee_assignment: invalid committee index")
+	ErrCANilRegistry  = errors.New("committee_assignment: nil registry")
+	ErrCAZeroCount    = errors.New("committee_assignment: zero index count")
 )
 
 // CommitteeAssignerConfig configures the committee assigner.
 type CommitteeAssignerConfig struct {
-	SlotsPerEpoch          uint64
-	TargetCommitteeSize    uint64
-	MaxCommitteesPerSlot   uint64
-	SyncCommitteeSize      int
-	EpochsPerSyncPeriod    uint64
-	MaxEffectiveBalanceCA  uint64 // cap for proposer selection
+	SlotsPerEpoch         uint64
+	TargetCommitteeSize   uint64
+	MaxCommitteesPerSlot  uint64
+	SyncCommitteeSize     int
+	EpochsPerSyncPeriod   uint64
+	MaxEffectiveBalanceCA uint64 // cap for proposer selection
 }
 
 // DefaultCommitteeAssignerConfig returns mainnet defaults.

@@ -208,7 +208,7 @@ func TestEndgameFinalityTracker_SubSlotVoting_FiltersMismatch(t *testing.T) {
 	atts := []SubSlotAttestation{
 		{ValidatorIndex: 1, Slot: slot, SubSlotIndex: 0, Weight: 50, BlockRoot: types.Hash{1}},
 		{ValidatorIndex: 2, Slot: slot + 1, SubSlotIndex: 0, Weight: 50, BlockRoot: types.Hash{1}}, // wrong slot
-		{ValidatorIndex: 3, Slot: slot, SubSlotIndex: 1, Weight: 50, BlockRoot: types.Hash{1}},      // wrong sub-slot
+		{ValidatorIndex: 3, Slot: slot, SubSlotIndex: 1, Weight: 50, BlockRoot: types.Hash{1}},     // wrong sub-slot
 	}
 
 	tracker.SubSlotVoting(slot, 0, 100, atts)

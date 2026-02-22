@@ -285,7 +285,7 @@ func TestEndgameEngine_PruneOldSlots(t *testing.T) {
 		eng.SubmitVote(&EndgameVote{
 			Slot: s, ValidatorIndex: 0,
 			BlockHash: types.BytesToHash([]byte{byte(s)}),
-			Weight: 100, Timestamp: s * 10,
+			Weight:    100, Timestamp: s * 10,
 		})
 	}
 
@@ -383,7 +383,7 @@ func TestEndgameEngine_MultipleSlots(t *testing.T) {
 		eng.SubmitVote(&EndgameVote{
 			Slot: s, ValidatorIndex: 0,
 			BlockHash: types.BytesToHash([]byte{byte(s)}),
-			Weight: 100, Timestamp: s * 100,
+			Weight:    100, Timestamp: s * 100,
 		})
 	}
 	for s := uint64(1); s <= 5; s++ {

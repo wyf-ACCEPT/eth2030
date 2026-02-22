@@ -33,8 +33,8 @@ const (
 
 // Dilithium-3 serialised sizes.
 const (
-	DSign3PubKeyBytes = 32 + DSign3K*DSign3N*4      // seed + t coefficients
-	DSign3SecKeyBytes = 32 + (DSign3L+DSign3K)*DSign3N*4 // seed + s1 + s2
+	DSign3PubKeyBytes = 32 + DSign3K*DSign3N*4                   // seed + t coefficients
+	DSign3SecKeyBytes = 32 + (DSign3L+DSign3K)*DSign3N*4         // seed + s1 + s2
 	DSign3SigBytes    = DSign3L*DSign3N*4 + DSign3K*DSign3N + 32 // z + hint + cHash
 )
 
@@ -67,11 +67,11 @@ type DSign3Sig struct {
 
 // Errors for Dilithium-3 signing.
 var (
-	ErrDSign3NilKey     = errors.New("dilithium3-sign: nil key")
-	ErrDSign3EmptyMsg   = errors.New("dilithium3-sign: empty message")
-	ErrDSign3BadSig     = errors.New("dilithium3-sign: malformed signature")
-	ErrDSign3Rejection  = errors.New("dilithium3-sign: rejection sampling exhausted")
-	ErrDSign3BadPKLen   = errors.New("dilithium3-sign: invalid public key length")
+	ErrDSign3NilKey    = errors.New("dilithium3-sign: nil key")
+	ErrDSign3EmptyMsg  = errors.New("dilithium3-sign: empty message")
+	ErrDSign3BadSig    = errors.New("dilithium3-sign: malformed signature")
+	ErrDSign3Rejection = errors.New("dilithium3-sign: rejection sampling exhausted")
+	ErrDSign3BadPKLen  = errors.New("dilithium3-sign: invalid public key length")
 )
 
 // DilithiumKeypair generates a Dilithium-3 key pair using cryptographic randomness.

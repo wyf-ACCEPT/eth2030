@@ -26,12 +26,12 @@ func TestCalcWithdrawalFee(t *testing.T) {
 		},
 		{
 			name:           "moderate excess",
-			excessRequests: 17, // one full fraction
+			excessRequests: 17,            // one full fraction
 			wantMin:        big.NewInt(2), // e^1 ~= 2.71
 		},
 		{
 			name:           "high excess",
-			excessRequests: 34, // two full fractions
+			excessRequests: 34,            // two full fractions
 			wantMin:        big.NewInt(7), // e^2 ~= 7.38
 		},
 		{

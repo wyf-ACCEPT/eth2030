@@ -84,7 +84,7 @@ func TestBatchValidator_Validate_EmptyMethod(t *testing.T) {
 func TestBatchValidator_Validate_Mixed(t *testing.T) {
 	v := NewBatchValidator(100)
 	requests := []BatchRequest{
-		{JSONRPC: "2.0", Method: "eth_chainId"},    // valid
+		{JSONRPC: "2.0", Method: "eth_chainId"},     // valid
 		{JSONRPC: "1.0", Method: "eth_blockNumber"}, // invalid version
 		{JSONRPC: "2.0", Method: ""},                // empty method
 		{JSONRPC: "2.0", Method: "eth_gasPrice"},    // valid

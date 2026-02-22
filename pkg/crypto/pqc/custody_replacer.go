@@ -22,10 +22,10 @@ import (
 
 // Custody replacer errors.
 var (
-	ErrCustodyKeyNotFound   = errors.New("pqc: custody key not found for validator")
-	ErrCustodyProofInvalid  = errors.New("pqc: custody proof verification failed")
-	ErrCustodySlotExpired   = errors.New("pqc: custody slot has expired")
-	ErrCustodyMaxSlots      = errors.New("pqc: maximum custody slots reached")
+	ErrCustodyKeyNotFound  = errors.New("pqc: custody key not found for validator")
+	ErrCustodyProofInvalid = errors.New("pqc: custody proof verification failed")
+	ErrCustodySlotExpired  = errors.New("pqc: custody slot has expired")
+	ErrCustodyMaxSlots     = errors.New("pqc: maximum custody slots reached")
 )
 
 // Custody replacer constants.
@@ -37,10 +37,10 @@ const (
 
 // CustodyReplacerConfig configures the custody replacer.
 type CustodyReplacerConfig struct {
-	SecurityLevel  int    // 128, 192, or 256
-	ProofSizeTarget int   // target proof size in bytes
-	HashFunction   string // hash function name (e.g. "keccak256")
-	MaxCustodySlots int   // maximum slots per validator
+	SecurityLevel   int    // 128, 192, or 256
+	ProofSizeTarget int    // target proof size in bytes
+	HashFunction    string // hash function name (e.g. "keccak256")
+	MaxCustodySlots int    // maximum slots per validator
 }
 
 // DefaultCustodyReplacerConfig returns a sensible default configuration.

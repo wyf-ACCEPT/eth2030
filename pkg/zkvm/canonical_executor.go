@@ -19,15 +19,15 @@ import (
 
 // CanonicalExecutor errors.
 var (
-	ErrCanonExecNilRegistry   = errors.New("canonical_exec: nil guest registry")
+	ErrCanonExecNilRegistry     = errors.New("canonical_exec: nil guest registry")
 	ErrCanonExecProgramNotFound = errors.New("canonical_exec: program not found")
-	ErrCanonExecGasExhausted  = errors.New("canonical_exec: gas limit exhausted")
-	ErrCanonExecCPUFault      = errors.New("canonical_exec: cpu execution fault")
-	ErrCanonExecBadExitCode   = errors.New("canonical_exec: non-zero exit code")
-	ErrCanonExecProofFailed   = errors.New("canonical_exec: proof generation failed")
-	ErrCanonExecVerifyFailed  = errors.New("canonical_exec: proof verification failed")
-	ErrCanonExecNilProof      = errors.New("canonical_exec: nil proof data")
-	ErrCanonExecEmptyInput    = errors.New("canonical_exec: empty program ID")
+	ErrCanonExecGasExhausted    = errors.New("canonical_exec: gas limit exhausted")
+	ErrCanonExecCPUFault        = errors.New("canonical_exec: cpu execution fault")
+	ErrCanonExecBadExitCode     = errors.New("canonical_exec: non-zero exit code")
+	ErrCanonExecProofFailed     = errors.New("canonical_exec: proof generation failed")
+	ErrCanonExecVerifyFailed    = errors.New("canonical_exec: proof verification failed")
+	ErrCanonExecNilProof        = errors.New("canonical_exec: nil proof data")
+	ErrCanonExecEmptyInput      = errors.New("canonical_exec: empty program ID")
 )
 
 // CanonicalExecutorConfig holds configuration for the executor.

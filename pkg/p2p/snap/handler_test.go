@@ -223,10 +223,10 @@ type mockStorageSlot struct {
 }
 
 type mockBackend struct {
-	accounts map[types.Hash][]mockAccount   // root -> sorted accounts
-	storage  map[string][]mockStorageSlot   // root+account -> sorted slots
-	codes    map[types.Hash][]byte          // code hash -> bytecode
-	nodes    map[string][]byte              // root+path -> node data
+	accounts map[types.Hash][]mockAccount // root -> sorted accounts
+	storage  map[string][]mockStorageSlot // root+account -> sorted slots
+	codes    map[types.Hash][]byte        // code hash -> bytecode
+	nodes    map[string][]byte            // root+path -> node data
 }
 
 func newMockBackend() *mockBackend {

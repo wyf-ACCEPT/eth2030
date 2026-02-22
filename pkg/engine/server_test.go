@@ -15,18 +15,18 @@ import (
 
 // mockBackend is a test implementation of the Backend interface.
 type mockBackend struct {
-	processBlockFn      func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error)
-	processBlockV4Fn    func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
-	processBlockV5Fn    func(payload *ExecutionPayloadV5, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
-	forkchoiceUpdFn     func(state ForkchoiceStateV1, attrs *PayloadAttributesV3) (ForkchoiceUpdatedResult, error)
-	forkchoiceUpdV4Fn   func(state ForkchoiceStateV1, attrs *PayloadAttributesV4) (ForkchoiceUpdatedResult, error)
-	getPayloadByIDFn    func(id PayloadID) (*GetPayloadResponse, error)
-	getPayloadV4ByIDFn  func(id PayloadID) (*GetPayloadV4Response, error)
-	getPayloadV6ByIDFn  func(id PayloadID) (*GetPayloadV6Response, error)
-	headTimestamp       uint64
-	isCancunFn          func(timestamp uint64) bool
-	isPragueFn          func(timestamp uint64) bool
-	isAmsterdamFn       func(timestamp uint64) bool
+	processBlockFn     func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error)
+	processBlockV4Fn   func(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
+	processBlockV5Fn   func(payload *ExecutionPayloadV5, hashes []types.Hash, root types.Hash, requests [][]byte) (PayloadStatusV1, error)
+	forkchoiceUpdFn    func(state ForkchoiceStateV1, attrs *PayloadAttributesV3) (ForkchoiceUpdatedResult, error)
+	forkchoiceUpdV4Fn  func(state ForkchoiceStateV1, attrs *PayloadAttributesV4) (ForkchoiceUpdatedResult, error)
+	getPayloadByIDFn   func(id PayloadID) (*GetPayloadResponse, error)
+	getPayloadV4ByIDFn func(id PayloadID) (*GetPayloadV4Response, error)
+	getPayloadV6ByIDFn func(id PayloadID) (*GetPayloadV6Response, error)
+	headTimestamp      uint64
+	isCancunFn         func(timestamp uint64) bool
+	isPragueFn         func(timestamp uint64) bool
+	isAmsterdamFn      func(timestamp uint64) bool
 }
 
 func (m *mockBackend) ProcessBlock(payload *ExecutionPayloadV3, hashes []types.Hash, root types.Hash) (PayloadStatusV1, error) {
@@ -903,8 +903,8 @@ func TestGetClientVersionV1(t *testing.T) {
 	if versions[0].Code != "ET" {
 		t.Errorf("expected code ET, got %s", versions[0].Code)
 	}
-	if versions[0].Name != "eth2030" {
-		t.Errorf("expected name eth2030, got %s", versions[0].Name)
+	if versions[0].Name != "ETH2030" {
+		t.Errorf("expected name ETH2030, got %s", versions[0].Name)
 	}
 }
 

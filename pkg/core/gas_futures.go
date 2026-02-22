@@ -19,10 +19,10 @@ var (
 // The Long party benefits when actual gas price exceeds StrikePrice;
 // the Short party benefits when it is below.
 type GasFuture struct {
-	ID          types.Hash   // unique contract identifier
-	ExpiryBlock uint64       // block number at which the future settles
-	StrikePrice *big.Int     // agreed gas price (in wei)
-	Volume      uint64       // amount of gas covered by the contract
+	ID          types.Hash    // unique contract identifier
+	ExpiryBlock uint64        // block number at which the future settles
+	StrikePrice *big.Int      // agreed gas price (in wei)
+	Volume      uint64        // amount of gas covered by the contract
 	Long        types.Address // party betting gas price goes up
 	Short       types.Address // party betting gas price goes down
 }
@@ -31,7 +31,7 @@ type GasFuture struct {
 type Settlement struct {
 	FutureID       types.Hash
 	ActualGasPrice *big.Int
-	Payout         *big.Int     // amount transferred from loser to winner
+	Payout         *big.Int      // amount transferred from loser to winner
 	Winner         types.Address // party receiving the payout
 }
 

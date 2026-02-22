@@ -61,8 +61,8 @@ func TestSignedOverflow(t *testing.T) {
 	// -1 in two's complement uint256 is 0xFFF...F (max uint256)
 	negOne := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1))
 
-	st.Push(negOne)     // -1 as uint256
-	st.Push(minInt256)  // -2^255 as uint256 (top bit set)
+	st.Push(negOne)    // -1 as uint256
+	st.Push(minInt256) // -2^255 as uint256 (top bit set)
 	opSdiv(&pc, evm, contract, mem, st)
 
 	// Result should be -2^255 (i.e., minInt256 as unsigned) since the overflow
@@ -160,7 +160,7 @@ type selfDestructMockState struct {
 	destructed map[types.Address]bool
 }
 
-func (m *selfDestructMockState) CreateAccount(types.Address)            {}
+func (m *selfDestructMockState) CreateAccount(types.Address) {}
 func (m *selfDestructMockState) GetBalance(addr types.Address) *big.Int {
 	if b, ok := m.balances[addr]; ok {
 		return new(big.Int).Set(b)
@@ -179,32 +179,38 @@ func (m *selfDestructMockState) SubBalance(addr types.Address, amount *big.Int) 
 	}
 	m.balances[addr].Sub(m.balances[addr], amount)
 }
-func (m *selfDestructMockState) GetNonce(types.Address) uint64                      { return 0 }
-func (m *selfDestructMockState) SetNonce(types.Address, uint64)                     {}
-func (m *selfDestructMockState) GetCode(types.Address) []byte                       { return nil }
-func (m *selfDestructMockState) SetCode(types.Address, []byte)                      {}
-func (m *selfDestructMockState) GetCodeHash(types.Address) types.Hash                          { return types.Hash{} }
-func (m *selfDestructMockState) GetCodeSize(types.Address) int                                 { return 0 }
-func (m *selfDestructMockState) GetState(types.Address, types.Hash) types.Hash                 { return types.Hash{} }
-func (m *selfDestructMockState) SetState(types.Address, types.Hash, types.Hash)                {}
-func (m *selfDestructMockState) GetCommittedState(types.Address, types.Hash) types.Hash        { return types.Hash{} }
-func (m *selfDestructMockState) GetTransientState(types.Address, types.Hash) types.Hash        { return types.Hash{} }
-func (m *selfDestructMockState) SetTransientState(types.Address, types.Hash, types.Hash)       {}
-func (m *selfDestructMockState) ClearTransientStorage()                                        {}
-func (m *selfDestructMockState) SelfDestruct(addr types.Address)                               { m.destructed[addr] = true }
-func (m *selfDestructMockState) HasSelfDestructed(addr types.Address) bool                     { return m.destructed[addr] }
-func (m *selfDestructMockState) Exist(types.Address) bool                                      { return true }
-func (m *selfDestructMockState) Empty(types.Address) bool                                      { return false }
-func (m *selfDestructMockState) Snapshot() int                                                 { return 0 }
-func (m *selfDestructMockState) RevertToSnapshot(int)                                          {}
-func (m *selfDestructMockState) AddLog(*types.Log)                                             {}
-func (m *selfDestructMockState) AddRefund(uint64)                                              {}
-func (m *selfDestructMockState) SubRefund(uint64)                                              {}
-func (m *selfDestructMockState) GetRefund() uint64                                             { return 0 }
-func (m *selfDestructMockState) AddAddressToAccessList(types.Address)                          {}
-func (m *selfDestructMockState) AddSlotToAccessList(types.Address, types.Hash)                 {}
-func (m *selfDestructMockState) AddressInAccessList(types.Address) bool                        { return true }
-func (m *selfDestructMockState) SlotInAccessList(types.Address, types.Hash) (bool, bool)       { return true, true }
+func (m *selfDestructMockState) GetNonce(types.Address) uint64                  { return 0 }
+func (m *selfDestructMockState) SetNonce(types.Address, uint64)                 {}
+func (m *selfDestructMockState) GetCode(types.Address) []byte                   { return nil }
+func (m *selfDestructMockState) SetCode(types.Address, []byte)                  {}
+func (m *selfDestructMockState) GetCodeHash(types.Address) types.Hash           { return types.Hash{} }
+func (m *selfDestructMockState) GetCodeSize(types.Address) int                  { return 0 }
+func (m *selfDestructMockState) GetState(types.Address, types.Hash) types.Hash  { return types.Hash{} }
+func (m *selfDestructMockState) SetState(types.Address, types.Hash, types.Hash) {}
+func (m *selfDestructMockState) GetCommittedState(types.Address, types.Hash) types.Hash {
+	return types.Hash{}
+}
+func (m *selfDestructMockState) GetTransientState(types.Address, types.Hash) types.Hash {
+	return types.Hash{}
+}
+func (m *selfDestructMockState) SetTransientState(types.Address, types.Hash, types.Hash) {}
+func (m *selfDestructMockState) ClearTransientStorage()                                  {}
+func (m *selfDestructMockState) SelfDestruct(addr types.Address)                         { m.destructed[addr] = true }
+func (m *selfDestructMockState) HasSelfDestructed(addr types.Address) bool               { return m.destructed[addr] }
+func (m *selfDestructMockState) Exist(types.Address) bool                                { return true }
+func (m *selfDestructMockState) Empty(types.Address) bool                                { return false }
+func (m *selfDestructMockState) Snapshot() int                                           { return 0 }
+func (m *selfDestructMockState) RevertToSnapshot(int)                                    {}
+func (m *selfDestructMockState) AddLog(*types.Log)                                       {}
+func (m *selfDestructMockState) AddRefund(uint64)                                        {}
+func (m *selfDestructMockState) SubRefund(uint64)                                        {}
+func (m *selfDestructMockState) GetRefund() uint64                                       { return 0 }
+func (m *selfDestructMockState) AddAddressToAccessList(types.Address)                    {}
+func (m *selfDestructMockState) AddSlotToAccessList(types.Address, types.Hash)           {}
+func (m *selfDestructMockState) AddressInAccessList(types.Address) bool                  { return true }
+func (m *selfDestructMockState) SlotInAccessList(types.Address, types.Hash) (bool, bool) {
+	return true, true
+}
 
 // TestCreate_AddressCalculation verifies that CREATE produces the correct
 // address: keccak256(rlp([sender, nonce]))[12:].

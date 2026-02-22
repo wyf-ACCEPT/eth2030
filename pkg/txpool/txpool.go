@@ -61,10 +61,10 @@ var (
 
 // Config holds TxPool configuration.
 type Config struct {
-	MaxSize      int      // Maximum number of transactions in pool
-	MaxPerSender int      // Maximum pending per sender
-	MinGasPrice  *big.Int // Minimum gas price to accept
-	BlockGasLimit uint64  // Current block gas limit
+	MaxSize       int      // Maximum number of transactions in pool
+	MaxPerSender  int      // Maximum pending per sender
+	MinGasPrice   *big.Int // Minimum gas price to accept
+	BlockGasLimit uint64   // Current block gas limit
 }
 
 // DefaultConfig returns sensible defaults for the pool.

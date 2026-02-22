@@ -32,7 +32,7 @@ const baseProtocolVersion = 5
 // sub-protocol capabilities. The format mirrors go-ethereum's p2p.protoHandshake.
 type HelloPacket struct {
 	Version    uint64 // devp2p base protocol version (5).
-	Name       string // Client identity string (e.g. "eth2030/v0.1.0").
+	Name       string // Client identity string (e.g. "ETH2030/v0.1.0").
 	Caps       []Cap  // Supported sub-protocol capabilities.
 	ListenPort uint64 // TCP listening port (0 if not listening).
 	ID         string // Node ID (hex-encoded public key or random).
@@ -43,11 +43,11 @@ type HelloPacket struct {
 func EncodeHello(h *HelloPacket) []byte {
 	// Pre-calculate size.
 	size := 8 + 2 + len(h.Name) // version + nameLen + name
-	size += 2                     // capCount
+	size += 2                   // capCount
 	for _, c := range h.Caps {
 		size += 1 + len(c.Name) + 4 // capNameLen + capName + capVersion
 	}
-	size += 8          // listenPort
+	size += 8             // listenPort
 	size += 2 + len(h.ID) // idLen + id
 
 	buf := make([]byte, 0, size)
@@ -158,11 +158,11 @@ func DecodeHello(data []byte) (*HelloPacket, error) {
 type DisconnectReason uint8
 
 const (
-	DiscRequested       DisconnectReason = 0x00 // Peer requested disconnect.
-	DiscNetworkError    DisconnectReason = 0x01 // Network error.
-	DiscProtocolError   DisconnectReason = 0x02 // Protocol breach.
-	DiscUselessPeer     DisconnectReason = 0x03 // No matching capabilities.
-	DiscTooManyPeers    DisconnectReason = 0x04 // Too many peers.
+	DiscRequested        DisconnectReason = 0x00 // Peer requested disconnect.
+	DiscNetworkError     DisconnectReason = 0x01 // Network error.
+	DiscProtocolError    DisconnectReason = 0x02 // Protocol breach.
+	DiscUselessPeer      DisconnectReason = 0x03 // No matching capabilities.
+	DiscTooManyPeers     DisconnectReason = 0x04 // Too many peers.
 	DiscAlreadyConnected DisconnectReason = 0x05 // Already connected.
 	DiscSubprotocolError DisconnectReason = 0x10 // Sub-protocol error.
 )

@@ -15,18 +15,18 @@ import (
 
 // Purge target flags for PurgeConfig.
 const (
-	PurgeTargetEmptyAccounts    uint32 = 1 << iota // accounts with zero balance, nonce, empty code
-	PurgeTargetSelfDestructed                       // self-destructed contracts
-	PurgeTargetExpiredStorage                       // storage slots past cutoff block
-	PurgeTargetAll              = PurgeTargetEmptyAccounts | PurgeTargetSelfDestructed | PurgeTargetExpiredStorage
+	PurgeTargetEmptyAccounts  uint32 = 1 << iota // accounts with zero balance, nonce, empty code
+	PurgeTargetSelfDestructed                    // self-destructed contracts
+	PurgeTargetExpiredStorage                    // storage slots past cutoff block
+	PurgeTargetAll            = PurgeTargetEmptyAccounts | PurgeTargetSelfDestructed | PurgeTargetExpiredStorage
 )
 
 // Purge errors.
 var (
-	ErrPurgeNilState    = errors.New("purge: nil state database")
-	ErrPurgeNoTargets   = errors.New("purge: no purge targets selected")
-	ErrPurgeDryRun      = errors.New("purge: dry run does not modify state")
-	ErrPurgeCutoffZero  = errors.New("purge: cutoff block cannot be zero")
+	ErrPurgeNilState   = errors.New("purge: nil state database")
+	ErrPurgeNoTargets  = errors.New("purge: no purge targets selected")
+	ErrPurgeDryRun     = errors.New("purge: dry run does not modify state")
+	ErrPurgeCutoffZero = errors.New("purge: cutoff block cannot be zero")
 )
 
 // PurgeConfig controls which state elements are purged and how.
@@ -64,13 +64,13 @@ func (pc PurgeConfig) HasTarget(target uint32) bool {
 // PurgeStats holds before/after metrics for a purge operation.
 type PurgeStats struct {
 	// Counts of purged items.
-	EmptyAccountsPurged   int
-	SelfDestructedPurged  int
-	ExpiredSlotsPurged    int
+	EmptyAccountsPurged  int
+	SelfDestructedPurged int
+	ExpiredSlotsPurged   int
 
 	// Before/after state metrics.
-	AccountsBefore  int
-	AccountsAfter   int
+	AccountsBefore     int
+	AccountsAfter      int
 	StorageSlotsBefore int
 	StorageSlotsAfter  int
 
@@ -467,4 +467,3 @@ func PreserveSystemContracts(config *PurgeConfig) {
 		config.PreserveAddresses[addr] = true
 	}
 }
-

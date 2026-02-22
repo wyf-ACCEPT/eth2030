@@ -65,24 +65,24 @@ type FindNode struct {
 
 // Nodes is the Discovery V5 NODES response.
 type Nodes struct {
-	ReqID    []byte
-	Total    uint8
-	ENRs     [][]byte // RLP-encoded ENR records
+	ReqID []byte
+	Total uint8
+	ENRs  [][]byte // RLP-encoded ENR records
 }
 
 // WhoAreYou is the Discovery V5 WHOAREYOU challenge.
 type WhoAreYou struct {
-	Nonce     [NonceSize]byte
-	IDNonce   [16]byte // random data for identity proof
-	ENRSeq    uint64   // highest known ENR seq of the challenged node
+	Nonce   [NonceSize]byte
+	IDNonce [16]byte // random data for identity proof
+	ENRSeq  uint64   // highest known ENR seq of the challenged node
 }
 
 // Handshake is the Discovery V5 handshake response.
 type Handshake struct {
-	SrcID     enode.NodeID
-	IDSig     []byte     // signature proving identity
-	EPubkey   []byte     // ephemeral public key
-	Record    []byte     // optional ENR record (if ENRSeq in challenge < local)
+	SrcID   enode.NodeID
+	IDSig   []byte // signature proving identity
+	EPubkey []byte // ephemeral public key
+	Record  []byte // optional ENR record (if ENRSeq in challenge < local)
 }
 
 // Session holds state for an active V5 session with a remote node.

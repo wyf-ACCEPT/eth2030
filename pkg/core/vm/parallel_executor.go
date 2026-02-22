@@ -16,10 +16,10 @@ import (
 
 // Parallel executor errors.
 var (
-	ErrNoTransactions    = errors.New("parallel: no transactions to execute")
-	ErrNilState          = errors.New("parallel: nil state database")
-	ErrGasLimitExceeded  = errors.New("parallel: cumulative gas exceeds block limit")
-	ErrWorkerCountZero   = errors.New("parallel: worker count must be > 0")
+	ErrNoTransactions   = errors.New("parallel: no transactions to execute")
+	ErrNilState         = errors.New("parallel: nil state database")
+	ErrGasLimitExceeded = errors.New("parallel: cumulative gas exceeds block limit")
+	ErrWorkerCountZero  = errors.New("parallel: worker count must be > 0")
 )
 
 // AccessType distinguishes reads from writes in conflict detection.
@@ -51,14 +51,14 @@ type ParallelExecResult struct {
 	GasUsed  uint64
 	ReadSet  []StorageAccess
 	WriteSet []StorageAccess
-	Conflict bool   // set to true if a conflict was detected post-execution
-	Err      error  // non-nil if execution itself failed
+	Conflict bool  // set to true if a conflict was detected post-execution
+	Err      error // non-nil if execution itself failed
 }
 
 // ConflictDetector tracks storage-key-level accesses across transactions
 // to detect read-write and write-write conflicts. Thread-safe.
 type ConflictDetector struct {
-	mu      sync.Mutex
+	mu sync.Mutex
 	// writers maps each storage key to the tx index that last wrote it.
 	writers map[storageKey]int
 	// readers maps each storage key to a set of tx indices that read it.
@@ -291,10 +291,10 @@ func NewParallelExecutor(workers int) *ParallelExecutor {
 	}
 }
 
-func (pe *ParallelExecutor) Workers() int        { return pe.workers }
+func (pe *ParallelExecutor) Workers() int          { return pe.workers }
 func (pe *ParallelExecutor) TotalExecuted() uint64 { return pe.totalExecuted.Load() }
 func (pe *ParallelExecutor) ConflictsHit() uint64  { return pe.conflictsHit.Load() }
-func (pe *ParallelExecutor) ReExecuted() uint64     { return pe.reExecuted.Load() }
+func (pe *ParallelExecutor) ReExecuted() uint64    { return pe.reExecuted.Load() }
 
 // ExecuteParallel runs txs optimistically in parallel, detects conflicts,
 // and re-executes conflicting txs serially. Returns receipts in tx order.

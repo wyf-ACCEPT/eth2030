@@ -24,8 +24,8 @@ var (
 type ManagedEpoch struct {
 	Number    uint64
 	StartSlot uint64
-	EndSlot   uint64       // inclusive: last slot of the epoch
-	Committee []string     // ordered list of validator IDs
+	EndSlot   uint64   // inclusive: last slot of the epoch
+	Committee []string // ordered list of validator IDs
 	Finalized bool
 	StateRoot types.Hash
 }

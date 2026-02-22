@@ -80,13 +80,13 @@ var KZGBLSModulus = [32]byte{
 
 // KZG validation errors.
 var (
-	ErrKZGInvalidBlobSize           = errors.New("kzg: blob size must be 131072 bytes")
-	ErrKZGFieldElementOutOfRange    = errors.New("kzg: field element >= BLS_MODULUS")
-	ErrKZGInvalidCommitmentSize     = errors.New("kzg: commitment must be 48 bytes")
-	ErrKZGInvalidCommitmentFormat   = errors.New("kzg: invalid commitment G1 format")
-	ErrKZGInvalidProofSize          = errors.New("kzg: proof must be 48 bytes")
-	ErrKZGInvalidCellIndex          = errors.New("kzg: cell index >= CellsPerExtBlob")
-	ErrKZGBackendNotImplemented     = errors.New("kzg: backend operation not implemented")
+	ErrKZGInvalidBlobSize         = errors.New("kzg: blob size must be 131072 bytes")
+	ErrKZGFieldElementOutOfRange  = errors.New("kzg: field element >= BLS_MODULUS")
+	ErrKZGInvalidCommitmentSize   = errors.New("kzg: commitment must be 48 bytes")
+	ErrKZGInvalidCommitmentFormat = errors.New("kzg: invalid commitment G1 format")
+	ErrKZGInvalidProofSize        = errors.New("kzg: proof must be 48 bytes")
+	ErrKZGInvalidCellIndex        = errors.New("kzg: cell index >= CellsPerExtBlob")
+	ErrKZGBackendNotImplemented   = errors.New("kzg: backend operation not implemented")
 )
 
 // KZGCeremonyConfig holds configuration for a KZG trusted setup.

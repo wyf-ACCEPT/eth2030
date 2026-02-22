@@ -156,15 +156,15 @@ type FinalityDecision struct {
 
 // QuorumTracker tracks real-time quorum progress within a slot.
 type QuorumTracker struct {
-	Slot           uint64
-	TotalStake     uint64
-	RequiredStake  uint64
-	AccruedStake   uint64
-	VoteCount      int
-	StakeByRoot    map[types.Hash]uint64
-	LeadingRoot    types.Hash
-	LeadingStake   uint64
-	QuorumReached  bool
+	Slot          uint64
+	TotalStake    uint64
+	RequiredStake uint64
+	AccruedStake  uint64
+	VoteCount     int
+	StakeByRoot   map[types.Hash]uint64
+	LeadingRoot   types.Hash
+	LeadingStake  uint64
+	QuorumReached bool
 }
 
 // NewQuorumTracker creates a quorum tracker for the given slot.
@@ -224,10 +224,10 @@ type VoteAggregator struct {
 	validatorStakes map[uint64]uint64
 
 	// Per-slot vote tracking.
-	slotVotes    map[uint64]map[uint64]*AggregatedVote // slot -> validator -> vote
-	slotQuorums  map[uint64]*QuorumTracker
+	slotVotes     map[uint64]map[uint64]*AggregatedVote // slot -> validator -> vote
+	slotQuorums   map[uint64]*QuorumTracker
 	slotTimelines map[uint64]*SlotTimeline
-	finalized    map[uint64]*FinalityDecision
+	finalized     map[uint64]*FinalityDecision
 }
 
 // NewVoteAggregator creates a new vote aggregator.

@@ -19,11 +19,11 @@ import (
 
 // Bitfield errors.
 var (
-	ErrBitlistZeroLength    = errors.New("bitfield: bitlist length must be positive")
-	ErrBitlistIndexOOB      = errors.New("bitfield: bit index out of bounds")
-	ErrBitlistLengthMismatch = errors.New("bitfield: bitlist length mismatch for OR")
-	ErrBitvectorZeroLength  = errors.New("bitfield: bitvector length must be positive")
-	ErrBitvectorIndexOOB    = errors.New("bitfield: bitvector index out of bounds")
+	ErrBitlistZeroLength       = errors.New("bitfield: bitlist length must be positive")
+	ErrBitlistIndexOOB         = errors.New("bitfield: bit index out of bounds")
+	ErrBitlistLengthMismatch   = errors.New("bitfield: bitlist length mismatch for OR")
+	ErrBitvectorZeroLength     = errors.New("bitfield: bitvector length must be positive")
+	ErrBitvectorIndexOOB       = errors.New("bitfield: bitvector index out of bounds")
 	ErrBitvectorLengthMismatch = errors.New("bitfield: bitvector length mismatch")
 )
 

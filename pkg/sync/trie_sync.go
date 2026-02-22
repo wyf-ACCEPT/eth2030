@@ -20,10 +20,10 @@ var (
 type trieSyncState int
 
 const (
-	stateUnknown    trieSyncState = iota // not yet seen
-	statePending                         // scheduled for download
-	stateProcessed                       // downloaded and validated
-	stateCommitted                       // written to the database
+	stateUnknown   trieSyncState = iota // not yet seen
+	statePending                        // scheduled for download
+	stateProcessed                      // downloaded and validated
+	stateCommitted                      // written to the database
 )
 
 // trieSyncNode tracks a single trie node during synchronization.

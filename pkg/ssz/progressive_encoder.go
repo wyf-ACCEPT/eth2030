@@ -149,7 +149,9 @@ func (pe *ProgressiveEncoder) SubtreeRoots() [][32]byte {
 // appended, rather than recomputing the entire tree.
 //
 // The progressive tree is structured as:
-//   hash(subtree_0, hash(subtree_1, hash(subtree_2, ... zero)))
+//
+//	hash(subtree_0, hash(subtree_1, hash(subtree_2, ... zero)))
+//
 // So we fold right-to-left: start with the rightmost subtree paired with
 // a zero hash for the empty remainder, then wrap each subtree as the left
 // child with the accumulated right child.

@@ -11,14 +11,14 @@ import (
 
 // Builder registry errors.
 var (
-	ErrBuilderNotFound       = errors.New("builder not found")
-	ErrBuilderAlreadyExists  = errors.New("builder already registered")
-	ErrBuilderNotActive      = errors.New("builder not active")
-	ErrInsufficientStake     = errors.New("insufficient builder stake")
-	ErrInvalidBuilderBid     = errors.New("invalid builder bid")
-	ErrInvalidPayloadReveal  = errors.New("payload reveal does not match committed hash")
-	ErrNoBidsAvailable       = errors.New("no bids available for slot")
-	ErrInvalidBidSignature   = errors.New("invalid bid signature")
+	ErrBuilderNotFound      = errors.New("builder not found")
+	ErrBuilderAlreadyExists = errors.New("builder already registered")
+	ErrBuilderNotActive     = errors.New("builder not active")
+	ErrInsufficientStake    = errors.New("insufficient builder stake")
+	ErrInvalidBuilderBid    = errors.New("invalid builder bid")
+	ErrInvalidPayloadReveal = errors.New("payload reveal does not match committed hash")
+	ErrNoBidsAvailable      = errors.New("no bids available for slot")
+	ErrInvalidBidSignature  = errors.New("invalid bid signature")
 )
 
 // MinBuilderStake is the minimum stake required for a builder (1 ETH in wei).
@@ -27,8 +27,8 @@ var MinBuilderStake = new(big.Int).Mul(big.NewInt(1), new(big.Int).Exp(big.NewIn
 // BuilderRegistry manages registered builders and their bids.
 type BuilderRegistry struct {
 	mu       sync.RWMutex
-	builders map[BLSPubkey]*Builder      // pubkey -> builder
-	byIndex  map[BuilderIndex]*Builder   // index -> builder
+	builders map[BLSPubkey]*Builder                  // pubkey -> builder
+	byIndex  map[BuilderIndex]*Builder               // index -> builder
 	bids     map[uint64][]*SignedExecutionPayloadBid // slot -> sorted bids
 	nextIdx  BuilderIndex
 }

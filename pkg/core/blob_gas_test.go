@@ -248,8 +248,8 @@ func TestCalcBlobReservePrice(t *testing.T) {
 		{nil, 0},
 		{big.NewInt(0), 0},
 		{big.NewInt(-1), 0},
-		{big.NewInt(131072), 8192},                       // 8192 * 131072 / 131072 = 8192
-		{big.NewInt(30_000_000_000), 1_875_000_000},      // 8192 * 30e9 / 131072
+		{big.NewInt(131072), 8192}, // 8192 * 131072 / 131072 = 8192
+		{big.NewInt(30_000_000_000), 1_875_000_000}, // 8192 * 30e9 / 131072
 	}
 
 	for _, tt := range tests {

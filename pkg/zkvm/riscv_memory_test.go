@@ -7,10 +7,10 @@ import (
 func TestRVMem_ReadWriteByte(t *testing.T) {
 	mem := NewRVMemory()
 
-	if err := mem.WriteByte(0x100, 0xAB); err != nil {
+	if err := mem.WriteByteAt(0x100, 0xAB); err != nil {
 		t.Fatalf("WriteByte: %v", err)
 	}
-	val, err := mem.ReadByte(0x100)
+	val, err := mem.ReadByteAt(0x100)
 	if err != nil {
 		t.Fatalf("ReadByte: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestRVMem_SparsePages(t *testing.T) {
 	// Write to widely separated addresses.
 	addrs := []uint32{0x0000, 0x10000, 0x20000, 0x100000}
 	for i, addr := range addrs {
-		if err := mem.WriteByte(addr, byte(i+1)); err != nil {
+		if err := mem.WriteByteAt(addr, byte(i+1)); err != nil {
 			t.Fatalf("WriteByte at 0x%x: %v", addr, err)
 		}
 	}
@@ -65,7 +65,7 @@ func TestRVMem_SparsePages(t *testing.T) {
 	}
 
 	for i, addr := range addrs {
-		val, err := mem.ReadByte(addr)
+		val, err := mem.ReadByteAt(addr)
 		if err != nil {
 			t.Fatalf("ReadByte at 0x%x: %v", addr, err)
 		}
@@ -117,7 +117,7 @@ func TestRVMem_LoadSegment(t *testing.T) {
 	}
 
 	for i, expected := range data {
-		val, err := mem.ReadByte(0x8000 + uint32(i))
+		val, err := mem.ReadByteAt(0x8000 + uint32(i))
 		if err != nil {
 			t.Fatalf("ReadByte after segment load: %v", err)
 		}
@@ -150,13 +150,13 @@ func TestRVMem_PageLimit(t *testing.T) {
 	mem.maxPages = 2
 
 	// Each write to a different page should eventually hit the limit.
-	if err := mem.WriteByte(0x0000, 1); err != nil {
+	if err := mem.WriteByteAt(0x0000, 1); err != nil {
 		t.Fatalf("first page: %v", err)
 	}
-	if err := mem.WriteByte(0x1000, 2); err != nil {
+	if err := mem.WriteByteAt(0x1000, 2); err != nil {
 		t.Fatalf("second page: %v", err)
 	}
-	err := mem.WriteByte(0x2000, 3)
+	err := mem.WriteByteAt(0x2000, 3)
 	if err != ErrRVMemPageLimit {
 		t.Errorf("expected ErrRVMemPageLimit, got %v", err)
 	}
@@ -164,7 +164,7 @@ func TestRVMem_PageLimit(t *testing.T) {
 
 func TestRVMem_Reset(t *testing.T) {
 	mem := NewRVMemory()
-	if err := mem.WriteByte(0x100, 0xFF); err != nil {
+	if err := mem.WriteByteAt(0x100, 0xFF); err != nil {
 		t.Fatalf("WriteByte: %v", err)
 	}
 	if mem.PageCount() != 1 {
@@ -177,7 +177,7 @@ func TestRVMem_Reset(t *testing.T) {
 		t.Errorf("PageCount after reset: %d, want 0", mem.PageCount())
 	}
 	// Reading after reset should give zero (allocates a new page).
-	val, err := mem.ReadByte(0x100)
+	val, err := mem.ReadByteAt(0x100)
 	if err != nil {
 		t.Fatalf("ReadByte after reset: %v", err)
 	}
@@ -206,7 +206,7 @@ func TestRVMem_MMIO(t *testing.T) {
 	)
 
 	// Read from MMIO.
-	b, err := mem.ReadByte(RVMMIOBase)
+	b, err := mem.ReadByteAt(RVMMIOBase)
 	if err != nil {
 		t.Fatalf("ReadByte MMIO: %v", err)
 	}
@@ -234,10 +234,10 @@ func TestRVMem_LittleEndian(t *testing.T) {
 	}
 
 	// Verify byte order: LE means byte 0 is LSB.
-	b0, _ := mem.ReadByte(0x100)
-	b1, _ := mem.ReadByte(0x101)
-	b2, _ := mem.ReadByte(0x102)
-	b3, _ := mem.ReadByte(0x103)
+	b0, _ := mem.ReadByteAt(0x100)
+	b1, _ := mem.ReadByteAt(0x101)
+	b2, _ := mem.ReadByteAt(0x102)
+	b3, _ := mem.ReadByteAt(0x103)
 
 	if b0 != 0x01 || b1 != 0x02 || b2 != 0x03 || b3 != 0x04 {
 		t.Errorf("LE byte order: got [%02x %02x %02x %02x], want [01 02 03 04]",

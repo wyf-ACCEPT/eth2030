@@ -13,29 +13,29 @@ import (
 
 // Inclusion monitoring errors.
 var (
-	ErrIMSlotNotFound      = errors.New("inclusion-monitor: slot not found")
-	ErrIMProposerNotFound  = errors.New("inclusion-monitor: proposer not found")
-	ErrIMDuplicateBlock    = errors.New("inclusion-monitor: block already recorded")
-	ErrIMInvalidScore      = errors.New("inclusion-monitor: score out of range")
-	ErrIMNoData            = errors.New("inclusion-monitor: no data for epoch")
+	ErrIMSlotNotFound     = errors.New("inclusion-monitor: slot not found")
+	ErrIMProposerNotFound = errors.New("inclusion-monitor: proposer not found")
+	ErrIMDuplicateBlock   = errors.New("inclusion-monitor: block already recorded")
+	ErrIMInvalidScore     = errors.New("inclusion-monitor: score out of range")
+	ErrIMNoData           = errors.New("inclusion-monitor: no data for epoch")
 )
 
 // InclusionComplianceScore represents a proposer's compliance score.
 type InclusionComplianceScore struct {
-	ProposerIndex     uint64
-	Score             uint64 // 0-100, higher is better
-	TotalListed       int    // txs on inclusion list
-	TotalIncluded     int    // listed txs actually included
-	TotalMissed       int    // listed txs not included
-	ViolationCount    int
+	ProposerIndex  uint64
+	Score          uint64 // 0-100, higher is better
+	TotalListed    int    // txs on inclusion list
+	TotalIncluded  int    // listed txs actually included
+	TotalMissed    int    // listed txs not included
+	ViolationCount int
 }
 
 // InclusionDelayRecord tracks delay between tx submission and inclusion.
 type InclusionDelayRecord struct {
-	TxHash       types.Hash
-	SubmitSlot   uint64
-	IncludeSlot  uint64
-	DelaySlots   uint64
+	TxHash        types.Hash
+	SubmitSlot    uint64
+	IncludeSlot   uint64
+	DelaySlots    uint64
 	ProposerIndex uint64
 }
 
@@ -51,8 +51,8 @@ type FOCILViolation struct {
 
 // CensorshipScore scores a proposer's censorship resistance. Higher is better.
 type CensorshipScore struct {
-	ProposerIndex uint64
-	Score         uint64 // 0-100
+	ProposerIndex  uint64
+	Score          uint64 // 0-100
 	BlocksProposed int
 	ListCompliance float64 // 0.0-100.0 percentage of lists honored
 	AvgDelaySlots  float64 // average inclusion delay
@@ -73,11 +73,11 @@ type InclusionEpochReport struct {
 
 // slotBlockRecord tracks inclusion data for a single block/slot.
 type slotBlockRecord struct {
-	slot           uint64
-	proposerIndex  uint64
-	blockRoot      types.Hash
-	listedTxs      map[types.Hash]bool // txs on the inclusion list
-	includedTxs    map[types.Hash]bool // txs actually included
+	slot          uint64
+	proposerIndex uint64
+	blockRoot     types.Hash
+	listedTxs     map[types.Hash]bool // txs on the inclusion list
+	includedTxs   map[types.Hash]bool // txs actually included
 }
 
 // InclusionMonitorConfig configures the monitor.

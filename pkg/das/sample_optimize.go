@@ -34,7 +34,7 @@ type SampleOptimizerConfig struct {
 func DefaultSampleOptimizerConfig() SampleOptimizerConfig {
 	return SampleOptimizerConfig{
 		MinSamples:       SamplesPerSlot,       // 8
-		MaxSamples:       int(NumberOfColumns),  // 128
+		MaxSamples:       int(NumberOfColumns), // 128
 		TargetConfidence: 0.999,
 		SecurityMargin:   2,
 	}

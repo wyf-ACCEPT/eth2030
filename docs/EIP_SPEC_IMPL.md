@@ -2,7 +2,7 @@
 
 > Last updated: 2026-02-22
 
-Complete traceability matrix mapping every EIP to its specification, implementation, tests, and roadmap position. eth2030 implements **94+ EIPs** across all upgrade phases.
+Complete traceability matrix mapping every EIP to its specification, implementation, tests, and roadmap position. ETH2030 implements **94+ EIPs** across all upgrade phases.
 
 ---
 
@@ -239,16 +239,16 @@ Complete traceability matrix mapping every EIP to its specification, implementat
 
 ## go-ethereum Integration
 
-The `pkg/geth/` adapter package bridges eth2030 to go-ethereum v1.17.0:
+The `pkg/geth/` adapter package bridges ETH2030 to go-ethereum v1.17.0:
 
 | Component | File | Description |
 |-----------|------|-------------|
 | Type conversion | `geth/types.go` | Address, Hash, uint256, AccessList, Log conversion |
 | Chain config | `geth/config.go` | Fork-aware ChainConfig mapping (Frontier-Prague) |
-| Pre-state | `geth/prestate.go` | Create go-ethereum StateDB from eth2030 accounts |
+| Pre-state | `geth/prestate.go` | Create go-ethereum StateDB from ETH2030 accounts |
 | State transition | `geth/transition.go` | ApplyMessage, MakeBlockContext, EffectiveGasPrice |
 | Block processor | `geth/processor.go` | GethBlockProcessor with custom precompile injection |
-| Custom precompiles | `geth/extensions.go` | 13 eth2030 precompiles injected via SetPrecompiles() |
+| Custom precompiles | `geth/extensions.go` | 13 ETH2030 precompiles injected via SetPrecompiles() |
 | Precompile adapters | `core/vm/precompile_adapters.go` | Exported wrappers for unexported precompile types |
 | EF test runner | `core/eftest/geth_runner.go` | 36,126/36,126 tests passing (100%) |
 
@@ -261,7 +261,7 @@ The `pkg/geth/` adapter package bridges eth2030 to go-ethereum v1.17.0:
 | NII (Number-Theoretic) | 4 | 0x0201-0x0204 | I+ |
 | Field arithmetic | 4 | 0x0205-0x0208 | I+ |
 
-**Note**: go-ethereum's `operation` struct is unexported, so 26 custom opcodes (CLZ, DUPN, APPROVE, TXPARAM*, EOF, AA) remain eth2030-native-EVM-only.
+**Note**: go-ethereum's `operation` struct is unexported, so 26 custom opcodes (CLZ, DUPN, APPROVE, TXPARAM*, EOF, AA) remain ETH2030-native-EVM-only.
 
 ---
 

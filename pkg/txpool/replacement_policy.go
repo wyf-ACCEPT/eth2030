@@ -40,14 +40,14 @@ const (
 
 // RBF policy errors.
 var (
-	ErrRBFNilTx              = errors.New("rbf: nil transaction")
-	ErrRBFNonceMismatch      = errors.New("rbf: replacement nonce mismatch")
-	ErrRBFInsufficientFeeBump = errors.New("rbf: fee cap bump below minimum")
-	ErrRBFInsufficientTipBump = errors.New("rbf: tip cap bump below minimum")
+	ErrRBFNilTx                = errors.New("rbf: nil transaction")
+	ErrRBFNonceMismatch        = errors.New("rbf: replacement nonce mismatch")
+	ErrRBFInsufficientFeeBump  = errors.New("rbf: fee cap bump below minimum")
+	ErrRBFInsufficientTipBump  = errors.New("rbf: tip cap bump below minimum")
 	ErrRBFInsufficientBlobBump = errors.New("rbf: blob fee cap bump below minimum")
-	ErrRBFMaxReplacements    = errors.New("rbf: maximum replacement count exceeded")
-	ErrRBFMaxChainDepth      = errors.New("rbf: account replacement chain too deep")
-	ErrRBFTypeMismatch       = errors.New("rbf: cannot replace blob tx with non-blob tx")
+	ErrRBFMaxReplacements      = errors.New("rbf: maximum replacement count exceeded")
+	ErrRBFMaxChainDepth        = errors.New("rbf: account replacement chain too deep")
+	ErrRBFTypeMismatch         = errors.New("rbf: cannot replace blob tx with non-blob tx")
 )
 
 // ReplacementChainEntry records a single replacement event.
@@ -60,7 +60,7 @@ type ReplacementChainEntry struct {
 
 // nonceSlot tracks replacement count and history for a single (sender, nonce).
 type nonceSlot struct {
-	count   int                    // Number of replacements at this nonce.
+	count   int                     // Number of replacements at this nonce.
 	entries []ReplacementChainEntry // Replacement history.
 }
 
@@ -102,14 +102,14 @@ type RBFPolicyEngine struct {
 
 // RBFStats holds replacement statistics.
 type RBFStats struct {
-	TotalAttempts   uint64 // Total replacement attempts.
-	TotalAccepted   uint64 // Successful replacements.
-	TotalRejected   uint64 // Rejected replacements.
-	FeeRejects      uint64 // Rejected due to insufficient fee bump.
-	TipRejects      uint64 // Rejected due to insufficient tip bump.
-	BlobFeeRejects  uint64 // Rejected due to insufficient blob fee bump.
-	SpamRejects     uint64 // Rejected due to max replacements.
-	ChainRejects    uint64 // Rejected due to chain depth.
+	TotalAttempts  uint64 // Total replacement attempts.
+	TotalAccepted  uint64 // Successful replacements.
+	TotalRejected  uint64 // Rejected replacements.
+	FeeRejects     uint64 // Rejected due to insufficient fee bump.
+	TipRejects     uint64 // Rejected due to insufficient tip bump.
+	BlobFeeRejects uint64 // Rejected due to insufficient blob fee bump.
+	SpamRejects    uint64 // Rejected due to max replacements.
+	ChainRejects   uint64 // Rejected due to chain depth.
 }
 
 // NewRBFPolicyEngine creates an RBF policy engine with the given config.

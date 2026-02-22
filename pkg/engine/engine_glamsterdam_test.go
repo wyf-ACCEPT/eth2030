@@ -505,8 +505,8 @@ func TestGlamsterdam_GetClientVersionV2(t *testing.T) {
 	if v.Code != "ET" {
 		t.Fatalf("expected code ET, got %s", v.Code)
 	}
-	if v.Name != "eth2030" {
-		t.Fatalf("expected name eth2030, got %s", v.Name)
+	if v.Name != "ETH2030" {
+		t.Fatalf("expected name ETH2030, got %s", v.Name)
 	}
 	if v.OS != "linux" {
 		t.Fatalf("expected OS linux, got %s", v.OS)

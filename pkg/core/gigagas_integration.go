@@ -19,10 +19,10 @@ import (
 
 // GigagasBlockProcessor errors.
 var (
-	ErrGigagasNilBlock      = errors.New("gigagas_integration: nil block")
-	ErrGigagasNilState      = errors.New("gigagas_integration: nil state db")
-	ErrGigagasNotEnabled    = errors.New("gigagas_integration: gigagas not enabled for this block")
-	ErrGigagasGasExceeded   = errors.New("gigagas_integration: block gas limit exceeded")
+	ErrGigagasNilBlock    = errors.New("gigagas_integration: nil block")
+	ErrGigagasNilState    = errors.New("gigagas_integration: nil state db")
+	ErrGigagasNotEnabled  = errors.New("gigagas_integration: gigagas not enabled for this block")
+	ErrGigagasGasExceeded = errors.New("gigagas_integration: block gas limit exceeded")
 )
 
 // GigagasBlockConfig configures the block processor.
@@ -53,13 +53,13 @@ func DefaultGigagasBlockConfig() GigagasBlockConfig {
 
 // BlockProcessingResult holds the outcome of parallel block processing.
 type BlockProcessingResult struct {
-	Receipts      []*TxReceipt
-	GasUsed       uint64
-	Conflicts     int
-	ReExecuted    int
-	WorkerCount   int
-	Duration      time.Duration
-	GasPerSecond  float64
+	Receipts     []*TxReceipt
+	GasUsed      uint64
+	Conflicts    int
+	ReExecuted   int
+	WorkerCount  int
+	Duration     time.Duration
+	GasPerSecond float64
 }
 
 // TxReceipt is a minimal receipt for block processing results.

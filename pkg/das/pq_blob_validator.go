@@ -27,13 +27,13 @@ const (
 
 // Gas cost constants for PQ blob validation.
 const (
-	pqValidateBaseGas      = 3000
-	pqValidatePerByteGas   = 4
-	pqDilithiumVerifyGas   = 45000
-	pqFalconVerifyGas      = 28000
-	pqSPHINCSVerifyGas     = 120000
-	pqMerkleProofGas       = 5000
-	pqBatchOverheadGas     = 1500
+	pqValidateBaseGas    = 3000
+	pqValidatePerByteGas = 4
+	pqDilithiumVerifyGas = 45000
+	pqFalconVerifyGas    = 28000
+	pqSPHINCSVerifyGas   = 120000
+	pqMerkleProofGas     = 5000
+	pqBatchOverheadGas   = 1500
 )
 
 // PQ blob validator errors.

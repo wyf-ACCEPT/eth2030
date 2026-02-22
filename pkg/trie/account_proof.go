@@ -17,7 +17,7 @@ var (
 // ProofResult combines an account proof with zero or more storage proofs,
 // matching the response shape of eth_getProof (EIP-1186).
 type ProofResult struct {
-	Account      *AccountProofData
+	Account       *AccountProofData
 	StorageProofs []StorageProofData
 }
 

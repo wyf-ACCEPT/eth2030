@@ -92,9 +92,9 @@ func (db *MemoryDB) Len() int {
 // --- Batch ---
 
 type memBatch struct {
-	db    *MemoryDB
-	ops   []batchOp
-	size  int
+	db   *MemoryDB
+	ops  []batchOp
+	size int
 }
 
 type batchOp struct {

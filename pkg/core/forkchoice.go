@@ -10,14 +10,14 @@ import (
 
 // Fork choice errors.
 var (
-	ErrFinalizedBlockUnknown = errors.New("finalized block not found")
-	ErrSafeBlockUnknown      = errors.New("safe block not found")
-	ErrHeadBlockUnknown      = errors.New("head block not found")
-	ErrReorgPastFinalized    = errors.New("reorg would revert past finalized block")
+	ErrFinalizedBlockUnknown  = errors.New("finalized block not found")
+	ErrSafeBlockUnknown       = errors.New("safe block not found")
+	ErrHeadBlockUnknown       = errors.New("head block not found")
+	ErrReorgPastFinalized     = errors.New("reorg would revert past finalized block")
 	ErrCommonAncestorNotFound = errors.New("common ancestor not found")
-	ErrInvalidFinalizedChain = errors.New("finalized block not in head's ancestry")
-	ErrInvalidSafeChain      = errors.New("safe block not in head's ancestry")
-	ErrSafeNotFinalized      = errors.New("safe block number is below finalized block number")
+	ErrInvalidFinalizedChain  = errors.New("finalized block not in head's ancestry")
+	ErrInvalidSafeChain       = errors.New("safe block not in head's ancestry")
+	ErrSafeNotFinalized       = errors.New("safe block number is below finalized block number")
 )
 
 // ForkChoice tracks the consensus layer's view of the chain: head, safe,

@@ -137,7 +137,7 @@ func TestBatchWriter_AutoFlush(t *testing.T) {
 	bw.MaxBatchSize = 20
 
 	// Write enough data to exceed the 20-byte threshold.
-	bw.Put([]byte("key1"), []byte("value1"))      // 4 + 6 = 10
+	bw.Put([]byte("key1"), []byte("value1"))       // 4 + 6 = 10
 	bw.Put([]byte("key2"), []byte("value2value2")) // 4 + 11 = 15, total = 25
 
 	// The auto-flush should have been triggered, so data should be in DB.
@@ -172,9 +172,9 @@ func TestBatchWriter_MixedOperations(t *testing.T) {
 	db.Put([]byte("b"), []byte("old_b"))
 
 	bw := NewBatchWriter(db)
-	bw.Put([]byte("a"), []byte("new_a"))     // overwrite
-	bw.Delete([]byte("b"))                    // delete
-	bw.Put([]byte("c"), []byte("new_c"))      // insert new
+	bw.Put([]byte("a"), []byte("new_a")) // overwrite
+	bw.Delete([]byte("b"))               // delete
+	bw.Put([]byte("c"), []byte("new_c")) // insert new
 	bw.Flush()
 
 	// Verify results.

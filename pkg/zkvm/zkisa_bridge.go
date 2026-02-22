@@ -34,29 +34,29 @@ var ZKISAPrecompileAddr = types.BytesToAddress([]byte{0x20})
 
 // zkISA operation selectors (first 4 bytes of precompile input).
 const (
-	ZKISAOpHash          uint32 = 0x01 // Keccak-256 hash
-	ZKISAOpSHA256        uint32 = 0x02 // SHA-256 hash
-	ZKISAOpECRecover     uint32 = 0x03 // ECDSA recovery
-	ZKISAOpModExp        uint32 = 0x04 // Modular exponentiation
-	ZKISAOpBN256Add      uint32 = 0x05 // BN256 point addition
+	ZKISAOpHash           uint32 = 0x01 // Keccak-256 hash
+	ZKISAOpSHA256         uint32 = 0x02 // SHA-256 hash
+	ZKISAOpECRecover      uint32 = 0x03 // ECDSA recovery
+	ZKISAOpModExp         uint32 = 0x04 // Modular exponentiation
+	ZKISAOpBN256Add       uint32 = 0x05 // BN256 point addition
 	ZKISAOpBN256ScalarMul uint32 = 0x06 // BN256 scalar multiplication
-	ZKISAOpBN256Pairing  uint32 = 0x07 // BN256 pairing check
-	ZKISAOpBLSVerify     uint32 = 0x08 // BLS12-381 signature verify
-	ZKISAOpCustom        uint32 = 0xFF // Custom guest program execution
+	ZKISAOpBN256Pairing   uint32 = 0x07 // BN256 pairing check
+	ZKISAOpBLSVerify      uint32 = 0x08 // BLS12-381 signature verify
+	ZKISAOpCustom         uint32 = 0xFF // Custom guest program execution
 )
 
 // Gas costs for zkISA operations (per-operation base cost).
 const (
-	zkisaGasHash          uint64 = 3000
-	zkisaGasSHA256        uint64 = 3000
-	zkisaGasECRecover     uint64 = 5000
-	zkisaGasModExp        uint64 = 10000
-	zkisaGasBN256Add      uint64 = 2000
+	zkisaGasHash           uint64 = 3000
+	zkisaGasSHA256         uint64 = 3000
+	zkisaGasECRecover      uint64 = 5000
+	zkisaGasModExp         uint64 = 10000
+	zkisaGasBN256Add       uint64 = 2000
 	zkisaGasBN256ScalarMul uint64 = 8000
-	zkisaGasBN256Pairing  uint64 = 50000
-	zkisaGasBLSVerify     uint64 = 12000
-	zkisaGasCustomBase    uint64 = 100000
-	zkisaGasPerInputByte  uint64 = 8
+	zkisaGasBN256Pairing   uint64 = 50000
+	zkisaGasBLSVerify      uint64 = 12000
+	zkisaGasCustomBase     uint64 = 100000
+	zkisaGasPerInputByte   uint64 = 8
 )
 
 // ZKISAOpEntry maps an operation selector to its zkISA program and gas cost.

@@ -103,9 +103,9 @@ type ClientRateStats struct {
 
 // MethodRateStats provides per-method rate limiting statistics.
 type MethodRateStats struct {
-	TotalRequests uint64
+	TotalRequests  uint64
 	DeniedRequests uint64
-	AvgLatencyMs  float64
+	AvgLatencyMs   float64
 }
 
 // GlobalRateStats provides aggregate rate limiting statistics.

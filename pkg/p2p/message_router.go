@@ -34,21 +34,21 @@ type RouterHandler func(peerID string, msg Msg) error
 // MessageRouter demultiplexes protocol messages, tracks request-response
 // correlation, enforces per-peer rate limits, and manages outbound priority queue.
 type MessageRouter struct {
-	mu       sync.RWMutex
-	handlers map[uint64]RouterHandler
-	closed   bool
-	reqMu    sync.Mutex
-	nextReq  atomic.Uint64
-	pending  map[uint64]*routerPendingReq
-	rateMu   sync.Mutex
-	rates    map[string]*rateLimiter
-	rateMax  int
+	mu        sync.RWMutex
+	handlers  map[uint64]RouterHandler
+	closed    bool
+	reqMu     sync.Mutex
+	nextReq   atomic.Uint64
+	pending   map[uint64]*routerPendingReq
+	rateMu    sync.Mutex
+	rates     map[string]*rateLimiter
+	rateMax   int
 	rateBurst int
-	outMu    sync.Mutex
-	outQueue priorityQueue
-	outMax   int
-	outCond  *sync.Cond
-	stats    RouterStats
+	outMu     sync.Mutex
+	outQueue  priorityQueue
+	outMax    int
+	outCond   *sync.Cond
+	stats     RouterStats
 }
 
 type RouterStats struct {

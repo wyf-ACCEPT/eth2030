@@ -234,7 +234,7 @@ func TestValidateListSlotMismatch(t *testing.T) {
 
 func TestValidateListUnauthorized(t *testing.T) {
 	v := NewInclusionListValidator(DefaultListValidatorConfig())
-	il := makeIL(100, 99, 1, 21000) // proposer 99 not authorized
+	il := makeIL(100, 99, 1, 21000)   // proposer 99 not authorized
 	state := newMockHeadState(100, 5) // only proposer 5 authorized
 	err := v.ValidateList(il, state)
 	if !errors.Is(err, ErrValidatorUnauthorized) {

@@ -200,8 +200,8 @@ func TestConflictDetector_RAWConflict(t *testing.T) {
 		WriteSet: []StorageAccess{{Address: addr, Key: key, Type: AccessWrite}},
 	}
 	r1 := &ParallelExecResult{
-		TxIndex:  1,
-		ReadSet:  []StorageAccess{{Address: addr, Key: key, Type: AccessRead}},
+		TxIndex: 1,
+		ReadSet: []StorageAccess{{Address: addr, Key: key, Type: AccessRead}},
 	}
 
 	conflicts := cd.DetectConflicts([]*ParallelExecResult{r0, r1})
@@ -403,16 +403,16 @@ func newParallelMockStateDB() *parallelMockStateDB {
 	}
 }
 
-func (m *parallelMockStateDB) CreateAccount(addr types.Address)             {}
-func (m *parallelMockStateDB) GetBalance(addr types.Address) *big.Int       { return big.NewInt(1000000) }
+func (m *parallelMockStateDB) CreateAccount(addr types.Address)               {}
+func (m *parallelMockStateDB) GetBalance(addr types.Address) *big.Int         { return big.NewInt(1000000) }
 func (m *parallelMockStateDB) AddBalance(addr types.Address, amount *big.Int) {}
 func (m *parallelMockStateDB) SubBalance(addr types.Address, amount *big.Int) {}
-func (m *parallelMockStateDB) GetNonce(addr types.Address) uint64           { return 0 }
-func (m *parallelMockStateDB) SetNonce(addr types.Address, nonce uint64)    {}
-func (m *parallelMockStateDB) GetCode(addr types.Address) []byte            { return nil }
-func (m *parallelMockStateDB) SetCode(addr types.Address, code []byte)      {}
-func (m *parallelMockStateDB) GetCodeHash(addr types.Address) types.Hash    { return types.Hash{} }
-func (m *parallelMockStateDB) GetCodeSize(addr types.Address) int           { return 0 }
+func (m *parallelMockStateDB) GetNonce(addr types.Address) uint64             { return 0 }
+func (m *parallelMockStateDB) SetNonce(addr types.Address, nonce uint64)      {}
+func (m *parallelMockStateDB) GetCode(addr types.Address) []byte              { return nil }
+func (m *parallelMockStateDB) SetCode(addr types.Address, code []byte)        {}
+func (m *parallelMockStateDB) GetCodeHash(addr types.Address) types.Hash      { return types.Hash{} }
+func (m *parallelMockStateDB) GetCodeSize(addr types.Address) int             { return 0 }
 func (m *parallelMockStateDB) GetState(addr types.Address, key types.Hash) types.Hash {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -429,21 +429,24 @@ func (m *parallelMockStateDB) GetCommittedState(addr types.Address, key types.Ha
 func (m *parallelMockStateDB) GetTransientState(addr types.Address, key types.Hash) types.Hash {
 	return types.Hash{}
 }
-func (m *parallelMockStateDB) SetTransientState(addr types.Address, key types.Hash, value types.Hash) {}
-func (m *parallelMockStateDB) ClearTransientStorage()                                                   {}
-func (m *parallelMockStateDB) SelfDestruct(addr types.Address)                                          {}
-func (m *parallelMockStateDB) HasSelfDestructed(addr types.Address) bool                                { return false }
-func (m *parallelMockStateDB) Exist(addr types.Address) bool                                            { return true }
-func (m *parallelMockStateDB) Empty(addr types.Address) bool                                            { return false }
-func (m *parallelMockStateDB) Snapshot() int                                                            { return 0 }
-func (m *parallelMockStateDB) RevertToSnapshot(id int)                                                  {}
-func (m *parallelMockStateDB) AddLog(log *types.Log)                                                    {}
-func (m *parallelMockStateDB) AddRefund(gas uint64)                                                     {}
-func (m *parallelMockStateDB) SubRefund(gas uint64)                                                     {}
-func (m *parallelMockStateDB) GetRefund() uint64                                                        { return 0 }
-func (m *parallelMockStateDB) AddAddressToAccessList(addr types.Address)                                {}
-func (m *parallelMockStateDB) AddSlotToAccessList(addr types.Address, slot types.Hash)                  {}
-func (m *parallelMockStateDB) AddressInAccessList(addr types.Address) bool                              { return false }
-func (m *parallelMockStateDB) SlotInAccessList(addr types.Address, slot types.Hash) (bool, bool)        { return false, false }
+func (m *parallelMockStateDB) SetTransientState(addr types.Address, key types.Hash, value types.Hash) {
+}
+func (m *parallelMockStateDB) ClearTransientStorage()                                  {}
+func (m *parallelMockStateDB) SelfDestruct(addr types.Address)                         {}
+func (m *parallelMockStateDB) HasSelfDestructed(addr types.Address) bool               { return false }
+func (m *parallelMockStateDB) Exist(addr types.Address) bool                           { return true }
+func (m *parallelMockStateDB) Empty(addr types.Address) bool                           { return false }
+func (m *parallelMockStateDB) Snapshot() int                                           { return 0 }
+func (m *parallelMockStateDB) RevertToSnapshot(id int)                                 {}
+func (m *parallelMockStateDB) AddLog(log *types.Log)                                   {}
+func (m *parallelMockStateDB) AddRefund(gas uint64)                                    {}
+func (m *parallelMockStateDB) SubRefund(gas uint64)                                    {}
+func (m *parallelMockStateDB) GetRefund() uint64                                       { return 0 }
+func (m *parallelMockStateDB) AddAddressToAccessList(addr types.Address)               {}
+func (m *parallelMockStateDB) AddSlotToAccessList(addr types.Address, slot types.Hash) {}
+func (m *parallelMockStateDB) AddressInAccessList(addr types.Address) bool             { return false }
+func (m *parallelMockStateDB) SlotInAccessList(addr types.Address, slot types.Hash) (bool, bool) {
+	return false, false
+}
 
 var _ StateDB = (*parallelMockStateDB)(nil)

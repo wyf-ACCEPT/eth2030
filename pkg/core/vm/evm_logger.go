@@ -47,43 +47,43 @@ func DefaultTraceConfig() TraceConfig {
 
 // TraceStep represents one opcode execution step in a trace.
 type TraceStep struct {
-	PC       uint64   `json:"pc"`
-	OpCode   string   `json:"op"`
-	OpByte   byte     `json:"opByte"`
-	Gas      uint64   `json:"gas"`
-	GasCost  uint64   `json:"gasCost"`
-	Depth    int      `json:"depth"`
-	Stack    []string `json:"stack,omitempty"`
-	Memory   string   `json:"memory,omitempty"`
-	MemSize  int      `json:"memSize"`
-	Error    string   `json:"error,omitempty"`
+	PC      uint64   `json:"pc"`
+	OpCode  string   `json:"op"`
+	OpByte  byte     `json:"opByte"`
+	Gas     uint64   `json:"gas"`
+	GasCost uint64   `json:"gasCost"`
+	Depth   int      `json:"depth"`
+	Stack   []string `json:"stack,omitempty"`
+	Memory  string   `json:"memory,omitempty"`
+	MemSize int      `json:"memSize"`
+	Error   string   `json:"error,omitempty"`
 }
 
 // TraceCallEvent captures a call enter or exit.
 type TraceCallEvent struct {
-	Type     string        `json:"type"`               // "enter" or "exit"
-	CallType string        `json:"callType"`           // CALL, STATICCALL, etc.
+	Type     string        `json:"type"`     // "enter" or "exit"
+	CallType string        `json:"callType"` // CALL, STATICCALL, etc.
 	From     types.Address `json:"from"`
 	To       types.Address `json:"to"`
 	Gas      uint64        `json:"gas"`
 	Value    *big.Int      `json:"value,omitempty"`
-	Input    string        `json:"input,omitempty"`    // hex-encoded for enter
-	Output   string        `json:"output,omitempty"`   // hex-encoded for exit
-	GasUsed  uint64        `json:"gasUsed,omitempty"`  // only for exit
-	Error    string        `json:"error,omitempty"`    // only for exit
+	Input    string        `json:"input,omitempty"`   // hex-encoded for enter
+	Output   string        `json:"output,omitempty"`  // hex-encoded for exit
+	GasUsed  uint64        `json:"gasUsed,omitempty"` // only for exit
+	Error    string        `json:"error,omitempty"`   // only for exit
 }
 
 // EVMTracer implements EVMLogger with configurable verbosity and structured
 // output. It supports both in-memory trace collection and streaming output.
 type EVMTracer struct {
-	config    TraceConfig
-	steps     []TraceStep
-	calls     []TraceCallEvent
-	output    []byte
-	err       error
-	gasUsed   uint64
-	writer    io.Writer // optional streaming output
-	gasAccum  map[string]uint64 // opcode -> total gas consumed
+	config   TraceConfig
+	steps    []TraceStep
+	calls    []TraceCallEvent
+	output   []byte
+	err      error
+	gasUsed  uint64
+	writer   io.Writer         // optional streaming output
+	gasAccum map[string]uint64 // opcode -> total gas consumed
 }
 
 // NewEVMTracer creates a tracer with the given configuration.

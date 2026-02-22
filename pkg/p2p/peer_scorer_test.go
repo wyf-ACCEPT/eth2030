@@ -207,10 +207,10 @@ func TestBehaviorScorer_DecayScores(t *testing.T) {
 
 func TestBehaviorScorer_RankedPeers(t *testing.T) {
 	bs := newBehaviorScorer()
-	bs.RecordValidBlock("p1")   // 55
-	bs.RecordValidBlock("p1")   // 60
-	bs.RecordValidBlock("p2")   // 55
-	bs.RecordTimeout("p3")      // 42
+	bs.RecordValidBlock("p1")     // 55
+	bs.RecordValidBlock("p1")     // 60
+	bs.RecordValidBlock("p2")     // 55
+	bs.RecordTimeout("p3")        // 42
 	bs.RecordInvalidMessage("p4") // 35
 
 	ranked := bs.RankedPeers(3)

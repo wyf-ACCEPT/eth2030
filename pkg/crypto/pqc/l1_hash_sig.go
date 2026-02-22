@@ -34,8 +34,8 @@ var (
 
 // L1 hash signature constants.
 const (
-	l1SeedSize     = 32  // random seed size in bytes
-	l1WDefault     = 16  // default Winternitz parameter
+	l1SeedSize      = 32 // random seed size in bytes
+	l1WDefault      = 16 // default Winternitz parameter
 	l1HeightDefault = 10 // default tree height (1024 signatures)
 
 	// l1ChainLen16 is the number of OTS chains for w=16:

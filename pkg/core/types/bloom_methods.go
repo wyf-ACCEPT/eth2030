@@ -70,8 +70,8 @@ func bloomBits(data []byte) [3][2]uint {
 	var result [3][2]uint
 	for i := 0; i < 3; i++ {
 		bit := uint(binary.BigEndian.Uint16(h[2*i:])) & 0x7FF // mod 2048
-		result[i][0] = BloomByteLength - 1 - bit/8             // byte index
-		result[i][1] = bit % 8                                  // bit position
+		result[i][0] = BloomByteLength - 1 - bit/8            // byte index
+		result[i][1] = bit % 8                                // bit position
 	}
 	return result
 }

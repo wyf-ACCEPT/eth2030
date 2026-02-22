@@ -100,11 +100,11 @@ func TestInitCodeGas(t *testing.T) {
 		wantGas uint64
 	}{
 		{"empty", 0, 0},
-		{"1 byte", 1, InitCodeWordGas},              // ceil(1/32) = 1 word
-		{"32 bytes", 32, InitCodeWordGas},             // 1 word
-		{"33 bytes", 33, 2 * InitCodeWordGas},         // 2 words
-		{"64 bytes", 64, 2 * InitCodeWordGas},         // 2 words
-		{"100 bytes", 100, 4 * InitCodeWordGas},       // ceil(100/32) = 4 words
+		{"1 byte", 1, InitCodeWordGas},          // ceil(1/32) = 1 word
+		{"32 bytes", 32, InitCodeWordGas},       // 1 word
+		{"33 bytes", 33, 2 * InitCodeWordGas},   // 2 words
+		{"64 bytes", 64, 2 * InitCodeWordGas},   // 2 words
+		{"100 bytes", 100, 4 * InitCodeWordGas}, // ceil(100/32) = 4 words
 	}
 
 	for _, tt := range tests {

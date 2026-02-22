@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	ErrUnknownParent = errors.New("forkchoice: unknown parent block")
+	ErrUnknownParent  = errors.New("forkchoice: unknown parent block")
 	ErrDuplicateBlock = errors.New("forkchoice: duplicate block")
-	ErrUnknownBlock  = errors.New("forkchoice: unknown block")
+	ErrUnknownBlock   = errors.New("forkchoice: unknown block")
 )
 
 // ForkChoiceConfig holds the initial configuration for a fork choice store.

@@ -31,9 +31,9 @@ type MetricEntry struct {
 type MetricsCollector struct {
 	mu         sync.RWMutex
 	config     CollectorConfig
-	metrics    []MetricEntry            // append-only log of all entries
-	latest     map[string]*MetricEntry  // most recent value per name
-	histValues map[string][]float64     // raw values per histogram name
+	metrics    []MetricEntry           // append-only log of all entries
+	latest     map[string]*MetricEntry // most recent value per name
+	histValues map[string][]float64    // raw values per histogram name
 }
 
 // NewMetricsCollector creates a new collector with the given config.

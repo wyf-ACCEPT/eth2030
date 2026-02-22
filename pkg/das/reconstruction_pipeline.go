@@ -29,20 +29,20 @@ var (
 type ReconstructionPriority int
 
 const (
-	PriorityLow    ReconstructionPriority = 0
-	PriorityNormal ReconstructionPriority = 1
-	PriorityHigh   ReconstructionPriority = 2
+	PriorityLow      ReconstructionPriority = 0
+	PriorityNormal   ReconstructionPriority = 1
+	PriorityHigh     ReconstructionPriority = 2
 	PriorityCritical ReconstructionPriority = 3
 )
 
 // BlobReconState tracks the reconstruction state of a single blob.
 type BlobReconState struct {
-	BlobIndex     uint64
-	Slot          uint64
-	Priority      ReconstructionPriority
-	Commitment    KZGCommitment
-	CollectedCells map[uint64]Cell  // cellIndex -> cell
-	TotalCells     int              // total cells needed
+	BlobIndex      uint64
+	Slot           uint64
+	Priority       ReconstructionPriority
+	Commitment     KZGCommitment
+	CollectedCells map[uint64]Cell // cellIndex -> cell
+	TotalCells     int             // total cells needed
 	Reconstructed  bool
 	ReconData      []byte
 	StartedAt      time.Time
@@ -221,11 +221,11 @@ func (rs *ReconstructionScheduler) Schedule() []ScheduleEntry {
 
 // ReconPipelineMetrics tracks reconstruction performance counters.
 type ReconPipelineMetrics struct {
-	TotalAttempts   atomic.Int64
-	TotalSuccesses  atomic.Int64
-	TotalFailures   atomic.Int64
-	TotalLatencyMs  atomic.Int64
-	CellsCollected  atomic.Int64
+	TotalAttempts  atomic.Int64
+	TotalSuccesses atomic.Int64
+	TotalFailures  atomic.Int64
+	TotalLatencyMs atomic.Int64
+	CellsCollected atomic.Int64
 }
 
 // SuccessRate returns the fraction of successful reconstructions.

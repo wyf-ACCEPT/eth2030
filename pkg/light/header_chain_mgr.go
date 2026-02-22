@@ -22,15 +22,15 @@ import (
 
 // Header chain manager errors.
 var (
-	ErrMgrNotStarted       = errors.New("header_chain_mgr: manager not started")
-	ErrMgrAlreadyStarted   = errors.New("header_chain_mgr: manager already started")
-	ErrMgrNilHeader        = errors.New("header_chain_mgr: nil header")
-	ErrMgrFinalityRegress  = errors.New("header_chain_mgr: finality cannot regress")
-	ErrMgrReorgBelowFinal  = errors.New("header_chain_mgr: reorg below finalized height")
-	ErrMgrNoFinalizedHdr   = errors.New("header_chain_mgr: no finalized header")
-	ErrMgrInvalidSig       = errors.New("header_chain_mgr: sync committee signature invalid")
-	ErrMgrSnapshotEmpty    = errors.New("header_chain_mgr: snapshot range is empty")
-	ErrMgrRangeInvalid     = errors.New("header_chain_mgr: invalid block range")
+	ErrMgrNotStarted      = errors.New("header_chain_mgr: manager not started")
+	ErrMgrAlreadyStarted  = errors.New("header_chain_mgr: manager already started")
+	ErrMgrNilHeader       = errors.New("header_chain_mgr: nil header")
+	ErrMgrFinalityRegress = errors.New("header_chain_mgr: finality cannot regress")
+	ErrMgrReorgBelowFinal = errors.New("header_chain_mgr: reorg below finalized height")
+	ErrMgrNoFinalizedHdr  = errors.New("header_chain_mgr: no finalized header")
+	ErrMgrInvalidSig      = errors.New("header_chain_mgr: sync committee signature invalid")
+	ErrMgrSnapshotEmpty   = errors.New("header_chain_mgr: snapshot range is empty")
+	ErrMgrRangeInvalid    = errors.New("header_chain_mgr: invalid block range")
 )
 
 // HeaderChainMgrConfig configures the header chain manager.

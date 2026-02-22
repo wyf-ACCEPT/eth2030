@@ -25,10 +25,10 @@ import (
 
 // Extended NII precompile addresses in the 0x02xx range.
 var (
-	NiiFieldMulExtAddr    = types.BytesToAddress([]byte{0x02, 0x05})
-	NiiFieldInvExtAddr    = types.BytesToAddress([]byte{0x02, 0x06})
-	NiiFieldExpAddr       = types.BytesToAddress([]byte{0x02, 0x07})
-	NiiBatchFieldVerAddr  = types.BytesToAddress([]byte{0x02, 0x08})
+	NiiFieldMulExtAddr   = types.BytesToAddress([]byte{0x02, 0x05})
+	NiiFieldInvExtAddr   = types.BytesToAddress([]byte{0x02, 0x06})
+	NiiFieldExpAddr      = types.BytesToAddress([]byte{0x02, 0x07})
+	NiiBatchFieldVerAddr = types.BytesToAddress([]byte{0x02, 0x08})
 )
 
 // Extended NII precompile errors.

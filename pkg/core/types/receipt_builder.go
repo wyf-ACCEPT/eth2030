@@ -5,19 +5,19 @@ import "math/big"
 // ReceiptBuilder constructs receipts step-by-step after transaction execution.
 // It accumulates fields and computes the bloom filter on Build().
 type ReceiptBuilder struct {
-	status           uint64
-	gasUsed          uint64
-	cumulativeGas    uint64
-	logs             []*Log
-	contractAddress  Address
-	txHash           Hash
-	blockHash        Hash
-	blockNumber      uint64
-	transactionIndex uint
-	txType           uint8
+	status            uint64
+	gasUsed           uint64
+	cumulativeGas     uint64
+	logs              []*Log
+	contractAddress   Address
+	txHash            Hash
+	blockHash         Hash
+	blockNumber       uint64
+	transactionIndex  uint
+	txType            uint8
 	effectiveGasPrice *big.Int
-	blobGasUsed      uint64
-	blobGasPrice     *big.Int
+	blobGasUsed       uint64
+	blobGasPrice      *big.Int
 
 	// Track which fields were explicitly set.
 	hasStatus      bool

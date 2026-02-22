@@ -38,12 +38,12 @@ func DefaultReceiptGeneratorConfig() ReceiptGeneratorConfig {
 // It tracks cumulative gas usage across a block and populates all receipt
 // fields including bloom filters, status codes, and EIP-4844 blob gas.
 type ReceiptGenerator struct {
-	config          ReceiptGeneratorConfig
-	cumulativeGas   uint64
-	cumulativeBlobGas uint64
+	config                ReceiptGeneratorConfig
+	cumulativeGas         uint64
+	cumulativeBlobGas     uint64
 	cumulativeCalldataGas uint64
-	receipts        []*types.Receipt
-	blockBloom      types.Bloom
+	receipts              []*types.Receipt
+	blockBloom            types.Bloom
 }
 
 // NewReceiptGenerator creates a new generator with the given config.

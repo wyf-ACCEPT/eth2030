@@ -1,5 +1,5 @@
 // Package rpc provides JSON-RPC 2.0 types and the standard Ethereum
-// JSON-RPC API (eth_ namespace) for the eth2030 execution client.
+// JSON-RPC API (eth_ namespace) for the ETH2030 execution client.
 package rpc
 
 import (
@@ -98,18 +98,18 @@ const (
 
 // RPCBlock is the JSON representation of a block.
 type RPCBlock struct {
-	Number       string         `json:"number"`
-	Hash         string         `json:"hash"`
-	ParentHash   string         `json:"parentHash"`
-	Timestamp    string         `json:"timestamp"`
-	GasLimit     string         `json:"gasLimit"`
-	GasUsed      string         `json:"gasUsed"`
-	Miner        string         `json:"miner"`
-	BaseFeePerGas *string       `json:"baseFeePerGas,omitempty"`
-	StateRoot    string         `json:"stateRoot"`
-	TxRoot       string         `json:"transactionsRoot"`
-	ReceiptsRoot string         `json:"receiptsRoot"`
-	Transactions []string       `json:"transactions"` // tx hashes
+	Number        string   `json:"number"`
+	Hash          string   `json:"hash"`
+	ParentHash    string   `json:"parentHash"`
+	Timestamp     string   `json:"timestamp"`
+	GasLimit      string   `json:"gasLimit"`
+	GasUsed       string   `json:"gasUsed"`
+	Miner         string   `json:"miner"`
+	BaseFeePerGas *string  `json:"baseFeePerGas,omitempty"`
+	StateRoot     string   `json:"stateRoot"`
+	TxRoot        string   `json:"transactionsRoot"`
+	ReceiptsRoot  string   `json:"receiptsRoot"`
+	Transactions  []string `json:"transactions"` // tx hashes
 }
 
 // RPCTransaction is the JSON representation of a transaction.
@@ -198,18 +198,18 @@ type FilterCriteria struct {
 
 // RPCBlockWithTxs is the JSON representation of a block with full transaction objects.
 type RPCBlockWithTxs struct {
-	Number        string             `json:"number"`
-	Hash          string             `json:"hash"`
-	ParentHash    string             `json:"parentHash"`
-	Timestamp     string             `json:"timestamp"`
-	GasLimit      string             `json:"gasLimit"`
-	GasUsed       string             `json:"gasUsed"`
-	Miner         string             `json:"miner"`
-	BaseFeePerGas *string            `json:"baseFeePerGas,omitempty"`
-	StateRoot     string             `json:"stateRoot"`
-	TxRoot        string             `json:"transactionsRoot"`
-	ReceiptsRoot  string             `json:"receiptsRoot"`
-	Transactions  []*RPCTransaction  `json:"transactions"`
+	Number        string            `json:"number"`
+	Hash          string            `json:"hash"`
+	ParentHash    string            `json:"parentHash"`
+	Timestamp     string            `json:"timestamp"`
+	GasLimit      string            `json:"gasLimit"`
+	GasUsed       string            `json:"gasUsed"`
+	Miner         string            `json:"miner"`
+	BaseFeePerGas *string           `json:"baseFeePerGas,omitempty"`
+	StateRoot     string            `json:"stateRoot"`
+	TxRoot        string            `json:"transactionsRoot"`
+	ReceiptsRoot  string            `json:"receiptsRoot"`
+	Transactions  []*RPCTransaction `json:"transactions"`
 }
 
 // FormatBlock converts a block to its JSON-RPC representation.

@@ -328,12 +328,12 @@ func testUnifiedStateWithValidators(n int) *UnifiedBeaconState {
 		pk[0] = byte(i)
 		pk[1] = byte(i >> 8)
 		s.AddValidator(&UnifiedValidator{
-			Pubkey:           pk,
-			EffectiveBalance: 32 * GweiPerETH,
-			Balance:          32 * GweiPerETH,
-			ActivationEpoch:  0,
-			ExitEpoch:        FarFutureEpoch,
-			WithdrawableEpoch: FarFutureEpoch,
+			Pubkey:                     pk,
+			EffectiveBalance:           32 * GweiPerETH,
+			Balance:                    32 * GweiPerETH,
+			ActivationEpoch:            0,
+			ExitEpoch:                  FarFutureEpoch,
+			WithdrawableEpoch:          FarFutureEpoch,
 			ActivationEligibilityEpoch: 0,
 		})
 	}

@@ -38,16 +38,16 @@ const (
 
 // Proposer slashing errors.
 var (
-	ErrPSNilEvidence        = errors.New("proposer_slashing: nil evidence")
-	ErrPSNilHeader          = errors.New("proposer_slashing: nil or empty header")
-	ErrPSSameRoot           = errors.New("proposer_slashing: headers have the same root")
-	ErrPSDifferentSlot      = errors.New("proposer_slashing: headers are for different slots")
-	ErrPSDifferentProposer  = errors.New("proposer_slashing: headers have different proposer indices")
-	ErrPSNotActive          = errors.New("proposer_slashing: proposer is not active")
-	ErrPSAlreadySlashed     = errors.New("proposer_slashing: proposer is already slashed")
-	ErrPSNotSlashable       = errors.New("proposer_slashing: proposer is not slashable at epoch")
-	ErrPSInvalidSignature   = errors.New("proposer_slashing: invalid header signature")
-	ErrPSDuplicateEvidence  = errors.New("proposer_slashing: duplicate slashing evidence")
+	ErrPSNilEvidence       = errors.New("proposer_slashing: nil evidence")
+	ErrPSNilHeader         = errors.New("proposer_slashing: nil or empty header")
+	ErrPSSameRoot          = errors.New("proposer_slashing: headers have the same root")
+	ErrPSDifferentSlot     = errors.New("proposer_slashing: headers are for different slots")
+	ErrPSDifferentProposer = errors.New("proposer_slashing: headers have different proposer indices")
+	ErrPSNotActive         = errors.New("proposer_slashing: proposer is not active")
+	ErrPSAlreadySlashed    = errors.New("proposer_slashing: proposer is already slashed")
+	ErrPSNotSlashable      = errors.New("proposer_slashing: proposer is not slashable at epoch")
+	ErrPSInvalidSignature  = errors.New("proposer_slashing: invalid header signature")
+	ErrPSDuplicateEvidence = errors.New("proposer_slashing: duplicate slashing evidence")
 )
 
 // ProposerSlashingRecord contains a complete proposer slashing: two

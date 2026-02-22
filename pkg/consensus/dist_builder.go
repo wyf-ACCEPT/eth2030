@@ -20,16 +20,16 @@ import (
 
 // Distributed block builder errors.
 var (
-	ErrDBNilBid          = errors.New("dist builder: nil bid")
-	ErrDBZeroBidValue    = errors.New("dist builder: bid value must be > 0")
-	ErrDBSlotZero        = errors.New("dist builder: slot must be > 0")
-	ErrDBNilFragment     = errors.New("dist builder: nil fragment")
-	ErrDBEmptyFragment   = errors.New("dist builder: fragment has no transactions")
-	ErrDBMaxBuilders     = errors.New("dist builder: maximum builders reached")
-	ErrDBBidTimeout      = errors.New("dist builder: bid submission timed out")
-	ErrDBNoBids          = errors.New("dist builder: no bids for slot")
-	ErrDBNoFragments     = errors.New("dist builder: no fragments for slot")
-	ErrDBGasExceeded     = errors.New("dist builder: merged gas exceeds limit")
+	ErrDBNilBid        = errors.New("dist builder: nil bid")
+	ErrDBZeroBidValue  = errors.New("dist builder: bid value must be > 0")
+	ErrDBSlotZero      = errors.New("dist builder: slot must be > 0")
+	ErrDBNilFragment   = errors.New("dist builder: nil fragment")
+	ErrDBEmptyFragment = errors.New("dist builder: fragment has no transactions")
+	ErrDBMaxBuilders   = errors.New("dist builder: maximum builders reached")
+	ErrDBBidTimeout    = errors.New("dist builder: bid submission timed out")
+	ErrDBNoBids        = errors.New("dist builder: no bids for slot")
+	ErrDBNoFragments   = errors.New("dist builder: no fragments for slot")
+	ErrDBGasExceeded   = errors.New("dist builder: merged gas exceeds limit")
 )
 
 // MergeStrategy defines how fragments are combined into a block.
@@ -80,7 +80,7 @@ func DefaultDistBuilderConfig() *DistBuilderConfig {
 type ConsensusBuilderBid struct {
 	BuilderID string
 	Slot      Slot
-	Value     *big.Int   // bid value in wei
+	Value     *big.Int // bid value in wei
 	GasUsed   uint64
 	TxCount   int
 	BlockRoot types.Hash
@@ -106,11 +106,11 @@ type slotBids struct {
 
 // MergedBlock is the result of merging fragments for a slot.
 type MergedBlock struct {
-	Slot        Slot
-	Fragments   []*BlockFragment // included fragments, in merge order
-	TotalGas    uint64
-	TotalTxs    int
-	BuilderIDs  []string
+	Slot       Slot
+	Fragments  []*BlockFragment // included fragments, in merge order
+	TotalGas   uint64
+	TotalTxs   int
+	BuilderIDs []string
 }
 
 // DistBlockBuilder collects bids and fragments from multiple builders

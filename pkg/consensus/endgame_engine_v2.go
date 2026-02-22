@@ -14,11 +14,11 @@ import (
 )
 
 var (
-	ErrRoundNotStarted    = errors.New("finality-v2: round not started for slot")
-	ErrDuplicateVoteV2    = errors.New("finality-v2: duplicate vote from validator")
-	ErrInvalidValidator   = errors.New("finality-v2: validator index out of range")
-	ErrRoundFinalized     = errors.New("finality-v2: round already finalized")
-	ErrSlotMismatch       = errors.New("finality-v2: vote slot does not match round")
+	ErrRoundNotStarted  = errors.New("finality-v2: round not started for slot")
+	ErrDuplicateVoteV2  = errors.New("finality-v2: duplicate vote from validator")
+	ErrInvalidValidator = errors.New("finality-v2: validator index out of range")
+	ErrRoundFinalized   = errors.New("finality-v2: round already finalized")
+	ErrSlotMismatch     = errors.New("finality-v2: vote slot does not match round")
 )
 
 // FinalityV2Config configures the endgame finality V2 engine.

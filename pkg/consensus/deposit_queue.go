@@ -25,14 +25,14 @@ const (
 )
 
 var (
-	ErrDepositQueueBelowMinimum      = errors.New("deposit queue: amount below minimum")
-	ErrDepositQueueAboveMax          = errors.New("deposit queue: amount above max effective balance")
-	ErrDepositQueueInvalidPubkey     = errors.New("deposit queue: invalid pubkey length")
-	ErrDepositQueueEmptyPubkey       = errors.New("deposit queue: pubkey is empty")
-	ErrDepositQueueInvalidSig        = errors.New("deposit queue: invalid signature length")
-	ErrDepositQueueInvalidCreds      = errors.New("deposit queue: invalid withdrawal credentials length")
-	ErrDepositQueueDuplicateIndex    = errors.New("deposit queue: duplicate deposit index")
-	ErrDepositQueueZeroAmount        = errors.New("deposit queue: amount must be > 0")
+	ErrDepositQueueBelowMinimum   = errors.New("deposit queue: amount below minimum")
+	ErrDepositQueueAboveMax       = errors.New("deposit queue: amount above max effective balance")
+	ErrDepositQueueInvalidPubkey  = errors.New("deposit queue: invalid pubkey length")
+	ErrDepositQueueEmptyPubkey    = errors.New("deposit queue: pubkey is empty")
+	ErrDepositQueueInvalidSig     = errors.New("deposit queue: invalid signature length")
+	ErrDepositQueueInvalidCreds   = errors.New("deposit queue: invalid withdrawal credentials length")
+	ErrDepositQueueDuplicateIndex = errors.New("deposit queue: duplicate deposit index")
+	ErrDepositQueueZeroAmount     = errors.New("deposit queue: amount must be > 0")
 )
 
 // DepositQueueConfig holds configuration for the deposit processing queue.
@@ -54,7 +54,7 @@ type DepositQueueConfig struct {
 func DefaultDepositQueueConfig() DepositQueueConfig {
 	return DepositQueueConfig{
 		MaxDepositsPerBlock: 16,
-		MinDepositAmount:    32_000_000_000, // 32 ETH
+		MinDepositAmount:    32_000_000_000,   // 32 ETH
 		MaxEffectiveBalance: 2048_000_000_000, // 2048 ETH (EIP-7251)
 		DepositContractAddress: types.HexToAddress(
 			"0x00000000219ab540356cBB839Cbe05303d7705Fa",
@@ -91,7 +91,7 @@ type DepositQueue struct {
 	config     DepositQueueConfig
 	pending    []*DepositEntry
 	processed  []*DepositEntry
-	indexSet   map[uint64]bool // tracks all known deposit indices
+	indexSet   map[uint64]bool   // tracks all known deposit indices
 	validators map[string]uint64 // pubkey (hex) -> accumulated amount
 	totalCount uint64
 }

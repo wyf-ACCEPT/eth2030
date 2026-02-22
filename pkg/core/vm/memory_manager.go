@@ -18,7 +18,7 @@ const MemoryManagerMaxSize = 32 * 1024 * 1024
 // MemoryManager tracks EVM memory regions with gas accounting.
 // It maintains a byte-addressable memory that grows in 32-byte word increments.
 type MemoryManager struct {
-	store       []byte
+	store        []byte
 	totalGasUsed uint64
 }
 

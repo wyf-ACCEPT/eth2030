@@ -35,10 +35,10 @@ type InclusionListEntry struct {
 // InclusionList represents a set of transactions that MUST be included in
 // a subsequent block. Created by an IL committee member for a given slot.
 type InclusionList struct {
-	Slot           uint64               `json:"slot"`
-	ProposerIndex  uint64               `json:"proposerIndex"` // IL committee member index
-	CommitteeRoot  types.Hash           `json:"committeeRoot"` // root of IL committee
-	Entries        []InclusionListEntry  `json:"entries"`
+	Slot          uint64               `json:"slot"`
+	ProposerIndex uint64               `json:"proposerIndex"` // IL committee member index
+	CommitteeRoot types.Hash           `json:"committeeRoot"` // root of IL committee
+	Entries       []InclusionListEntry `json:"entries"`
 }
 
 // SignedInclusionList wraps an InclusionList with a BLS signature.

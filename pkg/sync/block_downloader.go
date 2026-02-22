@@ -21,10 +21,10 @@ var (
 
 // Task status constants.
 const (
-	TaskStatusPending    = "pending"
-	TaskStatusActive     = "active"
-	TaskStatusCompleted  = "completed"
-	TaskStatusFailed     = "failed"
+	TaskStatusPending   = "pending"
+	TaskStatusActive    = "active"
+	TaskStatusCompleted = "completed"
+	TaskStatusFailed    = "failed"
 )
 
 // BlockDownloaderConfig configures the BlockDownloader.

@@ -7,18 +7,18 @@ import (
 
 // mockAdminBackend implements AdminBackend for testing.
 type mockAdminBackend struct {
-	nodeInfo     NodeInfoData
-	peers        []PeerInfoData
-	addPeerErr   error
+	nodeInfo      NodeInfoData
+	peers         []PeerInfoData
+	addPeerErr    error
 	removePeerErr error
-	chainID      uint64
-	dataDir      string
+	chainID       uint64
+	dataDir       string
 }
 
 func newMockAdminBackend() *mockAdminBackend {
 	return &mockAdminBackend{
 		nodeInfo: NodeInfoData{
-			Name:       "eth2030/v0.1.0/linux-amd64/go1.22",
+			Name:       "ETH2030/v0.1.0/linux-amd64/go1.22",
 			ID:         "abc123def456",
 			Enode:      "enode://abc123@127.0.0.1:30303",
 			ListenAddr: ":30303",
@@ -47,12 +47,12 @@ func newMockAdminBackend() *mockAdminBackend {
 			},
 		},
 		chainID: 1337,
-		dataDir: "/tmp/eth2030-data",
+		dataDir: "/tmp/ETH2030-data",
 	}
 }
 
-func (b *mockAdminBackend) NodeInfo() NodeInfoData     { return b.nodeInfo }
-func (b *mockAdminBackend) Peers() []PeerInfoData      { return b.peers }
+func (b *mockAdminBackend) NodeInfo() NodeInfoData      { return b.nodeInfo }
+func (b *mockAdminBackend) Peers() []PeerInfoData       { return b.peers }
 func (b *mockAdminBackend) AddPeer(url string) error    { return b.addPeerErr }
 func (b *mockAdminBackend) RemovePeer(url string) error { return b.removePeerErr }
 func (b *mockAdminBackend) ChainID() uint64             { return b.chainID }
@@ -68,8 +68,8 @@ func TestAdminNodeInfo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if info.Name != "eth2030/v0.1.0/linux-amd64/go1.22" {
-		t.Fatalf("want name eth2030/v0.1.0/linux-amd64/go1.22, got %s", info.Name)
+	if info.Name != "ETH2030/v0.1.0/linux-amd64/go1.22" {
+		t.Fatalf("want name ETH2030/v0.1.0/linux-amd64/go1.22, got %s", info.Name)
 	}
 	if info.ID != "abc123def456" {
 		t.Fatalf("want ID abc123def456, got %s", info.ID)
@@ -261,8 +261,8 @@ func TestAdminDataDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if dir != "/tmp/eth2030-data" {
-		t.Fatalf("want /tmp/eth2030-data, got %s", dir)
+	if dir != "/tmp/ETH2030-data" {
+		t.Fatalf("want /tmp/ETH2030-data, got %s", dir)
 	}
 }
 

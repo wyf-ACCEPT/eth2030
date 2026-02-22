@@ -5,8 +5,9 @@
 // signature leaves. The "fast" variant uses larger signatures but faster signing.
 //
 // Parameters (SPHINCS+-128f-like):
-//   N=16 (security bytes), W=16 (Winternitz), H=66 (total tree height),
-//   D=22 (hypertree layers), K=33 (FORS trees), T=2^6 (FORS leaves per tree)
+//
+//	N=16 (security bytes), W=16 (Winternitz), H=66 (total tree height),
+//	D=22 (hypertree layers), K=33 (FORS trees), T=2^6 (FORS leaves per tree)
 //
 // For Ethereum post-quantum attestations (L+ roadmap), SPHINCS+ provides
 // fallback security relying only on hash function pre-image resistance.
@@ -22,19 +23,19 @@ import (
 
 // SPHINCS+-128f parameter constants.
 const (
-	sphincsN         = 16  // security parameter in bytes
-	sphincsW         = 16  // Winternitz parameter
-	sphincsH         = 66  // total tree height
-	sphincsD         = 22  // hypertree layers
-	sphincsK         = 33  // FORS trees
-	sphincsLogT      = 6   // log2(FORS leaves per tree)
-	sphincsT         = 64  // FORS leaves per tree (2^sphincsLogT)
-	sphincsWOTSLen1  = 32  // ceil(8*N / log2(W)) = ceil(128/4) = 32
-	sphincsWOTSLen2  = 3   // checksum chains
+	sphincsN         = 16 // security parameter in bytes
+	sphincsW         = 16 // Winternitz parameter
+	sphincsH         = 66 // total tree height
+	sphincsD         = 22 // hypertree layers
+	sphincsK         = 33 // FORS trees
+	sphincsLogT      = 6  // log2(FORS leaves per tree)
+	sphincsT         = 64 // FORS leaves per tree (2^sphincsLogT)
+	sphincsWOTSLen1  = 32 // ceil(8*N / log2(W)) = ceil(128/4) = 32
+	sphincsWOTSLen2  = 3  // checksum chains
 	sphincsWOTSLen   = sphincsWOTSLen1 + sphincsWOTSLen2
-	sphincsWOTSSigSz = sphincsWOTSLen * sphincsN // 35 * 16 = 560 bytes
+	sphincsWOTSSigSz = sphincsWOTSLen * sphincsN                    // 35 * 16 = 560 bytes
 	sphincsFORSSigSz = sphincsK * (sphincsLogT*sphincsN + sphincsN) // FORS signature
-	sphincsSeedSize  = 3 * sphincsN // SK.seed + SK.prf + PK.seed
+	sphincsSeedSize  = 3 * sphincsN                                 // SK.seed + SK.prf + PK.seed
 
 	// SPHINCSPubKeySize is the public key size: PK.seed + PK.root.
 	SPHINCSPubKeySize = 2 * sphincsN

@@ -42,12 +42,12 @@ const (
 
 // Altair sync committee errors.
 var (
-	ErrAltairSyncNilState       = errors.New("altair_sync: nil beacon state")
-	ErrAltairSyncNoValidators   = errors.New("altair_sync: no active validators")
-	ErrAltairSyncBitfieldLen    = errors.New("altair_sync: bitfield length mismatch")
+	ErrAltairSyncNilState         = errors.New("altair_sync: nil beacon state")
+	ErrAltairSyncNoValidators     = errors.New("altair_sync: no active validators")
+	ErrAltairSyncBitfieldLen      = errors.New("altair_sync: bitfield length mismatch")
 	ErrAltairSyncLowParticipation = errors.New("altair_sync: participation below threshold")
-	ErrAltairSyncInvalidSig     = errors.New("altair_sync: invalid aggregate signature")
-	ErrAltairSyncNilAggregate   = errors.New("altair_sync: nil sync aggregate")
+	ErrAltairSyncInvalidSig       = errors.New("altair_sync: invalid aggregate signature")
+	ErrAltairSyncNilAggregate     = errors.New("altair_sync: nil sync aggregate")
 )
 
 // SyncCommitteeAltair extends the base SyncCommittee with validator indices
@@ -65,8 +65,8 @@ type SyncCommitteeAltair struct {
 
 // SyncAggregateAltair is a validated sync aggregate with participation count.
 type SyncAggregateAltair struct {
-	Bits            [AltairSyncBitfieldBytes]byte
-	Signature       [96]byte
+	Bits             [AltairSyncBitfieldBytes]byte
+	Signature        [96]byte
 	ParticipantCount uint64
 }
 

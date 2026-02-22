@@ -41,7 +41,7 @@ func TestProgressiveListSingleElement(t *testing.T) {
 	root := pl.HashTreeRoot()
 
 	left := Merkleize([][32]byte{chunk}, 1) // == chunk
-	right := zeroHash()                      // empty recursive call
+	right := zeroHash()                     // empty recursive call
 	inner := hash(left, right)
 	expected := MixInLength(inner, 1)
 	if root != expected {

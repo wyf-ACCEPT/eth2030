@@ -265,7 +265,7 @@ func TestAttackReportString(t *testing.T) {
 		ReorgDepth:        10,
 		FinalizedEpoch:    5,
 		CurrentEpoch:      20,
-		AffectedEpochs:   []uint64{6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+		AffectedEpochs:    []uint64{6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 		RecommendedAction: ActionFallback,
 	}
 	s := attack.String()

@@ -197,9 +197,9 @@ func TestIM_ViolationCount(t *testing.T) {
 
 	// 3 blocks, 2 violating.
 	listed := imTxHashes(10)
-	im.RecordBlock(1, 5, imTestHash(0x01), listed, listed[:2])  // 20% < 80% -> violation
-	im.RecordBlock(2, 6, imTestHash(0x02), listed, listed[:9])  // 90% >= 80% -> ok
-	im.RecordBlock(3, 7, imTestHash(0x03), listed, listed[:3])  // 30% < 80% -> violation
+	im.RecordBlock(1, 5, imTestHash(0x01), listed, listed[:2]) // 20% < 80% -> violation
+	im.RecordBlock(2, 6, imTestHash(0x02), listed, listed[:9]) // 90% >= 80% -> ok
+	im.RecordBlock(3, 7, imTestHash(0x03), listed, listed[:3]) // 30% < 80% -> violation
 
 	if im.ViolationCount() != 2 {
 		t.Errorf("ViolationCount = %d, want 2", im.ViolationCount())
@@ -292,10 +292,10 @@ func TestIM_GenerateEpochReport(t *testing.T) {
 
 	// Slots 0-3 in epoch 0.
 	listed := imTxHashes(10)
-	im.RecordBlock(0, 1, imTestHash(0x01), listed, listed)       // 100%
-	im.RecordBlock(1, 2, imTestHash(0x02), listed, listed[:5])   // 50%
-	im.RecordBlock(2, 3, imTestHash(0x03), listed, listed[:8])   // 80%
-	im.RecordBlock(3, 1, imTestHash(0x04), listed, listed[:10])  // 100%
+	im.RecordBlock(0, 1, imTestHash(0x01), listed, listed)      // 100%
+	im.RecordBlock(1, 2, imTestHash(0x02), listed, listed[:5])  // 50%
+	im.RecordBlock(2, 3, imTestHash(0x03), listed, listed[:8])  // 80%
+	im.RecordBlock(3, 1, imTestHash(0x04), listed, listed[:10]) // 100%
 
 	report, err := im.GenerateEpochReport(epoch, slotsPerEpoch)
 	if err != nil {
@@ -332,8 +332,8 @@ func TestIM_GenerateEpochReport_BestWorst(t *testing.T) {
 	slotsPerEpoch := uint64(2)
 	listed := imTxHashes(10)
 
-	im.RecordBlock(0, 10, imTestHash(0x01), listed, listed)      // 100%
-	im.RecordBlock(1, 20, imTestHash(0x02), listed, listed[:3])  // 30%
+	im.RecordBlock(0, 10, imTestHash(0x01), listed, listed)     // 100%
+	im.RecordBlock(1, 20, imTestHash(0x02), listed, listed[:3]) // 30%
 
 	report, _ := im.GenerateEpochReport(0, slotsPerEpoch)
 

@@ -1,4 +1,4 @@
-# eth2030 Gap Analysis vs L1 Strawmap Roadmap
+# ETH2030 Gap Analysis vs L1 Strawmap Roadmap
 
 Last updated: 2026-02-22
 
@@ -135,7 +135,7 @@ Running against the official Ethereum Foundation state test vectors (36,126 test
 ### Architecture
 
 The EF test runner uses go-ethereum's execution engine directly:
-- `pkg/geth/` adapter package bridges eth2030 types to go-ethereum interfaces
+- `pkg/geth/` adapter package bridges ETH2030 types to go-ethereum interfaces
 - `geth.MakePreState()` creates go-ethereum `state.StateDB` backed by real trie DB
 - `core.ApplyMessage()` executes transactions with go-ethereum's EVM
 - State roots computed via go-ethereum's `StateDB.Commit()` with correct EIP-158 handling
@@ -145,7 +145,7 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 
 ### Custom Precompile Integration
 
-eth2030's custom precompiles are injected into go-ethereum's EVM via `evm.SetPrecompiles()`:
+ETH2030's custom precompiles are injected into go-ethereum's EVM via `evm.SetPrecompiles()`:
 
 | Category | Count | Addresses | Activation Fork |
 |----------|-------|-----------|----------------|
@@ -154,7 +154,7 @@ eth2030's custom precompiles are injected into go-ethereum's EVM via `evm.SetPre
 | NII (Number-Theoretic) | 4 | 0x0201-0x0204 | I+ |
 | Field arithmetic | 4 | 0x0205-0x0208 | I+ |
 
-**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes (CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, EOF, AA) remain eth2030-native-EVM-only.
+**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes (CLZ, DUPN/SWAPN/EXCHANGE, APPROVE, TXPARAM*, EOF, AA) remain ETH2030-native-EVM-only.
 
 ### Fixes Applied (24.7% → 27.4%)
 

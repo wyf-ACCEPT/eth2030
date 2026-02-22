@@ -10,7 +10,8 @@ import (
 // needed for a stateless verifier to confirm the key-value pairs.
 //
 // The witness format (placeholder, not the full IPA multipoint proof):
-//   [root_commitment(32)] [num_keys(4)] [key(32) value(32) proof_data(N)]...
+//
+//	[root_commitment(32)] [num_keys(4)] [key(32) value(32) proof_data(N)]...
 func GenerateVerkleWitness(tree VerkleTree, accessedKeys [][]byte) ([]byte, error) {
 	root, err := tree.Commit()
 	if err != nil {

@@ -17,14 +17,14 @@ import (
 
 // 1 ETH includer errors.
 var (
-	ErrIncluderZeroAddress    = errors.New("includer: zero address")
-	ErrIncluderWrongStake     = errors.New("includer: stake must be exactly 1 ETH (1e18 wei)")
+	ErrIncluderZeroAddress       = errors.New("includer: zero address")
+	ErrIncluderWrongStake        = errors.New("includer: stake must be exactly 1 ETH (1e18 wei)")
 	ErrIncluderAlreadyRegistered = errors.New("includer: already registered")
-	ErrIncluderNotRegistered  = errors.New("includer: not registered")
-	ErrIncluderPoolEmpty      = errors.New("includer: pool is empty")
-	ErrIncluderAlreadySlashed = errors.New("includer: already slashed")
-	ErrIncluderNilDuty        = errors.New("includer: nil duty")
-	ErrIncluderInvalidSig     = errors.New("includer: invalid signature")
+	ErrIncluderNotRegistered     = errors.New("includer: not registered")
+	ErrIncluderPoolEmpty         = errors.New("includer: pool is empty")
+	ErrIncluderAlreadySlashed    = errors.New("includer: already slashed")
+	ErrIncluderNilDuty           = errors.New("includer: nil duty")
+	ErrIncluderInvalidSig        = errors.New("includer: invalid signature")
 )
 
 // OneETH is the required stake amount: 1 ETH = 1e18 wei.
@@ -32,9 +32,9 @@ var OneETH = new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
 
 // Includer reward constants (in Gwei).
 const (
-	BaseIncluderReward    uint64 = 10_000  // 10,000 Gwei per slot
-	IncluderRewardDecay   uint64 = 100     // decay per slot for late inclusion
-	SlashPenaltyPercent   uint64 = 10      // 10% of stake slashed for misbehaviour
+	BaseIncluderReward  uint64 = 10_000 // 10,000 Gwei per slot
+	IncluderRewardDecay uint64 = 100    // decay per slot for late inclusion
+	SlashPenaltyPercent uint64 = 10     // 10% of stake slashed for misbehaviour
 )
 
 // IncluderStatus tracks the state of a registered includer.

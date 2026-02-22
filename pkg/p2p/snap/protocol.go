@@ -112,10 +112,10 @@ type TrieNodePathSet [][]byte
 
 // GetTrieNodesPacket requests trie nodes by path.
 type GetTrieNodesPacket struct {
-	ID    uint64             // Request identifier.
-	Root  types.Hash         // State trie root.
-	Paths []TrieNodePathSet  // Sets of trie node paths to retrieve.
-	Bytes uint64             // Soft limit on response size in bytes.
+	ID    uint64            // Request identifier.
+	Root  types.Hash        // State trie root.
+	Paths []TrieNodePathSet // Sets of trie node paths to retrieve.
+	Bytes uint64            // Soft limit on response size in bytes.
 }
 
 // TrieNodesPacket is the response to GetTrieNodesPacket.

@@ -100,9 +100,9 @@ const ftIndexEntrySize = 16
 
 // ftIndexEntry is an index entry for the compressed table.
 type ftIndexEntry struct {
-	Offset           uint64
-	CompressedLen    uint32
-	UncompressedLen  uint32
+	Offset          uint64
+	CompressedLen   uint32
+	UncompressedLen uint32
 }
 
 func (e *ftIndexEntry) encode() []byte {

@@ -12,10 +12,10 @@ import (
 
 // EIP-7954 validation errors.
 var (
-	ErrCodeSizeExceeded      = errors.New("eip7954: deployed code exceeds max code size")
-	ErrInitCodeSizeExceeded  = errors.New("eip7954: init code exceeds max init code size")
-	ErrCodeSizeZero          = errors.New("eip7954: deployed code is empty")
-	ErrInitCodeEmpty         = errors.New("eip7954: init code is empty")
+	ErrCodeSizeExceeded     = errors.New("eip7954: deployed code exceeds max code size")
+	ErrInitCodeSizeExceeded = errors.New("eip7954: init code exceeds max init code size")
+	ErrCodeSizeZero         = errors.New("eip7954: deployed code is empty")
+	ErrInitCodeEmpty        = errors.New("eip7954: init code is empty")
 )
 
 // CodeSizeLimits holds the code size limits for a specific fork.

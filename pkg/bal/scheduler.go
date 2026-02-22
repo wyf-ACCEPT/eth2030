@@ -53,20 +53,20 @@ type SpeculativeResult struct {
 
 // SchedulerMetrics collects runtime statistics for the scheduler.
 type SchedulerMetrics struct {
-	WavesFormed    atomic.Uint64
-	TxsScheduled   atomic.Uint64
-	Rollbacks      atomic.Uint64
-	ReExecutions   atomic.Uint64
-	MaxWaveSize    atomic.Uint64
+	WavesFormed  atomic.Uint64
+	TxsScheduled atomic.Uint64
+	Rollbacks    atomic.Uint64
+	ReExecutions atomic.Uint64
+	MaxWaveSize  atomic.Uint64
 }
 
 // BALScheduler uses BAL conflict information to schedule transactions
 // into parallel execution waves and manage speculative execution.
 type BALScheduler struct {
-	mu         sync.Mutex
-	workers    int
-	detector   *BALConflictDetector
-	metrics    SchedulerMetrics
+	mu       sync.Mutex
+	workers  int
+	detector *BALConflictDetector
+	metrics  SchedulerMetrics
 }
 
 // NewBALScheduler creates a scheduler with the given number of workers and
@@ -87,9 +87,15 @@ func (s *BALScheduler) Workers() int {
 	return s.workers
 }
 
-// SchedulerMetricsSnapshot returns a copy of the current metrics.
-func (s *BALScheduler) SchedulerMetricsSnapshot() SchedulerMetrics {
-	return s.metrics
+// SchedulerMetricsSnapshot returns a snapshot of the current metrics.
+func (s *BALScheduler) SchedulerMetricsSnapshot() *SchedulerMetrics {
+	m := new(SchedulerMetrics)
+	m.WavesFormed.Store(s.metrics.WavesFormed.Load())
+	m.TxsScheduled.Store(s.metrics.TxsScheduled.Load())
+	m.Rollbacks.Store(s.metrics.Rollbacks.Load())
+	m.ReExecutions.Store(s.metrics.ReExecutions.Load())
+	m.MaxWaveSize.Store(s.metrics.MaxWaveSize.Load())
+	return m
 }
 
 // Schedule analyzes a BlockAccessList and produces an ordered sequence of

@@ -12,11 +12,11 @@ import (
 // --- mock state writer for trie healer tests ---
 
 type thMockWriter struct {
-	trieNodes  map[string][]byte
-	missingFn  func(root types.Hash, limit int) [][]byte
-	accounts   map[types.Hash]AccountData
-	storage    map[string][]byte
-	bytecodes  map[types.Hash][]byte
+	trieNodes map[string][]byte
+	missingFn func(root types.Hash, limit int) [][]byte
+	accounts  map[types.Hash]AccountData
+	storage   map[string][]byte
+	bytecodes map[types.Hash][]byte
 }
 
 func newTHMockWriter() *thMockWriter {

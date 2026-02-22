@@ -1,4 +1,4 @@
-// Package proofs provides proof aggregation for the eth2030 client.
+// Package proofs provides proof aggregation for the ETH2030 client.
 // It supports multiple proof types (ZK-SNARK, ZK-STARK, IPA, KZG) and
 // allows aggregation and verification of execution proofs.
 package proofs

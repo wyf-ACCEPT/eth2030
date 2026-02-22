@@ -21,18 +21,18 @@ const (
 // PayloadToHeaderV1 converts an ExecutionPayloadV1 to a block Header.
 func PayloadToHeaderV1(payload *ExecutionPayloadV1) *types.Header {
 	header := &types.Header{
-		ParentHash: payload.ParentHash,
-		Coinbase:   payload.FeeRecipient,
-		Root:       payload.StateRoot,
+		ParentHash:  payload.ParentHash,
+		Coinbase:    payload.FeeRecipient,
+		Root:        payload.StateRoot,
 		ReceiptHash: payload.ReceiptsRoot,
-		Bloom:      payload.LogsBloom,
-		MixDigest:  payload.PrevRandao,
-		Number:     new(big.Int).SetUint64(payload.BlockNumber),
-		GasLimit:   payload.GasLimit,
-		GasUsed:    payload.GasUsed,
-		Time:       payload.Timestamp,
-		Extra:      payload.ExtraData,
-		BaseFee:    payload.BaseFeePerGas,
+		Bloom:       payload.LogsBloom,
+		MixDigest:   payload.PrevRandao,
+		Number:      new(big.Int).SetUint64(payload.BlockNumber),
+		GasLimit:    payload.GasLimit,
+		GasUsed:     payload.GasUsed,
+		Time:        payload.Timestamp,
+		Extra:       payload.ExtraData,
+		BaseFee:     payload.BaseFeePerGas,
 	}
 	header.Difficulty = new(big.Int)
 	header.UncleHash = types.EmptyUncleHash
@@ -119,10 +119,10 @@ func BlobSidecarFromBundle(bundle *BlobsBundleV1, index int, blockHash types.Has
 		return nil, ErrBlobBundleSidecarIndex
 	}
 	return &BlobSidecar{
-		Index:         uint64(index),
-		Blob:          bundle.Blobs[index],
-		KZGCommitment: bundle.Commitments[index],
-		KZGProof:      bundle.Proofs[index],
+		Index:             uint64(index),
+		Blob:              bundle.Blobs[index],
+		KZGCommitment:     bundle.Commitments[index],
+		KZGProof:          bundle.Proofs[index],
 		SignedBlockHeader: blockHash,
 	}, nil
 }
@@ -197,16 +197,16 @@ func ConvertV2ToV3(v2 *ExecutionPayloadV2) *ExecutionPayloadV3 {
 // ConvertV3ToV4 upgrades a V3 payload to V4 with empty execution requests.
 func ConvertV3ToV4(v3 *ExecutionPayloadV3) *ExecutionPayloadV4 {
 	return &ExecutionPayloadV4{
-		ExecutionPayloadV3:   *v3,
-		ExecutionRequests:    [][]byte{},
+		ExecutionPayloadV3: *v3,
+		ExecutionRequests:  [][]byte{},
 	}
 }
 
 // ConvertV4ToV5 upgrades a V4 payload to V5 with empty block access list.
 func ConvertV4ToV5(v4 *ExecutionPayloadV4) *ExecutionPayloadV5 {
 	return &ExecutionPayloadV5{
-		ExecutionPayloadV4:  *v4,
-		BlockAccessList:     nil,
+		ExecutionPayloadV4: *v4,
+		BlockAccessList:    nil,
 	}
 }
 

@@ -431,7 +431,7 @@ func TestEffectiveFee(t *testing.T) {
 
 	tx := &MultidimTx{
 		GasLimit:           1000,
-		BlobCount:          1,        // 131072 blob gas
+		BlobCount:          1, // 131072 blob gas
 		AccessListSize:     500,
 		MaxFeePerGas:       big.NewInt(10), // == base fee
 		MaxBlobFeePerGas:   big.NewInt(5),  // == base fee
@@ -481,7 +481,7 @@ func TestEstimateTotalCost(t *testing.T) {
 
 	tx := &MultidimTx{
 		GasLimit:       1000,
-		BlobCount:      1,    // 131072 blob gas
+		BlobCount:      1, // 131072 blob gas
 		AccessListSize: 500,
 	}
 

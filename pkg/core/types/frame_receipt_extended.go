@@ -49,9 +49,9 @@ func (g *FrameGasBreakdown) TotalConsumed() uint64 {
 
 // SubFrameResult represents the execution outcome of a nested sub-frame call.
 type SubFrameResult struct {
-	Target  Address
-	Status  uint64
-	GasUsed uint64
+	Target     Address
+	Status     uint64
+	GasUsed    uint64
 	ReturnData []byte
 }
 
@@ -106,7 +106,7 @@ type ExtendedFrameTxReceipt struct {
 	// EffectiveGasPrice is the effective gas price after EIP-1559 base fee.
 	EffectiveGasPrice *big.Int
 	// BlobGasUsed tracks blob gas if the frame tx carried blobs.
-	BlobGasUsed uint64
+	BlobGasUsed  uint64
 	BlobGasPrice *big.Int
 }
 

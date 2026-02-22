@@ -61,24 +61,24 @@ func (s ValidatorState) String() string {
 
 // Validator lifecycle errors.
 var (
-	ErrLifecycleValidatorNotFound  = errors.New("lifecycle: validator not found")
-	ErrLifecycleAlreadyActive      = errors.New("lifecycle: validator already active")
-	ErrLifecycleAlreadyExiting     = errors.New("lifecycle: validator already exiting or exited")
-	ErrLifecycleNotActive          = errors.New("lifecycle: validator is not active")
-	ErrLifecycleAlreadySlashed     = errors.New("lifecycle: validator already slashed")
+	ErrLifecycleValidatorNotFound   = errors.New("lifecycle: validator not found")
+	ErrLifecycleAlreadyActive       = errors.New("lifecycle: validator already active")
+	ErrLifecycleAlreadyExiting      = errors.New("lifecycle: validator already exiting or exited")
+	ErrLifecycleNotActive           = errors.New("lifecycle: validator is not active")
+	ErrLifecycleAlreadySlashed      = errors.New("lifecycle: validator already slashed")
 	ErrLifecycleInsufficientBalance = errors.New("lifecycle: insufficient effective balance for activation")
 )
 
 // LifecycleValidator tracks a single validator through its lifecycle.
 type LifecycleValidator struct {
-	Index                    ValidatorIndex
-	ActivationEligibleEpoch  Epoch  // when eligible for the activation queue
-	ActivationEpoch          Epoch  // when actually activated
-	ExitEpoch                Epoch  // when exit takes effect
-	WithdrawableEpoch        Epoch  // when funds become withdrawable
-	EffectiveBalance         uint64 // in Gwei
-	Balance                  uint64 // actual balance in Gwei
-	Slashed                  bool
+	Index                   ValidatorIndex
+	ActivationEligibleEpoch Epoch  // when eligible for the activation queue
+	ActivationEpoch         Epoch  // when actually activated
+	ExitEpoch               Epoch  // when exit takes effect
+	WithdrawableEpoch       Epoch  // when funds become withdrawable
+	EffectiveBalance        uint64 // in Gwei
+	Balance                 uint64 // actual balance in Gwei
+	Slashed                 bool
 }
 
 // State returns the current lifecycle state at the given epoch.
@@ -122,12 +122,12 @@ func (v *LifecycleValidator) IsSlashable(epoch Epoch) bool {
 
 // ValidatorLifecycleStats holds aggregate statistics about the validator set.
 type ValidatorLifecycleStats struct {
-	PendingCount      int
-	ActiveCount       int
-	ExitingCount      int
-	ExitedCount       int
-	WithdrawableCount int
-	SlashedCount      int
+	PendingCount       int
+	ActiveCount        int
+	ExitingCount       int
+	ExitedCount        int
+	WithdrawableCount  int
+	SlashedCount       int
 	TotalActiveBalance uint64
 }
 

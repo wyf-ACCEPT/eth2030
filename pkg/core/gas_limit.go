@@ -18,9 +18,9 @@ type GasLimitSchedule []GasLimitEntry
 
 // DefaultGasLimitSchedule defines the planned gas limit increases (3x/year).
 var DefaultGasLimitSchedule = GasLimitSchedule{
-	{ActivationTime: 0, TargetGasLimit: 60_000_000},           // current: 60M
-	{ActivationTime: 15_768_000, TargetGasLimit: 180_000_000}, // +6 months: 180M (3x)
-	{ActivationTime: 31_536_000, TargetGasLimit: 540_000_000}, // +12 months: 540M (3x)
+	{ActivationTime: 0, TargetGasLimit: 60_000_000},             // current: 60M
+	{ActivationTime: 15_768_000, TargetGasLimit: 180_000_000},   // +6 months: 180M (3x)
+	{ActivationTime: 31_536_000, TargetGasLimit: 540_000_000},   // +12 months: 540M (3x)
 	{ActivationTime: 47_304_000, TargetGasLimit: 1_000_000_000}, // +18 months: 1G (capped)
 }
 

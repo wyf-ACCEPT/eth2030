@@ -303,23 +303,25 @@ func runEFCategory(t *testing.T, category string, minPassRate float64) {
 }
 
 // Tests against categories with 100% pass rate.
-func TestEF_stCodeCopyTest(t *testing.T)   { runEFCategory(t, "stCodeCopyTest", 100.0) }
+func TestEF_stCodeCopyTest(t *testing.T)    { runEFCategory(t, "stCodeCopyTest", 100.0) }
 func TestEF_stZeroCallsRevert(t *testing.T) { runEFCategory(t, "stZeroCallsRevert", 100.0) }
-func TestEF_stSLoadTest(t *testing.T)      { runEFCategory(t, "stSLoadTest", 100.0) }
-func TestEF_stExpectSection(t *testing.T)  { runEFCategory(t, "stExpectSection", 100.0) }
+func TestEF_stSLoadTest(t *testing.T)       { runEFCategory(t, "stSLoadTest", 100.0) }
+func TestEF_stExpectSection(t *testing.T)   { runEFCategory(t, "stExpectSection", 100.0) }
 
 // Tests against categories with >80% pass rate.
-func TestEF_stMemoryStressTest(t *testing.T)    { runEFCategory(t, "stMemoryStressTest", 84.0) }
-func TestEF_stArgsZeroOneBalance(t *testing.T)  { runEFCategory(t, "stArgsZeroOneBalance", 80.0) }
-func TestEF_stQuadraticComplexityTest(t *testing.T) { runEFCategory(t, "stQuadraticComplexityTest", 85.0) }
+func TestEF_stMemoryStressTest(t *testing.T)   { runEFCategory(t, "stMemoryStressTest", 84.0) }
+func TestEF_stArgsZeroOneBalance(t *testing.T) { runEFCategory(t, "stArgsZeroOneBalance", 80.0) }
+func TestEF_stQuadraticComplexityTest(t *testing.T) {
+	runEFCategory(t, "stQuadraticComplexityTest", 85.0)
+}
 
 // Tests against categories with >40% pass rate.
-func TestEF_stCallCodes(t *testing.T)           { runEFCategory(t, "stCallCodes", 60.0) }
-func TestEF_stEIP150Specific(t *testing.T)      { runEFCategory(t, "stEIP150Specific", 50.0) }
-func TestEF_stMemoryTest(t *testing.T)          { runEFCategory(t, "stMemoryTest", 50.0) }
-func TestEF_stEIP1559(t *testing.T)             { runEFCategory(t, "stEIP1559", 40.0) }
-func TestEF_stStaticCall(t *testing.T)          { runEFCategory(t, "stStaticCall", 40.0) }
-func TestEF_stRevertTest(t *testing.T)          { runEFCategory(t, "stRevertTest", 40.0) }
+func TestEF_stCallCodes(t *testing.T)      { runEFCategory(t, "stCallCodes", 60.0) }
+func TestEF_stEIP150Specific(t *testing.T) { runEFCategory(t, "stEIP150Specific", 50.0) }
+func TestEF_stMemoryTest(t *testing.T)     { runEFCategory(t, "stMemoryTest", 50.0) }
+func TestEF_stEIP1559(t *testing.T)        { runEFCategory(t, "stEIP1559", 40.0) }
+func TestEF_stStaticCall(t *testing.T)     { runEFCategory(t, "stStaticCall", 40.0) }
+func TestEF_stRevertTest(t *testing.T)     { runEFCategory(t, "stRevertTest", 40.0) }
 
 // --- execution-spec-tests compiled state test fixtures ---
 
@@ -640,16 +642,16 @@ func TestEF_RegressionGates(t *testing.T) {
 
 	// category -> minimum pass count (conservative, below current observed)
 	gates := map[string]int{
-		"stCodeCopyTest":          4,
-		"stZeroCallsRevert":      30,
-		"stSLoadTest":            2,
-		"stExpectSection":        18,
-		"stMemoryStressTest":     130,
-		"stArgsZeroOneBalance":   150,
+		"stCodeCopyTest":            4,
+		"stZeroCallsRevert":         30,
+		"stSLoadTest":               2,
+		"stExpectSection":           18,
+		"stMemoryStressTest":        130,
+		"stArgsZeroOneBalance":      150,
 		"stQuadraticComplexityTest": 55,
-		"stCallCodes":            100,
-		"stEIP150Specific":       25,
-		"stMemoryTest":           500,
+		"stCallCodes":               100,
+		"stEIP150Specific":          25,
+		"stMemoryTest":              500,
 	}
 
 	for category, minPass := range gates {
@@ -687,7 +689,7 @@ func TestEF_RegressionGates(t *testing.T) {
 }
 
 // TestEF_CategorySummary prints a compact summary of pass rates by category
-// using the native eth2030 EVM. For the authoritative 100% pass rate results
+// using the native ETH2030 EVM. For the authoritative 100% pass rate results
 // via go-ethereum's EVM, use TestGethCategorySummary in geth_runner_test.go.
 func TestEF_CategorySummary(t *testing.T) {
 	t.Skip("use TestGethCategorySummary for authoritative EF test results via go-ethereum backend")

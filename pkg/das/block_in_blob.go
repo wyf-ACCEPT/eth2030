@@ -16,16 +16,16 @@ import (
 
 // Block-in-blob errors.
 var (
-	ErrBlockDataEmpty       = errors.New("das: block data must not be empty")
-	ErrBlockDataTooLarge    = errors.New("das: block data exceeds maximum encodable size")
-	ErrNoBlobsProvided      = errors.New("das: no blobs provided for decoding")
-	ErrBlobOrderMismatch    = errors.New("das: blob sequence has non-contiguous indices")
-	ErrBlobHashMismatch     = errors.New("das: blob block hash mismatch across blobs")
-	ErrBlobCountMismatch    = errors.New("das: blob total chunk count mismatch")
-	ErrMissingLastBlob      = errors.New("das: last blob marker not found")
-	ErrBlobDataCorrupt      = errors.New("das: blob data integrity check failed")
-	ErrCommitmentMismatch   = errors.New("das: commitment verification failed")
-	ErrMaxBlobsExceeded     = errors.New("das: block data requires more blobs than allowed")
+	ErrBlockDataEmpty     = errors.New("das: block data must not be empty")
+	ErrBlockDataTooLarge  = errors.New("das: block data exceeds maximum encodable size")
+	ErrNoBlobsProvided    = errors.New("das: no blobs provided for decoding")
+	ErrBlobOrderMismatch  = errors.New("das: blob sequence has non-contiguous indices")
+	ErrBlobHashMismatch   = errors.New("das: blob block hash mismatch across blobs")
+	ErrBlobCountMismatch  = errors.New("das: blob total chunk count mismatch")
+	ErrMissingLastBlob    = errors.New("das: last blob marker not found")
+	ErrBlobDataCorrupt    = errors.New("das: blob data integrity check failed")
+	ErrCommitmentMismatch = errors.New("das: commitment verification failed")
+	ErrMaxBlobsExceeded   = errors.New("das: block data requires more blobs than allowed")
 )
 
 // blockBlobHeaderSize is the byte overhead per blob for the header.

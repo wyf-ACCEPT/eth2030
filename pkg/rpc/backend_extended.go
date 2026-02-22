@@ -307,21 +307,21 @@ var _ Backend = (*backendTypeCheck)(nil)
 // is satisfied (it will never be instantiated).
 type backendTypeCheck struct{}
 
-func (b *backendTypeCheck) HeaderByNumber(_ BlockNumber) *types.Header           { return nil }
-func (b *backendTypeCheck) HeaderByHash(_ types.Hash) *types.Header              { return nil }
-func (b *backendTypeCheck) BlockByNumber(_ BlockNumber) *types.Block              { return nil }
-func (b *backendTypeCheck) BlockByHash(_ types.Hash) *types.Block                { return nil }
-func (b *backendTypeCheck) CurrentHeader() *types.Header                          { return nil }
-func (b *backendTypeCheck) ChainID() *big.Int                                     { return nil }
-func (b *backendTypeCheck) StateAt(_ types.Hash) (state.StateDB, error)           { return nil, nil }
-func (b *backendTypeCheck) SendTransaction(_ *types.Transaction) error            { return nil }
+func (b *backendTypeCheck) HeaderByNumber(_ BlockNumber) *types.Header  { return nil }
+func (b *backendTypeCheck) HeaderByHash(_ types.Hash) *types.Header     { return nil }
+func (b *backendTypeCheck) BlockByNumber(_ BlockNumber) *types.Block    { return nil }
+func (b *backendTypeCheck) BlockByHash(_ types.Hash) *types.Block       { return nil }
+func (b *backendTypeCheck) CurrentHeader() *types.Header                { return nil }
+func (b *backendTypeCheck) ChainID() *big.Int                           { return nil }
+func (b *backendTypeCheck) StateAt(_ types.Hash) (state.StateDB, error) { return nil, nil }
+func (b *backendTypeCheck) SendTransaction(_ *types.Transaction) error  { return nil }
 func (b *backendTypeCheck) GetTransaction(_ types.Hash) (*types.Transaction, uint64, uint64) {
 	return nil, 0, 0
 }
-func (b *backendTypeCheck) SuggestGasPrice() *big.Int                     { return nil }
-func (b *backendTypeCheck) GetReceipts(_ types.Hash) []*types.Receipt     { return nil }
-func (b *backendTypeCheck) GetLogs(_ types.Hash) []*types.Log             { return nil }
-func (b *backendTypeCheck) GetBlockReceipts(_ uint64) []*types.Receipt    { return nil }
+func (b *backendTypeCheck) SuggestGasPrice() *big.Int                  { return nil }
+func (b *backendTypeCheck) GetReceipts(_ types.Hash) []*types.Receipt  { return nil }
+func (b *backendTypeCheck) GetLogs(_ types.Hash) []*types.Log          { return nil }
+func (b *backendTypeCheck) GetBlockReceipts(_ uint64) []*types.Receipt { return nil }
 func (b *backendTypeCheck) GetProof(_ types.Address, _ []types.Hash, _ BlockNumber) (*trie.AccountProof, error) {
 	return nil, nil
 }

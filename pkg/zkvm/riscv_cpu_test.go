@@ -81,10 +81,10 @@ func TestRVCPU_ADDAndSUB(t *testing.T) {
 	// ADD x3, x1, x2 -> 17
 	// SUB x4, x1, x2 -> 3
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 10),                 // ADDI x1, x0, 10
-		EncodeIType(0x13, 2, 0, 0, 7),                  // ADDI x2, x0, 7
-		EncodeRType(0x33, 3, 0, 1, 2, 0),               // ADD x3, x1, x2
-		EncodeRType(0x33, 4, 0, 1, 2, 0x20),            // SUB x4, x1, x2
+		EncodeIType(0x13, 1, 0, 0, 10),      // ADDI x1, x0, 10
+		EncodeIType(0x13, 2, 0, 0, 7),       // ADDI x2, x0, 7
+		EncodeRType(0x33, 3, 0, 1, 2, 0),    // ADD x3, x1, x2
+		EncodeRType(0x33, 4, 0, 1, 2, 0x20), // SUB x4, x1, x2
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -134,8 +134,8 @@ func TestRVCPU_Shifts(t *testing.T) {
 	// SRL x3 from 0x80000000 >> 4 -> 0x08000000
 	// SRA x4 from 0x80000000 >> 4 -> 0xF8000000
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 0x80),               // x1 = 128
-		EncodeIType(0x13, 2, 1, 1, 2),                   // SLLI x2, x1, 2
+		EncodeIType(0x13, 1, 0, 0, 0x80), // x1 = 128
+		EncodeIType(0x13, 2, 1, 1, 2),    // SLLI x2, x1, 2
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -173,9 +173,9 @@ func TestRVCPU_SLT(t *testing.T) {
 func TestRVCPU_MUL(t *testing.T) {
 	// M extension: MUL x3, x1, x2
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 7),     // x1 = 7
-		EncodeIType(0x13, 2, 0, 0, 6),     // x2 = 6
-		EncodeRType(0x33, 3, 0, 1, 2, 1),  // MUL x3, x1, x2 (funct7=1)
+		EncodeIType(0x13, 1, 0, 0, 7),    // x1 = 7
+		EncodeIType(0x13, 2, 0, 0, 6),    // x2 = 6
+		EncodeRType(0x33, 3, 0, 1, 2, 1), // MUL x3, x1, x2 (funct7=1)
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -192,9 +192,9 @@ func TestRVCPU_MULH(t *testing.T) {
 	// MULH: high 32 bits of signed multiply.
 	// 0x40000000 * 4 = 0x100000000 -> high = 1
 	instrs := []uint32{
-		EncodeUType(0x37, 1, 0x40000000),   // LUI x1, 0x40000000
-		EncodeIType(0x13, 2, 0, 0, 4),      // x2 = 4
-		EncodeRType(0x33, 3, 1, 1, 2, 1),   // MULH x3, x1, x2
+		EncodeUType(0x37, 1, 0x40000000), // LUI x1, 0x40000000
+		EncodeIType(0x13, 2, 0, 0, 4),    // x2 = 4
+		EncodeRType(0x33, 3, 1, 1, 2, 1), // MULH x3, x1, x2
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -209,12 +209,12 @@ func TestRVCPU_MULH(t *testing.T) {
 
 func TestRVCPU_DIVAndREM(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 17),    // x1 = 17
-		EncodeIType(0x13, 2, 0, 0, 5),     // x2 = 5
-		EncodeRType(0x33, 3, 4, 1, 2, 1),  // DIV x3, x1, x2 -> 3
-		EncodeRType(0x33, 4, 6, 1, 2, 1),  // REM x4, x1, x2 -> 2
-		EncodeRType(0x33, 5, 5, 1, 2, 1),  // DIVU x5, x1, x2 -> 3
-		EncodeRType(0x33, 6, 7, 1, 2, 1),  // REMU x6, x1, x2 -> 2
+		EncodeIType(0x13, 1, 0, 0, 17),   // x1 = 17
+		EncodeIType(0x13, 2, 0, 0, 5),    // x2 = 5
+		EncodeRType(0x33, 3, 4, 1, 2, 1), // DIV x3, x1, x2 -> 3
+		EncodeRType(0x33, 4, 6, 1, 2, 1), // REM x4, x1, x2 -> 2
+		EncodeRType(0x33, 5, 5, 1, 2, 1), // DIVU x5, x1, x2 -> 3
+		EncodeRType(0x33, 6, 7, 1, 2, 1), // REMU x6, x1, x2 -> 2
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -238,12 +238,12 @@ func TestRVCPU_DIVAndREM(t *testing.T) {
 
 func TestRVCPU_DivByZero(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 42),    // x1 = 42
+		EncodeIType(0x13, 1, 0, 0, 42), // x1 = 42
 		// x2 = 0 (default)
-		EncodeRType(0x33, 3, 4, 1, 2, 1),  // DIV x3, x1, x2 -> -1 (0xFFFFFFFF)
-		EncodeRType(0x33, 4, 5, 1, 2, 1),  // DIVU x4, x1, x2 -> 0xFFFFFFFF
-		EncodeRType(0x33, 5, 6, 1, 2, 1),  // REM x5, x1, x2 -> 42
-		EncodeRType(0x33, 6, 7, 1, 2, 1),  // REMU x6, x1, x2 -> 42
+		EncodeRType(0x33, 3, 4, 1, 2, 1), // DIV x3, x1, x2 -> -1 (0xFFFFFFFF)
+		EncodeRType(0x33, 4, 5, 1, 2, 1), // DIVU x4, x1, x2 -> 0xFFFFFFFF
+		EncodeRType(0x33, 5, 6, 1, 2, 1), // REM x5, x1, x2 -> 42
+		EncodeRType(0x33, 6, 7, 1, 2, 1), // REMU x6, x1, x2 -> 42
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -264,10 +264,10 @@ func TestRVCPU_LoadStore(t *testing.T) {
 	// x1 = 12345 (value to store)
 	// x3 = 0x1000 (address)
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 123),                 // ADDI x1, x0, 123
-		EncodeUType(0x37, 3, 0x00001000),                 // LUI x3, 0x1000
-		EncodeSType(0x23, 2, 3, 1, 0),                    // SW x1, 0(x3)
-		EncodeIType(0x03, 4, 2, 3, 0),                    // LW x4, 0(x3)
+		EncodeIType(0x13, 1, 0, 0, 123),  // ADDI x1, x0, 123
+		EncodeUType(0x37, 3, 0x00001000), // LUI x3, 0x1000
+		EncodeSType(0x23, 2, 3, 1, 0),    // SW x1, 0(x3)
+		EncodeIType(0x03, 4, 2, 3, 0),    // LW x4, 0(x3)
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 200)
@@ -286,11 +286,11 @@ func TestRVCPU_LoadStore(t *testing.T) {
 func TestRVCPU_BEQ(t *testing.T) {
 	// Branch taken: x1==x2 -> skip ADDI x3, x0, 99
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 5),                 // x1 = 5
-		EncodeIType(0x13, 2, 0, 0, 5),                 // x2 = 5
-		EncodeBType(0x63, 0, 1, 2, 8),                 // BEQ x1, x2, +8 (skip next)
-		EncodeIType(0x13, 3, 0, 0, 99),                // x3 = 99 (should be skipped)
-		EncodeIType(0x13, 3, 0, 0, 42),                // x3 = 42 (branch target)
+		EncodeIType(0x13, 1, 0, 0, 5),  // x1 = 5
+		EncodeIType(0x13, 2, 0, 0, 5),  // x2 = 5
+		EncodeBType(0x63, 0, 1, 2, 8),  // BEQ x1, x2, +8 (skip next)
+		EncodeIType(0x13, 3, 0, 0, 99), // x3 = 99 (should be skipped)
+		EncodeIType(0x13, 3, 0, 0, 42), // x3 = 42 (branch target)
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -305,11 +305,11 @@ func TestRVCPU_BEQ(t *testing.T) {
 
 func TestRVCPU_BNE(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 5),                 // x1 = 5
-		EncodeIType(0x13, 2, 0, 0, 6),                 // x2 = 6
-		EncodeBType(0x63, 1, 1, 2, 8),                 // BNE x1, x2, +8
-		EncodeIType(0x13, 3, 0, 0, 99),                // skipped
-		EncodeIType(0x13, 3, 0, 0, 42),                // target
+		EncodeIType(0x13, 1, 0, 0, 5),  // x1 = 5
+		EncodeIType(0x13, 2, 0, 0, 6),  // x2 = 6
+		EncodeBType(0x63, 1, 1, 2, 8),  // BNE x1, x2, +8
+		EncodeIType(0x13, 3, 0, 0, 99), // skipped
+		EncodeIType(0x13, 3, 0, 0, 42), // target
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -325,9 +325,9 @@ func TestRVCPU_BNE(t *testing.T) {
 func TestRVCPU_JAL(t *testing.T) {
 	// JAL x1, +8 => skip one instruction, set x1 = PC+4 = 4
 	instrs := []uint32{
-		EncodeJType(0x6F, 1, 8),            // JAL x1, +8
-		EncodeIType(0x13, 3, 0, 0, 99),     // skipped
-		EncodeIType(0x13, 3, 0, 0, 77),     // target
+		EncodeJType(0x6F, 1, 8),        // JAL x1, +8
+		EncodeIType(0x13, 3, 0, 0, 99), // skipped
+		EncodeIType(0x13, 3, 0, 0, 77), // target
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -384,12 +384,12 @@ func TestRVCPU_EmptyProgram(t *testing.T) {
 
 func TestRVCPU_Ecall_Output(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 10, 0, 0, 'H'),  // a0 = 'H'
-		EncodeIType(0x13, 17, 0, 0, 1),     // a7 = ECALL_OUTPUT
+		EncodeIType(0x13, 10, 0, 0, 'H'), // a0 = 'H'
+		EncodeIType(0x13, 17, 0, 0, 1),   // a7 = ECALL_OUTPUT
 		rvEcall(),
-		EncodeIType(0x13, 10, 0, 0, 'i'),  // a0 = 'i'
+		EncodeIType(0x13, 10, 0, 0, 'i'), // a0 = 'i'
 		rvEcall(),
-		EncodeIType(0x13, 17, 0, 0, 0),    // a7 = ECALL_HALT
+		EncodeIType(0x13, 17, 0, 0, 0), // a7 = ECALL_HALT
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -403,11 +403,11 @@ func TestRVCPU_Ecall_Output(t *testing.T) {
 
 func TestRVCPU_Ecall_Input(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 17, 0, 0, 2),    // a7 = ECALL_INPUT
+		EncodeIType(0x13, 17, 0, 0, 2), // a7 = ECALL_INPUT
 		rvEcall(),
 		// a0 now has first input byte, copy to x5
-		EncodeIType(0x13, 5, 0, 10, 0),    // ADDI x5, a0, 0
-		EncodeIType(0x13, 17, 0, 0, 0),    // a7 = ECALL_HALT
+		EncodeIType(0x13, 5, 0, 10, 0), // ADDI x5, a0, 0
+		EncodeIType(0x13, 17, 0, 0, 0), // a7 = ECALL_HALT
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
@@ -422,10 +422,10 @@ func TestRVCPU_Ecall_Input(t *testing.T) {
 
 func TestRVCPU_WithWitness(t *testing.T) {
 	instrs := []uint32{
-		EncodeIType(0x13, 1, 0, 0, 10), // ADDI x1, x0, 10
-		EncodeIType(0x13, 2, 0, 0, 20), // ADDI x2, x0, 20
+		EncodeIType(0x13, 1, 0, 0, 10),   // ADDI x1, x0, 10
+		EncodeIType(0x13, 2, 0, 0, 20),   // ADDI x2, x0, 20
 		EncodeRType(0x33, 3, 0, 1, 2, 0), // ADD x3, x1, x2
-		rvEcall(), // halt
+		rvEcall(),                        // halt
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)
 	cpu.Regs[17] = RVEcallHalt
@@ -444,10 +444,10 @@ func TestRVCPU_WithWitness(t *testing.T) {
 func TestRVCPU_DIVSignedOverflow(t *testing.T) {
 	// Division of INT_MIN by -1 should return INT_MIN.
 	instrs := []uint32{
-		EncodeUType(0x37, 1, 0x80000000),               // LUI x1, 0x80000000 (INT_MIN)
-		EncodeIType(0x13, 2, 0, 0, -1),                 // x2 = -1
-		EncodeRType(0x33, 3, 4, 1, 2, 1),               // DIV x3, x1, x2
-		EncodeRType(0x33, 4, 6, 1, 2, 1),               // REM x4, x1, x2
+		EncodeUType(0x37, 1, 0x80000000), // LUI x1, 0x80000000 (INT_MIN)
+		EncodeIType(0x13, 2, 0, 0, -1),   // x2 = -1
+		EncodeRType(0x33, 3, 4, 1, 2, 1), // DIV x3, x1, x2
+		EncodeRType(0x33, 4, 6, 1, 2, 1), // REM x4, x1, x2
 		rvEcall(),
 	}
 	cpu := rvCPUWithProgram(t, instrs, 100)

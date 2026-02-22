@@ -36,8 +36,8 @@ var panicReasons = map[uint64]string{
 // GasBreakdown provides detailed gas accounting across all dimensions.
 type GasBreakdown struct {
 	// Execution gas (EVM compute).
-	ExecutionGas     uint64
-	ExecutionRefund  uint64
+	ExecutionGas       uint64
+	ExecutionRefund    uint64
 	ExecutionEffective uint64 // after refund
 
 	// Calldata gas (EIP-7706 separate dimension).
@@ -95,10 +95,10 @@ type ExtendedExecutionResult struct {
 	ContractAddress types.Address
 
 	// Extended fields.
-	GasBreak  GasBreakdown
-	Trace     *TraceOutput
-	Logs      []*types.Log
-	TxHash    types.Hash
+	GasBreak GasBreakdown
+	Trace    *TraceOutput
+	Logs     []*types.Log
+	TxHash   types.Hash
 }
 
 // Failed returns whether the execution resulted in an error.

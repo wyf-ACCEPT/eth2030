@@ -141,10 +141,10 @@ func TestBlstVerifyEmptyInputs(t *testing.T) {
 
 	// All nil/empty combinations should return false without panicking.
 	cases := []struct {
-		name   string
-		pk     []byte
-		msg    []byte
-		sig    []byte
+		name string
+		pk   []byte
+		msg  []byte
+		sig  []byte
 	}{
 		{"nil pubkey", nil, []byte("msg"), make([]byte, 96)},
 		{"empty pubkey", []byte{}, []byte("msg"), make([]byte, 96)},

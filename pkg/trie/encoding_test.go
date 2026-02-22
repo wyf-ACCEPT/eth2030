@@ -51,13 +51,13 @@ func TestHexToCompactExtensionOdd(t *testing.T) {
 
 func TestCompactToHexRoundtrip(t *testing.T) {
 	tests := [][]byte{
-		{1, 2, 3, 4, terminatorByte},       // leaf, even
-		{1, 2, 3, terminatorByte},           // leaf, odd
-		{1, 2, 3, 4},                        // extension, even
-		{1, 2, 3},                           // extension, odd
-		{0, terminatorByte},                 // leaf, single nibble
-		{0xf, 0xa, 0xb, terminatorByte},     // leaf, odd
-		{},                                  // empty extension
+		{1, 2, 3, 4, terminatorByte},    // leaf, even
+		{1, 2, 3, terminatorByte},       // leaf, odd
+		{1, 2, 3, 4},                    // extension, even
+		{1, 2, 3},                       // extension, odd
+		{0, terminatorByte},             // leaf, single nibble
+		{0xf, 0xa, 0xb, terminatorByte}, // leaf, odd
+		{},                              // empty extension
 	}
 
 	for _, hex := range tests {

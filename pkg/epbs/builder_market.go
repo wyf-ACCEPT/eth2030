@@ -34,22 +34,22 @@ var (
 // MarketBid represents a builder's bid in the marketplace. It wraps the
 // core BuilderBid with marketplace-specific metadata.
 type MarketBid struct {
-	Bid         BuilderBid `json:"bid"`
+	Bid         BuilderBid    `json:"bid"`
 	BuilderAddr types.Address `json:"builderAddr"`
 	ReceivedAt  time.Time     `json:"receivedAt"`
 }
 
 // BuilderProfile tracks a builder's reputation in the marketplace.
 type BuilderProfile struct {
-	Address          types.Address `json:"address"`
-	TotalBids        uint64        `json:"totalBids"`
-	TotalWins        uint64        `json:"totalWins"`
-	TotalDeliveries  uint64        `json:"totalDeliveries"`
-	TotalMisses      uint64        `json:"totalMisses"`
-	ConsecutiveMisses uint64       `json:"consecutiveMisses"`
-	Score            float64       `json:"score"`
-	Banned           bool          `json:"banned"`
-	LastActive       time.Time     `json:"lastActive"`
+	Address           types.Address `json:"address"`
+	TotalBids         uint64        `json:"totalBids"`
+	TotalWins         uint64        `json:"totalWins"`
+	TotalDeliveries   uint64        `json:"totalDeliveries"`
+	TotalMisses       uint64        `json:"totalMisses"`
+	ConsecutiveMisses uint64        `json:"consecutiveMisses"`
+	Score             float64       `json:"score"`
+	Banned            bool          `json:"banned"`
+	LastActive        time.Time     `json:"lastActive"`
 }
 
 // BuilderMarketConfig configures the builder marketplace.
@@ -99,7 +99,7 @@ type slotAuction struct {
 type BuilderMarket struct {
 	mu       sync.RWMutex
 	config   BuilderMarketConfig
-	auctions map[uint64]*slotAuction         // slot -> auction
+	auctions map[uint64]*slotAuction           // slot -> auction
 	builders map[types.Address]*BuilderProfile // builder address -> profile
 }
 

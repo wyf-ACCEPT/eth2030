@@ -4,9 +4,10 @@
 // lattice-based cryptography.
 //
 // Construction:
-//   Keygen: A (random k x k matrix of polynomials), s (secret vector)
-//   Commit: c = A*s + e + encode(message), where e is a small error term
-//   Verify: recompute c from the opening and check equality
+//
+//	Keygen: A (random k x k matrix of polynomials), s (secret vector)
+//	Commit: c = A*s + e + encode(message), where e is a small error term
+//	Verify: recompute c from the opening and check equality
 //
 // Parameters match Kyber (n=256, q=3329) for NIST Level 1 security.
 // The commitment is binding under MLWE and hiding under MLWE.
@@ -35,12 +36,12 @@ const (
 
 // Lattice commitment errors.
 var (
-	ErrLatticeNilData     = errors.New("lattice: nil blob data")
-	ErrLatticeEmptyData   = errors.New("lattice: empty blob data")
-	ErrLatticeNilCommit   = errors.New("lattice: nil commitment")
-	ErrLatticeNilOpening  = errors.New("lattice: nil opening")
-	ErrLatticeSchemeBad   = errors.New("lattice: wrong scheme identifier")
-	ErrLatticeVerifyFail  = errors.New("lattice: verification failed")
+	ErrLatticeNilData    = errors.New("lattice: nil blob data")
+	ErrLatticeEmptyData  = errors.New("lattice: empty blob data")
+	ErrLatticeNilCommit  = errors.New("lattice: nil commitment")
+	ErrLatticeNilOpening = errors.New("lattice: nil opening")
+	ErrLatticeSchemeBad  = errors.New("lattice: wrong scheme identifier")
+	ErrLatticeVerifyFail = errors.New("lattice: verification failed")
 )
 
 // LatticeCommitScheme is a Module-LWE-based blob commitment scheme.

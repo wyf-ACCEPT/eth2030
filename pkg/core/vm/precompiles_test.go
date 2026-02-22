@@ -682,11 +682,11 @@ func TestModExpPrecompile(t *testing.T) {
 		base, exp, mod int64
 		want           int64
 	}{
-		{2, 10, 1000, 24},        // 2^10 % 1000 = 1024 % 1000 = 24
-		{3, 5, 13, 9},            // 3^5 % 13 = 243 % 13 = 9
-		{7, 0, 100, 1},           // 7^0 % 100 = 1
-		{0, 10, 7, 0},            // 0^10 % 7 = 0
-		{2, 10, 0, 0},            // 2^10 % 0 = 0 (zero mod)
+		{2, 10, 1000, 24},                // 2^10 % 1000 = 1024 % 1000 = 24
+		{3, 5, 13, 9},                    // 3^5 % 13 = 243 % 13 = 9
+		{7, 0, 100, 1},                   // 7^0 % 100 = 1
+		{0, 10, 7, 0},                    // 0^10 % 7 = 0
+		{2, 10, 0, 0},                    // 2^10 % 0 = 0 (zero mod)
 		{123456789, 65537, 998244353, 0}, // large values (expected computed below)
 	}
 
@@ -856,10 +856,10 @@ func TestBN256Add(t *testing.T) {
 
 	// G + G should return 2G.
 	input := make([]byte, 128)
-	input[31] = 1   // x1 = 1
-	input[63] = 2   // y1 = 2
-	input[95] = 1   // x2 = 1
-	input[127] = 2  // y2 = 2
+	input[31] = 1  // x1 = 1
+	input[63] = 2  // y1 = 2
+	input[95] = 1  // x2 = 1
+	input[127] = 2 // y2 = 2
 	out, err = c.Run(input)
 	if err != nil {
 		t.Fatalf("bn256Add(G+G): unexpected error: %v", err)
@@ -885,9 +885,9 @@ func TestBN256ScalarMul(t *testing.T) {
 
 	// 1 * G = G
 	input := make([]byte, 96)
-	input[31] = 1  // x = 1
-	input[63] = 2  // y = 2
-	input[95] = 1  // scalar = 1
+	input[31] = 1 // x = 1
+	input[63] = 2 // y = 2
+	input[95] = 1 // scalar = 1
 	out, err := c.Run(input)
 	if err != nil {
 		t.Fatalf("bn256ScalarMul(1*G): unexpected error: %v", err)
@@ -898,8 +898,8 @@ func TestBN256ScalarMul(t *testing.T) {
 
 	// 0 * G = identity
 	input2 := make([]byte, 96)
-	input2[31] = 1  // x = 1
-	input2[63] = 2  // y = 2
+	input2[31] = 1 // x = 1
+	input2[63] = 2 // y = 2
 	// scalar = 0
 	out2, err := c.Run(input2)
 	if err != nil {

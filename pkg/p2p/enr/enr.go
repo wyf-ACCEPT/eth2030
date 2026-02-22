@@ -28,10 +28,10 @@ const (
 )
 
 var (
-	ErrInvalidSig  = errors.New("enr: invalid signature")
-	ErrTooBig      = errors.New("enr: record exceeds size limit")
-	ErrNotSigned   = errors.New("enr: record not signed")
-	ErrNotSorted   = errors.New("enr: pairs not sorted by key")
+	ErrInvalidSig   = errors.New("enr: invalid signature")
+	ErrTooBig       = errors.New("enr: record exceeds size limit")
+	ErrNotSigned    = errors.New("enr: record not signed")
+	ErrNotSorted    = errors.New("enr: pairs not sorted by key")
 	ErrDuplicateKey = errors.New("enr: duplicate key")
 )
 

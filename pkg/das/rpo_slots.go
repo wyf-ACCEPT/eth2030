@@ -36,9 +36,9 @@ type RPOConfig struct {
 // DefaultRPOConfig returns sensible defaults for the current PeerDAS spec.
 func DefaultRPOConfig() RPOConfig {
 	return RPOConfig{
-		InitialRPO: 4,
-		MaxRPO:     64,
-		MinRPO:     1,
+		InitialRPO:  4,
+		MaxRPO:      64,
+		MinRPO:      1,
 		RPOStepSize: 8,
 	}
 }

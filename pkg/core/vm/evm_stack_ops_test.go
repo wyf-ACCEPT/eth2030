@@ -202,11 +202,11 @@ func TestStackOpExecutor_ExecSwap(t *testing.T) {
 	exec := NewStackOpExecutor()
 
 	tests := []struct {
-		name     string
-		n        int
-		items    []int64
-		wantTop  int64
-		wantNth  int64
+		name    string
+		n       int
+		items   []int64
+		wantTop int64
+		wantNth int64
 	}{
 		{"SWAP1", 1, []int64{1, 2}, 1, 2},
 		{"SWAP2", 2, []int64{1, 2, 3}, 1, 3},

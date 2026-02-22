@@ -39,9 +39,9 @@ func (m *handlerMockBackend) GetPayloadV4ByID(id PayloadID) (*GetPayloadV4Respon
 func (m *handlerMockBackend) GetPayloadV6ByID(id PayloadID) (*GetPayloadV6Response, error) {
 	return nil, ErrUnknownPayload
 }
-func (m *handlerMockBackend) GetHeadTimestamp() uint64  { return 1000 }
-func (m *handlerMockBackend) IsCancun(ts uint64) bool   { return true }
-func (m *handlerMockBackend) IsPrague(ts uint64) bool   { return true }
+func (m *handlerMockBackend) GetHeadTimestamp() uint64   { return 1000 }
+func (m *handlerMockBackend) IsCancun(ts uint64) bool    { return true }
+func (m *handlerMockBackend) IsPrague(ts uint64) bool    { return true }
 func (m *handlerMockBackend) IsAmsterdam(ts uint64) bool { return true }
 
 // TestHandler_ParseError tests that invalid JSON returns a parse error.
@@ -154,8 +154,8 @@ func TestHandler_GetClientVersion(t *testing.T) {
 	if versions[0].Code != "ET" {
 		t.Fatalf("want code ET, got %s", versions[0].Code)
 	}
-	if versions[0].Name != "eth2030" {
-		t.Fatalf("want name eth2030, got %s", versions[0].Name)
+	if versions[0].Name != "ETH2030" {
+		t.Fatalf("want name ETH2030, got %s", versions[0].Name)
 	}
 }
 

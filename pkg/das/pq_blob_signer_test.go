@@ -270,9 +270,9 @@ func TestPQBlobPublicKeySize(t *testing.T) {
 
 func TestEncodDecodePQBlobSignature(t *testing.T) {
 	original := PQBlobSignature{
-		Algorithm: PQBlobAlgFalcon,
-		PublicKey: []byte{1, 2, 3, 4, 5},
-		Signature: []byte{10, 20, 30, 40, 50, 60},
+		Algorithm:  PQBlobAlgFalcon,
+		PublicKey:  []byte{1, 2, 3, 4, 5},
+		Signature:  []byte{10, 20, 30, 40, 50, 60},
 		Commitment: [32]byte{0xAA, 0xBB, 0xCC},
 	}
 

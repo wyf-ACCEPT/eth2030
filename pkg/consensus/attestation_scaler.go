@@ -55,11 +55,11 @@ type ScalerStats struct {
 
 // ScalerConfig configures the attestation scaler.
 type ScalerConfig struct {
-	MaxBufferSize  int    // maximum attestations in the buffer
-	MinWorkers     int    // minimum worker count
-	MaxWorkers     int    // maximum worker count
-	PruneEpochs    int    // epochs before attestation expiry
-	SlotsPerEpoch  uint64 // slots per epoch
+	MaxBufferSize int    // maximum attestations in the buffer
+	MinWorkers    int    // minimum worker count
+	MaxWorkers    int    // maximum worker count
+	PruneEpochs   int    // epochs before attestation expiry
+	SlotsPerEpoch uint64 // slots per epoch
 }
 
 // DefaultScalerConfig returns the default scaler configuration.

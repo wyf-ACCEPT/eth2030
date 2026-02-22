@@ -188,8 +188,8 @@ func copyHeader(h *Header) *Header {
 		GasLimit:    h.GasLimit,
 		GasUsed:     h.GasUsed,
 		Time:        h.Time,
-		MixDigest: h.MixDigest,
-		Nonce:     h.Nonce,
+		MixDigest:   h.MixDigest,
+		Nonce:       h.Nonce,
 	}
 
 	if h.Difficulty != nil {

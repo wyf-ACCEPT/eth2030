@@ -20,15 +20,15 @@ import (
 
 // Custody manager errors.
 var (
-	ErrCustodyMgrClosed        = errors.New("das/custody-manager: manager is closed")
+	ErrCustodyMgrClosed         = errors.New("das/custody-manager: manager is closed")
 	ErrCustodyMgrNotInitialized = errors.New("das/custody-manager: not initialized")
-	ErrCustodyMgrEpochZero     = errors.New("das/custody-manager: epoch must be > 0")
-	ErrCustodyMgrColumnOOB     = errors.New("das/custody-manager: column index out of range")
-	ErrCustodyMgrSlotOOB       = errors.New("das/custody-manager: slot out of epoch range")
-	ErrCustodyMgrIncomplete    = errors.New("das/custody-manager: custody set incomplete")
-	ErrCustodyMgrProofInvalid  = errors.New("das/custody-manager: custody proof invalid")
-	ErrCustodyMgrAlreadyStored = errors.New("das/custody-manager: column data already stored")
-	ErrCustodyMgrRotationBusy  = errors.New("das/custody-manager: rotation in progress")
+	ErrCustodyMgrEpochZero      = errors.New("das/custody-manager: epoch must be > 0")
+	ErrCustodyMgrColumnOOB      = errors.New("das/custody-manager: column index out of range")
+	ErrCustodyMgrSlotOOB        = errors.New("das/custody-manager: slot out of epoch range")
+	ErrCustodyMgrIncomplete     = errors.New("das/custody-manager: custody set incomplete")
+	ErrCustodyMgrProofInvalid   = errors.New("das/custody-manager: custody proof invalid")
+	ErrCustodyMgrAlreadyStored  = errors.New("das/custody-manager: column data already stored")
+	ErrCustodyMgrRotationBusy   = errors.New("das/custody-manager: rotation in progress")
 )
 
 // CustodyManagerConfig configures the CustodyManager.
@@ -86,11 +86,11 @@ type SlotCompleteness struct {
 
 // CustodyRotationEvent records an epoch rotation transition.
 type CustodyRotationEvent struct {
-	FromEpoch    uint64
-	ToEpoch      uint64
-	AddedColumns []uint64
+	FromEpoch      uint64
+	ToEpoch        uint64
+	AddedColumns   []uint64
 	DroppedColumns []uint64
-	Timestamp    time.Time
+	Timestamp      time.Time
 }
 
 // CustodyProofRequest is a request to prove custody of a column.

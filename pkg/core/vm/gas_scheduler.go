@@ -93,27 +93,27 @@ func DefaultGasSchedulerConfig() GasSchedulerConfig {
 				MinGasPrice:       1,
 			},
 			StorageRead: {
-				Limit:             blockGasLimit / 4,      // 25% of block for reads
-				TargetUsage:       blockGasLimit / 8,      // 50% of read limit
-				BaseFeeMultiplier: 2,                      // reads cost 2x compute
+				Limit:             blockGasLimit / 4, // 25% of block for reads
+				TargetUsage:       blockGasLimit / 8, // 50% of read limit
+				BaseFeeMultiplier: 2,                 // reads cost 2x compute
 				MinGasPrice:       1,
 			},
 			StorageWrite: {
-				Limit:             blockGasLimit / 8,      // 12.5% of block for writes
-				TargetUsage:       blockGasLimit / 16,     // 50% of write limit
-				BaseFeeMultiplier: 5,                      // writes cost 5x compute
+				Limit:             blockGasLimit / 8,  // 12.5% of block for writes
+				TargetUsage:       blockGasLimit / 16, // 50% of write limit
+				BaseFeeMultiplier: 5,                  // writes cost 5x compute
 				MinGasPrice:       1,
 			},
 			Bandwidth: {
-				Limit:             blockGasLimit / 4,      // 25% for calldata/bandwidth
+				Limit:             blockGasLimit / 4, // 25% for calldata/bandwidth
 				TargetUsage:       blockGasLimit / 8,
 				BaseFeeMultiplier: 1,
 				MinGasPrice:       1,
 			},
 			StateGrowth: {
-				Limit:             blockGasLimit / 16,     // 6.25% for state growth
+				Limit:             blockGasLimit / 16, // 6.25% for state growth
 				TargetUsage:       blockGasLimit / 32,
-				BaseFeeMultiplier: 10,                     // state growth is expensive
+				BaseFeeMultiplier: 10, // state growth is expensive
 				MinGasPrice:       1,
 			},
 		},

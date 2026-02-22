@@ -298,7 +298,7 @@ func TestCalcNextBaseFee(t *testing.T) {
 			name:      "below target: decrease",
 			baseFee:   big.NewInt(1_000_000_000),
 			gasLimit:  30_000_000,
-			gasUsed:   0, // 0% usage
+			gasUsed:   0,                       // 0% usage
 			wantAbove: big.NewInt(800_000_000), // max 12.5% decrease
 			wantBelow: big.NewInt(1_000_000_000),
 		},

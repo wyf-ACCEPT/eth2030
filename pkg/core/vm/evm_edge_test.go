@@ -305,7 +305,7 @@ func TestMemoryExpansionNonWordAligned(t *testing.T) {
 	if !ok {
 		t.Fatal("MemoryCost(0, 64) returned ok=false")
 	}
-	expectedGas := uint64(3 + 3 + 3) + expectedMemCost
+	expectedGas := uint64(3+3+3) + expectedMemCost
 	if gasUsed != expectedGas {
 		t.Errorf("gas used = %d, want %d (non-word-aligned memory expansion)", gasUsed, expectedGas)
 	}
@@ -920,14 +920,14 @@ func TestUndefinedOpcodesAreInvalid(t *testing.T) {
 	// Sample some opcodes that should not be defined.
 	undefinedOps := []byte{
 		0x0c, 0x0d, 0x0e, 0x0f, // gap after SIGNEXTEND
-		0x1e, 0x1f,              // gap after SAR
-		0x21, 0x22, 0x23,        // gap after KECCAK256
+		0x1e, 0x1f, // gap after SAR
+		0x21, 0x22, 0x23, // gap after KECCAK256
 		0x4b, 0x4c, 0x4d, 0x4e, 0x4f, // gap after BLOBBASEFEE
 		0xA5, 0xA6, 0xA7, 0xA8, // gap after LOG4
 		0xB0, 0xC0, 0xD0, 0xE0, // various unused ranges
-		0xEF,                    // 0xEF (EIP-3541: EOF marker, should be invalid)
+		0xEF,                   // 0xEF (EIP-3541: EOF marker, should be invalid)
 		0xF6, 0xF7, 0xF8, 0xF9, // gap between CREATE2 and STATICCALL
-		0xFB, 0xFC,              // gap between STATICCALL and REVERT
+		0xFB, 0xFC, // gap between STATICCALL and REVERT
 	}
 
 	for _, op := range undefinedOps {
@@ -1132,14 +1132,14 @@ func TestMloadReturn(t *testing.T) {
 	contract.Code = []byte{
 		byte(PUSH1), 0x42,
 		byte(PUSH1), 0x00,
-		byte(MSTORE),       // mem[0:32] = ...42
+		byte(MSTORE), // mem[0:32] = ...42
 		byte(PUSH1), 0x00,
-		byte(MLOAD),        // load mem[0:32]
+		byte(MLOAD), // load mem[0:32]
 		byte(PUSH1), 0x20,
-		byte(MSTORE),       // store at offset 32
+		byte(MSTORE), // store at offset 32
 		byte(PUSH1), 0x20,
 		byte(PUSH1), 0x20,
-		byte(RETURN),       // return mem[32:64]
+		byte(RETURN), // return mem[32:64]
 	}
 
 	ret, err := evm.Run(contract, nil)
@@ -1162,9 +1162,9 @@ func TestCodecopyBeyondCodeSize(t *testing.T) {
 	// Code is 12 bytes. CODECOPY from offset 10 with length 4 should
 	// copy 2 real bytes + 2 zero bytes.
 	contract.Code = []byte{
-		byte(PUSH1), 0x04,  // size = 4
-		byte(PUSH1), 0x08,  // code offset = 8 (within code)
-		byte(PUSH1), 0x00,  // mem offset = 0
+		byte(PUSH1), 0x04, // size = 4
+		byte(PUSH1), 0x08, // code offset = 8 (within code)
+		byte(PUSH1), 0x00, // mem offset = 0
 		byte(CODECOPY),
 		byte(PUSH1), 0x04,
 		byte(PUSH1), 0x00,
@@ -1200,9 +1200,9 @@ func TestCalldataCopyBeyondCalldataSize(t *testing.T) {
 	// Copy 8 bytes from calldata offset 0, but calldata is only 4 bytes.
 	// Bytes 4-7 should be zero-padded.
 	contract.Code = []byte{
-		byte(PUSH1), 0x08,  // size = 8
-		byte(PUSH1), 0x00,  // calldata offset = 0
-		byte(PUSH1), 0x00,  // mem offset = 0
+		byte(PUSH1), 0x08, // size = 8
+		byte(PUSH1), 0x00, // calldata offset = 0
+		byte(PUSH1), 0x00, // mem offset = 0
 		byte(CALLDATACOPY),
 		byte(PUSH1), 0x08,
 		byte(PUSH1), 0x00,
@@ -1235,7 +1235,7 @@ func TestCalldataLoadBeyondEnd(t *testing.T) {
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 100000)
 	// CALLDATALOAD at offset 100 (beyond 4-byte calldata)
 	contract.Code = []byte{
-		byte(PUSH1), 100,       // offset = 100
+		byte(PUSH1), 100, // offset = 100
 		byte(CALLDATALOAD),
 		byte(PUSH1), 0x00,
 		byte(MSTORE),
@@ -1266,9 +1266,9 @@ func TestMsizeTracksMemoryExpansion(t *testing.T) {
 	// Then MSTORE at offset 32 (expands to 64), MSIZE should be 64.
 	contract.Code = []byte{
 		byte(PUSH1), 0x01, byte(PUSH1), 0x00, byte(MSTORE),
-		byte(MSIZE),       // should be 32
+		byte(MSIZE), // should be 32
 		byte(PUSH1), 0x01, byte(PUSH1), 0x20, byte(MSTORE),
-		byte(MSIZE),       // should be 64
+		byte(MSIZE),                     // should be 64
 		byte(PUSH1), 0x40, byte(MSTORE), // store MSIZE(64) at offset 0x40
 		byte(PUSH1), 0x00, byte(MSTORE), // store MSIZE(32) at offset 0 (overwrite)
 		byte(PUSH1), 0x20, byte(PUSH1), 0x40, byte(RETURN),
@@ -1328,9 +1328,9 @@ func TestGasOpcode(t *testing.T) {
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), initialGas)
 	// PUSH1(3) + GAS(2) + PUSH1(3) + MSTORE(3 + mem 3) + ... = return remaining gas
 	contract.Code = []byte{
-		byte(PUSH1), 0x01,  // 3 gas
-		byte(POP),          // 2 gas -> remaining = 100000 - 5 = 99995
-		byte(GAS),          // 2 gas -> pushes (100000 - 5 - 2) = 99993
+		byte(PUSH1), 0x01, // 3 gas
+		byte(POP), // 2 gas -> remaining = 100000 - 5 = 99995
+		byte(GAS), // 2 gas -> pushes (100000 - 5 - 2) = 99993
 		byte(PUSH1), 0x00,
 		byte(MSTORE),
 		byte(PUSH1), 0x20,

@@ -73,9 +73,9 @@ type WitnessProofBundle struct {
 
 // WitnessProofGenerator produces Merkle proofs from a StateWitness.
 type WitnessProofGenerator struct {
-	mu       sync.Mutex
-	depth    int
-	maxSize  int
+	mu        sync.Mutex
+	depth     int
+	maxSize   int
 	generated uint64
 }
 

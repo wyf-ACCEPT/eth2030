@@ -36,12 +36,12 @@ var (
 type ValidationErrorCode int
 
 const (
-	ValidationOK             ValidationErrorCode = 0
-	ValidationSyntaxErr      ValidationErrorCode = 1
-	ValidationSignatureErr   ValidationErrorCode = 2
-	ValidationStateErr       ValidationErrorCode = 3
-	ValidationBlobErr        ValidationErrorCode = 4
-	ValidationRateLimitErr   ValidationErrorCode = 5
+	ValidationOK           ValidationErrorCode = 0
+	ValidationSyntaxErr    ValidationErrorCode = 1
+	ValidationSignatureErr ValidationErrorCode = 2
+	ValidationStateErr     ValidationErrorCode = 3
+	ValidationBlobErr      ValidationErrorCode = 4
+	ValidationRateLimitErr ValidationErrorCode = 5
 )
 
 // ValidationResult holds the outcome of a validation pipeline run.

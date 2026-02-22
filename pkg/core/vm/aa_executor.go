@@ -72,12 +72,12 @@ type PaymasterResult struct {
 
 // AATx represents an EIP-7701 Account Abstraction transaction.
 type AATx struct {
-	ChainID     *big.Int
-	Sender      types.Address
-	Nonce       NonceKey
-	Deployer    *types.Address
-	DeployerData []byte
-	Paymaster   *types.Address
+	ChainID       *big.Int
+	Sender        types.Address
+	Nonce         NonceKey
+	Deployer      *types.Address
+	DeployerData  []byte
+	Paymaster     *types.Address
 	PaymasterData []byte
 
 	SenderValidationData []byte
@@ -335,12 +335,12 @@ func (ex *AAExecutor) PostOpPhase(
 
 	// Set up AA context for paymaster post-op.
 	aaCtx := &AAContext{
-		CurrentRole:    AARolePaymasterPostOp,
-		RoleAccepted:   false,
-		Sender:         tx.Sender,
-		Paymaster:      paymasterAddr,
-		PaymasterData:  tx.PaymasterData,
-		Nonce:          tx.Nonce.Sequence,
+		CurrentRole:   AARolePaymasterPostOp,
+		RoleAccepted:  false,
+		Sender:        tx.Sender,
+		Paymaster:     paymasterAddr,
+		PaymasterData: tx.PaymasterData,
+		Nonce:         tx.Nonce.Sequence,
 	}
 	if executionResult != nil {
 		if executionResult.Success {

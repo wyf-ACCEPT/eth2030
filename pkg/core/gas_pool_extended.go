@@ -11,9 +11,9 @@ import (
 
 // Sub-pool errors.
 var (
-	ErrBlobGasPoolExhausted       = errors.New("blob gas pool exhausted")
-	ErrExecutionGasPoolExhausted  = errors.New("execution gas pool exhausted")
-	ErrGasReservationNotFound     = errors.New("gas reservation not found")
+	ErrBlobGasPoolExhausted        = errors.New("blob gas pool exhausted")
+	ErrExecutionGasPoolExhausted   = errors.New("execution gas pool exhausted")
+	ErrGasReservationNotFound      = errors.New("gas reservation not found")
 	ErrGasReservationAlreadyExists = errors.New("gas reservation already exists")
 )
 

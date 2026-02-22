@@ -286,7 +286,10 @@ func TestPQTxValidatorRealSupportedAlgorithms(t *testing.T) {
 
 func TestPQTxValidatorRealKeySize(t *testing.T) {
 	v := types.NewPQTxValidatorReal()
-	valid := []struct{ st uint8; sz int }{
+	valid := []struct {
+		st uint8
+		sz int
+	}{
 		{types.PQSigTypeMLDSA, 1568},
 		{types.PQSigTypeFalcon, 897},
 		{types.PQSigTypeSPHINCS, 32},
@@ -296,7 +299,10 @@ func TestPQTxValidatorRealKeySize(t *testing.T) {
 			t.Fatalf("valid key(%d, %d): %v", tt.st, tt.sz, err)
 		}
 	}
-	invalid := []struct{ st uint8; sz int }{
+	invalid := []struct {
+		st uint8
+		sz int
+	}{
 		{types.PQSigTypeMLDSA, 100},
 		{types.PQSigTypeFalcon, 2000},
 		{types.PQSigTypeSPHINCS, 64},

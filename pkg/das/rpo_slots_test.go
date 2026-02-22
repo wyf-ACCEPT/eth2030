@@ -322,13 +322,13 @@ func TestGetScheduledRPO(t *testing.T) {
 		epoch uint64
 		want  uint64
 	}{
-		{50, 4},    // before first entry -> current RPO
-		{100, 8},   // exact match
-		{150, 8},   // between entries
-		{200, 16},  // exact match
-		{250, 16},  // between entries
-		{300, 32},  // exact match
-		{500, 32},  // after last entry
+		{50, 4},   // before first entry -> current RPO
+		{100, 8},  // exact match
+		{150, 8},  // between entries
+		{200, 16}, // exact match
+		{250, 16}, // between entries
+		{300, 32}, // exact match
+		{500, 32}, // after last entry
 	}
 	for _, tt := range tests {
 		if got := rm.GetScheduledRPO(tt.epoch); got != tt.want {

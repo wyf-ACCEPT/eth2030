@@ -19,15 +19,15 @@ import (
 
 // Committee tracker errors.
 var (
-	ErrTrackerNotInitialized   = errors.New("committee_tracker: tracker not initialized")
-	ErrTrackerAlreadyTracked   = errors.New("committee_tracker: period already tracked")
-	ErrTrackerPeriodGap        = errors.New("committee_tracker: non-sequential period transition")
-	ErrTrackerNoCommittee      = errors.New("committee_tracker: no committee for period")
-	ErrTrackerThresholdNotMet  = errors.New("committee_tracker: aggregation threshold not met")
-	ErrTrackerInvalidUpdate    = errors.New("committee_tracker: invalid committee update")
-	ErrTrackerRootMismatch     = errors.New("committee_tracker: committee root mismatch")
-	ErrTrackerWindowFull       = errors.New("committee_tracker: retention window full")
-	ErrTrackerNilCommittee     = errors.New("committee_tracker: nil committee provided")
+	ErrTrackerNotInitialized  = errors.New("committee_tracker: tracker not initialized")
+	ErrTrackerAlreadyTracked  = errors.New("committee_tracker: period already tracked")
+	ErrTrackerPeriodGap       = errors.New("committee_tracker: non-sequential period transition")
+	ErrTrackerNoCommittee     = errors.New("committee_tracker: no committee for period")
+	ErrTrackerThresholdNotMet = errors.New("committee_tracker: aggregation threshold not met")
+	ErrTrackerInvalidUpdate   = errors.New("committee_tracker: invalid committee update")
+	ErrTrackerRootMismatch    = errors.New("committee_tracker: committee root mismatch")
+	ErrTrackerWindowFull      = errors.New("committee_tracker: retention window full")
+	ErrTrackerNilCommittee    = errors.New("committee_tracker: nil committee provided")
 )
 
 // CommitteeTrackerConfig configures the committee tracker behavior.

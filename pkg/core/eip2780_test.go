@@ -36,14 +36,14 @@ func TestEIP2780Constants(t *testing.T) {
 // TestEIP2780IntrinsicGas verifies the Glamsterdam intrinsic gas function.
 func TestEIP2780IntrinsicGas(t *testing.T) {
 	tests := []struct {
-		name        string
-		data        []byte
-		isCreate    bool
-		hasValue    bool
-		toExists    bool
-		authCount   uint64
-		emptyAuth   uint64
-		want        uint64
+		name      string
+		data      []byte
+		isCreate  bool
+		hasValue  bool
+		toExists  bool
+		authCount uint64
+		emptyAuth uint64
+		want      uint64
 	}{
 		{
 			name: "minimal NOP tx",

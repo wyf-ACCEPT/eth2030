@@ -14,13 +14,13 @@ import (
 
 // Registry errors.
 var (
-	ErrRegistryFull            = errors.New("registry: maximum builders reached")
-	ErrRegistryDuplicate       = errors.New("registry: builder already registered")
-	ErrRegistryNotFound        = errors.New("registry: builder not found")
-	ErrRegistryInactive        = errors.New("registry: builder is inactive")
-	ErrRegistryNilInfo         = errors.New("registry: nil builder info")
-	ErrRegistryNilBidRecord    = errors.New("registry: nil bid record")
-	ErrRegistryZeroStake       = errors.New("registry: builder stake is zero")
+	ErrRegistryFull         = errors.New("registry: maximum builders reached")
+	ErrRegistryDuplicate    = errors.New("registry: builder already registered")
+	ErrRegistryNotFound     = errors.New("registry: builder not found")
+	ErrRegistryInactive     = errors.New("registry: builder is inactive")
+	ErrRegistryNilInfo      = errors.New("registry: nil builder info")
+	ErrRegistryNilBidRecord = errors.New("registry: nil bid record")
+	ErrRegistryZeroStake    = errors.New("registry: builder stake is zero")
 )
 
 // BuilderInfo contains registration details for a builder in the registry.

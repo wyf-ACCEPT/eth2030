@@ -104,10 +104,10 @@ type builderAccount struct {
 // BidEscrow manages collateral deposits, bid locking, and settlement for
 // ePBS builder bids. All public methods are safe for concurrent use.
 type BidEscrow struct {
-	mu       sync.RWMutex
-	accounts map[string]*builderAccount  // builderID -> account
-	bids     map[uint64]*escrowBidEntry  // slot -> bid entry
-	results  []*SettlementResult         // settlement history
+	mu         sync.RWMutex
+	accounts   map[string]*builderAccount // builderID -> account
+	bids       map[uint64]*escrowBidEntry // slot -> bid entry
+	results    []*SettlementResult        // settlement history
 	maxResults int
 }
 

@@ -145,9 +145,9 @@ func FuzzTrieProof(f *testing.F) {
 	// Seed: key to insert, key to prove.
 	f.Add([]byte{0x01}, []byte{0xaa}, []byte{0x01})
 	f.Add([]byte{0x01, 0x02}, []byte{0xbb}, []byte{0x01, 0x02})
-	f.Add([]byte{0x01}, []byte{0xaa}, []byte{0x02})       // prove absent key
+	f.Add([]byte{0x01}, []byte{0xaa}, []byte{0x02}) // prove absent key
 	f.Add([]byte("hello"), []byte("world"), []byte("hello"))
-	f.Add([]byte("hello"), []byte("world"), []byte("hx"))  // absent key
+	f.Add([]byte("hello"), []byte("world"), []byte("hx")) // absent key
 
 	f.Fuzz(func(t *testing.T, insertKey, insertVal, proofKey []byte) {
 		// Cap sizes.
@@ -204,15 +204,15 @@ func FuzzTrieMultiInsertDelete(f *testing.F) {
 	f.Add([]byte{
 		0x00,             // insert
 		0x02, 0xab, 0xcd, // key
-		0x01, 0xef,       // value
+		0x01, 0xef, // value
 	})
 	f.Add([]byte{
-		0x00,             // insert
-		0x01, 0x01,       // key
-		0x01, 0x0a,       // value
-		0x01,             // delete
-		0x01, 0x01,       // key
-		0x00,             // (no value for delete)
+		0x00,       // insert
+		0x01, 0x01, // key
+		0x01, 0x0a, // value
+		0x01,       // delete
+		0x01, 0x01, // key
+		0x00, // (no value for delete)
 	})
 
 	f.Fuzz(func(t *testing.T, data []byte) {

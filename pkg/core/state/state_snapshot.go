@@ -15,11 +15,11 @@ import (
 
 // Snapshot system errors.
 var (
-	ErrSnapLayerNotFound  = errors.New("state_snapshot: layer not found")
-	ErrSnapLayerStale     = errors.New("state_snapshot: layer is stale")
-	ErrSnapIncomplete     = errors.New("state_snapshot: incomplete generation")
-	ErrSnapCycle          = errors.New("state_snapshot: update would form cycle")
-	ErrSnapReadOnly       = errors.New("state_snapshot: read-only snapshot")
+	ErrSnapLayerNotFound = errors.New("state_snapshot: layer not found")
+	ErrSnapLayerStale    = errors.New("state_snapshot: layer is stale")
+	ErrSnapIncomplete    = errors.New("state_snapshot: incomplete generation")
+	ErrSnapCycle         = errors.New("state_snapshot: update would form cycle")
+	ErrSnapReadOnly      = errors.New("state_snapshot: read-only snapshot")
 )
 
 // SnapshotAccount is a cached account stored in snapshot layers.

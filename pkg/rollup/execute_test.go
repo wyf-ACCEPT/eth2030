@@ -55,7 +55,7 @@ func TestDecodeExecuteInputValid(t *testing.T) {
 	anchor := []byte{0xee, 0xff}
 
 	input := make([]byte, minInputLen+len(blockData)+len(witness)+len(anchor))
-	binary.BigEndian.PutUint64(input[0:8], 42)    // chainID
+	binary.BigEndian.PutUint64(input[0:8], 42)                 // chainID
 	copy(input[8:40], types.BytesToHash([]byte{0x01}).Bytes()) // preStateRoot
 	binary.BigEndian.PutUint32(input[40:44], uint32(len(blockData)))
 	binary.BigEndian.PutUint32(input[44:48], uint32(len(witness)))
@@ -177,11 +177,11 @@ func TestExecutePrecompileRunValidBlock(t *testing.T) {
 	blockData := []byte{0x01, 0x02, 0x03}
 
 	input := make([]byte, minInputLen+len(blockData))
-	binary.BigEndian.PutUint64(input[0:8], 1)                                    // chainID=1
-	copy(input[8:40], types.BytesToHash([]byte{0x01}).Bytes())                     // preStateRoot
-	binary.BigEndian.PutUint32(input[40:44], uint32(len(blockData)))              // blockDataLen
-	binary.BigEndian.PutUint32(input[44:48], 0)                                    // witnessLen
-	binary.BigEndian.PutUint32(input[48:52], 0)                                    // anchorDataLen
+	binary.BigEndian.PutUint64(input[0:8], 1)                        // chainID=1
+	copy(input[8:40], types.BytesToHash([]byte{0x01}).Bytes())       // preStateRoot
+	binary.BigEndian.PutUint32(input[40:44], uint32(len(blockData))) // blockDataLen
+	binary.BigEndian.PutUint32(input[44:48], 0)                      // witnessLen
+	binary.BigEndian.PutUint32(input[48:52], 0)                      // anchorDataLen
 	copy(input[52:], blockData)
 
 	result, err := ep.Run(input)
@@ -211,7 +211,7 @@ func TestCheckNoBlobTransactionsClean(t *testing.T) {
 
 func TestCheckNoBlobTransactionsWithBlob(t *testing.T) {
 	txList := [][]byte{
-		{0x02, 0x01, 0x02},                  // type 2 (EIP-1559)
+		{0x02, 0x01, 0x02},                   // type 2 (EIP-1559)
 		{types.BlobTxType, 0x01, 0x02, 0x03}, // blob tx
 	}
 	encoded, _ := rlp.EncodeToBytes(txList)

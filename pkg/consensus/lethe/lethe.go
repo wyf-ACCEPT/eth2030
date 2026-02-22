@@ -20,16 +20,16 @@ import (
 
 // Channel errors.
 var (
-	ErrChannelClosed        = errors.New("channel is closed")
-	ErrNotParticipant       = errors.New("address is not a channel participant")
-	ErrAlreadyParticipant   = errors.New("address is already a channel participant")
-	ErrNoParticipants       = errors.New("channel requires at least one participant")
-	ErrChannelNotFound      = errors.New("channel not found")
-	ErrChannelExists        = errors.New("channel already exists")
-	ErrInvalidPubKey        = errors.New("invalid public key")
-	ErrDecryptionFailed     = errors.New("decryption failed")
-	ErrPayloadTooShort      = errors.New("ciphertext too short")
-	ErrInvalidChannelID     = errors.New("invalid channel ID")
+	ErrChannelClosed      = errors.New("channel is closed")
+	ErrNotParticipant     = errors.New("address is not a channel participant")
+	ErrAlreadyParticipant = errors.New("address is already a channel participant")
+	ErrNoParticipants     = errors.New("channel requires at least one participant")
+	ErrChannelNotFound    = errors.New("channel not found")
+	ErrChannelExists      = errors.New("channel already exists")
+	ErrInvalidPubKey      = errors.New("invalid public key")
+	ErrDecryptionFailed   = errors.New("decryption failed")
+	ErrPayloadTooShort    = errors.New("ciphertext too short")
+	ErrInvalidChannelID   = errors.New("invalid channel ID")
 )
 
 // participant holds a channel member's address and optional ephemeral public key.

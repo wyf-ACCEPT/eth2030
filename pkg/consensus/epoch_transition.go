@@ -86,19 +86,19 @@ func (p *EpochTransitionParticipation) RotateParticipation() {
 // full epoch transition. Designed to work with FullBeaconState while
 // allowing decoupled testing.
 type EpochTransitionState struct {
-	CurrentSlot     uint64
-	SlotsPerEpoch   uint64
-	Validators      []*ValidatorV2
-	Balances        []uint64
-	Slashings       []uint64 // indexed by epoch % EpochsPerSlashingsVector
+	CurrentSlot      uint64
+	SlotsPerEpoch    uint64
+	Validators       []*ValidatorV2
+	Balances         []uint64
+	Slashings        []uint64 // indexed by epoch % EpochsPerSlashingsVector
 	InactivityScores []uint64 // per-validator inactivity scores (Altair+)
 
 	// Justification and finalization.
-	JustBits     [4]bool
-	PrevJustCP   Checkpoint
-	CurrJustCP   Checkpoint
-	FinalizedCP  Checkpoint
-	BlockRoots   []Checkpoint // epoch boundary block roots for justification
+	JustBits    [4]bool
+	PrevJustCP  Checkpoint
+	CurrJustCP  Checkpoint
+	FinalizedCP Checkpoint
+	BlockRoots  []Checkpoint // epoch boundary block roots for justification
 
 	// Participation tracking.
 	Participation *EpochTransitionParticipation
@@ -123,14 +123,14 @@ func (s *EpochTransitionState) PreviousEpoch() Epoch {
 
 // EpochTransitionResult holds the output of an epoch transition.
 type EpochTransitionResult struct {
-	Rewards         []int64  // per-validator net reward (positive) or penalty (negative)
-	Activated       []ValidatorIndex
-	Ejected         []ValidatorIndex
-	Slashed         []ValidatorIndex // validators penalized by slashings processing
-	FinalityDelay   uint64
-	InLeakMode      bool
-	NewFinalizedCP  Checkpoint
-	NewJustifiedCP  Checkpoint
+	Rewards        []int64 // per-validator net reward (positive) or penalty (negative)
+	Activated      []ValidatorIndex
+	Ejected        []ValidatorIndex
+	Slashed        []ValidatorIndex // validators penalized by slashings processing
+	FinalityDelay  uint64
+	InLeakMode     bool
+	NewFinalizedCP Checkpoint
+	NewJustifiedCP Checkpoint
 }
 
 // EpochTransition orchestrates full epoch boundary state transitions.

@@ -224,14 +224,14 @@ func TestGraphConflictAnalyzerCanParallelizeAccountLevel(t *testing.T) {
 
 	bal1 := NewBlockAccessList()
 	bal1.AddEntry(AccessEntry{
-		Address:      addr,
-		AccessIndex:  1,
+		Address:       addr,
+		AccessIndex:   1,
 		BalanceChange: &BalanceChange{OldValue: big.NewInt(100), NewValue: big.NewInt(50)},
 	})
 	bal2 := NewBlockAccessList()
 	bal2.AddEntry(AccessEntry{
-		Address:      addr,
-		AccessIndex:  1,
+		Address:       addr,
+		AccessIndex:   1,
 		BalanceChange: &BalanceChange{OldValue: big.NewInt(50), NewValue: big.NewInt(30)},
 	})
 	if analyzer.CanParallelize(bal1, bal2) {

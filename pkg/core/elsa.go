@@ -102,7 +102,7 @@ func (s *StateChangeSubscription) IsClosed() bool {
 // ELSA provides external read-only access to execution layer state.
 // All methods are safe for concurrent use.
 type ELSA struct {
-	mu     sync.RWMutex
+	mu      sync.RWMutex
 	stateDB *state.MemoryStateDB
 	config  ELSAConfig
 

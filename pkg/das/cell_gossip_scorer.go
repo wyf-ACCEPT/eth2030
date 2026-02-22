@@ -69,12 +69,12 @@ func DefaultGossipScoreConfig() GossipScoreConfig {
 
 // gossipPeerEntry tracks a single peer's gossip score across DAS subnets.
 type gossipPeerEntry struct {
-	score            float64
-	validMessages    uint64
-	invalidMessages  uint64
-	lateMessages     uint64
-	lastMessageTime  time.Time
-	lastDecayTime    time.Time
+	score           float64
+	validMessages   uint64
+	invalidMessages uint64
+	lateMessages    uint64
+	lastMessageTime time.Time
+	lastDecayTime   time.Time
 }
 
 // GossipScorer tracks gossip quality scores for peers across DAS subnets.

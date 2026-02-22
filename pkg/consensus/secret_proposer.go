@@ -11,10 +11,10 @@ import (
 
 // Secret proposer selection errors.
 var (
-	ErrSPNoCommitment   = errors.New("secret proposer: no commitment for slot")
-	ErrSPWrongSecret    = errors.New("secret proposer: secret does not match commitment")
+	ErrSPNoCommitment    = errors.New("secret proposer: no commitment for slot")
+	ErrSPWrongSecret     = errors.New("secret proposer: secret does not match commitment")
 	ErrSPAlreadyRevealed = errors.New("secret proposer: already revealed")
-	ErrSPZeroValidators = errors.New("secret proposer: zero validators")
+	ErrSPZeroValidators  = errors.New("secret proposer: zero validators")
 )
 
 // SecretProposerConfig configures the secret proposer selection mechanism.

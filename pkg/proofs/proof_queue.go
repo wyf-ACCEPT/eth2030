@@ -54,11 +54,11 @@ const MandatoryThreshold = 3
 
 // Queue errors.
 var (
-	ErrQueueClosed       = errors.New("proof_queue: queue is closed")
-	ErrQueueFull         = errors.New("proof_queue: queue is full")
-	ErrProofDataEmpty    = errors.New("proof_queue: proof data is empty")
-	ErrBlockHashZero     = errors.New("proof_queue: block hash is zero")
-	ErrDeadlineExceeded  = errors.New("proof_queue: proof deadline exceeded")
+	ErrQueueClosed           = errors.New("proof_queue: queue is closed")
+	ErrQueueFull             = errors.New("proof_queue: queue is full")
+	ErrProofDataEmpty        = errors.New("proof_queue: proof data is empty")
+	ErrBlockHashZero         = errors.New("proof_queue: block hash is zero")
+	ErrDeadlineExceeded      = errors.New("proof_queue: proof deadline exceeded")
 	ErrInvalidQueueProofType = errors.New("proof_queue: invalid proof type")
 )
 

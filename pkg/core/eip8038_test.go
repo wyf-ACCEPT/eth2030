@@ -33,9 +33,9 @@ func TestEIP8038Constants(t *testing.T) {
 // increased compared to the pre-Glamsterdam values.
 func TestEIP8038IncreasedAccessCosts(t *testing.T) {
 	checks := []struct {
-		name    string
-		glamst  uint64
-		pre     uint64
+		name   string
+		glamst uint64
+		pre    uint64
 	}{
 		{"ColdAccountAccess", vm.ColdAccountAccessGlamst, vm.ColdAccountAccessCost},
 		{"ColdSload", vm.ColdSloadGlamst, vm.ColdSloadCost},

@@ -13,10 +13,10 @@ import (
 
 // Sequencer errors.
 var (
-	ErrBatchEmpty      = errors.New("sequencer: no transactions to seal")
-	ErrBatchFull       = errors.New("sequencer: batch is full")
-	ErrTxEmpty         = errors.New("sequencer: transaction data is empty")
-	ErrCompressFailed  = errors.New("sequencer: payload compression failed")
+	ErrBatchEmpty     = errors.New("sequencer: no transactions to seal")
+	ErrBatchFull      = errors.New("sequencer: batch is full")
+	ErrTxEmpty        = errors.New("sequencer: transaction data is empty")
+	ErrCompressFailed = errors.New("sequencer: payload compression failed")
 )
 
 // SequencerConfig controls the batching and submission behavior of the sequencer.

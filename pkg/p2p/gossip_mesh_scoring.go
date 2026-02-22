@@ -39,13 +39,13 @@ func DefaultMeshScoreParams() MeshScoreParams {
 
 // TopicPeerScore tracks per-topic delivery statistics for a single peer.
 type TopicPeerScore struct {
-	MeshDeliveries    uint64    // Messages delivered while in mesh.
-	FirstDeliveries   uint64    // First-seen messages from this peer.
-	InvalidMessages   uint64    // Invalid messages from this peer.
-	MeshJoinTime      time.Time // When this peer joined the topic mesh.
-	InMesh            bool      // Whether the peer is currently in mesh.
-	DecayedScore      float64   // Accumulated score after decay.
-	LastDecayTime     time.Time // Last time decay was applied.
+	MeshDeliveries  uint64    // Messages delivered while in mesh.
+	FirstDeliveries uint64    // First-seen messages from this peer.
+	InvalidMessages uint64    // Invalid messages from this peer.
+	MeshJoinTime    time.Time // When this peer joined the topic mesh.
+	InMesh          bool      // Whether the peer is currently in mesh.
+	DecayedScore    float64   // Accumulated score after decay.
+	LastDecayTime   time.Time // Last time decay was applied.
 }
 
 // MeshDecayConfig configures exponential decay for historical scores.
@@ -89,15 +89,15 @@ func DefaultMeshBanConfig() MeshBanConfig {
 
 // meshBanEntry records a mesh ban with its expiry.
 type meshBanEntry struct {
-	BannedAt time.Time
+	BannedAt  time.Time
 	ExpiresAt time.Time
 	Score     float64
 }
 
 // meshPeerState holds all scoring state for a single peer across topics.
 type meshPeerState struct {
-	topics    map[string]*TopicPeerScore
-	banned    *meshBanEntry
+	topics     map[string]*TopicPeerScore
+	banned     *meshBanEntry
 	graylisted bool
 }
 
@@ -106,12 +106,12 @@ type meshPeerState struct {
 // decay, threshold-based banning with cooldown, and mesh management.
 // All methods are safe for concurrent use.
 type GossipMeshScoreManager struct {
-	mu          sync.RWMutex
-	params      MeshScoreParams
-	decay       MeshDecayConfig
-	ban         MeshBanConfig
-	peers       map[string]*meshPeerState
-	meshPeers   map[string]map[string]bool // topic -> set of peer IDs in mesh
+	mu        sync.RWMutex
+	params    MeshScoreParams
+	decay     MeshDecayConfig
+	ban       MeshBanConfig
+	peers     map[string]*meshPeerState
+	meshPeers map[string]map[string]bool // topic -> set of peer IDs in mesh
 }
 
 // NewGossipMeshScoreManager creates a mesh score manager with the given configs.

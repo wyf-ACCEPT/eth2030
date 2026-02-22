@@ -20,12 +20,12 @@ import (
 
 // Endgame state errors.
 var (
-	ErrEndgameNoFinalized     = errors.New("endgame: no finalized state exists")
+	ErrEndgameNoFinalized      = errors.New("endgame: no finalized state exists")
 	ErrEndgameAlreadyFinalized = errors.New("endgame: state root already finalized")
-	ErrEndgameRootNotPending  = errors.New("endgame: state root not in pending set")
-	ErrEndgameNilStateDB      = errors.New("endgame: nil underlying state db")
-	ErrEndgameZeroRoot        = errors.New("endgame: zero state root")
-	ErrEndgameSlotRegression  = errors.New("endgame: slot must not decrease")
+	ErrEndgameRootNotPending   = errors.New("endgame: state root not in pending set")
+	ErrEndgameNilStateDB       = errors.New("endgame: nil underlying state db")
+	ErrEndgameZeroRoot         = errors.New("endgame: zero state root")
+	ErrEndgameSlotRegression   = errors.New("endgame: slot must not decrease")
 )
 
 // finalizedEntry records a finalized state root and the slot at which it

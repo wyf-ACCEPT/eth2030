@@ -29,9 +29,9 @@ const (
 
 // Attester capacity errors.
 var (
-	ErrAttestationCapExceeded  = errors.New("attestation: slot capacity exceeded")
-	ErrAttestationTooLarge     = errors.New("attestation: single attestation exceeds size limit")
-	ErrEmptyCommitteeList      = errors.New("attestation: empty committee list")
+	ErrAttestationCapExceeded = errors.New("attestation: slot capacity exceeded")
+	ErrAttestationTooLarge    = errors.New("attestation: single attestation exceeds size limit")
+	ErrEmptyCommitteeList     = errors.New("attestation: empty committee list")
 )
 
 // AttestationSizeEstimate estimates the encoded size of a single attestation

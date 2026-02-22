@@ -82,11 +82,11 @@ const (
 	SstoreClearsScheduleRefund uint64 = 4800
 
 	// SELFDESTRUCT gas.
-	SelfdestructGas          uint64 = 5000
-	CreateBySelfdestructGas  uint64 = 25000 // sending to a new account
-	CreateDataGas            uint64 = 200   // per byte of created contract code
-	MaxCodeSize              int    = 24576 // EIP-170: max contract size
-	MaxInitCodeSize          int    = 49152 // EIP-3860: max init code size (2 * MaxCodeSize)
+	SelfdestructGas         uint64 = 5000
+	CreateBySelfdestructGas uint64 = 25000 // sending to a new account
+	CreateDataGas           uint64 = 200   // per byte of created contract code
+	MaxCodeSize             int    = 24576 // EIP-170: max contract size
+	MaxInitCodeSize         int    = 49152 // EIP-3860: max init code size (2 * MaxCodeSize)
 
 	// EIP-3860: initcode word gas.
 	InitCodeWordGas uint64 = 2
@@ -101,13 +101,13 @@ const (
 
 // EIP-2780: Reduce intrinsic transaction gas.
 const (
-	TxBaseGlamsterdam         uint64 = 4500  // TX_BASE_COST (was 21000)
-	GasNewAccount             uint64 = 25000 // surcharge for value-transfer to non-existent account
-	StateUpdate               uint64 = 1000  // one account-leaf write
-	ColdAccountCostNoCode     uint64 = 500   // cold touch of account without code
-	ColdAccountCostCode       uint64 = 2600  // cold touch of account with code
-	CallValueTransferGlamst   uint64 = 2000  // EIP-2780: 2 * STATE_UPDATE (was 9000)
-	CallNewAccountGlamst      uint64 = 26000 // EIP-2780: STATE_UPDATE + GAS_NEW_ACCOUNT
+	TxBaseGlamsterdam       uint64 = 4500  // TX_BASE_COST (was 21000)
+	GasNewAccount           uint64 = 25000 // surcharge for value-transfer to non-existent account
+	StateUpdate             uint64 = 1000  // one account-leaf write
+	ColdAccountCostNoCode   uint64 = 500   // cold touch of account without code
+	ColdAccountCostCode     uint64 = 2600  // cold touch of account with code
+	CallValueTransferGlamst uint64 = 2000  // EIP-2780: 2 * STATE_UPDATE (was 9000)
+	CallNewAccountGlamst    uint64 = 26000 // EIP-2780: STATE_UPDATE + GAS_NEW_ACCOUNT
 )
 
 // EIP-8037: State Creation Gas Increase (simplified for 60M gas limit).
@@ -235,8 +235,8 @@ func callGasEIP150(contractGas, baseGas, requestedGas uint64) uint64 {
 // Per EIP-2200 / EIP-3529 (post-London):
 //   - If current == new: WarmStorageReadCost (100 gas, no-op)
 //   - If current != new:
-//     - If original == current: SstoreSet (20000) or SstoreReset (2900)
-//     - If original != current: WarmStorageReadCost (100)
+//   - If original == current: SstoreSet (20000) or SstoreReset (2900)
+//   - If original != current: WarmStorageReadCost (100)
 //   - Refund logic per EIP-3529 (SstoreClearsScheduleRefund = 4800).
 func SstoreGas(original, current, newVal [32]byte, cold bool) (gas uint64, refund int64) {
 	if cold {

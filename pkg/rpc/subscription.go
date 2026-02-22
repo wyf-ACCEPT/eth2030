@@ -40,9 +40,9 @@ type installedFilter struct {
 	typ       FilterType
 	query     FilterQuery
 	lastPoll  time.Time
-	blockLogs []*types.Log   // accumulated log results (LogFilter)
-	hashes    []types.Hash   // accumulated block or tx hashes
-	lastBlock uint64         // last scanned block (for incremental polls)
+	blockLogs []*types.Log // accumulated log results (LogFilter)
+	hashes    []types.Hash // accumulated block or tx hashes
+	lastBlock uint64       // last scanned block (for incremental polls)
 }
 
 // SubscriptionManager tracks installed filters and WebSocket subscriptions,

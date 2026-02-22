@@ -42,11 +42,11 @@ func (ar AccountRef) RefAddress() types.Address {
 //   - CallerAddr is the original msg.sender from the parent context
 //   - DelegatedCaller points to the parent contract reference
 type ContractRefInfo struct {
-	SelfAddr        types.Address // the address of this contract (ADDRESS opcode)
-	CallerAddr      types.Address // the caller of this contract (CALLER opcode)
+	SelfAddr        types.Address    // the address of this contract (ADDRESS opcode)
+	CallerAddr      types.Address    // the caller of this contract (CALLER opcode)
 	DelegatedCaller *ContractRefInfo // non-nil for DELEGATECALL chains
-	CodeAddr        types.Address // the address from which code was loaded
-	IsDelegate      bool          // true if this is a DELEGATECALL context
+	CodeAddr        types.Address    // the address from which code was loaded
+	IsDelegate      bool             // true if this is a DELEGATECALL context
 }
 
 // NewAccountContractRef creates a ContractRefInfo for an external account

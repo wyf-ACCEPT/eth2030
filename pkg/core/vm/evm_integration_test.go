@@ -75,47 +75,47 @@ func TestReentrancy(t *testing.T) {
 	//   51:   STOP
 	const jumpdestA = 50
 	codeA := []byte{
-		byte(PUSH1), 0x00,       // slot 0
-		byte(SLOAD),             // load counter
-		byte(PUSH1), 0x01,       // 1
-		byte(ADD),               // counter + 1
-		byte(DUP1),              // dup for comparison
-		byte(PUSH1), 0x00,       // slot 0
-		byte(SSTORE),            // store updated counter
-		byte(PUSH1), 0x02,       // 2
-		byte(LT),                // 2 < counter+1? (same as counter+1 > 2)
-		byte(PUSH1), jumpdestA,  // jump target
-		byte(JUMPI),             // if yes, jump to stop
-		byte(PUSH1), 0x00,  // retLen
-		byte(PUSH1), 0x00,  // retOffset
-		byte(PUSH1), 0x00,  // argsLen
-		byte(PUSH1), 0x00,  // argsOffset
-		byte(PUSH1), 0x00,  // value
-		byte(PUSH20),       // contractB address
+		byte(PUSH1), 0x00, // slot 0
+		byte(SLOAD),       // load counter
+		byte(PUSH1), 0x01, // 1
+		byte(ADD),         // counter + 1
+		byte(DUP1),        // dup for comparison
+		byte(PUSH1), 0x00, // slot 0
+		byte(SSTORE),      // store updated counter
+		byte(PUSH1), 0x02, // 2
+		byte(LT),               // 2 < counter+1? (same as counter+1 > 2)
+		byte(PUSH1), jumpdestA, // jump target
+		byte(JUMPI),       // if yes, jump to stop
+		byte(PUSH1), 0x00, // retLen
+		byte(PUSH1), 0x00, // retOffset
+		byte(PUSH1), 0x00, // argsLen
+		byte(PUSH1), 0x00, // argsOffset
+		byte(PUSH1), 0x00, // value
+		byte(PUSH20), // contractB address
 	}
 	codeA = append(codeA, contractB[:]...)
 	codeA = append(codeA,
-		byte(GAS),        // push remaining gas
+		byte(GAS), // push remaining gas
 		byte(CALL),
-		byte(POP),        // discard result
-		byte(JUMPDEST),   // position 50
+		byte(POP),      // discard result
+		byte(JUMPDEST), // position 50
 		byte(STOP),
 	)
 
 	// Contract B: call A with all remaining gas, then STOP.
 	codeB := []byte{
-		byte(PUSH1), 0x00,  // retLen
-		byte(PUSH1), 0x00,  // retOffset
-		byte(PUSH1), 0x00,  // argsLen
-		byte(PUSH1), 0x00,  // argsOffset
-		byte(PUSH1), 0x00,  // value
-		byte(PUSH20),       // contractA address
+		byte(PUSH1), 0x00, // retLen
+		byte(PUSH1), 0x00, // retOffset
+		byte(PUSH1), 0x00, // argsLen
+		byte(PUSH1), 0x00, // argsOffset
+		byte(PUSH1), 0x00, // value
+		byte(PUSH20), // contractA address
 	}
 	codeB = append(codeB, contractA[:]...)
 	codeB = append(codeB,
-		byte(GAS),   // push remaining gas
+		byte(GAS), // push remaining gas
 		byte(CALL),
-		byte(POP),   // discard result
+		byte(POP), // discard result
 		byte(STOP),
 	)
 
@@ -163,13 +163,13 @@ func TestCallDepthLimit(t *testing.T) {
 		byte(PUSH1), 0x00, // argsLen
 		byte(PUSH1), 0x00, // argsOffset
 		byte(PUSH1), 0x00, // value
-		byte(PUSH20),      // self address
+		byte(PUSH20), // self address
 	}
 	code = append(code, contractAddr[:]...)
 	code = append(code,
 		byte(PUSH2), 0xFF, 0xFF, // gas
 		byte(CALL),
-		byte(POP),  // discard result
+		byte(POP), // discard result
 		byte(STOP),
 	)
 	stateDB.SetCode(contractAddr, code)
@@ -203,23 +203,23 @@ func TestNestedCallOutOfGas(t *testing.T) {
 	// Child: expensive operation that runs out of gas
 	// Infinite loop: PUSH1 0x00, JUMP to self (JUMPDEST at 0)
 	childCode := []byte{
-		byte(JUMPDEST),     // pos 0
+		byte(JUMPDEST),    // pos 0
 		byte(PUSH1), 0x00, // jump target
-		byte(JUMP),         // infinite loop -> runs out of gas
+		byte(JUMP), // infinite loop -> runs out of gas
 	}
 
 	// Parent: CALL child with limited gas (100), then store 0x42 at slot 0, STOP
 	parentCode := []byte{
-		byte(PUSH1), 0x00,  // retLen
-		byte(PUSH1), 0x00,  // retOffset
-		byte(PUSH1), 0x00,  // argsLen
-		byte(PUSH1), 0x00,  // argsOffset
-		byte(PUSH1), 0x00,  // value
-		byte(PUSH20),       // child address
+		byte(PUSH1), 0x00, // retLen
+		byte(PUSH1), 0x00, // retOffset
+		byte(PUSH1), 0x00, // argsLen
+		byte(PUSH1), 0x00, // argsOffset
+		byte(PUSH1), 0x00, // value
+		byte(PUSH20), // child address
 	}
 	parentCode = append(parentCode, childAddr[:]...)
 	parentCode = append(parentCode,
-		byte(PUSH1), 0x64,  // gas = 100 (too little for child)
+		byte(PUSH1), 0x64, // gas = 100 (too little for child)
 		byte(CALL),
 		// CALL pushed 0 (failure), pop it
 		byte(POP),
@@ -266,28 +266,28 @@ func TestRevertPropagation(t *testing.T) {
 
 	// Child: set storage slot 0 to 0xFF, then REVERT with return data [0xDE, 0xAD]
 	childCode := []byte{
-		byte(PUSH1), 0xFF,  // value
-		byte(PUSH1), 0x00,  // slot
-		byte(SSTORE),       // set slot 0 = 0xFF (should be reverted)
-		byte(PUSH1), 0xDE,  // data byte
+		byte(PUSH1), 0xFF, // value
+		byte(PUSH1), 0x00, // slot
+		byte(SSTORE),      // set slot 0 = 0xFF (should be reverted)
+		byte(PUSH1), 0xDE, // data byte
 		byte(PUSH1), 0x00,
-		byte(MSTORE8),      // mem[0] = 0xDE
+		byte(MSTORE8), // mem[0] = 0xDE
 		byte(PUSH1), 0xAD,
 		byte(PUSH1), 0x01,
-		byte(MSTORE8),      // mem[1] = 0xAD
-		byte(PUSH1), 0x02,  // size
-		byte(PUSH1), 0x00,  // offset
-		byte(REVERT),       // revert with [0xDE, 0xAD]
+		byte(MSTORE8),     // mem[1] = 0xAD
+		byte(PUSH1), 0x02, // size
+		byte(PUSH1), 0x00, // offset
+		byte(REVERT), // revert with [0xDE, 0xAD]
 	}
 
 	// Parent: CALL child with return buffer, check RETURNDATASIZE, store 0x42 at slot 0
 	parentCode := []byte{
-		byte(PUSH1), 0x20,  // retLen = 32
-		byte(PUSH1), 0x00,  // retOffset = 0
-		byte(PUSH1), 0x00,  // argsLen
-		byte(PUSH1), 0x00,  // argsOffset
-		byte(PUSH1), 0x00,  // value
-		byte(PUSH20),       // child address
+		byte(PUSH1), 0x20, // retLen = 32
+		byte(PUSH1), 0x00, // retOffset = 0
+		byte(PUSH1), 0x00, // argsLen
+		byte(PUSH1), 0x00, // argsOffset
+		byte(PUSH1), 0x00, // value
+		byte(PUSH20), // child address
 	}
 	parentCode = append(parentCode, childAddr[:]...)
 	parentCode = append(parentCode,
@@ -298,14 +298,14 @@ func TestRevertPropagation(t *testing.T) {
 		// Check RETURNDATASIZE should be 2
 		byte(RETURNDATASIZE),
 		byte(PUSH1), 0x20, // offset 0x20 (store at memory offset 32)
-		byte(MSTORE),      // store returndatasize in memory
+		byte(MSTORE), // store returndatasize in memory
 		// Store 0x42 to show parent continues
 		byte(PUSH1), 0x42,
 		byte(PUSH1), 0x00,
 		byte(SSTORE),
 		// Return returndatasize value
-		byte(PUSH1), 0x20,  // size
-		byte(PUSH1), 0x20,  // offset (where we stored returndatasize)
+		byte(PUSH1), 0x20, // size
+		byte(PUSH1), 0x20, // offset (where we stored returndatasize)
 		byte(RETURN),
 	)
 
@@ -353,11 +353,11 @@ func TestCreateDeployment(t *testing.T) {
 	// which is runtime code for: PUSH1 0x42, PUSH1 0, MSTORE, PUSH1 1, PUSH1 31, RETURN
 	// (returns the byte 0x42)
 	initCode := []byte{
-		byte(PUSH1), 0x42,  // runtime will return 0x42
+		byte(PUSH1), 0x42, // runtime will return 0x42
 		byte(PUSH1), 0x00,
 		byte(MSTORE),
-		byte(PUSH1), 0x01,  // return 1 byte
-		byte(PUSH1), 0x1f,  // from offset 31
+		byte(PUSH1), 0x01, // return 1 byte
+		byte(PUSH1), 0x1f, // from offset 31
 		byte(RETURN),
 	}
 
@@ -535,10 +535,10 @@ func TestTransientStorageIsolation(t *testing.T) {
 
 	// Contract: TSTORE(key=1, value=0xAA), TLOAD(key=1), MSTORE, RETURN
 	code := []byte{
-		byte(PUSH1), 0xAA,  // value
-		byte(PUSH1), 0x01,  // key
+		byte(PUSH1), 0xAA, // value
+		byte(PUSH1), 0x01, // key
 		byte(TSTORE),
-		byte(PUSH1), 0x01,  // key
+		byte(PUSH1), 0x01, // key
 		byte(TLOAD),
 		byte(PUSH1), 0x00,
 		byte(MSTORE),
@@ -597,16 +597,16 @@ func TestTransientStorageWriteProtection(t *testing.T) {
 
 func TestMemoryExpansionGasCosts(t *testing.T) {
 	tests := []struct {
-		name     string
-		oldSize  uint64
-		newSize  uint64
-		wantOk   bool
-		minCost  uint64 // minimum expected cost (0 for no expansion)
+		name    string
+		oldSize uint64
+		newSize uint64
+		wantOk  bool
+		minCost uint64 // minimum expected cost (0 for no expansion)
 	}{
 		{"no expansion", 32, 32, true, 0},
-		{"0 to 32", 0, 32, true, 3},         // 1 word: 1*3 = 3
-		{"32 to 64", 32, 64, true, 3},        // 2 words cost - 1 word cost
-		{"0 to 1024", 0, 1024, true, 96},     // 32 words: 32*3 + 32^2/512 = 96 + 2 = 98
+		{"0 to 32", 0, 32, true, 3},      // 1 word: 1*3 = 3
+		{"32 to 64", 32, 64, true, 3},    // 2 words cost - 1 word cost
+		{"0 to 1024", 0, 1024, true, 96}, // 32 words: 32*3 + 32^2/512 = 96 + 2 = 98
 		{"exceed max", 0, MaxMemorySize + 1, false, 0},
 	}
 
@@ -678,18 +678,18 @@ func TestReturndataCopyOutOfBounds(t *testing.T) {
 	}
 
 	// Attempt to copy 1 byte from offset 5 (exactly at end)
-	st.Push(big.NewInt(1))  // length
-	st.Push(big.NewInt(5))  // dataOffset (at end)
-	st.Push(big.NewInt(0))  // memOffset
+	st.Push(big.NewInt(1)) // length
+	st.Push(big.NewInt(5)) // dataOffset (at end)
+	st.Push(big.NewInt(0)) // memOffset
 	_, err = opReturndataCopy(&pc, evm, contract, mem, st)
 	if !errors.Is(err, ErrReturnDataOutOfBounds) {
 		t.Errorf("expected ErrReturnDataOutOfBounds for offset at end, got %v", err)
 	}
 
 	// Valid: copy exactly 5 bytes
-	st.Push(big.NewInt(5))  // length
-	st.Push(big.NewInt(0))  // dataOffset
-	st.Push(big.NewInt(0))  // memOffset
+	st.Push(big.NewInt(5)) // length
+	st.Push(big.NewInt(0)) // dataOffset
+	st.Push(big.NewInt(0)) // memOffset
 	_, err = opReturndataCopy(&pc, evm, contract, mem, st)
 	if err != nil {
 		t.Errorf("valid RETURNDATACOPY failed: %v", err)
@@ -711,9 +711,9 @@ func TestReturndataCopyOverflow(t *testing.T) {
 	pc := uint64(0)
 
 	// dataOffset + length overflows uint64
-	st.Push(big.NewInt(1))                              // length
-	st.Push(new(big.Int).SetUint64(^uint64(0)))         // dataOffset (max uint64)
-	st.Push(big.NewInt(0))                              // memOffset
+	st.Push(big.NewInt(1))                      // length
+	st.Push(new(big.Int).SetUint64(^uint64(0))) // dataOffset (max uint64)
+	st.Push(big.NewInt(0))                      // memOffset
 	_, err := opReturndataCopy(&pc, evm, contract, mem, st)
 	if !errors.Is(err, ErrReturnDataOutOfBounds) {
 		t.Errorf("expected ErrReturnDataOutOfBounds for overflow, got %v", err)
@@ -1002,7 +1002,7 @@ func TestGasRefundCap(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
-	current := original // same as original
+	current := original  // same as original
 	newVal := [32]byte{} // clearing to zero
 
 	gas, refund := SstoreGas(original, current, newVal, false)

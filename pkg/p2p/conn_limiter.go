@@ -15,14 +15,14 @@ import (
 
 // ConnLim errors.
 var (
-	ErrConnLimMaxPeers      = errors.New("p2p: connection limit reached")
-	ErrConnLimSubnet16Full  = errors.New("p2p: /16 subnet limit reached")
-	ErrConnLimSubnet24Full  = errors.New("p2p: /24 subnet limit reached")
-	ErrConnLimInboundFull   = errors.New("p2p: inbound connection limit reached")
-	ErrConnLimOutboundFull  = errors.New("p2p: outbound connection limit reached")
-	ErrConnLimRateLimited   = errors.New("p2p: inbound rate limit exceeded")
-	ErrConnLimDuplicate     = errors.New("p2p: duplicate connection attempt")
-	ErrConnLimReservedSlot  = errors.New("p2p: reserved slot not available")
+	ErrConnLimMaxPeers       = errors.New("p2p: connection limit reached")
+	ErrConnLimSubnet16Full   = errors.New("p2p: /16 subnet limit reached")
+	ErrConnLimSubnet24Full   = errors.New("p2p: /24 subnet limit reached")
+	ErrConnLimInboundFull    = errors.New("p2p: inbound connection limit reached")
+	ErrConnLimOutboundFull   = errors.New("p2p: outbound connection limit reached")
+	ErrConnLimRateLimited    = errors.New("p2p: inbound rate limit exceeded")
+	ErrConnLimDuplicate      = errors.New("p2p: duplicate connection attempt")
+	ErrConnLimReservedSlot   = errors.New("p2p: reserved slot not available")
 	ErrConnLimAlreadyTracked = errors.New("p2p: connection already tracked")
 )
 
@@ -44,14 +44,14 @@ func (d ConnDirection) String() string {
 
 // ConnLimConfig configures the ConnLim connection manager.
 type ConnLimConfig struct {
-	MaxPeers         int           // Total max connections (default 50).
-	MaxInbound       int           // Max inbound connections (default MaxPeers/2).
-	MaxOutbound      int           // Max outbound connections (default MaxPeers/2).
-	MaxPerSubnet16   int           // Max connections from a /16 subnet (default 4).
-	MaxPerSubnet24   int           // Max connections from a /24 subnet (default 2).
-	StaticSlots      int           // Reserved slots for static peers (default 5).
-	TrustedSlots     int           // Reserved slots for trusted peers (default 5).
-	InboundRateLimit int           // Max new inbound conns per InboundRateWindow.
+	MaxPeers          int           // Total max connections (default 50).
+	MaxInbound        int           // Max inbound connections (default MaxPeers/2).
+	MaxOutbound       int           // Max outbound connections (default MaxPeers/2).
+	MaxPerSubnet16    int           // Max connections from a /16 subnet (default 4).
+	MaxPerSubnet24    int           // Max connections from a /24 subnet (default 2).
+	StaticSlots       int           // Reserved slots for static peers (default 5).
+	TrustedSlots      int           // Reserved slots for trusted peers (default 5).
+	InboundRateLimit  int           // Max new inbound conns per InboundRateWindow.
 	InboundRateWindow time.Duration // Window for inbound rate limiting (default 10s).
 }
 
@@ -131,14 +131,14 @@ func NewConnLim(cfg ConnLimConfig) *ConnLim {
 		cfg.InboundRateLimit = 10
 	}
 	return &ConnLim{
-		config:         cfg,
-		conns:          make(map[string]*ConnEntry),
-		subnet16:       make(map[string]int),
-		subnet24:       make(map[string]int),
-		recentAttempts: make(map[string]time.Time),
-		metricActive:   metrics.NewGauge("p2p_conn_active"),
-		metricInbound:  metrics.NewGauge("p2p_conn_inbound"),
-		metricOutbound: metrics.NewGauge("p2p_conn_outbound"),
+		config:             cfg,
+		conns:              make(map[string]*ConnEntry),
+		subnet16:           make(map[string]int),
+		subnet24:           make(map[string]int),
+		recentAttempts:     make(map[string]time.Time),
+		metricActive:       metrics.NewGauge("p2p_conn_active"),
+		metricInbound:      metrics.NewGauge("p2p_conn_inbound"),
+		metricOutbound:     metrics.NewGauge("p2p_conn_outbound"),
 		metricSubnetReject: metrics.NewCounter("p2p_conn_subnet_reject"),
 		metricRateReject:   metrics.NewCounter("p2p_conn_rate_reject"),
 		metricDupReject:    metrics.NewCounter("p2p_conn_dup_reject"),

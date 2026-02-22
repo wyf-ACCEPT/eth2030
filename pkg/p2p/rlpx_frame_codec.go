@@ -281,8 +281,8 @@ func (fc *FrameCodec) ReadMsg() (Msg, error) {
 	}, nil
 }
 
-func (fc *FrameCodec) SendPing() error  { return fc.WriteMsg(Msg{Code: PingMsg, Size: 0}) }
-func (fc *FrameCodec) SendPong() error  { return fc.WriteMsg(Msg{Code: PongMsg, Size: 0}) }
+func (fc *FrameCodec) SendPing() error { return fc.WriteMsg(Msg{Code: PingMsg, Size: 0}) }
+func (fc *FrameCodec) SendPong() error { return fc.WriteMsg(Msg{Code: PongMsg, Size: 0}) }
 
 // SendDisconnect sends a disconnect message and closes the codec.
 func (fc *FrameCodec) SendDisconnect(reason DisconnectReason) error {

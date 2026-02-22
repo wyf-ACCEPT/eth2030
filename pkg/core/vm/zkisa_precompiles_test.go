@@ -425,10 +425,10 @@ func TestVerifyExecutionProofWrongOutput(t *testing.T) {
 
 func TestZkISAGasCosts(t *testing.T) {
 	tests := []struct {
-		name   string
+		name       string
 		precompile ZkISAPrecompile
-		input  []byte
-		minGas uint64
+		input      []byte
+		minGas     uint64
 	}{
 		{"ecrecover", &ZkISAEcrecover{}, make([]byte, 128), 3000},
 		{"sha256-empty", &ZkISASha256{}, []byte{}, 60},
@@ -491,12 +491,12 @@ func TestVerifyExecutionProofAllPrecompiles(t *testing.T) {
 	registry := RegisterZkISAPrecompiles()
 
 	inputs := map[types.Address][]byte{
-		types.BytesToAddress([]byte{0x01}): make([]byte, 128),       // ecrecover
-		types.BytesToAddress([]byte{0x02}): []byte("test data"),     // sha256
+		types.BytesToAddress([]byte{0x01}): make([]byte, 128),                                             // ecrecover
+		types.BytesToAddress([]byte{0x02}): []byte("test data"),                                           // sha256
 		types.BytesToAddress([]byte{0x05}): buildModexpInput(big.NewInt(2), big.NewInt(3), big.NewInt(5)), // modexp
-		types.BytesToAddress([]byte{0x06}): make([]byte, 128),       // bn128add
-		types.BytesToAddress([]byte{0x07}): make([]byte, 96),        // bn128mul
-		types.BytesToAddress([]byte{0x08}): make([]byte, 192),       // bn128pairing
+		types.BytesToAddress([]byte{0x06}): make([]byte, 128),                                             // bn128add
+		types.BytesToAddress([]byte{0x07}): make([]byte, 96),                                              // bn128mul
+		types.BytesToAddress([]byte{0x08}): make([]byte, 192),                                             // bn128pairing
 	}
 
 	for addr, p := range registry {

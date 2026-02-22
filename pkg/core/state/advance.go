@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	ErrAdvancerNoParent    = errors.New("advancer: parent state not found")
-	ErrAdvancerTooManyTxs  = errors.New("advancer: too many transactions")
-	ErrAdvancerMaxReached  = errors.New("advancer: max speculations reached")
-	ErrAdvancerInvalidTx   = errors.New("advancer: invalid transaction data")
+	ErrAdvancerNoParent   = errors.New("advancer: parent state not found")
+	ErrAdvancerTooManyTxs = errors.New("advancer: too many transactions")
+	ErrAdvancerMaxReached = errors.New("advancer: max speculations reached")
+	ErrAdvancerInvalidTx  = errors.New("advancer: invalid transaction data")
 )
 
 // AdvancerConfig configures the StateAdvancer.

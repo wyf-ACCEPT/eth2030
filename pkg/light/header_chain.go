@@ -19,7 +19,7 @@ import (
 
 // Header chain errors.
 var (
-	ErrHeaderChainNilHeader    = errors.New("light: nil header")
+	ErrHeaderChainNilHeader     = errors.New("light: nil header")
 	ErrHeaderChainParentUnknown = errors.New("light: parent header not found in chain")
 	ErrHeaderChainReorg         = errors.New("light: reorg detected, new chain is shorter")
 	ErrHeaderChainDuplicate     = errors.New("light: header already in chain")
@@ -67,17 +67,17 @@ type HeaderChain struct {
 	config HeaderChainConfig
 
 	// Chain state.
-	headers     map[types.Hash]*types.Header // hash -> header
-	byNumber    map[uint64]types.Hash        // number -> canonical hash
-	td          map[types.Hash]*big.Int      // hash -> total difficulty
-	headHash    types.Hash                   // canonical head hash
-	headNum     uint64                       // canonical head number
-	totalDiff   *big.Int                     // total difficulty of canonical head
+	headers   map[types.Hash]*types.Header // hash -> header
+	byNumber  map[uint64]types.Hash        // number -> canonical hash
+	td        map[types.Hash]*big.Int      // hash -> total difficulty
+	headHash  types.Hash                   // canonical head hash
+	headNum   uint64                       // canonical head number
+	totalDiff *big.Int                     // total difficulty of canonical head
 
 	// Finality tracking.
-	checkpoints    map[uint64]*FinalityCheckpoint // period -> checkpoint
-	latestFinalized types.Hash                    // hash of latest finalized header
-	finalizedNum    uint64                        // number of latest finalized header
+	checkpoints     map[uint64]*FinalityCheckpoint // period -> checkpoint
+	latestFinalized types.Hash                     // hash of latest finalized header
+	finalizedNum    uint64                         // number of latest finalized header
 
 	// Sync committee period tracking.
 	currentPeriod uint64

@@ -13,13 +13,13 @@ import (
 
 // Extended filter system errors.
 var (
-	ErrFilterNotFound       = errors.New("filter: not found")
-	ErrFilterWrongType      = errors.New("filter: wrong type for operation")
-	ErrFilterLimitReached   = errors.New("filter: maximum active filters reached")
-	ErrFilterExpired        = errors.New("filter: expired due to inactivity")
-	ErrFilterTopicMismatch  = errors.New("filter: topic position count exceeds 4")
-	ErrFilterBlockRange     = errors.New("filter: invalid block range")
-	ErrFilterLogOverflow    = errors.New("filter: log buffer full")
+	ErrFilterNotFound      = errors.New("filter: not found")
+	ErrFilterWrongType     = errors.New("filter: wrong type for operation")
+	ErrFilterLimitReached  = errors.New("filter: maximum active filters reached")
+	ErrFilterExpired       = errors.New("filter: expired due to inactivity")
+	ErrFilterTopicMismatch = errors.New("filter: topic position count exceeds 4")
+	ErrFilterBlockRange    = errors.New("filter: invalid block range")
+	ErrFilterLogOverflow   = errors.New("filter: log buffer full")
 )
 
 // ExtFilterType distinguishes filter kinds in the unified filter manager.

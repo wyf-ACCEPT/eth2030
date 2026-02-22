@@ -423,8 +423,8 @@ func TestSparsityFilterDistribution(t *testing.T) {
 
 	// With sparsity 8, we expect approximately 1/8 = 12.5% stored.
 	// Allow a generous margin since the distribution depends on the modulus.
-	expectedMin := total / 8 - total/80  // ~11.25%
-	expectedMax := total / 8 + total/80  // ~13.75%
+	expectedMin := total/8 - total/80 // ~11.25%
+	expectedMax := total/8 + total/80 // ~13.75%
 
 	if stored < expectedMin || stored > expectedMax {
 		t.Fatalf("stored %d of %d blobs (sparsity=8), expected between %d and %d",

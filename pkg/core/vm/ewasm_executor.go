@@ -70,10 +70,10 @@ func DefaultWASMExecutorConfig() WASMExecutorConfig {
 
 // WASMFrame represents a call frame on the call stack.
 type WASMFrame struct {
-	FuncIndex  uint32   // index of the function being executed
-	Locals     []uint64 // local variable slots
-	ReturnPC   int      // program counter to return to
-	StackBase  int      // operand stack depth at frame entry
+	FuncIndex uint32   // index of the function being executed
+	Locals    []uint64 // local variable slots
+	ReturnPC  int      // program counter to return to
+	StackBase int      // operand stack depth at frame entry
 }
 
 // executorFunc represents a parsed function body.
@@ -86,9 +86,9 @@ type executorFunc struct {
 
 // controlEntry tracks a block/loop for branch resolution.
 type controlEntry struct {
-	opcode   WASMOpcode // Block or Loop
-	startPC  int        // PC of the block/loop instruction
-	endPC    int        // PC of the matching End instruction (-1 if unknown)
+	opcode  WASMOpcode // Block or Loop
+	startPC int        // PC of the block/loop instruction
+	endPC   int        // PC of the matching End instruction (-1 if unknown)
 }
 
 // WASMExecutor is a stack-based WASM bytecode interpreter with gas metering.
@@ -129,13 +129,13 @@ func NewWASMExecutor(config WASMExecutorConfig) *WASMExecutor {
 
 // Gas costs per instruction category.
 const (
-	wasmGasConst    uint64 = 1
-	wasmGasArith    uint64 = 3
-	wasmGasLocal    uint64 = 2
-	wasmGasMemory   uint64 = 5
-	wasmGasControl  uint64 = 2
-	wasmGasCall     uint64 = 10
-	wasmGasBranch   uint64 = 3
+	wasmGasConst   uint64 = 1
+	wasmGasArith   uint64 = 3
+	wasmGasLocal   uint64 = 2
+	wasmGasMemory  uint64 = 5
+	wasmGasControl uint64 = 2
+	wasmGasCall    uint64 = 10
+	wasmGasBranch  uint64 = 3
 )
 
 func (e *WASMExecutor) useGas(cost uint64) error {

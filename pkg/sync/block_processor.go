@@ -119,7 +119,7 @@ type BlockProcessor struct {
 	ancestors AncestorLookup
 	hasher    ReceiptHasher
 
-	nextExpected uint64       // next block number we expect to process
+	nextExpected uint64 // next block number we expect to process
 	closed       atomic.Bool
 }
 
@@ -132,10 +132,10 @@ func NewBlockProcessor(config BlockProcessorConfig, inserter BlockInserter) *Blo
 		config.BatchSize = 64
 	}
 	return &BlockProcessor{
-		config:  config,
-		metrics: NewBlockProcessorMetrics(),
-		queue:   make(map[uint64]*queuedBlock),
-		seen:    make(map[types.Hash]bool),
+		config:   config,
+		metrics:  NewBlockProcessorMetrics(),
+		queue:    make(map[uint64]*queuedBlock),
+		seen:     make(map[types.Hash]bool),
 		inserter: inserter,
 	}
 }

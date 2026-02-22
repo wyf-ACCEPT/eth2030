@@ -9,14 +9,14 @@ import (
 
 // Header validation errors.
 var (
-	ErrInvalidParentHash  = errors.New("header: parent hash mismatch")
-	ErrInvalidNumber      = errors.New("header: block number is not parent+1")
+	ErrInvalidParentHash   = errors.New("header: parent hash mismatch")
+	ErrInvalidNumber       = errors.New("header: block number is not parent+1")
 	ErrInvalidTimestamp    = errors.New("header: timestamp not after parent")
-	ErrInvalidGasLimit    = errors.New("header: gas limit change exceeds bounds")
+	ErrInvalidGasLimit     = errors.New("header: gas limit change exceeds bounds")
 	ErrGasUsedExceedsLimit = errors.New("header: gas used exceeds gas limit")
-	ErrExtraDataTooLong   = errors.New("header: extra data exceeds 32 bytes")
-	ErrNilHeader          = errors.New("header: header is nil")
-	ErrNilParent          = errors.New("header: parent header is nil")
+	ErrExtraDataTooLong    = errors.New("header: extra data exceeds 32 bytes")
+	ErrNilHeader           = errors.New("header: header is nil")
+	ErrNilParent           = errors.New("header: parent header is nil")
 )
 
 // MaxExtraDataBytes is the maximum allowed length for the Extra field.

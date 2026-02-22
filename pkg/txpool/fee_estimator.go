@@ -45,10 +45,10 @@ type BlockFeeData struct {
 
 // FeeEstimatorConfig configures the FeeEstimator.
 type FeeEstimatorConfig struct {
-	HistorySize     int      // number of blocks to track
-	MinGasPrice     *big.Int // minimum suggested gas price
-	MinTip          *big.Int // minimum suggested priority fee
-	TipMultiplier   int      // multiplier for median tip suggestion
+	HistorySize   int      // number of blocks to track
+	MinGasPrice   *big.Int // minimum suggested gas price
+	MinTip        *big.Int // minimum suggested priority fee
+	TipMultiplier int      // multiplier for median tip suggestion
 }
 
 // DefaultFeeEstimatorConfig returns sensible defaults.
@@ -65,7 +65,7 @@ func DefaultFeeEstimatorConfig() FeeEstimatorConfig {
 // transactions. It maintains a sliding window of recent block fee data
 // and computes percentile-based recommendations.
 type FeeEstimator struct {
-	config  FeeEstimatorConfig
+	config FeeEstimatorConfig
 
 	mu      sync.RWMutex
 	history []BlockFeeData // circular buffer of recent blocks

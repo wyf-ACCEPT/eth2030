@@ -15,12 +15,12 @@ import (
 
 // Extended proof verifier errors.
 var (
-	ErrCompactProofEmpty    = errors.New("compact_proof: empty proof data")
-	ErrCompactProofCorrupt  = errors.New("compact_proof: corrupted encoding")
-	ErrBatchProofEmpty      = errors.New("batch_proof: no proofs to verify")
-	ErrBatchProofRootNil    = errors.New("batch_proof: nil root hash")
-	ErrProofSizeNegative    = errors.New("proof_size: negative estimate")
-	ErrCrossTrieMismatch    = errors.New("cross_trie: proof results differ")
+	ErrCompactProofEmpty   = errors.New("compact_proof: empty proof data")
+	ErrCompactProofCorrupt = errors.New("compact_proof: corrupted encoding")
+	ErrBatchProofEmpty     = errors.New("batch_proof: no proofs to verify")
+	ErrBatchProofRootNil   = errors.New("batch_proof: nil root hash")
+	ErrProofSizeNegative   = errors.New("proof_size: negative estimate")
+	ErrCrossTrieMismatch   = errors.New("cross_trie: proof results differ")
 )
 
 // ProofSizeEstimator estimates the proof size for a key in a given trie type

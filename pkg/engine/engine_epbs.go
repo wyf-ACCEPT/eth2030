@@ -51,10 +51,10 @@ func (api *EngineAPI) GetPayloadHeaderV1(slot uint64) (*GetPayloadHeaderV1Respon
 // The proposer has committed to a builder's bid and submits it here so the
 // EL can track the commitment and later verify the builder's reveal.
 type SubmitBlindedBlockV1Request struct {
-	Slot            uint64     `json:"slot"`
-	BuilderIndex    uint64     `json:"builderIndex"`
-	BidHash         [32]byte   `json:"bidHash"`
-	BeaconBlockRoot [32]byte   `json:"beaconBlockRoot"`
+	Slot            uint64   `json:"slot"`
+	BuilderIndex    uint64   `json:"builderIndex"`
+	BidHash         [32]byte `json:"bidHash"`
+	BeaconBlockRoot [32]byte `json:"beaconBlockRoot"`
 }
 
 // SubmitBlindedBlockV1Response is the response to engine_submitBlindedBlockV1.

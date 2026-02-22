@@ -433,7 +433,7 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			original:   one,
 			current:    one,
 			newVal:     zero,
-			wantGas:    GasSstoreReset,                        // 2900
+			wantGas:    GasSstoreReset,                    // 2900
 			wantRefund: int64(SstoreClearsScheduleRefund), // 4800
 		},
 		{
@@ -442,7 +442,7 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			current:    one,
 			newVal:     zero,
 			cold:       true,
-			wantGas:    GasSstoreReset + ColdSloadCost,        // 2900 + 2100 = 5000
+			wantGas:    GasSstoreReset + ColdSloadCost,    // 2900 + 2100 = 5000
 			wantRefund: int64(SstoreClearsScheduleRefund), // 4800
 		},
 
@@ -460,7 +460,7 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			original:   one,
 			current:    two,
 			newVal:     zero,
-			wantGas:    WarmStorageReadCost,                       // 100
+			wantGas:    WarmStorageReadCost,               // 100
 			wantRefund: int64(SstoreClearsScheduleRefund), // 4800
 		},
 		{
@@ -468,7 +468,7 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			original:   one,
 			current:    zero,
 			newVal:     two,
-			wantGas:    WarmStorageReadCost,                        // 100
+			wantGas:    WarmStorageReadCost,                // 100
 			wantRefund: -int64(SstoreClearsScheduleRefund), // -4800
 		},
 		{
@@ -476,7 +476,7 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			original:   zero,
 			current:    one,
 			newVal:     zero,
-			wantGas:    WarmStorageReadCost, // 100
+			wantGas:    WarmStorageReadCost,                              // 100
 			wantRefund: int64(GasSstoreSet) - int64(WarmStorageReadCost), // 20000 - 100 = 19900
 		},
 		{
@@ -484,15 +484,15 @@ func TestSstoreGas_AllCases(t *testing.T) {
 			original:   one,
 			current:    two,
 			newVal:     one,
-			wantGas:    WarmStorageReadCost, // 100
+			wantGas:    WarmStorageReadCost,                                // 100
 			wantRefund: int64(GasSstoreReset) - int64(WarmStorageReadCost), // 2900 - 100 = 2800
 		},
 		{
-			name:       "dirty restore from zero: orig=1, cur=0, new=1 (undo clear + restore)",
-			original:   one,
-			current:    zero,
-			newVal:     one,
-			wantGas:    WarmStorageReadCost, // 100
+			name:     "dirty restore from zero: orig=1, cur=0, new=1 (undo clear + restore)",
+			original: one,
+			current:  zero,
+			newVal:   one,
+			wantGas:  WarmStorageReadCost, // 100
 			// Undo clear: -4800, restore: +2800 = -2000
 			wantRefund: -int64(SstoreClearsScheduleRefund) + int64(GasSstoreReset) - int64(WarmStorageReadCost),
 		},
@@ -525,11 +525,11 @@ func TestSstoreRefund_MaxCap(t *testing.T) {
 		maxRefund uint64
 		capped    uint64
 	}{
-		{100000, 50000, 20000, 20000},  // 100000/5 = 20000, refund capped
-		{100000, 10000, 20000, 10000},  // refund below cap
-		{100000, 20000, 20000, 20000},  // refund exactly at cap
-		{50000, 25000, 10000, 10000},   // 50000/5 = 10000
-		{0, 0, 0, 0},                    // zero gas used
+		{100000, 50000, 20000, 20000}, // 100000/5 = 20000, refund capped
+		{100000, 10000, 20000, 10000}, // refund below cap
+		{100000, 20000, 20000, 20000}, // refund exactly at cap
+		{50000, 25000, 10000, 10000},  // 50000/5 = 10000
+		{0, 0, 0, 0},                  // zero gas used
 	}
 
 	for _, tt := range tests {
@@ -762,9 +762,9 @@ func TestCallGas_63_64Rule_Comprehensive(t *testing.T) {
 		{1000000, 984374, 984374},  // just under cap
 
 		// Edge cases (integer division: x/64 truncates).
-		{1, 1000, 1},    // 1 - 1/64 = 1 - 0 = 1
-		{63, 1000, 63},  // 63 - 63/64 = 63 - 0 = 63
-		{64, 1000, 63},  // 64 - 64/64 = 64 - 1 = 63
+		{1, 1000, 1},     // 1 - 1/64 = 1 - 0 = 1
+		{63, 1000, 63},   // 63 - 63/64 = 63 - 0 = 63
+		{64, 1000, 63},   // 64 - 64/64 = 64 - 1 = 63
 		{128, 1000, 126}, // 128 - 128/64 = 128 - 2 = 126
 	}
 

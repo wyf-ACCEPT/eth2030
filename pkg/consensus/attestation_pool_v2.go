@@ -34,12 +34,12 @@ const (
 
 // Enhanced attestation pool errors.
 var (
-	ErrPoolV2AttNil          = errors.New("attestation_pool_v2: nil attestation")
-	ErrPoolV2AttNoBits       = errors.New("attestation_pool_v2: empty aggregation bits")
-	ErrPoolV2AttSlotTooOld   = errors.New("attestation_pool_v2: attestation slot too old")
-	ErrPoolV2AttFutureSlot   = errors.New("attestation_pool_v2: attestation slot in future")
-	ErrPoolV2AttDuplicate    = errors.New("attestation_pool_v2: duplicate attestation")
-	ErrPoolV2Full            = errors.New("attestation_pool_v2: pool capacity exceeded")
+	ErrPoolV2AttNil           = errors.New("attestation_pool_v2: nil attestation")
+	ErrPoolV2AttNoBits        = errors.New("attestation_pool_v2: empty aggregation bits")
+	ErrPoolV2AttSlotTooOld    = errors.New("attestation_pool_v2: attestation slot too old")
+	ErrPoolV2AttFutureSlot    = errors.New("attestation_pool_v2: attestation slot in future")
+	ErrPoolV2AttDuplicate     = errors.New("attestation_pool_v2: duplicate attestation")
+	ErrPoolV2Full             = errors.New("attestation_pool_v2: pool capacity exceeded")
 	ErrPoolV2InvalidCommittee = errors.New("attestation_pool_v2: committee index out of range")
 )
 
@@ -63,10 +63,10 @@ type committeeKey struct {
 // monitoring network health and proposer efficiency.
 type InclusionDelayStats struct {
 	TotalAttestations uint64
-	TotalDelay        uint64  // sum of all inclusion delays
+	TotalDelay        uint64 // sum of all inclusion delays
 	MinDelay          uint64
 	MaxDelay          uint64
-	OptimalCount      uint64  // attestations included at delay=1
+	OptimalCount      uint64 // attestations included at delay=1
 }
 
 // AverageDelay returns the mean inclusion delay across all tracked attestations.

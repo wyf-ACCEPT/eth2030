@@ -19,16 +19,16 @@ import (
 
 // RealSTFExecutor errors.
 var (
-	ErrRealSTFNilInput       = errors.New("real_stf: nil input")
-	ErrRealSTFNilRegistry    = errors.New("real_stf: nil guest registry")
-	ErrRealSTFEmptyTx        = errors.New("real_stf: empty transactions")
-	ErrRealSTFNilBlock       = errors.New("real_stf: nil block header")
-	ErrRealSTFEncodeFailed   = errors.New("real_stf: encoding failed")
-	ErrRealSTFExecFailed     = errors.New("real_stf: execution failed")
-	ErrRealSTFProofFailed    = errors.New("real_stf: proof generation failed")
-	ErrRealSTFVerifyFailed   = errors.New("real_stf: proof verification failed")
-	ErrRealSTFRootMismatch   = errors.New("real_stf: post state root mismatch")
-	ErrRealSTFNoSTFProgram   = errors.New("real_stf: STF program not registered")
+	ErrRealSTFNilInput     = errors.New("real_stf: nil input")
+	ErrRealSTFNilRegistry  = errors.New("real_stf: nil guest registry")
+	ErrRealSTFEmptyTx      = errors.New("real_stf: empty transactions")
+	ErrRealSTFNilBlock     = errors.New("real_stf: nil block header")
+	ErrRealSTFEncodeFailed = errors.New("real_stf: encoding failed")
+	ErrRealSTFExecFailed   = errors.New("real_stf: execution failed")
+	ErrRealSTFProofFailed  = errors.New("real_stf: proof generation failed")
+	ErrRealSTFVerifyFailed = errors.New("real_stf: proof verification failed")
+	ErrRealSTFRootMismatch = errors.New("real_stf: post state root mismatch")
+	ErrRealSTFNoSTFProgram = errors.New("real_stf: STF program not registered")
 )
 
 // RealSTFConfig holds configuration for the real STF executor.

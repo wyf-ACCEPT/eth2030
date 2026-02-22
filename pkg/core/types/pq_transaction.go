@@ -21,8 +21,8 @@ const (
 
 // Expected PQ signature sizes per algorithm (NIST level 3 parameter sets).
 const (
-	DilithiumSigSize = 3293
-	FalconSigSize    = 1280
+	DilithiumSigSize   = 3293
+	FalconSigSize      = 1280
 	SPHINCSPlusSigSize = 17088
 )
 
@@ -46,7 +46,7 @@ type PQTransaction struct {
 	Data     []byte
 
 	// PQ signature fields.
-	PQSignatureType  uint8  // 0=Dilithium, 1=Falcon, 2=SPHINCS+
+	PQSignatureType  uint8 // 0=Dilithium, 1=Falcon, 2=SPHINCS+
 	PQSignature      []byte
 	PQPublicKey      []byte
 	ClassicSignature []byte // optional ECDSA fallback

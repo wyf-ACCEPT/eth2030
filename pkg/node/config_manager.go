@@ -166,8 +166,8 @@ func DefaultManagedConfig() *ManagedConfig {
 
 // ConfigManager provides validated, multi-source configuration management.
 type ConfigManager struct {
-	base     *ManagedConfig
-	sources  map[string]ConfigSource // tracks where each field came from
+	base    *ManagedConfig
+	sources map[string]ConfigSource // tracks where each field came from
 }
 
 // NewConfigManager creates a ConfigManager with default configuration.

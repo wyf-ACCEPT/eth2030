@@ -1,4 +1,4 @@
-# eth2030 Progress Report
+# ETH2030 Progress Report
 
 > Last updated: 2026-02-22
 
@@ -20,21 +20,21 @@
 
 ## go-ethereum Integration
 
-eth2030 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
+ETH2030 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
 
 | Component | Description |
 |-----------|-------------|
-| `pkg/geth/` | Adapter package bridging eth2030 types to go-ethereum interfaces |
+| `pkg/geth/` | Adapter package bridging ETH2030 types to go-ethereum interfaces |
 | `pkg/geth/processor.go` | Block processor using `gethcore.ApplyMessage` for all transactions |
 | `pkg/geth/extensions.go` | Custom precompile injection via `evm.SetPrecompiles()` (13 precompiles) |
 | `pkg/geth/statedb.go` | State creation using go-ethereum's real trie DB |
-| `pkg/geth/config.go` | Chain config mapping (eth2030 forks → go-ethereum params) |
+| `pkg/geth/config.go` | Chain config mapping (ETH2030 forks → go-ethereum params) |
 
 **Architecture:**
 ```
-eth2030 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
+ETH2030 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
                      |
-              core/types (eth2030's public type system — unchanged)
+              core/types (ETH2030's public type system — unchanged)
                      |
               pkg/geth/ (adapter package — only place that imports go-ethereum)
                      |
@@ -50,7 +50,7 @@ eth2030 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
 | NII | 4 | 0x0201-0x0204 | I+ |
 | Field arithmetic | 4 | 0x0205-0x0208 | I+ |
 
-**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes remain eth2030-native-EVM-only.
+**Opcode limitation**: go-ethereum's `operation` struct and `JumpTable` type are unexported, so 26 custom opcodes remain ETH2030-native-EVM-only.
 
 ## EF State Test Validation
 

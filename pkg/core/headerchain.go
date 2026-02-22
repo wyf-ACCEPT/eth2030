@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrKnownBlock     = errors.New("block already known")
-	ErrInsertStopped  = errors.New("insert stopped")
+	ErrKnownBlock    = errors.New("block already known")
+	ErrInsertStopped = errors.New("insert stopped")
 )
 
 // HeaderChain manages the canonical header chain with block insertion,

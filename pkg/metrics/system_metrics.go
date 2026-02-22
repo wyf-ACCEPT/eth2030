@@ -217,13 +217,13 @@ func (sm *SystemMetrics) ChainSyncProgress() float64 {
 // metricsSnapshot is the internal type used for JSON serialization of all
 // system metrics.
 type metricsSnapshot struct {
-	Goroutines   int       `json:"goroutines"`
-	Memory       MemStats  `json:"memory"`
-	UptimeSec    float64   `json:"uptimeSeconds"`
-	PeerCount    int       `json:"peerCount"`
-	BlockHeight  uint64    `json:"blockHeight"`
-	SyncProgress float64   `json:"syncProgress"`
-	CollectedAt  string    `json:"collectedAt"`
+	Goroutines   int      `json:"goroutines"`
+	Memory       MemStats `json:"memory"`
+	UptimeSec    float64  `json:"uptimeSeconds"`
+	PeerCount    int      `json:"peerCount"`
+	BlockHeight  uint64   `json:"blockHeight"`
+	SyncProgress float64  `json:"syncProgress"`
+	CollectedAt  string   `json:"collectedAt"`
 }
 
 // ExportJSON serializes all current metrics as a JSON object. It performs

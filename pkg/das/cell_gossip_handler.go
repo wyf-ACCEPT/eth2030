@@ -22,12 +22,12 @@ import (
 
 // Cell gossip handler errors.
 var (
-	ErrGossipHandlerClosed     = errors.New("das/gossip: handler is closed")
-	ErrGossipCellDuplicate     = errors.New("das/gossip: duplicate cell received")
-	ErrGossipCellValidation    = errors.New("das/gossip: cell validation failed")
-	ErrGossipCellNilMessage    = errors.New("das/gossip: nil cell message")
-	ErrGossipBlobNotTracked    = errors.New("das/gossip: blob index not tracked")
-	ErrGossipBroadcastNoPeers  = errors.New("das/gossip: no peers available for broadcast")
+	ErrGossipHandlerClosed    = errors.New("das/gossip: handler is closed")
+	ErrGossipCellDuplicate    = errors.New("das/gossip: duplicate cell received")
+	ErrGossipCellValidation   = errors.New("das/gossip: cell validation failed")
+	ErrGossipCellNilMessage   = errors.New("das/gossip: nil cell message")
+	ErrGossipBlobNotTracked   = errors.New("das/gossip: blob index not tracked")
+	ErrGossipBroadcastNoPeers = errors.New("das/gossip: no peers available for broadcast")
 )
 
 // CellGossipMessage is an extended cell message carrying a KZG proof and slot
@@ -126,9 +126,9 @@ type CellGossipCallback func(blobIndex int, event string)
 
 // blobCellState tracks the cells received for a single blob.
 type blobCellState struct {
-	cells       map[int]CellGossipMessage // cell index -> message
-	ready       bool                       // true when reconstruction threshold met
-	reconstructed bool                     // true when blob has been reconstructed
+	cells         map[int]CellGossipMessage // cell index -> message
+	ready         bool                      // true when reconstruction threshold met
+	reconstructed bool                      // true when blob has been reconstructed
 }
 
 // CellGossipHandler manages cell-level gossip: receiving, validating, storing,
@@ -169,12 +169,12 @@ type CellGossipHandler struct {
 
 // GossipHandlerStats holds gossip handler statistics.
 type GossipHandlerStats struct {
-	CellsReceived    int64
-	CellsValidated   int64
-	CellsRejected    int64
-	CellsDuplicate   int64
-	CellsBroadcast   int64
-	BlobsReady       int64
+	CellsReceived  int64
+	CellsValidated int64
+	CellsRejected  int64
+	CellsDuplicate int64
+	CellsBroadcast int64
+	BlobsReady     int64
 }
 
 // CellGossipHandlerConfig configures the gossip handler.

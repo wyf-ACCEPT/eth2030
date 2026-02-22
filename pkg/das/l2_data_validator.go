@@ -54,10 +54,10 @@ type L2DataReceipt struct {
 
 // L2ChainMetrics tracks per-chain throughput statistics.
 type L2ChainMetrics struct {
-	TotalBytes         uint64
-	TotalBlobs         uint64
-	AvgBlobSize        uint64
-	PeakThroughputBps  uint64
+	TotalBytes        uint64
+	TotalBlobs        uint64
+	AvgBlobSize       uint64
+	PeakThroughputBps uint64
 }
 
 // l2ChainState is internal per-chain state kept by the validator.

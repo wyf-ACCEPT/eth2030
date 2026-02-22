@@ -113,7 +113,7 @@ func TestCellGossipHandlerReconstructionReady(t *testing.T) {
 
 func TestCellGossipHandlerGetMissingCells(t *testing.T) {
 	handler := NewCellGossipHandler(CellGossipHandlerConfig{
-		MaxCellIndex: 5,
+		MaxCellIndex:            5,
 		ReconstructionThreshold: 3,
 	})
 

@@ -19,7 +19,7 @@ import (
 // PrometheusConfig configures the Prometheus exporter.
 type PrometheusConfig struct {
 	// Namespace is an optional prefix prepended to all metric names
-	// (e.g. "eth2030" produces "eth2030_chain_height").
+	// (e.g. "ETH2030" produces "ETH2030_chain_height").
 	Namespace string
 	// EnableRuntime controls whether Go runtime metrics (goroutines,
 	// memory, GC) are included in the output.
@@ -31,7 +31,7 @@ type PrometheusConfig struct {
 // DefaultPrometheusConfig returns a config with sensible defaults.
 func DefaultPrometheusConfig() PrometheusConfig {
 	return PrometheusConfig{
-		Namespace:     "eth2030",
+		Namespace:     "ETH2030",
 		EnableRuntime: true,
 		Path:          "/metrics",
 	}

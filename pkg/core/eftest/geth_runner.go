@@ -137,28 +137,28 @@ type stAuthorizationEntry struct {
 // We parse these from the raw JSON since the existing stTransaction struct
 // doesn't have all fields.
 type gethStTransaction struct {
-	Data                 []string                `json:"data"`
-	GasLimit             []string                `json:"gasLimit"`
-	Value                []string                `json:"value"`
-	GasPrice             string                  `json:"gasPrice"`
-	Nonce                string                  `json:"nonce"`
-	To                   string                  `json:"to"`
-	Sender               string                  `json:"sender"`
-	SecretKey            string                  `json:"secretKey"`
-	MaxFeePerGas         string                  `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas string                  `json:"maxPriorityFeePerGas"`
-	AccessLists          [][]stAccessListEntry    `json:"accessLists"`
-	BlobVersionedHashes  []string                `json:"blobVersionedHashes"`
-	MaxFeePerBlobGas     string                  `json:"maxFeePerBlobGas"`
-	AuthorizationList    []stAuthorizationEntry   `json:"authorizationList"`
+	Data                 []string               `json:"data"`
+	GasLimit             []string               `json:"gasLimit"`
+	Value                []string               `json:"value"`
+	GasPrice             string                 `json:"gasPrice"`
+	Nonce                string                 `json:"nonce"`
+	To                   string                 `json:"to"`
+	Sender               string                 `json:"sender"`
+	SecretKey            string                 `json:"secretKey"`
+	MaxFeePerGas         string                 `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas string                 `json:"maxPriorityFeePerGas"`
+	AccessLists          [][]stAccessListEntry  `json:"accessLists"`
+	BlobVersionedHashes  []string               `json:"blobVersionedHashes"`
+	MaxFeePerBlobGas     string                 `json:"maxFeePerBlobGas"`
+	AuthorizationList    []stAuthorizationEntry `json:"authorizationList"`
 }
 
 // gethStJSON extends stJSON with the full transaction format.
 type gethStJSON struct {
-	Env  stEnv                          `json:"env"`
-	Pre  map[string]stAccount           `json:"pre"`
-	Tx   gethStTransaction              `json:"transaction"`
-	Post map[string][]stPostState       `json:"post"`
+	Env  stEnv                    `json:"env"`
+	Pre  map[string]stAccount     `json:"pre"`
+	Tx   gethStTransaction        `json:"transaction"`
+	Post map[string][]stPostState `json:"post"`
 }
 
 // GethStateTest wraps a parsed state test with the full transaction format.

@@ -14,10 +14,10 @@ import (
 
 // Migration errors.
 var (
-	ErrMigrationNotStarted  = errors.New("verkle: migration not started")
-	ErrMigrationDeadline    = errors.New("verkle: migration deadline exceeded")
-	ErrOverlayReadFailed    = errors.New("verkle: overlay read failed")
-	ErrAccountNotFound      = errors.New("verkle: account not found in either tree")
+	ErrMigrationNotStarted = errors.New("verkle: migration not started")
+	ErrMigrationDeadline   = errors.New("verkle: migration deadline exceeded")
+	ErrOverlayReadFailed   = errors.New("verkle: overlay read failed")
+	ErrAccountNotFound     = errors.New("verkle: account not found in either tree")
 )
 
 // MPTToVerkleConverter reads from an MPT-based source and writes converted
@@ -32,12 +32,12 @@ type MPTToVerkleConverter struct {
 
 // ConverterProgress tracks the conversion progress from MPT to Verkle.
 type ConverterProgress struct {
-	AccountsConverted    uint64
+	AccountsConverted     uint64
 	StorageSlotsConverted uint64
-	CodeChunksConverted  uint64
-	StartTime            time.Time
-	LastUpdateTime       time.Time
-	Complete             bool
+	CodeChunksConverted   uint64
+	StartTime             time.Time
+	LastUpdateTime        time.Time
+	Complete              bool
 }
 
 // NewMPTToVerkleConverter creates a new converter that reads from the MPT

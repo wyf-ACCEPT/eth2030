@@ -123,13 +123,13 @@ type MigrationScheduler struct {
 	state  SchedulerState
 
 	// Progress tracking.
-	checkpoint     MigrationCheckpoint
-	accountsDone   uint64
-	storageDone    uint64
-	errCount       uint64
-	lastError      error
-	startTime      time.Time
-	lastTickTime   time.Time
+	checkpoint   MigrationCheckpoint
+	accountsDone uint64
+	storageDone  uint64
+	errCount     uint64
+	lastError    error
+	startTime    time.Time
+	lastTickTime time.Time
 
 	// Stop signal for the background goroutine.
 	stopCh chan struct{}

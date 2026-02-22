@@ -174,8 +174,8 @@ func TestRunJumpi(t *testing.T) {
 	// Code: PUSH1 1, PUSH1 6, JUMPI, INVALID, INVALID, INVALID, JUMPDEST, STOP
 	// Condition=1 (true), dest=6
 	contract.Code = []byte{
-		byte(PUSH1), 1,   // condition (true)
-		byte(PUSH1), 6,   // destination
+		byte(PUSH1), 1, // condition (true)
+		byte(PUSH1), 6, // destination
 		byte(JUMPI),
 		byte(INVALID),
 		byte(JUMPDEST),
@@ -194,8 +194,8 @@ func TestRunJumpiNotTaken(t *testing.T) {
 	// Code: PUSH1 0, PUSH1 7, JUMPI, STOP, ...
 	// Condition=0 (false), should fall through to STOP
 	contract.Code = []byte{
-		byte(PUSH1), 0,   // condition (false)
-		byte(PUSH1), 7,   // destination (doesn't matter)
+		byte(PUSH1), 0, // condition (false)
+		byte(PUSH1), 7, // destination (doesn't matter)
 		byte(JUMPI),
 		byte(STOP),
 	}
@@ -559,12 +559,12 @@ func TestMemoryExpansionGasDelta(t *testing.T) {
 	// First MSTORE at offset 0 (expands to 32 bytes),
 	// then MSTORE at offset 32 (expands to 64 bytes).
 	contract.Code = []byte{
-		byte(PUSH1), 0x01,  // value
-		byte(PUSH1), 0x00,  // offset 0
-		byte(MSTORE),       // mem: 0 -> 32 bytes
-		byte(PUSH1), 0x02,  // value
-		byte(PUSH1), 0x20,  // offset 32
-		byte(MSTORE),       // mem: 32 -> 64 bytes
+		byte(PUSH1), 0x01, // value
+		byte(PUSH1), 0x00, // offset 0
+		byte(MSTORE),      // mem: 0 -> 32 bytes
+		byte(PUSH1), 0x02, // value
+		byte(PUSH1), 0x20, // offset 32
+		byte(MSTORE), // mem: 32 -> 64 bytes
 		byte(STOP),
 	}
 
@@ -653,7 +653,7 @@ func TestMemoryExpansionLargeOffset(t *testing.T) {
 	// Rounded to words: ceil(4128/32) = 129 words. newSize = 129*32 = 4128.
 	// Cost = 129*3 + 129^2/512 = 387 + 32 = 419
 	contract.Code = []byte{
-		byte(PUSH1), 0x00,      // value
+		byte(PUSH1), 0x00, // value
 		byte(PUSH2), 0x10, 0x00, // offset = 4096
 		byte(MSTORE),
 		byte(STOP),
@@ -670,7 +670,7 @@ func TestMemoryExpansionLargeOffset(t *testing.T) {
 	if !ok {
 		t.Fatal("MemoryCost(0, 4128) returned ok=false")
 	}
-	expectedGas := uint64(3 + 3 + 3) + expectedMemCost
+	expectedGas := uint64(3+3+3) + expectedMemCost
 	if gasUsed != expectedGas {
 		t.Errorf("gas used = %d, want %d (large memory expansion)", gasUsed, expectedGas)
 	}
@@ -740,10 +740,10 @@ func TestMemoryExpansionRepeatedSameSize(t *testing.T) {
 	contract.Code = []byte{
 		byte(PUSH1), 0x01,
 		byte(PUSH1), 0x00,
-		byte(MSTORE),       // first: expand to 32
+		byte(MSTORE), // first: expand to 32
 		byte(PUSH1), 0x02,
 		byte(PUSH1), 0x00,
-		byte(MSTORE),       // second: no expansion needed
+		byte(MSTORE), // second: no expansion needed
 		byte(STOP),
 	}
 

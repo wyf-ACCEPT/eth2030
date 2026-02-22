@@ -5,7 +5,9 @@
 // via a random linear combination technique.
 //
 // Given signatures (sig_i, pk_i, msg_i), batch verification computes:
-//   e(sum(r_i * pk_i), H(m)) == e(G1, sum(r_i * sig_i))
+//
+//	e(sum(r_i * pk_i), H(m)) == e(G1, sum(r_i * sig_i))
+//
 // where r_i are random scalars. This catches invalid signatures with
 // overwhelming probability.
 //
@@ -38,9 +40,9 @@ const (
 
 // Batch verification errors.
 var (
-	ErrBatchVerifyEmpty     = errors.New("batch_verifier: empty batch")
-	ErrBatchVerifyMismatch  = errors.New("batch_verifier: length mismatch between signatures and pubkeys")
-	ErrBatchVerifyFailed    = errors.New("batch_verifier: batch verification failed")
+	ErrBatchVerifyEmpty      = errors.New("batch_verifier: empty batch")
+	ErrBatchVerifyMismatch   = errors.New("batch_verifier: length mismatch between signatures and pubkeys")
+	ErrBatchVerifyFailed     = errors.New("batch_verifier: batch verification failed")
 	ErrBatchVerifyInvalidSig = errors.New("batch_verifier: invalid signature found in fallback")
 )
 
@@ -186,9 +188,9 @@ func (bv *BatchVerifier) verifyEntries(entries []BatchVerifyEntry) *BatchVerifyR
 
 // randomLinearCombinationVerify implements the batch BLS verification
 // using random linear combination. For entries (pk_i, msg_i, sig_i):
-//   1. Generate random scalars r_i
-//   2. Compute weighted sums using r_i
-//   3. Verify the combined pairing check
+//  1. Generate random scalars r_i
+//  2. Compute weighted sums using r_i
+//  3. Verify the combined pairing check
 //
 // This is a simulation: in production, this would use actual BLS
 // pairing operations from the crypto library.

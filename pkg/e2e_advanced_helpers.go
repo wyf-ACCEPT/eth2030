@@ -52,9 +52,9 @@ func (m *MockProofValidator) ValidateProof(blockRoot, stateRoot types.Hash, proo
 // pairing operations for correct signature verification.
 type AlwaysValidBLS struct{}
 
-func (b *AlwaysValidBLS) Name() string                                           { return "test-always-valid" }
-func (b *AlwaysValidBLS) Verify(pubkey, msg, sig []byte) bool                    { return true }
-func (b *AlwaysValidBLS) AggregateVerify(pubkeys, msgs [][]byte, sig []byte) bool { return true }
+func (b *AlwaysValidBLS) Name() string                                               { return "test-always-valid" }
+func (b *AlwaysValidBLS) Verify(pubkey, msg, sig []byte) bool                        { return true }
+func (b *AlwaysValidBLS) AggregateVerify(pubkeys, msgs [][]byte, sig []byte) bool    { return true }
 func (b *AlwaysValidBLS) FastAggregateVerify(pubkeys [][]byte, msg, sig []byte) bool { return true }
 
 // MakeFinalityPipeline creates a FinalityPipeline with mock executor and prover.
@@ -94,7 +94,7 @@ func MakeFPVote(slot, validatorIdx, weight uint64, blockHash types.Hash) *consen
 		Weight:         weight,
 		Pubkey:         pubkey,
 		Signature:      sig,
-		SigningData:     signingData,
+		SigningData:    signingData,
 	}
 }
 

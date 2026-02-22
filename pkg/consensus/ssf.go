@@ -15,11 +15,11 @@ import (
 
 // SSF errors.
 var (
-	ErrSSFDuplicateVote   = errors.New("ssf: validator already voted for this slot")
+	ErrSSFDuplicateVote    = errors.New("ssf: validator already voted for this slot")
 	ErrSSFSlotAlreadyFinal = errors.New("ssf: slot is already finalized")
-	ErrSSFSlotMismatch    = errors.New("ssf: vote slot does not match target slot")
-	ErrSSFZeroStake       = errors.New("ssf: total stake is zero")
-	ErrSSFInvalidVoter    = errors.New("ssf: voter index exceeds voter limit")
+	ErrSSFSlotMismatch     = errors.New("ssf: vote slot does not match target slot")
+	ErrSSFZeroStake        = errors.New("ssf: total stake is zero")
+	ErrSSFInvalidVoter     = errors.New("ssf: voter index exceeds voter limit")
 )
 
 // SSFConfig holds parameters for single-slot finality.

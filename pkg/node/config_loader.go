@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// NodeConfig holds the full configuration for an eth2030 node,
+// NodeConfig holds the full configuration for an ETH2030 node,
 // parsed from a TOML-like configuration file. It is separate from
 // Config to support richer structured configuration with nested sections.
 type NodeConfig struct {
@@ -15,10 +15,10 @@ type NodeConfig struct {
 	NetworkID uint64
 	SyncMode  string
 
-	P2P     P2PConfig
-	RPC     RPCConfig
-	Mining  MiningConfig
-	Log     LogConfig
+	P2P    P2PConfig
+	RPC    RPCConfig
+	Mining MiningConfig
+	Log    LogConfig
 }
 
 // P2PConfig holds P2P networking configuration.

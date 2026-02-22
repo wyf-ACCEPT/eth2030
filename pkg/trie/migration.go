@@ -15,12 +15,12 @@ import (
 
 // Migration errors.
 var (
-	ErrMigrationNilSource     = errors.New("migration: nil source trie")
-	ErrMigrationAlreadyDone   = errors.New("migration: migration already complete")
-	ErrMigrationNoCheckpoint  = errors.New("migration: no checkpoint to restore from")
-	ErrMigrationInvalidBatch  = errors.New("migration: invalid batch size")
-	ErrMigrationInvalidSplit  = errors.New("migration: invalid split count")
-	ErrMigrationGasExceeded   = errors.New("migration: gas budget exceeded")
+	ErrMigrationNilSource    = errors.New("migration: nil source trie")
+	ErrMigrationAlreadyDone  = errors.New("migration: migration already complete")
+	ErrMigrationNoCheckpoint = errors.New("migration: no checkpoint to restore from")
+	ErrMigrationInvalidBatch = errors.New("migration: invalid batch size")
+	ErrMigrationInvalidSplit = errors.New("migration: invalid split count")
+	ErrMigrationGasExceeded  = errors.New("migration: gas budget exceeded")
 )
 
 // BatchConverter processes accounts in configurable batch sizes during
@@ -152,9 +152,9 @@ func InRange(key types.Hash, r AddressRange) bool {
 
 // StateProofGenerator generates MPT proofs during migration for verification.
 type StateProofGenerator struct {
-	source   *Trie
-	proofs   map[types.Hash][][]byte
-	mu       sync.Mutex
+	source *Trie
+	proofs map[types.Hash][][]byte
+	mu     sync.Mutex
 }
 
 // NewStateProofGenerator creates a proof generator for the given source trie.

@@ -29,7 +29,7 @@ func slPayload(bid *BuilderBid) *PayloadEnvelope {
 	return &PayloadEnvelope{
 		PayloadRoot: bid.BlockHash, BuilderIndex: bid.BuilderIndex,
 		BeaconBlockRoot: types.HexToHash("0xbeef"),
-		Slot: bid.Slot, StateRoot: types.HexToHash("0xcafe"),
+		Slot:            bid.Slot, StateRoot: types.HexToHash("0xcafe"),
 	}
 }
 

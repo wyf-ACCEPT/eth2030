@@ -33,7 +33,7 @@ type GossipScoreConfig struct {
 	Weights            GossipScoreWeights
 	GossipBanThreshold float64       // Composite score at which a peer gets gossip-banned.
 	LatencyTarget      time.Duration // Ideal response latency; below this earns full score.
-	LatencyPenalty      time.Duration // Latency above this earns the worst latency score.
+	LatencyPenalty     time.Duration // Latency above this earns the worst latency score.
 	DecayInterval      time.Duration // How often latency samples decay.
 	DecayAlpha         float64       // Exponential moving average alpha for latency (0..1).
 	MaxTopics          int           // Maximum number of topics tracked per peer.
@@ -45,7 +45,7 @@ func DefaultGossipScoreConfig() GossipScoreConfig {
 		Weights:            DefaultGossipScoreWeights(),
 		GossipBanThreshold: -60.0,
 		LatencyTarget:      200 * time.Millisecond,
-		LatencyPenalty:      5 * time.Second,
+		LatencyPenalty:     5 * time.Second,
 		DecayInterval:      30 * time.Second,
 		DecayAlpha:         0.3,
 		MaxTopics:          16,

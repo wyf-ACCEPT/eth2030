@@ -69,7 +69,7 @@ var (
 type EquivocationEvidence struct {
 	Type           EquivocationType
 	ValidatorIndex ValidatorIndex
-	Slot           Slot   // slot where the equivocation was detected
+	Slot           Slot // slot where the equivocation was detected
 	Evidence1Hash  [32]byte
 	Evidence2Hash  [32]byte
 	// For attestation equivocations, store source/target info.

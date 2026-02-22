@@ -32,14 +32,14 @@ const (
 
 // Hash-based signature errors.
 var (
-	ErrHashSigInvalidHeight   = errors.New("pqc: tree height must be 1-20")
+	ErrHashSigInvalidHeight     = errors.New("pqc: tree height must be 1-20")
 	ErrHashSigInvalidWinternitz = errors.New("pqc: Winternitz parameter must be 4 or 16")
-	ErrHashSigNoKeysLeft      = errors.New("pqc: no remaining one-time keys")
-	ErrHashSigNilPrivateKey   = errors.New("pqc: nil private key")
-	ErrHashSigNilMessage      = errors.New("pqc: nil message")
-	ErrHashSigNilSignature    = errors.New("pqc: nil signature")
-	ErrHashSigInvalidLeaf     = errors.New("pqc: leaf index exceeds tree size")
-	ErrHashSigBadAuthPath     = errors.New("pqc: auth path length mismatch")
+	ErrHashSigNoKeysLeft        = errors.New("pqc: no remaining one-time keys")
+	ErrHashSigNilPrivateKey     = errors.New("pqc: nil private key")
+	ErrHashSigNilMessage        = errors.New("pqc: nil message")
+	ErrHashSigNilSignature      = errors.New("pqc: nil signature")
+	ErrHashSigInvalidLeaf       = errors.New("pqc: leaf index exceeds tree size")
+	ErrHashSigBadAuthPath       = errors.New("pqc: auth path length mismatch")
 )
 
 // HashSigKeyPair holds a hash-based signature key pair.

@@ -37,10 +37,10 @@ const (
 
 // Pre-computed log and exp tables for GF(2^8).
 var (
-	gf256LogTable [256]uint8   // gf256LogTable[a] = discrete log base g of a
-	gf256ExpTable [512]uint8   // doubled for wraparound avoidance
+	gf256LogTable [256]uint8      // gf256LogTable[a] = discrete log base g of a
+	gf256ExpTable [512]uint8      // doubled for wraparound avoidance
 	gf256MulTable [256][256]uint8 // direct multiplication lookup
-	gf256InvTable [256]uint8   // multiplicative inverse table
+	gf256InvTable [256]uint8      // multiplicative inverse table
 	gf256InitOnce sync.Once
 )
 

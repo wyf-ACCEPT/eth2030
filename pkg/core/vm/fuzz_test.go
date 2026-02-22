@@ -359,7 +359,7 @@ func FuzzPrecompileBlake2F(f *testing.F) {
 	// Valid: 213 bytes with 1 round and final byte = 1.
 	valid := make([]byte, 213)
 	binary.BigEndian.PutUint32(valid[:4], 1) // 1 round
-	valid[212] = 1                            // final = true
+	valid[212] = 1                           // final = true
 	f.Add(valid)
 	f.Add([]byte{})
 	f.Add(make([]byte, 213))

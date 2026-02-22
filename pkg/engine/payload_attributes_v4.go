@@ -34,15 +34,15 @@ const (
 
 // Prague payload attributes errors.
 var (
-	ErrPragueAttrNil             = errors.New("payload_attributes_v4: nil attributes")
-	ErrPragueAttrTargetZero      = errors.New("payload_attributes_v4: target blob count is zero")
-	ErrPragueAttrMaxZero         = errors.New("payload_attributes_v4: max blob count is zero")
+	ErrPragueAttrNil              = errors.New("payload_attributes_v4: nil attributes")
+	ErrPragueAttrTargetZero       = errors.New("payload_attributes_v4: target blob count is zero")
+	ErrPragueAttrMaxZero          = errors.New("payload_attributes_v4: max blob count is zero")
 	ErrPragueAttrTargetExceedsMax = errors.New("payload_attributes_v4: target blob count exceeds max blob count")
-	ErrPragueAttrMaxTooLarge     = errors.New("payload_attributes_v4: max blob count exceeds absolute maximum")
-	ErrPragueAttrTargetTooSmall  = errors.New("payload_attributes_v4: target blob count below minimum")
-	ErrPragueAttrBeaconRoot      = errors.New("payload_attributes_v4: parent beacon block root is zero")
-	ErrPragueAttrTimestampZero   = errors.New("payload_attributes_v4: timestamp is zero")
-	ErrPragueAttrTimestampOld    = errors.New("payload_attributes_v4: timestamp not after parent")
+	ErrPragueAttrMaxTooLarge      = errors.New("payload_attributes_v4: max blob count exceeds absolute maximum")
+	ErrPragueAttrTargetTooSmall   = errors.New("payload_attributes_v4: target blob count below minimum")
+	ErrPragueAttrBeaconRoot       = errors.New("payload_attributes_v4: parent beacon block root is zero")
+	ErrPragueAttrTimestampZero    = errors.New("payload_attributes_v4: timestamp is zero")
+	ErrPragueAttrTimestampOld     = errors.New("payload_attributes_v4: timestamp not after parent")
 )
 
 // PayloadAttributesV4Prague extends V3 payload attributes with blob count

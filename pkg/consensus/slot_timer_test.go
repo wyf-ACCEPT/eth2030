@@ -43,15 +43,15 @@ func TestSlotTimer_SlotAt(t *testing.T) {
 		now  uint64
 		want uint64
 	}{
-		{999, 0},     // before genesis
-		{1000, 0},    // at genesis
-		{1001, 0},    // 1s into slot 0
-		{1011, 0},    // 11s into slot 0
-		{1012, 1},    // slot 1 starts
-		{1023, 1},    // end of slot 1
-		{1024, 2},    // slot 2 starts
-		{1384, 32},   // slot 32 = epoch 1 start
-		{2000, 83},   // (2000-1000)/12 = 83
+		{999, 0},   // before genesis
+		{1000, 0},  // at genesis
+		{1001, 0},  // 1s into slot 0
+		{1011, 0},  // 11s into slot 0
+		{1012, 1},  // slot 1 starts
+		{1023, 1},  // end of slot 1
+		{1024, 2},  // slot 2 starts
+		{1384, 32}, // slot 32 = epoch 1 start
+		{2000, 83}, // (2000-1000)/12 = 83
 	}
 	for _, tt := range tests {
 		got := st.slotAt(tt.now)
@@ -73,10 +73,10 @@ func TestSlotTimer_EpochAt(t *testing.T) {
 		want uint64
 	}{
 		{0, 0},
-		{383, 0},   // last second of epoch 0 (slot 31)
-		{384, 1},   // epoch 1 starts at slot 32 = 32*12 = 384
-		{767, 1},   // last second of epoch 1
-		{768, 2},   // epoch 2
+		{383, 0}, // last second of epoch 0 (slot 31)
+		{384, 1}, // epoch 1 starts at slot 32 = 32*12 = 384
+		{767, 1}, // last second of epoch 1
+		{768, 2}, // epoch 2
 	}
 	for _, tt := range tests {
 		got := st.epochAt(tt.now)
@@ -225,12 +225,12 @@ func TestSlotTimer_EpochProgressAt(t *testing.T) {
 		now  uint64
 		want float64
 	}{
-		{0, 0.0},              // slot 0, first of epoch => 0/32
-		{12, 1.0 / 32.0},     // slot 1 => 1/32
-		{24, 2.0 / 32.0},     // slot 2 => 2/32
-		{372, 31.0 / 32.0},   // slot 31 => 31/32
-		{384, 0.0},            // slot 32 => epoch 1, slot 0 => 0/32
-		{396, 1.0 / 32.0},    // slot 33 => epoch 1, slot 1 => 1/32
+		{0, 0.0},           // slot 0, first of epoch => 0/32
+		{12, 1.0 / 32.0},   // slot 1 => 1/32
+		{24, 2.0 / 32.0},   // slot 2 => 2/32
+		{372, 31.0 / 32.0}, // slot 31 => 31/32
+		{384, 0.0},         // slot 32 => epoch 1, slot 0 => 0/32
+		{396, 1.0 / 32.0},  // slot 33 => epoch 1, slot 1 => 1/32
 	}
 	for _, tt := range tests {
 		got := st.epochProgressAt(tt.now)
@@ -251,11 +251,11 @@ func TestSlotTimer_EpochProgressAt_QuickSlots(t *testing.T) {
 		now  uint64
 		want float64
 	}{
-		{0, 0.0},            // slot 0 => 0/4
-		{6, 0.25},           // slot 1 => 1/4
-		{12, 0.5},           // slot 2 => 2/4
-		{18, 0.75},          // slot 3 => 3/4
-		{24, 0.0},           // slot 4 => epoch 1, slot 0 => 0/4
+		{0, 0.0},   // slot 0 => 0/4
+		{6, 0.25},  // slot 1 => 1/4
+		{12, 0.5},  // slot 2 => 2/4
+		{18, 0.75}, // slot 3 => 3/4
+		{24, 0.0},  // slot 4 => epoch 1, slot 0 => 0/4
 	}
 	for _, tt := range tests {
 		got := st.epochProgressAt(tt.now)

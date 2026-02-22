@@ -26,30 +26,30 @@ const (
 
 // Inclusion list errors.
 var (
-	ErrILNil                = errors.New("inclusion list: nil list")
+	ErrILNil                 = errors.New("inclusion list: nil list")
 	ErrILTooManyTransactions = errors.New("inclusion list: too many transactions")
-	ErrILGasExceedsMax      = errors.New("inclusion list: total gas exceeds maximum")
-	ErrILSummaryMismatch    = errors.New("inclusion list: summary does not match transactions")
-	ErrILEmptyTransactions  = errors.New("inclusion list: transactions list is empty")
-	ErrILInvalidSlot        = errors.New("inclusion list: invalid slot number")
-	ErrILInvalidSignature   = errors.New("inclusion list: invalid BLS signature")
-	ErrILExpired            = errors.New("inclusion list: inclusion list has expired")
-	ErrILDuplicateSender    = errors.New("inclusion list: duplicate sender in summary")
+	ErrILGasExceedsMax       = errors.New("inclusion list: total gas exceeds maximum")
+	ErrILSummaryMismatch     = errors.New("inclusion list: summary does not match transactions")
+	ErrILEmptyTransactions   = errors.New("inclusion list: transactions list is empty")
+	ErrILInvalidSlot         = errors.New("inclusion list: invalid slot number")
+	ErrILInvalidSignature    = errors.New("inclusion list: invalid BLS signature")
+	ErrILExpired             = errors.New("inclusion list: inclusion list has expired")
+	ErrILDuplicateSender     = errors.New("inclusion list: duplicate sender in summary")
 )
 
 // InclusionListAggregate combines multiple signed inclusion lists from
 // different committee members for a given slot.
 type InclusionListAggregate struct {
-	Slot        uint64
-	Lists       []*SignedInclusionList
+	Slot          uint64
+	Lists         []*SignedInclusionList
 	MergedSummary []InclusionListEntry
 }
 
 // InclusionListComplianceResult holds the detailed result of checking
 // whether a block satisfies the inclusion list constraints.
 type InclusionListComplianceResult struct {
-	Compliant   bool
-	TotalRequired int
+	Compliant      bool
+	TotalRequired  int
 	TotalSatisfied int
 	MissingSenders []Address
 	MissingGas     map[Address]uint64 // gas shortfall per missing sender

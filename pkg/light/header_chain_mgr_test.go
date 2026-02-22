@@ -294,7 +294,7 @@ func TestHeaderChainMgrStats(t *testing.T) {
 
 func TestComputeSnapshotRoot(t *testing.T) {
 	snap := &ChainSnapshot{
-		Headers: []*types.Header{{Number: big.NewInt(0)}},
+		Headers:   []*types.Header{{Number: big.NewInt(0)}},
 		ChainRoot: types.HexToHash("0xabcdef"),
 	}
 	root := ComputeSnapshotRoot(snap)

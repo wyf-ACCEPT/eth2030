@@ -753,9 +753,9 @@ func TestExpiryEngine_InvalidMerkleProof(t *testing.T) {
 	// Tamper with the proof nodes to break the hash chain.
 	tamperedProof := validProof
 	tamperedProof.ProofNodes = [][]byte{
-		{0x01, 0x02, 0x03},                              // random leaf
-		{0x04, 0x05, 0x06},                              // random mid
-		append([]byte("root:"), make([]byte, 32)...),     // root with wrong child
+		{0x01, 0x02, 0x03},                           // random leaf
+		{0x04, 0x05, 0x06},                           // random mid
+		append([]byte("root:"), make([]byte, 32)...), // root with wrong child
 	}
 
 	if err := engine.ResurrectWithWitness(tamperedProof); err != errProofVerifyFailed {

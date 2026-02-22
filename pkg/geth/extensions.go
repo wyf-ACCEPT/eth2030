@@ -51,10 +51,10 @@ func NewPrecompileAdapter(inner vm.PrecompiledContract, name string) gethvm.Prec
 type Eth2028ForkLevel int
 
 const (
-	ForkLevelPrague     Eth2028ForkLevel = 0
+	ForkLevelPrague      Eth2028ForkLevel = 0
 	ForkLevelGlamsterdam Eth2028ForkLevel = 1
-	ForkLevelHogota     Eth2028ForkLevel = 2
-	ForkLevelIPlus      Eth2028ForkLevel = 3
+	ForkLevelHogota      Eth2028ForkLevel = 2
+	ForkLevelIPlus       Eth2028ForkLevel = 3
 )
 
 // customPrecompileEntry defines a custom precompile to inject.

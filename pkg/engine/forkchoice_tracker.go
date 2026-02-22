@@ -21,13 +21,13 @@ import (
 
 // ForkchoiceTracker errors.
 var (
-	ErrFCTNilUpdate        = errors.New("fc_tracker: nil forkchoice update")
-	ErrFCTZeroHead         = errors.New("fc_tracker: head block hash is zero")
-	ErrFCTConflict         = errors.New("fc_tracker: conflicting forkchoice update detected")
-	ErrFCTHistoryEmpty     = errors.New("fc_tracker: no forkchoice history")
-	ErrFCTPayloadIDExists  = errors.New("fc_tracker: payload ID already allocated")
-	ErrFCTPayloadNotFound  = errors.New("fc_tracker: payload ID not found")
-	ErrFCTBlockNotFound    = errors.New("fc_tracker: block not found in chain")
+	ErrFCTNilUpdate       = errors.New("fc_tracker: nil forkchoice update")
+	ErrFCTZeroHead        = errors.New("fc_tracker: head block hash is zero")
+	ErrFCTConflict        = errors.New("fc_tracker: conflicting forkchoice update detected")
+	ErrFCTHistoryEmpty    = errors.New("fc_tracker: no forkchoice history")
+	ErrFCTPayloadIDExists = errors.New("fc_tracker: payload ID already allocated")
+	ErrFCTPayloadNotFound = errors.New("fc_tracker: payload ID not found")
+	ErrFCTBlockNotFound   = errors.New("fc_tracker: block not found in chain")
 )
 
 // FCURecord stores a single forkchoice update for the debug history.

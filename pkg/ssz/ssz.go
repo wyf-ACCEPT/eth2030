@@ -10,11 +10,11 @@ import "errors"
 
 // Common errors.
 var (
-	ErrSize          = errors.New("ssz: invalid size")
-	ErrOffset        = errors.New("ssz: invalid offset")
-	ErrListTooLong   = errors.New("ssz: list exceeds maximum length")
+	ErrSize           = errors.New("ssz: invalid size")
+	ErrOffset         = errors.New("ssz: invalid offset")
+	ErrListTooLong    = errors.New("ssz: list exceeds maximum length")
 	ErrBufferTooSmall = errors.New("ssz: buffer too small")
-	ErrInvalidBool   = errors.New("ssz: invalid boolean value")
+	ErrInvalidBool    = errors.New("ssz: invalid boolean value")
 )
 
 // BytesPerLengthOffset is the number of bytes used for each offset in

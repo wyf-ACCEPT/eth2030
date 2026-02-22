@@ -64,11 +64,11 @@ func DefaultSlotDutyConfig() SlotDutyConfig {
 
 // ProposerDutyEntry records the proposer assignment for a single slot.
 type ProposerDutyEntry struct {
-	Slot           Slot
-	ProposerIndex  ValidatorIndex
-	EpochNumber    Epoch
+	Slot            Slot
+	ProposerIndex   ValidatorIndex
+	EpochNumber     Epoch
 	IsEpochBoundary bool
-	SlotStartTime  uint64 // unix timestamp
+	SlotStartTime   uint64 // unix timestamp
 }
 
 // SlotDutyScheduler provides fork-aware proposer duty scheduling and

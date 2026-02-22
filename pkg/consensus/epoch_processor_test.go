@@ -11,10 +11,10 @@ import (
 // each having the given effective balance and actual balance.
 func makeTestState(n int, effBal, actBal uint64, slot, slotsPerEpoch uint64) *EpochProcessorState {
 	state := &EpochProcessorState{
-		Slot:          slot,
-		SlotsPerEpoch: slotsPerEpoch,
-		Validators:    make([]*ValidatorV2, n),
-		Balances:      make([]uint64, n),
+		Slot:                       slot,
+		SlotsPerEpoch:              slotsPerEpoch,
+		Validators:                 make([]*ValidatorV2, n),
+		Balances:                   make([]uint64, n),
 		HistoricalRoots:            make([]types.Hash, 0),
 		PreviousEpochParticipation: NewEpochParticipation(),
 		CurrentEpochParticipation:  NewEpochParticipation(),

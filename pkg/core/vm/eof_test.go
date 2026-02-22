@@ -236,15 +236,15 @@ func TestParseEOF_MissingCodeSection(t *testing.T) {
 func TestParseEOF_TypeSizeMismatch(t *testing.T) {
 	// type_size=8 (2 entries) but only 1 code section.
 	var buf []byte
-	buf = append(buf, 0xEF, 0x00, 0x01)         // magic + version
-	buf = append(buf, 0x01, 0x00, 0x08)          // type: kind=1, size=8 (2 entries)
+	buf = append(buf, 0xEF, 0x00, 0x01)             // magic + version
+	buf = append(buf, 0x01, 0x00, 0x08)             // type: kind=1, size=8 (2 entries)
 	buf = append(buf, 0x02, 0x00, 0x01, 0x00, 0x01) // code: kind=2, num=1, size=1
-	buf = append(buf, 0xFF, 0x00, 0x00)          // data: kind=0xFF, size=0
-	buf = append(buf, 0x00)                       // terminator
+	buf = append(buf, 0xFF, 0x00, 0x00)             // data: kind=0xFF, size=0
+	buf = append(buf, 0x00)                         // terminator
 	// Body: 2 type entries + 1 code byte.
-	buf = append(buf, 0x00, 0x80, 0x00, 0x00)    // type entry 0
-	buf = append(buf, 0x01, 0x01, 0x00, 0x02)    // type entry 1
-	buf = append(buf, byte(STOP))                  // code section 0
+	buf = append(buf, 0x00, 0x80, 0x00, 0x00) // type entry 0
+	buf = append(buf, 0x01, 0x01, 0x00, 0x02) // type entry 1
+	buf = append(buf, byte(STOP))             // code section 0
 
 	_, err := ParseEOF(buf)
 	if err != ErrEOFTypeSizeMismatch {
@@ -279,9 +279,9 @@ func TestParseEOF_ZeroCodeSize(t *testing.T) {
 	buf = append(buf, 0xEF, 0x00, 0x01)
 	buf = append(buf, 0x01, 0x00, 0x04)             // type: size=4
 	buf = append(buf, 0x02, 0x00, 0x01, 0x00, 0x00) // code: num=1, size=0
-	buf = append(buf, 0xFF, 0x00, 0x00)              // data: size=0
-	buf = append(buf, 0x00)                           // terminator
-	buf = append(buf, 0x00, 0x80, 0x00, 0x00)        // type entry
+	buf = append(buf, 0xFF, 0x00, 0x00)             // data: size=0
+	buf = append(buf, 0x00)                         // terminator
+	buf = append(buf, 0x00, 0x80, 0x00, 0x00)       // type entry
 
 	_, err := ParseEOF(buf)
 	if err != ErrEOFZeroCodeSize {
@@ -449,8 +449,8 @@ func TestParseEOF_TypeSizeNotDivisibleBy4(t *testing.T) {
 	buf = append(buf, 0xEF, 0x00, 0x01)
 	buf = append(buf, 0x01, 0x00, 0x05)             // type: size=5 (invalid)
 	buf = append(buf, 0x02, 0x00, 0x01, 0x00, 0x01) // code: num=1, size=1
-	buf = append(buf, 0xFF, 0x00, 0x00)              // data: size=0
-	buf = append(buf, 0x00)                           // terminator
+	buf = append(buf, 0xFF, 0x00, 0x00)             // data: size=0
+	buf = append(buf, 0x00)                         // terminator
 	// Body (won't get parsed because of header validation).
 	buf = append(buf, 0x00, 0x80, 0x00, 0x00, 0x00) // 5 bytes type section
 	buf = append(buf, byte(STOP))
@@ -498,14 +498,14 @@ func TestSerializeEOF_ManualVerification(t *testing.T) {
 
 	// Verify header bytes manually.
 	expected := []byte{
-		0xEF, 0x00, 0x01,       // magic + version
-		0x01, 0x00, 0x04,       // type section: kind=1, size=4
-		0x02, 0x00, 0x01,       // code section: kind=2, num=1
-		0x00, 0x01,             // code section 0 size=1
-		0xFF, 0x00, 0x00,       // data section: kind=0xFF, size=0
-		0x00,                    // terminator
+		0xEF, 0x00, 0x01, // magic + version
+		0x01, 0x00, 0x04, // type section: kind=1, size=4
+		0x02, 0x00, 0x01, // code section: kind=2, num=1
+		0x00, 0x01, // code section 0 size=1
+		0xFF, 0x00, 0x00, // data section: kind=0xFF, size=0
+		0x00,                   // terminator
 		0x00, 0x80, 0x00, 0x00, // type[0]: inputs=0, outputs=0x80, max_stack=0
-		0x00,                    // code[0]: STOP
+		0x00, // code[0]: STOP
 	}
 	if !bytes.Equal(raw, expected) {
 		t.Errorf("SerializeEOF:\n  got:  %x\n  want: %x", raw, expected)
@@ -518,7 +518,7 @@ func TestParseEOF_MissingTerminator(t *testing.T) {
 	buf = append(buf, 0xEF, 0x00, 0x01)
 	buf = append(buf, 0x01, 0x00, 0x04)             // type
 	buf = append(buf, 0x02, 0x00, 0x01, 0x00, 0x01) // code
-	buf = append(buf, 0xFF, 0x00, 0x00)              // data
+	buf = append(buf, 0xFF, 0x00, 0x00)             // data
 	// No terminator -- just end the buffer.
 	_, err := ParseEOF(buf)
 	if err != ErrEOFMissingTerminator {

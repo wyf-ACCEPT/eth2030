@@ -11,7 +11,7 @@ import (
 
 // Extended protocol version constants (ETH/68 through ETH/72).
 const (
-	ETH69 = 69 // EIP-7642: eth/69 - Remove pre-merge fields
+	ETH69    = 69 // EIP-7642: eth/69 - Remove pre-merge fields
 	ExtETH72 = 72 // EIP-XXXX: Execution Witness Exchange
 )
 
@@ -47,10 +47,10 @@ const (
 
 // Extended protocol errors.
 var (
-	ErrUnsupportedMessage   = errors.New("eth: unsupported message for protocol version")
-	ErrVersionNegotiation   = errors.New("eth: version negotiation failed")
-	ErrMessageTooLarge      = errors.New("eth: message exceeds maximum size")
-	ErrInvalidMessageCode   = errors.New("eth: invalid message code for version")
+	ErrUnsupportedMessage = errors.New("eth: unsupported message for protocol version")
+	ErrVersionNegotiation = errors.New("eth: version negotiation failed")
+	ErrMessageTooLarge    = errors.New("eth: message exceeds maximum size")
+	ErrInvalidMessageCode = errors.New("eth: invalid message code for version")
 )
 
 // ProtocolCapability represents a single protocol version with its name

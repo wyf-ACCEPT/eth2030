@@ -82,8 +82,8 @@ func TestMakeLogLOG1(t *testing.T) {
 
 	logFn := makeLog(1)
 	st.Push(new(big.Int).SetBytes(topic1[:])) // topic1
-	st.Push(big.NewInt(3))                     // size
-	st.Push(big.NewInt(0))                     // offset
+	st.Push(big.NewInt(3))                    // size
+	st.Push(big.NewInt(0))                    // offset
 	_, err := logFn(&pc, evm, contract, mem, st)
 	if err != nil {
 		t.Fatalf("LOG1 error: %v", err)
@@ -116,8 +116,8 @@ func TestMakeLogLOG2(t *testing.T) {
 	logFn := makeLog(2)
 	st.Push(new(big.Int).SetBytes(topic2[:])) // topic2 (pushed first, popped second)
 	st.Push(new(big.Int).SetBytes(topic1[:])) // topic1 (pushed second, popped first)
-	st.Push(big.NewInt(2))                     // size
-	st.Push(big.NewInt(10))                    // offset
+	st.Push(big.NewInt(2))                    // size
+	st.Push(big.NewInt(10))                   // offset
 	_, err := logFn(&pc, evm, contract, mem, st)
 	if err != nil {
 		t.Fatalf("LOG2 error: %v", err)
@@ -298,14 +298,14 @@ func TestLogGasCalculation(t *testing.T) {
 		dataSize  uint64
 		wantGas   uint64
 	}{
-		{"LOG0 empty", 0, 0, 375},                         // 375 base
-		{"LOG0 32 bytes", 0, 32, 375 + 8*32},              // 375 + 256 = 631
-		{"LOG1 empty", 1, 0, 375 + 375},                   // 375 + 375 = 750
-		{"LOG1 10 bytes", 1, 10, 375 + 375 + 8*10},        // 375 + 375 + 80 = 830
-		{"LOG2 empty", 2, 0, 375 + 2*375},                 // 375 + 750 = 1125
-		{"LOG2 64 bytes", 2, 64, 375 + 2*375 + 8*64},      // 375 + 750 + 512 = 1637
-		{"LOG3 1 byte", 3, 1, 375 + 3*375 + 8*1},          // 375 + 1125 + 8 = 1508
-		{"LOG4 100 bytes", 4, 100, 375 + 4*375 + 8*100},   // 375 + 1500 + 800 = 2675
+		{"LOG0 empty", 0, 0, 375},                       // 375 base
+		{"LOG0 32 bytes", 0, 32, 375 + 8*32},            // 375 + 256 = 631
+		{"LOG1 empty", 1, 0, 375 + 375},                 // 375 + 375 = 750
+		{"LOG1 10 bytes", 1, 10, 375 + 375 + 8*10},      // 375 + 375 + 80 = 830
+		{"LOG2 empty", 2, 0, 375 + 2*375},               // 375 + 750 = 1125
+		{"LOG2 64 bytes", 2, 64, 375 + 2*375 + 8*64},    // 375 + 750 + 512 = 1637
+		{"LOG3 1 byte", 3, 1, 375 + 3*375 + 8*1},        // 375 + 1125 + 8 = 1508
+		{"LOG4 100 bytes", 4, 100, 375 + 4*375 + 8*100}, // 375 + 1500 + 800 = 2675
 	}
 
 	for _, tt := range tests {
@@ -352,7 +352,7 @@ func TestMakeGasLogDynamic(t *testing.T) {
 				st.Push(big.NewInt(0)) // topics
 			}
 			st.Push(new(big.Int).SetUint64(tt.dataSize)) // size
-			st.Push(big.NewInt(0))                         // offset
+			st.Push(big.NewInt(0))                       // offset
 
 			gasFn := makeGasLog(tt.numTopics)
 			got, _ := gasFn(evm, contract, st, mem, tt.dataSize)
@@ -446,7 +446,7 @@ func TestRunLOG0Bytecode(t *testing.T) {
 	contract.Code = []byte{
 		byte(PUSH4), 0xDE, 0xAD, 0xBE, 0xEF, // push 0xDEADBEEF
 		byte(PUSH1), 0x00, // offset 0
-		byte(MSTORE), // store at offset 0 (32-byte padded)
+		byte(MSTORE),      // store at offset 0 (32-byte padded)
 		byte(PUSH1), 0x04, // size = 4
 		byte(PUSH1), 0x1c, // offset = 28 (last 4 bytes of 32-byte word)
 		byte(LOG0),
@@ -576,7 +576,7 @@ func TestRunLOG4Bytecode(t *testing.T) {
 	contract.Code = []byte{
 		byte(PUSH1), 0xFF, // value to store
 		byte(PUSH1), 0x00, // offset 0
-		byte(MSTORE8), // store single byte at offset 0
+		byte(MSTORE8),     // store single byte at offset 0
 		byte(PUSH1), 0x04, // topic4
 		byte(PUSH1), 0x03, // topic3
 		byte(PUSH1), 0x02, // topic2
@@ -688,8 +688,8 @@ func TestRunLOGGasAccounting(t *testing.T) {
 
 			// Store data bytes at memory offset 0.
 			for j := 0; j < tt.dataSize; j++ {
-				code = append(code, byte(PUSH1), byte(j+1))    // value
-				code = append(code, byte(PUSH1), byte(j))      // offset
+				code = append(code, byte(PUSH1), byte(j+1)) // value
+				code = append(code, byte(PUSH1), byte(j))   // offset
 				code = append(code, byte(MSTORE8))
 			}
 
@@ -699,7 +699,7 @@ func TestRunLOGGasAccounting(t *testing.T) {
 			}
 			// Push size and offset.
 			code = append(code, byte(PUSH1), byte(tt.dataSize)) // size
-			code = append(code, byte(PUSH1), 0x00)               // offset
+			code = append(code, byte(PUSH1), 0x00)              // offset
 			code = append(code, tt.logOp)
 			code = append(code, byte(STOP))
 
@@ -738,9 +738,9 @@ func TestRunLOGGasAccounting(t *testing.T) {
 			// is only charged once.
 
 			topicPushGas := uint64(tt.nTopics) * GasPush
-			sizePushGas := GasPush      // PUSH1 for size
-			offsetPushGas := GasPush    // PUSH1 for offset
-			logConstant := GasLog       // 375
+			sizePushGas := GasPush   // PUSH1 for size
+			offsetPushGas := GasPush // PUSH1 for offset
+			logConstant := GasLog    // 375
 			logDynamic := uint64(tt.nTopics)*GasLogTopic + uint64(tt.dataSize)*GasLogData
 
 			// LOG memory expansion: if dataSize > 0, the LOG instruction reads from

@@ -45,11 +45,11 @@ type VerkleEmptyNode struct{}
 
 var emptyNodeInstance = &VerkleEmptyNode{}
 
-func EmptyVerkleNode() *VerkleEmptyNode              { return emptyNodeInstance }
-func (n *VerkleEmptyNode) NodeCommitment() [32]byte   { return [32]byte{} }
-func (n *VerkleEmptyNode) NodeType() VerkleNodeType    { return VerkleNodeEmpty }
-func (n *VerkleEmptyNode) IsDirty() bool               { return false }
-func (n *VerkleEmptyNode) Insert(key, value []byte) error { return ErrInsertIntoEmpty }
+func EmptyVerkleNode() *VerkleEmptyNode                        { return emptyNodeInstance }
+func (n *VerkleEmptyNode) NodeCommitment() [32]byte            { return [32]byte{} }
+func (n *VerkleEmptyNode) NodeType() VerkleNodeType            { return VerkleNodeEmpty }
+func (n *VerkleEmptyNode) IsDirty() bool                       { return false }
+func (n *VerkleEmptyNode) Insert(key, value []byte) error      { return ErrInsertIntoEmpty }
 func (n *VerkleEmptyNode) GetValue(key []byte) ([]byte, error) { return nil, nil }
 
 // --- VerkleLeafNode ---
@@ -70,9 +70,9 @@ func NewVerkleLeafNode(stem [StemSize]byte, config *PedersenConfig) *VerkleLeafN
 	return &VerkleLeafNode{stem: stem, dirty: true, config: config}
 }
 
-func (n *VerkleLeafNode) NodeType() VerkleNodeType { return VerkleNodeLeaf }
-func (n *VerkleLeafNode) IsDirty() bool            { return n.dirty }
-func (n *VerkleLeafNode) Stem() [StemSize]byte     { return n.stem }
+func (n *VerkleLeafNode) NodeType() VerkleNodeType  { return VerkleNodeLeaf }
+func (n *VerkleLeafNode) IsDirty() bool             { return n.dirty }
+func (n *VerkleLeafNode) Stem() [StemSize]byte      { return n.stem }
 func (n *VerkleLeafNode) HasValue(suffix byte) bool { return n.present[suffix] }
 
 func (n *VerkleLeafNode) ValueAt(suffix byte) *[ValueSize]byte {
@@ -98,14 +98,20 @@ func (n *VerkleLeafNode) DeleteValue(suffix byte) {
 func (n *VerkleLeafNode) ValueCount() int {
 	c := 0
 	for _, p := range n.present {
-		if p { c++ }
+		if p {
+			c++
+		}
 	}
 	return c
 }
 
 func (n *VerkleLeafNode) Insert(key, value []byte) error {
-	if len(key) != KeySize { return ErrInvalidNodeKey }
-	if len(value) != ValueSize { return ErrInvalidNodeValue }
+	if len(key) != KeySize {
+		return ErrInvalidNodeKey
+	}
+	if len(value) != ValueSize {
+		return ErrInvalidNodeValue
+	}
 	var stem [StemSize]byte
 	copy(stem[:], key[:StemSize])
 	if stem != n.stem {
@@ -118,25 +124,35 @@ func (n *VerkleLeafNode) Insert(key, value []byte) error {
 }
 
 func (n *VerkleLeafNode) GetValue(key []byte) ([]byte, error) {
-	if len(key) != KeySize { return nil, ErrInvalidNodeKey }
+	if len(key) != KeySize {
+		return nil, ErrInvalidNodeKey
+	}
 	var stem [StemSize]byte
 	copy(stem[:], key[:StemSize])
-	if stem != n.stem { return nil, nil }
+	if stem != n.stem {
+		return nil, nil
+	}
 	suffix := key[StemSize]
-	if !n.present[suffix] { return nil, nil }
+	if !n.present[suffix] {
+		return nil, nil
+	}
 	out := make([]byte, ValueSize)
 	copy(out, n.values[suffix][:])
 	return out, nil
 }
 
 func (n *VerkleLeafNode) NodeCommitment() [32]byte {
-	if !n.dirty { return n.commitment }
+	if !n.dirty {
+		return n.commitment
+	}
 	n.recomputeCommitment()
 	return n.commitment
 }
 
 func (n *VerkleLeafNode) CommitmentPoint() *crypto.BanderPoint {
-	if n.dirty { n.recomputeCommitment() }
+	if n.dirty {
+		n.recomputeCommitment()
+	}
 	return n.commitPt
 }
 
@@ -173,24 +189,34 @@ func NewVerkleInternalNode(depth int, config *PedersenConfig) *VerkleInternalNod
 	return &VerkleInternalNode{depth: depth, dirty: true, config: config}
 }
 
-func (n *VerkleInternalNode) NodeType() VerkleNodeType { return VerkleNodeInternal }
-func (n *VerkleInternalNode) IsDirty() bool            { return n.dirty }
-func (n *VerkleInternalNode) Depth() int               { return n.depth }
+func (n *VerkleInternalNode) NodeType() VerkleNodeType      { return VerkleNodeInternal }
+func (n *VerkleInternalNode) IsDirty() bool                 { return n.dirty }
+func (n *VerkleInternalNode) Depth() int                    { return n.depth }
 func (n *VerkleInternalNode) ChildAt(index byte) VerkleNode { return n.children[index] }
-func (n *VerkleInternalNode) ChildCount() int          { return n.childCount }
+func (n *VerkleInternalNode) ChildCount() int               { return n.childCount }
 
 func (n *VerkleInternalNode) SetChildAt(index byte, child VerkleNode) {
 	wasNil := n.children[index] == nil
 	n.children[index] = child
 	n.dirty = true
-	if wasNil && child != nil { n.childCount++ }
-	if !wasNil && child == nil { n.childCount-- }
+	if wasNil && child != nil {
+		n.childCount++
+	}
+	if !wasNil && child == nil {
+		n.childCount--
+	}
 }
 
 func (n *VerkleInternalNode) Insert(key, value []byte) error {
-	if len(key) != KeySize { return ErrInvalidNodeKey }
-	if len(value) != ValueSize { return ErrInvalidNodeValue }
-	if n.depth >= StemSize { return ErrMaxDepthExceeded }
+	if len(key) != KeySize {
+		return ErrInvalidNodeKey
+	}
+	if len(value) != ValueSize {
+		return ErrInvalidNodeValue
+	}
+	if n.depth >= StemSize {
+		return ErrMaxDepthExceeded
+	}
 
 	var stem [StemSize]byte
 	copy(stem[:], key[:StemSize])
@@ -208,11 +234,15 @@ func (n *VerkleInternalNode) Insert(key, value []byte) error {
 
 	switch c := child.(type) {
 	case *VerkleLeafNode:
-		if c.stem == stem { return c.Insert(key, value) }
+		if c.stem == stem {
+			return c.Insert(key, value)
+		}
 		return n.splitLeaf(childIdx, c, key, value)
 	case *VerkleInternalNode:
 		err := c.Insert(key, value)
-		if err == nil { n.dirty = true }
+		if err == nil {
+			n.dirty = true
+		}
 		return err
 	case *VerkleEmptyNode:
 		leaf := NewVerkleLeafNode(stem, n.config)
@@ -230,7 +260,9 @@ func (n *VerkleInternalNode) splitLeaf(childIdx byte, existing *VerkleLeafNode, 
 	var newStem [StemSize]byte
 	copy(newStem[:], newKey[:StemSize])
 	newDepth := n.depth + 1
-	if newDepth >= StemSize { return ErrMaxDepthExceeded }
+	if newDepth >= StemSize {
+		return ErrMaxDepthExceeded
+	}
 
 	internal := NewVerkleInternalNode(newDepth, n.config)
 	existingIdx := existing.stem[newDepth]
@@ -242,8 +274,12 @@ func (n *VerkleInternalNode) splitLeaf(childIdx byte, existing *VerkleLeafNode, 
 		internal.SetChildAt(existingIdx, nil)
 		eKey := leafToKey(existing)
 		eVal := leafFirstValue(existing)
-		if err := internal.Insert(eKey, eVal); err != nil { return err }
-		if err := internal.Insert(newKey, newValue); err != nil { return err }
+		if err := internal.Insert(eKey, eVal); err != nil {
+			return err
+		}
+		if err := internal.Insert(newKey, newValue); err != nil {
+			return err
+		}
 	} else {
 		newLeaf := NewVerkleLeafNode(newStem, n.config)
 		var val [ValueSize]byte
@@ -260,7 +296,10 @@ func leafToKey(leaf *VerkleLeafNode) []byte {
 	key := make([]byte, KeySize)
 	copy(key[:StemSize], leaf.stem[:])
 	for i := 0; i < NodeWidth; i++ {
-		if leaf.present[i] { key[StemSize] = byte(i); break }
+		if leaf.present[i] {
+			key[StemSize] = byte(i)
+			break
+		}
 	}
 	return key
 }
@@ -277,21 +316,31 @@ func leafFirstValue(leaf *VerkleLeafNode) []byte {
 }
 
 func (n *VerkleInternalNode) GetValue(key []byte) ([]byte, error) {
-	if len(key) != KeySize { return nil, ErrInvalidNodeKey }
-	if n.depth >= StemSize { return nil, nil }
+	if len(key) != KeySize {
+		return nil, ErrInvalidNodeKey
+	}
+	if n.depth >= StemSize {
+		return nil, nil
+	}
 	child := n.children[key[n.depth]]
-	if child == nil { return nil, nil }
+	if child == nil {
+		return nil, nil
+	}
 	return child.GetValue(key)
 }
 
 func (n *VerkleInternalNode) NodeCommitment() [32]byte {
-	if !n.dirty { return n.commitment }
+	if !n.dirty {
+		return n.commitment
+	}
 	n.recomputeCommitment()
 	return n.commitment
 }
 
 func (n *VerkleInternalNode) CommitmentPoint() *crypto.BanderPoint {
-	if n.dirty { n.recomputeCommitment() }
+	if n.dirty {
+		n.recomputeCommitment()
+	}
 	return n.commitPt
 }
 
@@ -324,36 +373,48 @@ type VerkleTrie struct {
 }
 
 func NewVerkleTrie(config *PedersenConfig) *VerkleTrie {
-	if config == nil { config = DefaultPedersenConfig() }
+	if config == nil {
+		config = DefaultPedersenConfig()
+	}
 	return &VerkleTrie{root: NewVerkleInternalNode(0, config), config: config}
 }
 
-func (vt *VerkleTrie) Root() *VerkleInternalNode { return vt.root }
+func (vt *VerkleTrie) Root() *VerkleInternalNode      { return vt.root }
 func (vt *VerkleTrie) Insert(key, value []byte) error { return vt.root.Insert(key, value) }
 func (vt *VerkleTrie) Get(key []byte) ([]byte, error) { return vt.root.GetValue(key) }
-func (vt *VerkleTrie) RootCommitment() [32]byte { return vt.root.NodeCommitment() }
+func (vt *VerkleTrie) RootCommitment() [32]byte       { return vt.root.NodeCommitment() }
 
 func (vt *VerkleTrie) NodeCount() int { return countVN(vt.root) }
 func (vt *VerkleTrie) LeafCount() int { return countVL(vt.root) }
 
 func countVN(node VerkleNode) int {
-	if node == nil { return 0 }
+	if node == nil {
+		return 0
+	}
 	n, ok := node.(*VerkleInternalNode)
-	if !ok { return 1 }
+	if !ok {
+		return 1
+	}
 	count := 1
 	for i := 0; i < NodeWidth; i++ {
-		if n.children[i] != nil { count += countVN(n.children[i]) }
+		if n.children[i] != nil {
+			count += countVN(n.children[i])
+		}
 	}
 	return count
 }
 
 func countVL(node VerkleNode) int {
-	if node == nil { return 0 }
+	if node == nil {
+		return 0
+	}
 	switch n := node.(type) {
 	case *VerkleInternalNode:
 		count := 0
 		for i := 0; i < NodeWidth; i++ {
-			if n.children[i] != nil { count += countVL(n.children[i]) }
+			if n.children[i] != nil {
+				count += countVL(n.children[i])
+			}
 		}
 		return count
 	case *VerkleLeafNode:

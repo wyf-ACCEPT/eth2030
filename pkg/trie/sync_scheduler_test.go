@@ -136,10 +136,10 @@ func TestSyncScheduler_PriorityOrdering(t *testing.T) {
 	shallowHash := types.BytesToHash([]byte{0x03})
 	rootHash := types.BytesToHash([]byte{0x04})
 
-	s.AddHash(deepHash, nil, 20, false)    // PriorityDeep (3)
-	s.AddHash(medHash, nil, 10, false)      // PriorityMedium (2)
-	s.AddHash(shallowHash, nil, 2, false)   // PriorityShallow (1)
-	s.AddHash(rootHash, nil, 0, false)      // PriorityRoot (0)
+	s.AddHash(deepHash, nil, 20, false)   // PriorityDeep (3)
+	s.AddHash(medHash, nil, 10, false)    // PriorityMedium (2)
+	s.AddHash(shallowHash, nil, 2, false) // PriorityShallow (1)
+	s.AddHash(rootHash, nil, 0, false)    // PriorityRoot (0)
 
 	reqs := s.PopRequests(10)
 	if len(reqs) != 4 {

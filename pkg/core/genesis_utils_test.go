@@ -68,8 +68,8 @@ func TestDevGenesisToBlock(t *testing.T) {
 	if block.GasLimit() != 30_000_000 {
 		t.Errorf("dev genesis gas limit = %d, want 30000000", block.GasLimit())
 	}
-	if string(block.Extra()) != "eth2030 dev genesis" {
-		t.Errorf("dev genesis extra = %q, want %q", string(block.Extra()), "eth2030 dev genesis")
+	if string(block.Extra()) != "ETH2030 dev genesis" {
+		t.Errorf("dev genesis extra = %q, want %q", string(block.Extra()), "ETH2030 dev genesis")
 	}
 }
 

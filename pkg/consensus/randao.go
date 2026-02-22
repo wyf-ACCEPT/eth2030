@@ -31,11 +31,11 @@ const (
 
 // RANDAO errors.
 var (
-	ErrRandaoNilState       = errors.New("randao: nil beacon state")
-	ErrRandaoInvalidReveal  = errors.New("randao: invalid RANDAO reveal signature")
-	ErrRandaoNoValidators   = errors.New("randao: no active validators")
-	ErrRandaoInvalidIndex   = errors.New("randao: index out of range")
-	ErrRandaoZeroCount      = errors.New("randao: zero index count for shuffle")
+	ErrRandaoNilState      = errors.New("randao: nil beacon state")
+	ErrRandaoInvalidReveal = errors.New("randao: invalid RANDAO reveal signature")
+	ErrRandaoNoValidators  = errors.New("randao: no active validators")
+	ErrRandaoInvalidIndex  = errors.New("randao: index out of range")
+	ErrRandaoZeroCount     = errors.New("randao: zero index count for shuffle")
 )
 
 // RandaoManager manages RANDAO mix state and processes reveals.

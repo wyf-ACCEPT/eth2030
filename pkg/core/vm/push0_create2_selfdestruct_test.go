@@ -182,10 +182,11 @@ func TestCreate2AddressDerivation(t *testing.T) {
 
 // TestCreate2AddressKnownVector tests against a well-known CREATE2 test vector.
 // From EIP-1014 examples:
-//   sender = 0x0000000000000000000000000000000000000000
-//   salt = 0x00...00
-//   initcode = 0x00
-//   expected address = keccak256(0xff ++ 0x00..00 ++ 0x00..00 ++ keccak256(0x00))[12:]
+//
+//	sender = 0x0000000000000000000000000000000000000000
+//	salt = 0x00...00
+//	initcode = 0x00
+//	expected address = keccak256(0xff ++ 0x00..00 ++ 0x00..00 ++ keccak256(0x00))[12:]
 func TestCreate2AddressKnownVector(t *testing.T) {
 	sender := types.Address{} // 0x000...000
 	salt := big.NewInt(0)
@@ -464,8 +465,8 @@ func (m *selfdestructMockStateDB) SubBalance(addr types.Address, amount *big.Int
 	}
 	m.balances[addr].Sub(m.balances[addr], amount)
 }
-func (m *selfdestructMockStateDB) GetNonce(types.Address) uint64    { return 0 }
-func (m *selfdestructMockStateDB) SetNonce(types.Address, uint64)   {}
+func (m *selfdestructMockStateDB) GetNonce(types.Address) uint64  { return 0 }
+func (m *selfdestructMockStateDB) SetNonce(types.Address, uint64) {}
 func (m *selfdestructMockStateDB) GetCode(addr types.Address) []byte {
 	return m.code[addr]
 }
@@ -488,12 +489,12 @@ func (m *selfdestructMockStateDB) Exist(addr types.Address) bool {
 func (m *selfdestructMockStateDB) Empty(addr types.Address) bool {
 	return !m.exists[addr]
 }
-func (m *selfdestructMockStateDB) Snapshot() int         { return 0 }
-func (m *selfdestructMockStateDB) RevertToSnapshot(int)  {}
-func (m *selfdestructMockStateDB) AddLog(*types.Log)     {}
-func (m *selfdestructMockStateDB) AddRefund(uint64)      {}
-func (m *selfdestructMockStateDB) SubRefund(uint64)      {}
-func (m *selfdestructMockStateDB) GetRefund() uint64     { return 0 }
+func (m *selfdestructMockStateDB) Snapshot() int        { return 0 }
+func (m *selfdestructMockStateDB) RevertToSnapshot(int) {}
+func (m *selfdestructMockStateDB) AddLog(*types.Log)    {}
+func (m *selfdestructMockStateDB) AddRefund(uint64)     {}
+func (m *selfdestructMockStateDB) SubRefund(uint64)     {}
+func (m *selfdestructMockStateDB) GetRefund() uint64    { return 0 }
 func (m *selfdestructMockStateDB) AddAddressToAccessList(addr types.Address) {
 	m.accessAddresses[addr] = true
 }

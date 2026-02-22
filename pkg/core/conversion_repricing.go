@@ -81,8 +81,8 @@ type GasOp struct {
 
 // ConvertedGasOp represents a gas operation with both original and converted costs.
 type ConvertedGasOp struct {
-	Opcode     byte
-	OriginalGas uint64
+	Opcode       byte
+	OriginalGas  uint64
 	ConvertedGas uint64
 }
 
@@ -231,10 +231,10 @@ func TotalGasSavings(table *ConversionTable, operations []GasOp) uint64 {
 
 // ConversionSummary provides a summary of a conversion table's effects.
 type ConversionSummary struct {
-	DefaultRatio     float64
-	ExplicitCount    int
-	MinGas           uint64
-	IsReduction      bool
+	DefaultRatio  float64
+	ExplicitCount int
+	MinGas        uint64
+	IsReduction   bool
 }
 
 // Summarize returns a summary of the conversion table's configuration.

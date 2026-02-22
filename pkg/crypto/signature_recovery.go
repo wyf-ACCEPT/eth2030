@@ -46,15 +46,15 @@ type CompactSignature struct {
 
 // Errors for signature recovery operations.
 var (
-	ErrSigRecoverInvalidLength   = errors.New("sig_recover: signature must be 65 bytes")
-	ErrSigRecoverInvalidV        = errors.New("sig_recover: invalid V value")
-	ErrSigRecoverInvalidR        = errors.New("sig_recover: R must be in [1, n-1]")
-	ErrSigRecoverInvalidS        = errors.New("sig_recover: S must be in [1, n-1]")
-	ErrSigRecoverMalleable       = errors.New("sig_recover: S is in upper half (malleable)")
-	ErrSigRecoverHashLength      = errors.New("sig_recover: message hash must be 32 bytes")
-	ErrSigRecoverFailed          = errors.New("sig_recover: public key recovery failed")
-	ErrSigRecoverBatchEmpty      = errors.New("sig_recover: empty batch")
-	ErrSigRecoverBatchMismatch   = errors.New("sig_recover: batch lengths do not match")
+	ErrSigRecoverInvalidLength = errors.New("sig_recover: signature must be 65 bytes")
+	ErrSigRecoverInvalidV      = errors.New("sig_recover: invalid V value")
+	ErrSigRecoverInvalidR      = errors.New("sig_recover: R must be in [1, n-1]")
+	ErrSigRecoverInvalidS      = errors.New("sig_recover: S must be in [1, n-1]")
+	ErrSigRecoverMalleable     = errors.New("sig_recover: S is in upper half (malleable)")
+	ErrSigRecoverHashLength    = errors.New("sig_recover: message hash must be 32 bytes")
+	ErrSigRecoverFailed        = errors.New("sig_recover: public key recovery failed")
+	ErrSigRecoverBatchEmpty    = errors.New("sig_recover: empty batch")
+	ErrSigRecoverBatchMismatch = errors.New("sig_recover: batch lengths do not match")
 )
 
 // ParseCompactSignature parses a 65-byte signature into a CompactSignature.

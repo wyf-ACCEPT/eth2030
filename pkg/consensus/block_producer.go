@@ -35,18 +35,18 @@ const (
 
 // Block producer errors.
 var (
-	ErrBPNilState          = errors.New("block_producer: nil beacon state")
-	ErrBPSlotRegression    = errors.New("block_producer: slot must be greater than state slot")
-	ErrBPInvalidProposer   = errors.New("block_producer: proposer index out of range")
-	ErrBPEmptyRandao       = errors.New("block_producer: empty RANDAO reveal")
-	ErrBPInvalidBlockSlot  = errors.New("block_producer: produced block has invalid slot")
-	ErrBPInvalidParent     = errors.New("block_producer: produced block has empty parent root")
-	ErrBPInvalidBody       = errors.New("block_producer: produced block has nil body")
+	ErrBPNilState         = errors.New("block_producer: nil beacon state")
+	ErrBPSlotRegression   = errors.New("block_producer: slot must be greater than state slot")
+	ErrBPInvalidProposer  = errors.New("block_producer: proposer index out of range")
+	ErrBPEmptyRandao      = errors.New("block_producer: empty RANDAO reveal")
+	ErrBPInvalidBlockSlot = errors.New("block_producer: produced block has invalid slot")
+	ErrBPInvalidParent    = errors.New("block_producer: produced block has empty parent root")
+	ErrBPInvalidBody      = errors.New("block_producer: produced block has nil body")
 )
 
 // ProposerSlashing represents a proposer slashing operation.
 type ProposerSlashing struct {
-	ProposerIndex   ValidatorIndex
+	ProposerIndex    ValidatorIndex
 	Header1, Header2 SignedBeaconBlockHeader
 }
 
@@ -88,16 +88,16 @@ type VoluntaryExit struct {
 
 // ExecutionPayloadHeader is a summary of the execution payload.
 type ExecutionPayloadHeader struct {
-	BlockHash      types.Hash
-	ParentHash     types.Hash
-	FeeRecipient   types.Address
-	StateRoot      types.Hash
-	ReceiptsRoot   types.Hash
-	LogsBloom      [LogsBloomLength]byte
-	GasLimit       uint64
-	GasUsed        uint64
-	Timestamp      uint64
-	BaseFeePerGas  uint64
+	BlockHash     types.Hash
+	ParentHash    types.Hash
+	FeeRecipient  types.Address
+	StateRoot     types.Hash
+	ReceiptsRoot  types.Hash
+	LogsBloom     [LogsBloomLength]byte
+	GasLimit      uint64
+	GasUsed       uint64
+	Timestamp     uint64
+	BaseFeePerGas uint64
 }
 
 // Eth1Data represents an ETH1 deposit data reference for block production.

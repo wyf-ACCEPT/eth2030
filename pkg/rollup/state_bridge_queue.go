@@ -21,16 +21,16 @@ import (
 
 // State bridge queue errors.
 var (
-	ErrQueueBridgeNilDeposit     = errors.New("state_bridge_queue: nil deposit")
-	ErrQueueBridgeZeroAmount     = errors.New("state_bridge_queue: deposit amount must be positive")
-	ErrQueueBridgeZeroAddress    = errors.New("state_bridge_queue: zero address not allowed")
-	ErrQueueBridgeDuplicate      = errors.New("state_bridge_queue: duplicate deposit nonce")
-	ErrQueueBridgeEmptyQueue     = errors.New("state_bridge_queue: no deposits to process")
-	ErrQueueBridgeNilWithdrawal  = errors.New("state_bridge_queue: nil withdrawal")
-	ErrQueueBridgeEmptyProof     = errors.New("state_bridge_queue: withdrawal proof is empty")
-	ErrQueueBridgeProofInvalid   = errors.New("state_bridge_queue: withdrawal proof verification failed")
-	ErrQueueBridgeNotFinalized   = errors.New("state_bridge_queue: deposit not finalized")
-	ErrQueueBridgeAlreadyFinal   = errors.New("state_bridge_queue: already finalized to this block")
+	ErrQueueBridgeNilDeposit    = errors.New("state_bridge_queue: nil deposit")
+	ErrQueueBridgeZeroAmount    = errors.New("state_bridge_queue: deposit amount must be positive")
+	ErrQueueBridgeZeroAddress   = errors.New("state_bridge_queue: zero address not allowed")
+	ErrQueueBridgeDuplicate     = errors.New("state_bridge_queue: duplicate deposit nonce")
+	ErrQueueBridgeEmptyQueue    = errors.New("state_bridge_queue: no deposits to process")
+	ErrQueueBridgeNilWithdrawal = errors.New("state_bridge_queue: nil withdrawal")
+	ErrQueueBridgeEmptyProof    = errors.New("state_bridge_queue: withdrawal proof is empty")
+	ErrQueueBridgeProofInvalid  = errors.New("state_bridge_queue: withdrawal proof verification failed")
+	ErrQueueBridgeNotFinalized  = errors.New("state_bridge_queue: deposit not finalized")
+	ErrQueueBridgeAlreadyFinal  = errors.New("state_bridge_queue: already finalized to this block")
 )
 
 // Deposit states for the queue bridge.

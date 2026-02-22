@@ -153,15 +153,15 @@ type StatelessStateDB struct {
 
 	// Simple journal for snapshot/revert. Each snapshot records the
 	// full set of dirty accounts so we can restore on revert.
-	snapshots map[int]*statelessSnapshot
+	snapshots  map[int]*statelessSnapshot
 	nextSnapID int
 }
 
 // statelessSnapshot captures a point-in-time copy of the overlay state.
 type statelessSnapshot struct {
-	accounts         map[types.Address]*stateObject
-	refund           uint64
-	logs             map[types.Hash][]*types.Log
+	accounts map[types.Address]*stateObject
+	refund   uint64
+	logs     map[types.Hash][]*types.Log
 }
 
 // NewStatelessStateDB creates a new stateless state database backed by witness

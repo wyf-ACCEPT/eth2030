@@ -19,11 +19,11 @@ const (
 )
 
 var (
-	ErrInvalidBlobConfig    = errors.New("das: invalid blob config")
-	ErrBlobCountOutOfRange  = errors.New("das: blob count out of range")
-	ErrBlobSizeOutOfRange   = errors.New("das: blob size out of range")
-	ErrNoScheduleEntries    = errors.New("das: no blob schedule entries")
-	ErrScheduleNotSorted    = errors.New("das: blob schedule entries not sorted by timestamp")
+	ErrInvalidBlobConfig   = errors.New("das: invalid blob config")
+	ErrBlobCountOutOfRange = errors.New("das: blob count out of range")
+	ErrBlobSizeOutOfRange  = errors.New("das: blob size out of range")
+	ErrNoScheduleEntries   = errors.New("das: no blob schedule entries")
+	ErrScheduleNotSorted   = errors.New("das: blob schedule entries not sorted by timestamp")
 )
 
 // BlobConfig defines the blob parameters for a given fork.

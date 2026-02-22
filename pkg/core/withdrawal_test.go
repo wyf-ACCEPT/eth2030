@@ -207,9 +207,9 @@ func TestWithdrawalProcessingMultipleToSameAddress(t *testing.T) {
 	addr := types.HexToAddress("0xaaaa")
 
 	withdrawals := []*types.Withdrawal{
-		{Index: 0, ValidatorIndex: 1, Address: addr, Amount: 1_000_000_000},  // 1 ETH
-		{Index: 1, ValidatorIndex: 2, Address: addr, Amount: 2_000_000_000},  // 2 ETH
-		{Index: 2, ValidatorIndex: 3, Address: addr, Amount: 500_000_000},    // 0.5 ETH
+		{Index: 0, ValidatorIndex: 1, Address: addr, Amount: 1_000_000_000}, // 1 ETH
+		{Index: 1, ValidatorIndex: 2, Address: addr, Amount: 2_000_000_000}, // 2 ETH
+		{Index: 2, ValidatorIndex: 3, Address: addr, Amount: 500_000_000},   // 0.5 ETH
 	}
 
 	ProcessWithdrawals(statedb, withdrawals)

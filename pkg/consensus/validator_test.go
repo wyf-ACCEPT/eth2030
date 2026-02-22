@@ -198,10 +198,10 @@ func TestValidatorSet_AddGetRemove(t *testing.T) {
 
 func TestComputeEffectiveBalance(t *testing.T) {
 	tests := []struct {
-		name            string
-		balance         uint64
-		currentEff      uint64
-		expectedEff     uint64
+		name        string
+		balance     uint64
+		currentEff  uint64
+		expectedEff uint64
 	}{
 		{
 			name:        "exact 32 ETH",

@@ -24,14 +24,17 @@ import (
 // Banderwagon field and curve parameters.
 //
 // The base field is the BLS12-381 scalar field Fr with modulus:
-//   r = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
+//
+//	r = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
 //
 // The Bandersnatch prime-order subgroup has order:
-//   n = 0x1cfb69d4ca675f520cce760202687600ff8f87007419047174fd06b52876e7e1
+//
+//	n = 0x1cfb69d4ca675f520cce760202687600ff8f87007419047174fd06b52876e7e1
 //
 // The twisted Edwards curve is -5x² + y² = 1 + dx²y² where:
-//   a = -5
-//   d = 0x6389c12633c267cbc66e3bf86be3b6d8cb66677177e54f92b369f2f5188d58e7
+//
+//	a = -5
+//	d = 0x6389c12633c267cbc66e3bf86be3b6d8cb66677177e54f92b369f2f5188d58e7
 //
 // The curve has order 4n (cofactor 4). The generator is in the order-n subgroup.
 // Coordinate arithmetic uses the base field r, while scalar arithmetic uses
@@ -60,7 +63,8 @@ var (
 
 // BanderPoint represents a point on the Banderwagon curve in extended
 // twisted Edwards coordinates (X, Y, T, Z) where:
-//   x = X/Z, y = Y/Z, T = X*Y/Z
+//
+//	x = X/Z, y = Y/Z, T = X*Y/Z
 type BanderPoint struct {
 	x, y, t, z *big.Int
 }
@@ -197,10 +201,11 @@ func banderIsOnCurve(x, y *big.Int) bool {
 // for twisted Edwards curves in extended coordinates.
 //
 // Formula from "Twisted Edwards Curves Revisited" (Hisil et al., 2008):
-//   A = X1*X2, B = Y1*Y2, C = T1*d*T2, D = Z1*Z2
-//   E = (X1+Y1)*(X2+Y2) - A - B
-//   F = D - C, G = D + C, H = B - a*A
-//   X3 = E*F, Y3 = G*H, T3 = E*H, Z3 = F*G
+//
+//	A = X1*X2, B = Y1*Y2, C = T1*d*T2, D = Z1*Z2
+//	E = (X1+Y1)*(X2+Y2) - A - B
+//	F = D - C, G = D + C, H = B - a*A
+//	X3 = E*F, Y3 = G*H, T3 = E*H, Z3 = F*G
 func BanderAdd(p1, p2 *BanderPoint) *BanderPoint {
 	A := banderFrMul(p1.x, p2.x)
 	B := banderFrMul(p1.y, p2.y)
@@ -227,10 +232,11 @@ func BanderAdd(p1, p2 *BanderPoint) *BanderPoint {
 // formula for twisted Edwards curves in extended coordinates.
 //
 // Formula:
-//   A = X1², B = Y1², C = 2*Z1²
-//   D = a*A, E = (X1+Y1)² - A - B
-//   G = D + B, F = G - C, H = D - B
-//   X3 = E*F, Y3 = G*H, T3 = E*H, Z3 = F*G
+//
+//	A = X1², B = Y1², C = 2*Z1²
+//	D = a*A, E = (X1+Y1)² - A - B
+//	G = D + B, F = G - C, H = D - B
+//	X3 = E*F, Y3 = G*H, T3 = E*H, Z3 = F*G
 func BanderDouble(p *BanderPoint) *BanderPoint {
 	A := banderFrSqr(p.x)
 	B := banderFrSqr(p.y)
@@ -313,7 +319,8 @@ func BanderMSM(points []*BanderPoint, scalars []*big.Int) *BanderPoint {
 // BanderEqual returns true if two points represent the same group element.
 // In Banderwagon (quotient group), (x, y) and (-x, -y) are equivalent.
 // We check: (X1*Z2 == X2*Z1 and Y1*Z2 == Y2*Z1) OR
-//           (X1*Z2 == -X2*Z1 and Y1*Z2 == -Y2*Z1).
+//
+//	(X1*Z2 == -X2*Z1 and Y1*Z2 == -Y2*Z1).
 func BanderEqual(p1, p2 *BanderPoint) bool {
 	lx := banderFrMul(p1.x, p2.z)
 	rx := banderFrMul(p2.x, p1.z)
@@ -479,7 +486,8 @@ func GeneratePedersenGenerators() [NumPedersenGenerators]*BanderPoint {
 }
 
 // PedersenCommit computes a Pedersen vector commitment:
-//   C = sum(values[i] * G_i) for i in [0, len(values))
+//
+//	C = sum(values[i] * G_i) for i in [0, len(values))
 //
 // values must have length <= NumPedersenGenerators.
 func PedersenCommit(values []*big.Int) *BanderPoint {

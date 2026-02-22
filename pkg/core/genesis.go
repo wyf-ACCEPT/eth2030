@@ -176,7 +176,7 @@ func (g *Genesis) CommitGenesis(db rawdb.Database) (*Blockchain, error) {
 	// Store genesis config as JSON in rawdb.
 	configData, err := json.Marshal(config)
 	if err == nil {
-		db.Put([]byte("eth2030-chain-config"), configData)
+		db.Put([]byte("ETH2030-chain-config"), configData)
 	}
 
 	return bc, nil

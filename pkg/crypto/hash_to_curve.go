@@ -33,11 +33,11 @@ import (
 // BLS12-381 G1 with suite BLS12381G1_XMD:SHA-256_SSWU_RO_.
 //
 // Steps:
-//   1. u = hash_to_field(msg, DST, 2)  -- produce two Fp elements
-//   2. Q0 = map_to_curve(u[0])
-//   3. Q1 = map_to_curve(u[1])
-//   4. R = Q0 + Q1
-//   5. P = clear_cofactor(R)
+//  1. u = hash_to_field(msg, DST, 2)  -- produce two Fp elements
+//  2. Q0 = map_to_curve(u[0])
+//  3. Q1 = map_to_curve(u[1])
+//  4. R = Q0 + Q1
+//  5. P = clear_cofactor(R)
 func HashToCurveG1(msg, dst []byte) (*BlsG1Point, error) {
 	if len(dst) > 255 {
 		return nil, errors.New("hash_to_curve: DST too long")
@@ -88,15 +88,15 @@ func EncodeToG1(msg, dst []byte) (*BlsG1Point, error) {
 //   - r_in_bytes = 64 (hash input block size)
 //
 // Steps:
-//   1. ell = ceil(len_in_bytes / b_in_bytes)
-//   2. DST_prime = DST || I2OSP(len(DST), 1)
-//   3. Z_pad = I2OSP(0, r_in_bytes)
-//   4. l_i_b_str = I2OSP(len_in_bytes, 2)
-//   5. msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime
-//   6. b_0 = H(msg_prime)
-//   7. b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
-//   8. for i in (2, ..., ell): b_i = H(strxor(b_0, b_{i-1}) || I2OSP(i, 1) || DST_prime)
-//   9. uniform_bytes = b_1 || ... || b_ell, truncated to len_in_bytes
+//  1. ell = ceil(len_in_bytes / b_in_bytes)
+//  2. DST_prime = DST || I2OSP(len(DST), 1)
+//  3. Z_pad = I2OSP(0, r_in_bytes)
+//  4. l_i_b_str = I2OSP(len_in_bytes, 2)
+//  5. msg_prime = Z_pad || msg || l_i_b_str || I2OSP(0, 1) || DST_prime
+//  6. b_0 = H(msg_prime)
+//  7. b_1 = H(b_0 || I2OSP(1, 1) || DST_prime)
+//  8. for i in (2, ..., ell): b_i = H(strxor(b_0, b_{i-1}) || I2OSP(i, 1) || DST_prime)
+//  9. uniform_bytes = b_1 || ... || b_ell, truncated to len_in_bytes
 func expandMessageXMD(msg, dst []byte, lenInBytes int) ([]byte, error) {
 	bInBytes := 32 // SHA-256 output size
 	rInBytes := 64 // SHA-256 block size
@@ -212,14 +212,14 @@ var (
 // 11-isogeny to map the result to E: y^2 = x^3 + 4.
 //
 // The map is defined as (RFC 9380 Section 6.6.2):
-//   1. tv1 = 1 / (Z^2 * u^4 + Z * u^2)
-//   2. x1 = (-B'/A') * (1 + tv1)  [if tv1==0: x1 = B'/(Z*A')]
-//   3. gx1 = x1^3 + A'*x1 + B'
-//   4. x2 = Z * u^2 * x1
-//   5. gx2 = x2^3 + A'*x2 + B'
-//   6. if is_square(gx1): x = x1, y = sqrt(gx1)
-//      else:               x = x2, y = sqrt(gx2)
-//   7. if sgn0(u) != sgn0(y): y = -y
+//  1. tv1 = 1 / (Z^2 * u^4 + Z * u^2)
+//  2. x1 = (-B'/A') * (1 + tv1)  [if tv1==0: x1 = B'/(Z*A')]
+//  3. gx1 = x1^3 + A'*x1 + B'
+//  4. x2 = Z * u^2 * x1
+//  5. gx2 = x2^3 + A'*x2 + B'
+//  6. if is_square(gx1): x = x1, y = sqrt(gx1)
+//     else:               x = x2, y = sqrt(gx2)
+//  7. if sgn0(u) != sgn0(y): y = -y
 func SimplifiedSWU(u *big.Int) (x, y *big.Int) {
 	u2 := blsFpSqr(u)
 	zU2 := blsFpMul(sswuZ, u2)

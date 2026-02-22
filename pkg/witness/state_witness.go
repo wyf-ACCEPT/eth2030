@@ -63,10 +63,10 @@ type StateWitnessBuilder struct {
 	stateRoot types.Hash
 	finalized bool
 
-	accounts   map[types.Address]*stateWitnessEntry
-	codes      map[types.Hash][]byte
-	slotCount  int
-	accessLog  []StateAccessRecord
+	accounts  map[types.Address]*stateWitnessEntry
+	codes     map[types.Hash][]byte
+	slotCount int
+	accessLog []StateAccessRecord
 }
 
 // stateWitnessEntry tracks one account during collection.

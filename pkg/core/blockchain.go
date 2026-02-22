@@ -13,12 +13,12 @@ import (
 )
 
 var (
-	ErrNoGenesis      = errors.New("genesis block not provided")
-	ErrGenesisExists  = errors.New("genesis already initialized")
-	ErrBlockNotFound  = errors.New("block not found")
-	ErrInvalidChain   = errors.New("invalid chain: blocks not contiguous")
-	ErrFutureBlock2   = errors.New("block number too high")
-	ErrStateNotFound  = errors.New("state not found for block")
+	ErrNoGenesis     = errors.New("genesis block not provided")
+	ErrGenesisExists = errors.New("genesis already initialized")
+	ErrBlockNotFound = errors.New("block not found")
+	ErrInvalidChain  = errors.New("invalid chain: blocks not contiguous")
+	ErrFutureBlock2  = errors.New("block number too high")
+	ErrStateNotFound = errors.New("state not found for block")
 )
 
 // TxLookupEntry stores the location of a transaction within the chain.

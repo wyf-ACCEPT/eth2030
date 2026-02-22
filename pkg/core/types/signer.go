@@ -477,4 +477,3 @@ var (
 	_ Signer = EIP155Signer{}
 	_ Signer = LondonSigner{}
 )
-

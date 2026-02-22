@@ -3,6 +3,7 @@ package geth
 import (
 	"math/big"
 
+	"github.com/eth2030/eth2030/core/types"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	gethcore "github.com/ethereum/go-ethereum/core"
 	gethstate "github.com/ethereum/go-ethereum/core/state"
@@ -10,7 +11,6 @@ import (
 	gethvm "github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/eth2030/eth2030/core/types"
 )
 
 // ApplyMessage executes a transaction message using go-ethereum's state
@@ -100,18 +100,18 @@ func MakeMessage(
 	authList []gethtypes.SetCodeAuthorization,
 ) *gethcore.Message {
 	msg := &gethcore.Message{
-		From:              from,
-		To:                to,
-		Nonce:             nonce,
-		Value:             value,
-		GasLimit:          gasLimit,
-		GasPrice:          gasPrice,
-		GasFeeCap:         gasFeeCap,
-		GasTipCap:         gasTipCap,
-		Data:              data,
-		AccessList:        accessList,
-		BlobHashes:        blobHashes,
-		BlobGasFeeCap:     blobGasFeeCap,
+		From:                  from,
+		To:                    to,
+		Nonce:                 nonce,
+		Value:                 value,
+		GasLimit:              gasLimit,
+		GasPrice:              gasPrice,
+		GasFeeCap:             gasFeeCap,
+		GasTipCap:             gasTipCap,
+		Data:                  data,
+		AccessList:            accessList,
+		BlobHashes:            blobHashes,
+		BlobGasFeeCap:         blobGasFeeCap,
 		SetCodeAuthorizations: authList,
 	}
 	return msg

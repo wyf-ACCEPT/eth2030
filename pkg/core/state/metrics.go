@@ -8,20 +8,20 @@ import (
 // StateMetrics tracks execution layer state operation metrics.
 // All counters use sync/atomic for thread-safe concurrent access.
 type StateMetrics struct {
-	AccountsRead     uint64
-	AccountsWritten  uint64
-	StorageReads     uint64
-	StorageWrites    uint64
-	CodeReads        uint64
-	CodeWrites       uint64
-	BytesRead        uint64
-	BytesWritten     uint64
-	SnapshotCount    int64
-	RevertCount      int64
+	AccountsRead      uint64
+	AccountsWritten   uint64
+	StorageReads      uint64
+	StorageWrites     uint64
+	CodeReads         uint64
+	CodeWrites        uint64
+	BytesRead         uint64
+	BytesWritten      uint64
+	SnapshotCount     int64
+	RevertCount       int64
 	SelfDestructCount int64
-	TotalGasUsed     uint64
-	BlockNumber      uint64
-	Timestamp        int64
+	TotalGasUsed      uint64
+	BlockNumber       uint64
+	Timestamp         int64
 }
 
 // NewStateMetrics creates a new StateMetrics with the current timestamp.
@@ -108,20 +108,20 @@ func (m *StateMetrics) Reset(blockNumber uint64) {
 // are cast to uint64 for uniform representation.
 func (m *StateMetrics) Summary() map[string]uint64 {
 	return map[string]uint64{
-		"accounts_read":      atomic.LoadUint64(&m.AccountsRead),
-		"accounts_written":   atomic.LoadUint64(&m.AccountsWritten),
-		"storage_reads":      atomic.LoadUint64(&m.StorageReads),
-		"storage_writes":     atomic.LoadUint64(&m.StorageWrites),
-		"code_reads":         atomic.LoadUint64(&m.CodeReads),
-		"code_writes":        atomic.LoadUint64(&m.CodeWrites),
-		"bytes_read":         atomic.LoadUint64(&m.BytesRead),
-		"bytes_written":      atomic.LoadUint64(&m.BytesWritten),
-		"snapshot_count":     uint64(atomic.LoadInt64(&m.SnapshotCount)),
-		"revert_count":       uint64(atomic.LoadInt64(&m.RevertCount)),
+		"accounts_read":       atomic.LoadUint64(&m.AccountsRead),
+		"accounts_written":    atomic.LoadUint64(&m.AccountsWritten),
+		"storage_reads":       atomic.LoadUint64(&m.StorageReads),
+		"storage_writes":      atomic.LoadUint64(&m.StorageWrites),
+		"code_reads":          atomic.LoadUint64(&m.CodeReads),
+		"code_writes":         atomic.LoadUint64(&m.CodeWrites),
+		"bytes_read":          atomic.LoadUint64(&m.BytesRead),
+		"bytes_written":       atomic.LoadUint64(&m.BytesWritten),
+		"snapshot_count":      uint64(atomic.LoadInt64(&m.SnapshotCount)),
+		"revert_count":        uint64(atomic.LoadInt64(&m.RevertCount)),
 		"self_destruct_count": uint64(atomic.LoadInt64(&m.SelfDestructCount)),
-		"total_gas_used":     atomic.LoadUint64(&m.TotalGasUsed),
-		"block_number":       atomic.LoadUint64(&m.BlockNumber),
-		"timestamp":          uint64(atomic.LoadInt64(&m.Timestamp)),
+		"total_gas_used":      atomic.LoadUint64(&m.TotalGasUsed),
+		"block_number":        atomic.LoadUint64(&m.BlockNumber),
+		"timestamp":           uint64(atomic.LoadInt64(&m.Timestamp)),
 	}
 }
 

@@ -30,12 +30,12 @@ const (
 	RCInactivityPenaltyQuotientAltair uint64 = 3 * (1 << 24)
 
 	// Altair reward weight constants (out of WeightDenominatorAltair = 64).
-	AltairSourceWeight        uint64 = 14
-	AltairTargetWeight        uint64 = 26
-	AltairHeadWeight          uint64 = 14
-	AltairSyncWeight          uint64 = 2
-	AltairProposerWeight      uint64 = 8
-	WeightDenominatorAltair   uint64 = 64
+	AltairSourceWeight      uint64 = 14
+	AltairTargetWeight      uint64 = 26
+	AltairHeadWeight        uint64 = 14
+	AltairSyncWeight        uint64 = 2
+	AltairProposerWeight    uint64 = 8
+	WeightDenominatorAltair uint64 = 64
 
 	// RCSyncCommitteeSize is the sync committee size for reward computation.
 	RCSyncCommitteeSize uint64 = 512
@@ -67,12 +67,12 @@ const (
 
 // RewardState holds the beacon state fields needed for reward computation.
 type RewardState struct {
-	Validators          []*RewardValidator
-	Balances            []uint64
-	CurrentEpoch        Epoch
-	FinalizedEpoch      Epoch
-	SlotsPerEpoch       uint64
-	SyncCommitteeSize   uint64
+	Validators        []*RewardValidator
+	Balances          []uint64
+	CurrentEpoch      Epoch
+	FinalizedEpoch    Epoch
+	SlotsPerEpoch     uint64
+	SyncCommitteeSize uint64
 }
 
 // RewardValidator holds per-validator fields relevant to rewards.
@@ -100,28 +100,28 @@ func NewParticipation() *Participation {
 
 // ValidatorReward holds the reward breakdown for a single validator.
 type ValidatorReward struct {
-	Index          int
-	SourceReward   int64
-	TargetReward   int64
-	HeadReward     int64
+	Index           int
+	SourceReward    int64
+	TargetReward    int64
+	HeadReward      int64
 	InclusionReward int64
-	SyncReward     int64
-	InactivityPen  int64
-	NetReward      int64
+	SyncReward      int64
+	InactivityPen   int64
+	NetReward       int64
 }
 
 // RewardSummary aggregates the reward results across all validators.
 type RewardSummary struct {
-	Validators    []ValidatorReward
-	TotalRewards  int64
+	Validators     []ValidatorReward
+	TotalRewards   int64
 	TotalPenalties int64
-	FinalityDelay uint64
-	InLeakMode    bool
+	FinalityDelay  uint64
+	InLeakMode     bool
 }
 
 // RewardCalculatorConfig configures the reward calculator.
 type RewardCalculatorConfig struct {
-	Fork                  ForkScheme
+	Fork                   ForkScheme
 	ProposerRewardQuotient uint64
 	InactivityQuotient     uint64
 }

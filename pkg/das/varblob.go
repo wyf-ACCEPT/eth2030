@@ -12,11 +12,11 @@ import (
 
 // Variable-size blob errors.
 var (
-	ErrVarBlobTooLarge      = errors.New("das: blob data exceeds MaxBlobSize")
-	ErrVarBlobInvalidChunk  = errors.New("das: chunk size must be a power of 2 within [MinChunkSize, MaxChunkSize]")
-	ErrVarBlobDecodeShort   = errors.New("das: encoded varblob too short")
-	ErrVarBlobDecodeLen     = errors.New("das: encoded varblob length mismatch")
-	ErrVarBlobEmptyData     = errors.New("das: blob data must not be empty")
+	ErrVarBlobTooLarge     = errors.New("das: blob data exceeds MaxBlobSize")
+	ErrVarBlobInvalidChunk = errors.New("das: chunk size must be a power of 2 within [MinChunkSize, MaxChunkSize]")
+	ErrVarBlobDecodeShort  = errors.New("das: encoded varblob too short")
+	ErrVarBlobDecodeLen    = errors.New("das: encoded varblob length mismatch")
+	ErrVarBlobEmptyData    = errors.New("das: blob data must not be empty")
 )
 
 // VarBlobConfig holds configuration for variable-size blobs (J+ upgrade).

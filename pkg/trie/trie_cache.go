@@ -19,11 +19,11 @@ type CacheStats struct {
 
 // cacheEntry is a node in the doubly-linked list used for LRU tracking.
 type cacheEntry struct {
-	hash  [32]byte
-	data  []byte
-	prev  *cacheEntry
-	next  *cacheEntry
-	size  uint64 // size of data in bytes
+	hash [32]byte
+	data []byte
+	prev *cacheEntry
+	next *cacheEntry
+	size uint64 // size of data in bytes
 }
 
 // TrieCache is a thread-safe LRU cache for trie nodes keyed by hash.

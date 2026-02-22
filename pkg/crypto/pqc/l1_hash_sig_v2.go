@@ -27,15 +27,15 @@ import (
 
 // L1 V2 hash signature errors.
 var (
-	ErrL1KeyExhausted    = errors.New("pqc: L1 key pair exhausted, no OTS leaves remaining")
+	ErrL1KeyExhausted     = errors.New("pqc: L1 key pair exhausted, no OTS leaves remaining")
 	ErrL1InvalidSignature = errors.New("pqc: L1 signature is invalid")
-	ErrL1InvalidAuthPath = errors.New("pqc: L1 auth path is invalid or does not match tree")
+	ErrL1InvalidAuthPath  = errors.New("pqc: L1 auth path is invalid or does not match tree")
 )
 
 // L1 V2 hash signature constants.
 const (
-	l1v2SeedSize     = 32  // random seed size in bytes
-	l1v2WDefault     = 16  // default Winternitz parameter
+	l1v2SeedSize      = 32 // random seed size in bytes
+	l1v2WDefault      = 16 // default Winternitz parameter
 	l1v2HeightDefault = 10 // default tree height (1024 signatures)
 
 	// l1v2ChainLen16 is the number of OTS chains for w=16.
@@ -47,16 +47,16 @@ const (
 
 // L1SignerConfig configures the L1 V2 hash-based signer.
 type L1SignerConfig struct {
-	TreeHeight       int    // Merkle tree height (1-20); max signatures = 2^height
-	WinternitzParam  int    // Winternitz parameter (4 or 16)
+	TreeHeight        int    // Merkle tree height (1-20); max signatures = 2^height
+	WinternitzParam   int    // Winternitz parameter (4 or 16)
 	KeyLifetimeBlocks uint64 // advisory lifetime in blocks (0 = unlimited)
 }
 
 // DefaultL1SignerConfig returns a sensible default config.
 func DefaultL1SignerConfig() L1SignerConfig {
 	return L1SignerConfig{
-		TreeHeight:       l1v2HeightDefault,
-		WinternitzParam:  l1v2WDefault,
+		TreeHeight:        l1v2HeightDefault,
+		WinternitzParam:   l1v2WDefault,
 		KeyLifetimeBlocks: 0,
 	}
 }

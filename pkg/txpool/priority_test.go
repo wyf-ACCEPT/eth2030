@@ -32,7 +32,10 @@ func TestPriorityPool_NewPool(t *testing.T) {
 func TestPriorityPool_AddAndPeek(t *testing.T) {
 	pp := NewPriorityPool(PriorityPoolConfig{MaxPoolSize: 10, MinGasPrice: 100})
 	for _, tc := range []struct {
-		h byte; s byte; gp uint64; n uint64
+		h  byte
+		s  byte
+		gp uint64
+		n  uint64
 	}{{1, 1, 500, 0}, {2, 1, 1000, 1}, {3, 2, 750, 0}} {
 		if added, err := pp.Add(makePriorityEntry(tc.h, tc.s, tc.gp, tc.n)); !added || err != nil {
 			t.Fatalf("Add failed: added=%v err=%v", added, err)

@@ -19,24 +19,24 @@ var WithdrawalRequestContract = types.HexToAddress("0x0c15F14308530b7CDB8460094B
 
 // Storage slot layout for the withdrawal request contract.
 const (
-	ExcessWithdrawalRequestsStorageSlot  = 0
-	WithdrawalRequestCountStorageSlot    = 1
+	ExcessWithdrawalRequestsStorageSlot   = 0
+	WithdrawalRequestCountStorageSlot     = 1
 	WithdrawalRequestQueueHeadStorageSlot = 2
 	WithdrawalRequestQueueTailStorageSlot = 3
-	WithdrawalRequestQueueStorageOffset  = 4
+	WithdrawalRequestQueueStorageOffset   = 4
 )
 
 // EIP-7002 protocol parameters.
 const (
-	MaxWithdrawalRequestsPerBlock    = 16
-	TargetWithdrawalRequestsPerBlock = 2
-	MinWithdrawalRequestFee          = 1 // wei
+	MaxWithdrawalRequestsPerBlock      = 16
+	TargetWithdrawalRequestsPerBlock   = 2
+	MinWithdrawalRequestFee            = 1 // wei
 	WithdrawalRequestFeeUpdateFraction = 17
 )
 
 // Errors for withdrawal request processing.
 var (
-	ErrWithdrawalRequestEmptyPubkey = errors.New("withdrawal request: empty validator pubkey")
+	ErrWithdrawalRequestEmptyPubkey     = errors.New("withdrawal request: empty validator pubkey")
 	ErrWithdrawalRequestFeeInsufficient = errors.New("withdrawal request: insufficient fee")
 )
 

@@ -48,9 +48,9 @@ type ProposerSlashingEvidence struct {
 type AttesterSlashingEvidence struct {
 	ValidatorIndex ValidatorIndex
 	// Type indicates whether this is a "double_vote" or "surround_vote".
-	Type           string
-	Attestation1   AttestationRecord
-	Attestation2   AttestationRecord
+	Type         string
+	Attestation1 AttestationRecord
+	Attestation2 AttestationRecord
 }
 
 // SlashingDetectorConfig holds configuration for the slashing detector.

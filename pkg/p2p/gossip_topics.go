@@ -158,13 +158,13 @@ type TopicScoreSnapshot struct {
 
 // Errors for the TopicManager.
 var (
-	ErrTopicNotSubscribed    = errors.New("gossip_topics: topic not subscribed")
+	ErrTopicNotSubscribed     = errors.New("gossip_topics: topic not subscribed")
 	ErrTopicAlreadySubscribed = errors.New("gossip_topics: topic already subscribed")
-	ErrTopicManagerClosed    = errors.New("gossip_topics: manager is closed")
-	ErrTopicNilHandler       = errors.New("gossip_topics: nil handler")
-	ErrTopicEmptyData        = errors.New("gossip_topics: empty data")
-	ErrTopicDuplicateMessage = errors.New("gossip_topics: duplicate message")
-	ErrTopicDataTooLarge     = errors.New("gossip_topics: data exceeds max payload size")
+	ErrTopicManagerClosed     = errors.New("gossip_topics: manager is closed")
+	ErrTopicNilHandler        = errors.New("gossip_topics: nil handler")
+	ErrTopicEmptyData         = errors.New("gossip_topics: empty data")
+	ErrTopicDuplicateMessage  = errors.New("gossip_topics: duplicate message")
+	ErrTopicDataTooLarge      = errors.New("gossip_topics: data exceeds max payload size")
 )
 
 // MaxPayloadSize is the maximum uncompressed payload size (10 MiB per spec).
@@ -189,8 +189,8 @@ type TopicManager struct {
 	topics map[GossipTopic]*topicState
 
 	// Global message deduplication: messageID -> receive time.
-	seen    map[MessageID]time.Time
-	seenMu  sync.Mutex
+	seen   map[MessageID]time.Time
+	seenMu sync.Mutex
 }
 
 // NewTopicManager creates a new TopicManager with the given parameters.

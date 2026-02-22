@@ -12,12 +12,12 @@ import (
 
 // PeerProtocolMetrics holds aggregated message statistics for a single peer.
 type PeerProtocolMetrics struct {
-	PeerID        string
-	TotalMessages uint64
-	TotalBytes    uint64
-	AvgLatencyMs  float64
+	PeerID         string
+	TotalMessages  uint64
+	TotalBytes     uint64
+	AvgLatencyMs   float64
 	MessagesByType map[uint64]uint64
-	LastSeen      int64 // unix timestamp
+	LastSeen       int64 // unix timestamp
 
 	// Internal accumulators for computing averages.
 	totalLatencyMs int64

@@ -132,7 +132,7 @@ func (s *PQSignatureScheme) GenerateKeys() (*PQKeySet, error) {
 	}
 
 	return &PQKeySet{
-		PublicKey:  publicKey,
+		PublicKey: publicKey,
 		KeyShares: shares,
 		Threshold: s.threshold,
 	}, nil

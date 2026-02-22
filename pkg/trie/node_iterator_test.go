@@ -285,8 +285,8 @@ func TestIteratorStats(t *testing.T) {
 
 func TestCollectLeavesWithStats(t *testing.T) {
 	entries := map[string]string{
-		"alpha": "1",
-		"bravo": "2",
+		"alpha":   "1",
+		"bravo":   "2",
 		"charlie": "3",
 	}
 	root, nodeMap := buildTrieAndCommit(t, entries)

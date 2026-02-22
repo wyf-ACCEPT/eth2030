@@ -9,9 +9,9 @@ import "errors"
 type PQAlgorithm uint8
 
 const (
-	DILITHIUM3     PQAlgorithm = 0
-	FALCON512      PQAlgorithm = 1
-	SPHINCSSHA256  PQAlgorithm = 2
+	DILITHIUM3    PQAlgorithm = 0
+	FALCON512     PQAlgorithm = 1
+	SPHINCSSHA256 PQAlgorithm = 2
 )
 
 // Size constants for Dilithium3 (CRYSTALS-Dilithium, NIST level 3).

@@ -87,7 +87,7 @@ func TestReceiptStatusField(t *testing.T) {
 	revertCode := []byte{
 		0x60, 0x00, // PUSH1 0x00
 		0x60, 0x00, // PUSH1 0x00
-		0xfd,       // REVERT
+		0xfd, // REVERT
 	}
 	statedb.CreateAccount(contractAddr)
 	statedb.SetCode(contractAddr, revertCode)
@@ -168,8 +168,8 @@ func TestReceiptLogsFromEVM(t *testing.T) {
 	logCode := []byte{
 		0x60, 0x20, // PUSH1 0x20 (size = 32)
 		0x60, 0x00, // PUSH1 0x00 (offset = 0)
-		0xa0,       // LOG0
-		0x00,       // STOP
+		0xa0, // LOG0
+		0x00, // STOP
 	}
 	statedb.CreateAccount(logContract)
 	statedb.SetCode(logContract, logCode)
@@ -539,8 +539,8 @@ func TestGlobalLogIndex(t *testing.T) {
 	code1 := []byte{
 		0x60, 0x20, // PUSH1 0x20
 		0x60, 0x00, // PUSH1 0x00
-		0xa0,       // LOG0
-		0x00,       // STOP
+		0xa0, // LOG0
+		0x00, // STOP
 	}
 	statedb.CreateAccount(contract1)
 	statedb.SetCode(contract1, code1)
@@ -553,8 +553,8 @@ func TestGlobalLogIndex(t *testing.T) {
 		0xa0,       // LOG0 (1st log)
 		0x60, 0x20, // PUSH1 0x20
 		0x60, 0x00, // PUSH1 0x00
-		0xa0,       // LOG0 (2nd log)
-		0x00,       // STOP
+		0xa0, // LOG0 (2nd log)
+		0x00, // STOP
 	}
 	statedb.CreateAccount(contract2)
 	statedb.SetCode(contract2, code2)

@@ -48,12 +48,12 @@ var (
 
 // ValidatorBalance represents a consensus-layer validator with EIP-7251 fields.
 type ValidatorBalance struct {
-	Pubkey               [48]byte
+	Pubkey                [48]byte
 	WithdrawalCredentials [32]byte
-	EffectiveBalance     uint64 // in Gwei
-	Slashed              bool
-	ActivationEpoch      Epoch
-	ExitEpoch            Epoch
+	EffectiveBalance      uint64 // in Gwei
+	Slashed               bool
+	ActivationEpoch       Epoch
+	ExitEpoch             Epoch
 }
 
 // IsActive returns true if the validator is active at the given epoch.

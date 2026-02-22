@@ -44,7 +44,7 @@ func DefaultBlobSyncConfig() BlobSyncConfig {
 
 // blobSlotState tracks the state of blob requests for a single slot.
 type blobSlotState struct {
-	requestedIndices map[uint64]bool // indices that were requested
+	requestedIndices map[uint64]bool   // indices that were requested
 	blobs            map[uint64][]byte // index -> blob data
 	verified         bool
 	complete         bool

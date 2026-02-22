@@ -89,12 +89,12 @@ type CustodyRotation struct {
 
 // CustodyProofResponse contains the data needed to respond to a custody challenge.
 type CustodyProofResponse struct {
-	NodeID        [32]byte
-	Epoch         uint64
-	Column        uint64
-	CellData      []byte
-	ProofHash     []byte
-	GeneratedAt   time.Time
+	NodeID      [32]byte
+	Epoch       uint64
+	Column      uint64
+	CellData    []byte
+	ProofHash   []byte
+	GeneratedAt time.Time
 }
 
 // NetworkSamplingRequest represents a request to sample a column from peers.

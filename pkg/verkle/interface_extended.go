@@ -282,9 +282,9 @@ type StateMigrationHook interface {
 // NoopMigrationHook is a no-op implementation of StateMigrationHook.
 type NoopMigrationHook struct{}
 
-func (NoopMigrationHook) OnAccountMigrated(_ types.Address) error       { return nil }
+func (NoopMigrationHook) OnAccountMigrated(_ types.Address) error               { return nil }
 func (NoopMigrationHook) OnStorageMigrated(_ types.Address, _ types.Hash) error { return nil }
-func (NoopMigrationHook) OnMigrationComplete(_ types.Hash) error        { return nil }
+func (NoopMigrationHook) OnMigrationComplete(_ types.Hash) error                { return nil }
 
 // CountingMigrationHook counts migration events.
 type CountingMigrationHook struct {

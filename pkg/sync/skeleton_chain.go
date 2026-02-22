@@ -27,18 +27,18 @@ var (
 
 // Default skeleton parameters.
 const (
-	DefaultSkeletonStride   = 2048  // Blocks between skeleton anchors.
-	DefaultMaxInFlight      = 8     // Maximum concurrent in-flight fetch tasks.
+	DefaultSkeletonStride   = 2048     // Blocks between skeleton anchors.
+	DefaultMaxInFlight      = 8        // Maximum concurrent in-flight fetch tasks.
 	DefaultMaxInFlightBytes = 64 << 20 // 64 MiB max in-flight data.
-	DefaultReceiptBatch     = 64    // Receipts per fetch request.
+	DefaultReceiptBatch     = 64       // Receipts per fetch request.
 )
 
 // SkeletonConfig configures the skeleton chain builder.
 type SkeletonConfig struct {
-	Stride          uint64 // Block interval between skeleton anchors.
-	MaxInFlight     int    // Maximum concurrent fetch tasks.
-	MaxInFlightBytes int64 // Maximum bytes of in-flight data.
-	ReceiptBatch    int    // Number of receipts per fetch batch.
+	Stride           uint64 // Block interval between skeleton anchors.
+	MaxInFlight      int    // Maximum concurrent fetch tasks.
+	MaxInFlightBytes int64  // Maximum bytes of in-flight data.
+	ReceiptBatch     int    // Number of receipts per fetch batch.
 }
 
 // DefaultSkeletonConfig returns sensible defaults.

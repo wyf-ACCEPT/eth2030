@@ -47,9 +47,9 @@ type TxAssertion struct {
 
 // AssertionResult holds the outcome of evaluating an assertion set.
 type AssertionResult struct {
-	Passed        bool
+	Passed         bool
 	AssertionIndex int
-	Reason        string
+	Reason         string
 }
 
 // AssertionContext provides the state needed to evaluate assertions.
@@ -152,9 +152,9 @@ func (as *AssertionSet) Evaluate(ctx *AssertionContext) *AssertionResult {
 	for i, a := range as.assertions {
 		if reason := evaluateAssertion(a, ctx); reason != "" {
 			return &AssertionResult{
-				Passed:        false,
+				Passed:         false,
 				AssertionIndex: i,
-				Reason:        reason,
+				Reason:         reason,
 			}
 		}
 	}

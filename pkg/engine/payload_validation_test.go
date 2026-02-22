@@ -384,10 +384,10 @@ func TestValidatePayloadFull_MultipleErrors(t *testing.T) {
 		ExecutionPayloadV2: ExecutionPayloadV2{
 			ExecutionPayloadV1: ExecutionPayloadV1{
 				GasLimit:      30000000,
-				GasUsed:       40000000, // exceeds limit
-				Timestamp:     0,        // zero timestamp
+				GasUsed:       40000000,         // exceeds limit
+				Timestamp:     0,                // zero timestamp
 				ExtraData:     make([]byte, 50), // too long
-				BaseFeePerGas: nil,      // nil base fee
+				BaseFeePerGas: nil,              // nil base fee
 				Transactions:  [][]byte{},
 			},
 			Withdrawals: nil, // nil withdrawals

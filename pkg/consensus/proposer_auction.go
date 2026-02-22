@@ -16,14 +16,14 @@ import (
 
 // Auction errors.
 var (
-	ErrAuctionSlotPast       = errors.New("proposer-auction: slot already past")
-	ErrAuctionAlreadyOpen    = errors.New("proposer-auction: auction already open for slot")
-	ErrAuctionNotOpen        = errors.New("proposer-auction: no open auction for slot")
-	ErrAuctionAlreadyClosed  = errors.New("proposer-auction: auction already closed")
-	ErrAuctionDuplicateBid   = errors.New("proposer-auction: duplicate bid from bidder")
-	ErrAuctionZeroBid        = errors.New("proposer-auction: bid amount must be > 0")
-	ErrAuctionNoBids         = errors.New("proposer-auction: no bids submitted")
-	ErrAuctionInvalidCommit  = errors.New("proposer-auction: invalid block root commitment")
+	ErrAuctionSlotPast      = errors.New("proposer-auction: slot already past")
+	ErrAuctionAlreadyOpen   = errors.New("proposer-auction: auction already open for slot")
+	ErrAuctionNotOpen       = errors.New("proposer-auction: no open auction for slot")
+	ErrAuctionAlreadyClosed = errors.New("proposer-auction: auction already closed")
+	ErrAuctionDuplicateBid  = errors.New("proposer-auction: duplicate bid from bidder")
+	ErrAuctionZeroBid       = errors.New("proposer-auction: bid amount must be > 0")
+	ErrAuctionNoBids        = errors.New("proposer-auction: no bids submitted")
+	ErrAuctionInvalidCommit = errors.New("proposer-auction: invalid block root commitment")
 )
 
 // AuctionBid represents a sealed bid in a proposer auction.
@@ -37,12 +37,12 @@ type AuctionBid struct {
 
 // AuctionClearing holds the clearing result for a Vickrey auction.
 type AuctionClearing struct {
-	Slot           uint64
-	Winner         uint64     // winning bidder
-	WinningBid     uint64     // highest bid
-	ClearingPrice  uint64     // second-highest bid (Vickrey price)
+	Slot            uint64
+	Winner          uint64 // winning bidder
+	WinningBid      uint64 // highest bid
+	ClearingPrice   uint64 // second-highest bid (Vickrey price)
 	BlockCommitment types.Hash
-	BidCount       int
+	BidCount        int
 }
 
 // ProposerAuction manages a sealed-bid auction for a single slot.
@@ -56,17 +56,17 @@ type ProposerAuction struct {
 
 // ProposerScheduleEntry is one entry in the deterministic proposer schedule.
 type ProposerScheduleEntry struct {
-	Slot           uint64
-	ProposerIndex  uint64
-	IsAuctioned    bool   // true if assigned via auction
-	ClearingPrice  uint64 // 0 if via fallback
+	Slot          uint64
+	ProposerIndex uint64
+	IsAuctioned   bool   // true if assigned via auction
+	ClearingPrice uint64 // 0 if via fallback
 }
 
 // CommitteeRotationEntry records committee composition for an epoch.
 type CommitteeRotationEntry struct {
-	Epoch      uint64
-	Committee  []uint64 // validator indices eligible for proposing
-	Seed       types.Hash
+	Epoch     uint64
+	Committee []uint64 // validator indices eligible for proposing
+	Seed      types.Hash
 }
 
 // AuctionedProposerConfig configures the auctioned proposer system.

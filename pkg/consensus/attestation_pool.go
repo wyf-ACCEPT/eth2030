@@ -31,13 +31,13 @@ const (
 
 // Attestation pool errors.
 var (
-	ErrPoolAttNil           = errors.New("attestation_pool: nil attestation")
-	ErrPoolAttSlotTooOld    = errors.New("attestation_pool: attestation slot too old")
-	ErrPoolAttFutureSlot    = errors.New("attestation_pool: attestation slot is in the future")
-	ErrPoolAttSourceEpoch   = errors.New("attestation_pool: source epoch mismatch")
-	ErrPoolAttTargetEpoch   = errors.New("attestation_pool: target epoch mismatch")
-	ErrPoolAttNoBits        = errors.New("attestation_pool: empty aggregation bits")
-	ErrPoolFull             = errors.New("attestation_pool: pool is full")
+	ErrPoolAttNil         = errors.New("attestation_pool: nil attestation")
+	ErrPoolAttSlotTooOld  = errors.New("attestation_pool: attestation slot too old")
+	ErrPoolAttFutureSlot  = errors.New("attestation_pool: attestation slot is in the future")
+	ErrPoolAttSourceEpoch = errors.New("attestation_pool: source epoch mismatch")
+	ErrPoolAttTargetEpoch = errors.New("attestation_pool: target epoch mismatch")
+	ErrPoolAttNoBits      = errors.New("attestation_pool: empty aggregation bits")
+	ErrPoolFull           = errors.New("attestation_pool: pool is full")
 )
 
 // PoolAttestation is the pool's internal attestation format, including
@@ -90,9 +90,9 @@ type attestationDataKey struct {
 
 // AttestationPoolConfig configures the attestation pool.
 type AttestationPoolConfig struct {
-	MaxPoolSize     int    // maximum number of attestations in the pool
-	PruneSlots      uint64 // attestations older than currentSlot - PruneSlots are removed
-	SlotsPerEpoch   uint64 // slots per epoch for epoch calculations
+	MaxPoolSize   int    // maximum number of attestations in the pool
+	PruneSlots    uint64 // attestations older than currentSlot - PruneSlots are removed
+	SlotsPerEpoch uint64 // slots per epoch for epoch calculations
 }
 
 // DefaultAttestationPoolConfig returns the default pool configuration.

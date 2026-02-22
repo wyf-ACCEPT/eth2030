@@ -14,9 +14,9 @@ import (
 // increments, but the pool allocates in larger pages to reduce the number
 // of slice reallocations. 4 KiB pages align with OS page sizes.
 const (
-	MemPoolPageSize  = 4096      // 4 KiB per page
-	MemPoolMaxPages  = 8192      // 32 MiB max (8192 * 4 KiB)
-	MemPoolWordSize  = 32        // EVM word size in bytes
+	MemPoolPageSize  = 4096 // 4 KiB per page
+	MemPoolMaxPages  = 8192 // 32 MiB max (8192 * 4 KiB)
+	MemPoolWordSize  = 32   // EVM word size in bytes
 	MemPoolMaxMemory = MemPoolPageSize * MemPoolMaxPages
 )
 
@@ -50,9 +50,9 @@ func putPage(p *[]byte) {
 // its backing store. It tracks gas costs for expansion and supports
 // efficient MCOPY operations.
 type PooledMemory struct {
-	pages      []*[]byte // pooled backing pages
-	size       uint64    // logical size in bytes (always word-aligned)
-	lastGasCost uint64   // cumulative gas paid for expansion
+	pages       []*[]byte // pooled backing pages
+	size        uint64    // logical size in bytes (always word-aligned)
+	lastGasCost uint64    // cumulative gas paid for expansion
 }
 
 // NewPooledMemory creates a PooledMemory with no initial allocation.

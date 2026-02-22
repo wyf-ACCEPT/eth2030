@@ -59,9 +59,9 @@ func TestSnapshotAccountCache_HitMissStats(t *testing.T) {
 	cache := NewSnapshotAccountCache(10)
 	hash := mkHash(0x01)
 	cache.Put(hash, []byte{1})
-	cache.Get(hash)        // hit
-	cache.Get(hash)        // hit
-	cache.Get(hash)        // hit
+	cache.Get(hash)         // hit
+	cache.Get(hash)         // hit
+	cache.Get(hash)         // hit
 	cache.Get(mkHash(0x99)) // miss
 	cache.Get(mkHash(0x98)) // miss
 
@@ -109,7 +109,7 @@ func TestSnapshotAccountCache_AccessPromotes(t *testing.T) {
 	cache.Put(h1, []byte{1})
 	cache.Put(h2, []byte{2})
 	cache.Put(h3, []byte{3})
-	cache.Get(h1)           // promote h1
+	cache.Get(h1)            // promote h1
 	cache.Put(h4, []byte{4}) // evicts h2 (now LRU)
 
 	if _, ok := cache.Get(h2); ok {

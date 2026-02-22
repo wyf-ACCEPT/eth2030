@@ -8,10 +8,10 @@ import (
 
 // mockNetBackend implements NetBackend for testing.
 type mockNetBackend struct {
-	networkID  uint64
-	listening  bool
-	peerCount  int
-	maxPeers   int
+	networkID uint64
+	listening bool
+	peerCount int
+	maxPeers  int
 }
 
 func newMockNetBackend() *mockNetBackend {
@@ -23,10 +23,10 @@ func newMockNetBackend() *mockNetBackend {
 	}
 }
 
-func (b *mockNetBackend) NetworkID() uint64  { return b.networkID }
-func (b *mockNetBackend) IsListening() bool  { return b.listening }
-func (b *mockNetBackend) PeerCount() int     { return b.peerCount }
-func (b *mockNetBackend) MaxPeers() int      { return b.maxPeers }
+func (b *mockNetBackend) NetworkID() uint64 { return b.networkID }
+func (b *mockNetBackend) IsListening() bool { return b.listening }
+func (b *mockNetBackend) PeerCount() int    { return b.peerCount }
+func (b *mockNetBackend) MaxPeers() int     { return b.maxPeers }
 
 // callNet is a test helper for NetAPI dispatch.
 func callNet(t *testing.T, n *NetAPI, method string, params ...interface{}) *Response {

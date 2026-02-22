@@ -493,4 +493,3 @@ func TestInclusionListTransactionHashes(t *testing.T) {
 		t.Errorf("hash[1] mismatch: got %s, want %s", hashes[1].Hex(), tx2.Hash().Hex())
 	}
 }
-

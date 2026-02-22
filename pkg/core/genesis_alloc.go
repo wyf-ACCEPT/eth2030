@@ -61,7 +61,7 @@ func TestnetGenesisBlock() *Genesis {
 		Config:     SepoliaConfig,
 		Nonce:      0,
 		Timestamp:  1633267481,
-		ExtraData:  []byte("eth2030 testnet"),
+		ExtraData:  []byte("ETH2030 testnet"),
 		GasLimit:   30_000_000,
 		Difficulty: big.NewInt(1),
 		Alloc:      TestnetGenesisAlloc(),
@@ -209,10 +209,10 @@ func AllocHasAccount(alloc GenesisAlloc, addr types.Address) bool {
 // GenesisStateSnapshot captures a snapshot of the genesis state after applying
 // allocations. It stores account data in a compact form for verification.
 type GenesisStateSnapshot struct {
-	Root          types.Hash
-	AccountCount  int
-	TotalBalance  *big.Int
-	CodeAccounts  int
+	Root         types.Hash
+	AccountCount int
+	TotalBalance *big.Int
+	CodeAccounts int
 }
 
 // SnapshotGenesisState applies a genesis allocation to a fresh in-memory state

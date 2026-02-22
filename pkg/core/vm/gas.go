@@ -2,7 +2,8 @@ package vm
 
 // Gas cost constants following the Cancun hard fork specification.
 // Gas tiers per Yellow Paper Appendix G:
-//   Gzero=0, Gbase=2, Gverylow=3, Glow=5, Gmid=8, Ghigh=10, Gext=20
+//
+//	Gzero=0, Gbase=2, Gverylow=3, Glow=5, Gmid=8, Ghigh=10, Gext=20
 const (
 	GasBase    uint64 = 2  // Gbase: ADDRESS, ORIGIN, CALLER, CALLVALUE, CALLDATASIZE, CODESIZE, GASPRICE, COINBASE, TIMESTAMP, NUMBER, PREVRANDAO, GASLIMIT, POP, PC, MSIZE, GAS, CHAINID, BASEFEE, RETURNDATASIZE, BLOBBASEFEE, PUSH0
 	GasVerylow uint64 = 3  // Gverylow: ADD, SUB, NOT, LT, GT, SLT, SGT, EQ, ISZERO, AND, OR, XOR, BYTE, SHL, SHR, SAR, CALLDATALOAD, MLOAD, MSTORE, MSTORE8, PUSH*, DUP*, SWAP*, CALLDATACOPY, CODECOPY, RETURNDATACOPY
@@ -50,17 +51,17 @@ const (
 	GasJump     uint64 = 8
 	GasJumpi    uint64 = 10
 
-	GasPush0     uint64 = 2
-	GasPush      uint64 = 3 // PUSH1-PUSH32
-	GasDup       uint64 = 3
-	GasSwap      uint64 = 3
-	GasPop       uint64 = 2
-	GasMload     uint64 = 3
-	GasMstore    uint64 = 3
-	GasMstore8   uint64 = 3
-	GasPc        uint64 = 2
-	GasMsize     uint64 = 2
-	GasGas       uint64 = 2
+	GasPush0   uint64 = 2
+	GasPush    uint64 = 3 // PUSH1-PUSH32
+	GasDup     uint64 = 3
+	GasSwap    uint64 = 3
+	GasPop     uint64 = 2
+	GasMload   uint64 = 3
+	GasMstore  uint64 = 3
+	GasMstore8 uint64 = 3
+	GasPc      uint64 = 2
+	GasMsize   uint64 = 2
+	GasGas     uint64 = 2
 
 	// Cancun opcodes (EIP-1153, EIP-5656, EIP-4844, EIP-7516)
 	GasTload       uint64 = 100 // EIP-1153: transient storage load
@@ -77,11 +78,11 @@ const (
 	GasKeccak256Glamsterdan uint64 = 45 // KECCAK256 constant (was 30)
 
 	// EIP-7904: Precompile gas cost increases.
-	GasECADDGlamsterdan           uint64 = 314   // bn256Add (was 150)
-	GasBlake2fConstGlamsterdan    uint64 = 170   // blake2F constant (was 0)
-	GasBlake2fPerRoundGlamsterdan uint64 = 2     // blake2F per round (was 1)
-	GasPointEvalGlamsterdan       uint64 = 89363 // KZG point evaluation (was 50000)
-	GasECPairingConstGlamsterdan  uint64 = 45000 // bn256Pairing constant (unchanged)
+	GasECADDGlamsterdan            uint64 = 314   // bn256Add (was 150)
+	GasBlake2fConstGlamsterdan     uint64 = 170   // blake2F constant (was 0)
+	GasBlake2fPerRoundGlamsterdan  uint64 = 2     // blake2F per round (was 1)
+	GasPointEvalGlamsterdan        uint64 = 89363 // KZG point evaluation (was 50000)
+	GasECPairingConstGlamsterdan   uint64 = 45000 // bn256Pairing constant (unchanged)
 	GasECPairingPerPairGlamsterdan uint64 = 34103 // bn256Pairing per pair (was 34000)
 
 	// EIP-4762: Statelessness gas cost changes (Verkle).

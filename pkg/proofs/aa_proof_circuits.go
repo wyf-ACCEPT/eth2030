@@ -40,17 +40,17 @@ const (
 	MaxAABatchSize = 256
 
 	// Groth16 proof element sizes (BN254 curve).
-	g1PointSize = 64 // uncompressed G1 point (x, y each 32 bytes)
-	g2PointSize = 128 // uncompressed G2 point (x, y each 64 bytes)
+	g1PointSize = 64                          // uncompressed G1 point (x, y each 32 bytes)
+	g2PointSize = 128                         // uncompressed G2 point (x, y each 64 bytes)
 	groth16Size = 2*g1PointSize + g2PointSize // A(G1) + C(G1) + B(G2)
 
 	// Gas cost model for AA proof verification.
-	aaCircuitBaseGas        uint64 = 80_000
-	aaCircuitPerConstraint  uint64 = 50
-	aaCircuitNonceConstraints   = 8
-	aaCircuitSigConstraints     = 256
-	aaCircuitGasConstraints     = 16
-	aaCircuitTotalConstraints   = aaCircuitNonceConstraints + aaCircuitSigConstraints + aaCircuitGasConstraints
+	aaCircuitBaseGas          uint64 = 80_000
+	aaCircuitPerConstraint    uint64 = 50
+	aaCircuitNonceConstraints        = 8
+	aaCircuitSigConstraints          = 256
+	aaCircuitGasConstraints          = 16
+	aaCircuitTotalConstraints        = aaCircuitNonceConstraints + aaCircuitSigConstraints + aaCircuitGasConstraints
 )
 
 // Domain separators for in-circuit hashing.
@@ -113,10 +113,10 @@ func (p *Groth16Proof) Bytes() []byte {
 
 // AAStateProof contains the on-chain state required to verify an AA operation.
 type AAStateProof struct {
-	AccountNonce    uint64     // current account nonce from state
-	AccountBalance  *big.Int   // account ETH balance for gas payment
-	StateRoot       types.Hash // state trie root at proof time
-	StorageProof    []byte     // Merkle proof of account in state trie
+	AccountNonce   uint64     // current account nonce from state
+	AccountBalance *big.Int   // account ETH balance for gas payment
+	StateRoot      types.Hash // state trie root at proof time
+	StorageProof   []byte     // Merkle proof of account in state trie
 }
 
 // AAValidationCircuit represents the ZK circuit for AA validation.
@@ -127,16 +127,16 @@ type AAStateProof struct {
 type AAValidationCircuit struct {
 	mu sync.RWMutex
 	// Config for gas cost computation.
-	baseGas         uint64
-	perConstraint   uint64
+	baseGas          uint64
+	perConstraint    uint64
 	totalConstraints int
 }
 
 // NewAAValidationCircuit creates a new circuit with default parameters.
 func NewAAValidationCircuit() *AAValidationCircuit {
 	return &AAValidationCircuit{
-		baseGas:         aaCircuitBaseGas,
-		perConstraint:   aaCircuitPerConstraint,
+		baseGas:          aaCircuitBaseGas,
+		perConstraint:    aaCircuitPerConstraint,
 		totalConstraints: aaCircuitTotalConstraints,
 	}
 }
@@ -165,11 +165,11 @@ type AACircuitProof struct {
 
 // AAPublicInputs are the public signals exposed by the circuit proof.
 type AAPublicInputs struct {
-	OpHash      types.Hash // hash of the user operation
-	EntryPoint  types.Address
-	Nonce       uint64
-	StateRoot   types.Hash
-	GasLimit    uint64
+	OpHash     types.Hash // hash of the user operation
+	EntryPoint types.Address
+	Nonce      uint64
+	StateRoot  types.Hash
+	GasLimit   uint64
 }
 
 // aaSHA256 computes SHA-256 over concatenated inputs for in-circuit hashing.
@@ -263,10 +263,10 @@ func ProveAAValidation(userOp *UserOperation, stateProof *AAStateProof) (*AACirc
 	gasCost := aaCircuitBaseGas + uint64(aaCircuitTotalConstraints)*aaCircuitPerConstraint
 
 	proof := &AACircuitProof{
-		Version: AACircuitVersion,
-		Groth16: Groth16Proof{A: piA, B: piB, C: piC},
+		Version:      AACircuitVersion,
+		Groth16:      Groth16Proof{A: piA, B: piB, C: piC},
 		PublicInputs: *publicInputs,
-		GasCost: gasCost,
+		GasCost:      gasCost,
 	}
 
 	return proof, publicInputs, nil
@@ -349,11 +349,11 @@ func (b *AAProofBatch) Size() int {
 
 // AABatchAggregatedProof is the result of batching multiple AA proofs.
 type AABatchAggregatedProof struct {
-	Version    byte
-	BatchRoot  types.Hash
-	BatchSize  int
-	TotalGas   uint64
-	ProofData  []byte
+	Version   byte
+	BatchRoot types.Hash
+	BatchSize int
+	TotalGas  uint64
+	ProofData []byte
 }
 
 // Aggregate combines all proofs in the batch into a single aggregated proof.

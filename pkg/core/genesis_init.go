@@ -18,8 +18,8 @@ import (
 
 // Genesis initialization errors.
 var (
-	ErrGenesisAlreadyWritten = errors.New("genesis: block already written")
-	ErrGenesisChainIDZero    = errors.New("genesis: chain ID must be positive")
+	ErrGenesisAlreadyWritten  = errors.New("genesis: block already written")
+	ErrGenesisChainIDZero     = errors.New("genesis: chain ID must be positive")
 	ErrGenesisTimestampFuture = errors.New("genesis: timestamp is in the far future")
 )
 

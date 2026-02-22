@@ -70,8 +70,8 @@ func (pl *ProgressiveList) HashTreeRoot() [32]byte {
 // merkleize_progressive(chunks, num_leaves):
 //   - If len(chunks) == 0: return Bytes32() (zero hash)
 //   - Otherwise: hash(
-//       merkleize(chunks[:num_leaves], num_leaves),
-//       merkleize_progressive(chunks[num_leaves:], num_leaves * 4)
+//     merkleize(chunks[:num_leaves], num_leaves),
+//     merkleize_progressive(chunks[num_leaves:], num_leaves * 4)
 //     )
 func merkleizeProgressive(chunks [][32]byte, numLeaves int) [32]byte {
 	if len(chunks) == 0 {

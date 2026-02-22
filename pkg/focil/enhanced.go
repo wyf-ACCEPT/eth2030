@@ -30,19 +30,19 @@ const (
 
 // Enhanced FOCIL errors.
 var (
-	ErrEnhancedNilList         = errors.New("focil: inclusion list is nil")
-	ErrEnhancedZeroSlot        = errors.New("focil: slot must be > 0")
-	ErrEnhancedTooManyTxs      = errors.New("focil: too many transactions")
-	ErrEnhancedTooManyConstr   = errors.New("focil: too many constraints")
-	ErrEnhancedGasExceeded     = errors.New("focil: max gas exceeded")
-	ErrEnhancedDuplicateTx     = errors.New("focil: duplicate transaction hash")
-	ErrEnhancedInvalidConstr   = errors.New("focil: invalid constraint")
-	ErrEnhancedNoLists         = errors.New("focil: no lists to merge")
-	ErrEnhancedEmptyTxs        = errors.New("focil: no transactions in list")
-	ErrEnhancedPriorityLen     = errors.New("focil: priority length mismatch")
-	ErrEnhancedConstraintGas   = errors.New("focil: constraint MinGas > MaxGas")
-	ErrEnhancedDeadlineZero    = errors.New("focil: constraint deadline is zero")
-	ErrEnhancedProposerZero    = errors.New("focil: proposer address is zero")
+	ErrEnhancedNilList       = errors.New("focil: inclusion list is nil")
+	ErrEnhancedZeroSlot      = errors.New("focil: slot must be > 0")
+	ErrEnhancedTooManyTxs    = errors.New("focil: too many transactions")
+	ErrEnhancedTooManyConstr = errors.New("focil: too many constraints")
+	ErrEnhancedGasExceeded   = errors.New("focil: max gas exceeded")
+	ErrEnhancedDuplicateTx   = errors.New("focil: duplicate transaction hash")
+	ErrEnhancedInvalidConstr = errors.New("focil: invalid constraint")
+	ErrEnhancedNoLists       = errors.New("focil: no lists to merge")
+	ErrEnhancedEmptyTxs      = errors.New("focil: no transactions in list")
+	ErrEnhancedPriorityLen   = errors.New("focil: priority length mismatch")
+	ErrEnhancedConstraintGas = errors.New("focil: constraint MinGas > MaxGas")
+	ErrEnhancedDeadlineZero  = errors.New("focil: constraint deadline is zero")
+	ErrEnhancedProposerZero  = errors.New("focil: proposer address is zero")
 )
 
 // InclusionConstraint represents a constraint on block inclusion behavior.

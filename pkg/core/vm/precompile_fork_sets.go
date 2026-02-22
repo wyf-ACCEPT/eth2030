@@ -17,13 +17,13 @@ import (
 
 // Fork name constants used as keys for precompile set selection.
 const (
-	ForkHomestead      = "Homestead"
-	ForkByzantium      = "Byzantium"
-	ForkIstanbul       = "Istanbul"
-	ForkCancun         = "Cancun"
-	ForkPrague         = "Prague"
-	ForkGlamsterdan    = "Glamsterdan"
-	ForkHogotaName     = "Hogota"
+	ForkHomestead   = "Homestead"
+	ForkByzantium   = "Byzantium"
+	ForkIstanbul    = "Istanbul"
+	ForkCancun      = "Cancun"
+	ForkPrague      = "Prague"
+	ForkGlamsterdan = "Glamsterdan"
+	ForkHogotaName  = "Hogota"
 )
 
 // Precompile address ranges.
@@ -56,10 +56,10 @@ type PrecompileActivation struct {
 // ForkPrecompileSet holds the complete set of precompiled contracts active at
 // a particular fork. It provides O(1) lookup and gas cost computation.
 type ForkPrecompileSet struct {
-	fork       string
-	contracts  map[types.Address]PrecompiledContract
-	names      map[types.Address]string
-	addresses  []types.Address // sorted for deterministic iteration
+	fork      string
+	contracts map[types.Address]PrecompiledContract
+	names     map[types.Address]string
+	addresses []types.Address // sorted for deterministic iteration
 }
 
 // newForkPrecompileSet creates a ForkPrecompileSet from a slice of activations.

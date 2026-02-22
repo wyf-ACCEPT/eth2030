@@ -16,13 +16,13 @@ import (
 
 // Teradata L2 errors.
 var (
-	ErrTeradataDataTooLarge    = errors.New("teradata: data exceeds maximum size")
-	ErrTeradataDataEmpty       = errors.New("teradata: data is empty")
-	ErrTeradataNotFound        = errors.New("teradata: data not found")
-	ErrTeradataTooManyChains   = errors.New("teradata: maximum L2 chains reached")
-	ErrTeradataStorageFull     = errors.New("teradata: total storage limit exceeded")
-	ErrTeradataInvalidReceipt  = errors.New("teradata: invalid receipt")
-	ErrTeradataInvalidChainID  = errors.New("teradata: invalid chain ID (must be > 0)")
+	ErrTeradataDataTooLarge   = errors.New("teradata: data exceeds maximum size")
+	ErrTeradataDataEmpty      = errors.New("teradata: data is empty")
+	ErrTeradataNotFound       = errors.New("teradata: data not found")
+	ErrTeradataTooManyChains  = errors.New("teradata: maximum L2 chains reached")
+	ErrTeradataStorageFull    = errors.New("teradata: total storage limit exceeded")
+	ErrTeradataInvalidReceipt = errors.New("teradata: invalid receipt")
+	ErrTeradataInvalidChainID = errors.New("teradata: invalid chain ID (must be > 0)")
 )
 
 // TeradataConfig holds configuration for the TeradataManager.
@@ -43,9 +43,9 @@ type TeradataConfig struct {
 // DefaultTeradataConfig returns a sensible default configuration.
 func DefaultTeradataConfig() TeradataConfig {
 	return TeradataConfig{
-		MaxDataSize:       4 * 1024 * 1024,  // 4 MiB
+		MaxDataSize:       4 * 1024 * 1024, // 4 MiB
 		MaxL2Chains:       256,
-		RetentionSlots:    8192,              // ~1 day at 12s slots
+		RetentionSlots:    8192,                    // ~1 day at 12s slots
 		TotalStorageLimit: 16 * 1024 * 1024 * 1024, // 16 GiB
 	}
 }
@@ -70,8 +70,8 @@ type L2DataStats struct {
 
 // teradataEntry is an internal record linking a commitment to its data.
 type teradataEntry struct {
-	data      []byte
-	receipt   TeradataReceipt
+	data    []byte
+	receipt TeradataReceipt
 }
 
 // TeradataManager manages teradata-level data availability for L2 chains.

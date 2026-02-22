@@ -23,23 +23,23 @@ import (
 const MaxBlobsPerBlock = MaxBlobGasPerBlock / BlobTxBlobGasPerBlob // 6
 
 var (
-	errNoBlobHashes        = errors.New("blob transaction must have at least one blob hash")
-	errTooManyBlobs        = errors.New("blob transaction exceeds max blobs per block")
+	errNoBlobHashes         = errors.New("blob transaction must have at least one blob hash")
+	errTooManyBlobs         = errors.New("blob transaction exceeds max blobs per block")
 	errInvalidVersionedHash = errors.New("blob versioned hash must start with 0x01")
-	errNilTo               = errors.New("blob transaction must have a non-nil To address")
-	errBlobTxDecode        = errors.New("failed to decode blob transaction")
+	errNilTo                = errors.New("blob transaction must have a non-nil To address")
+	errBlobTxDecode         = errors.New("failed to decode blob transaction")
 )
 
 // NewBlobTx creates a new BlobTx with the given parameters.
 // Blob transactions always require a non-nil To address.
 func NewBlobTx(chainID, nonce, gas uint64, to *Address, value, maxFee, maxPriority, maxBlobFee *big.Int, data []byte, blobHashes []Hash) *BlobTx {
 	tx := &BlobTx{
-		ChainID:   new(big.Int).SetUint64(chainID),
-		Nonce:     nonce,
-		GasTipCap: new(big.Int),
-		GasFeeCap: new(big.Int),
-		Gas:       gas,
-		Value:     new(big.Int),
+		ChainID:    new(big.Int).SetUint64(chainID),
+		Nonce:      nonce,
+		GasTipCap:  new(big.Int),
+		GasFeeCap:  new(big.Int),
+		Gas:        gas,
+		Value:      new(big.Int),
 		BlobFeeCap: new(big.Int),
 	}
 	if maxPriority != nil {

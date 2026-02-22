@@ -76,7 +76,7 @@ type AttProcIndexedAttestation struct {
 type AttProcAttestation struct {
 	AggregationBits []byte
 	Data            AttProcAttestationData
-	CommitteeBits   []byte   // bitfield, which committees are included
+	CommitteeBits   []byte // bitfield, which committees are included
 	Signature       [96]byte
 }
 

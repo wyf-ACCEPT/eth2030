@@ -11,8 +11,8 @@ import (
 
 // Beam sync errors.
 var (
-	ErrBeamFetchFailed   = errors.New("beam sync: fetch failed")
-	ErrBeamNoPeer        = errors.New("beam sync: no peer available")
+	ErrBeamFetchFailed     = errors.New("beam sync: fetch failed")
+	ErrBeamNoPeer          = errors.New("beam sync: no peer available")
 	ErrBeamAccountNotFound = errors.New("beam sync: account not found")
 )
 
@@ -53,9 +53,9 @@ type BeamSync struct {
 	prefetcher *BeamPrefetcher
 
 	// Stats.
-	fetchCount   atomic.Uint64
-	cacheHits    atomic.Uint64
-	cacheMisses  atomic.Uint64
+	fetchCount  atomic.Uint64
+	cacheHits   atomic.Uint64
+	cacheMisses atomic.Uint64
 }
 
 // NewBeamSync creates a new beam sync instance with the given network fetcher.

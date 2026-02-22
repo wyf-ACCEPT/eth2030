@@ -10,18 +10,18 @@ import (
 
 // Validator-level errors for inclusion list validation.
 var (
-	ErrValidatorNilList       = errors.New("focil-validator: inclusion list is nil")
-	ErrValidatorEmptyList     = errors.New("focil-validator: inclusion list has no entries")
-	ErrValidatorListTooLarge  = errors.New("focil-validator: inclusion list exceeds max size")
-	ErrValidatorDuplicateTx   = errors.New("focil-validator: duplicate transaction hash in list")
-	ErrValidatorInvalidTx     = errors.New("focil-validator: invalid transaction encoding")
-	ErrValidatorGasExceeded   = errors.New("focil-validator: transaction gas exceeds per-item limit")
-	ErrValidatorTotalGas      = errors.New("focil-validator: total gas exceeds list limit")
-	ErrValidatorSlotMismatch  = errors.New("focil-validator: list slot does not match head slot")
-	ErrValidatorZeroSlot      = errors.New("focil-validator: slot must be > 0")
-	ErrValidatorUnauthorized  = errors.New("focil-validator: proposer not authorized")
-	ErrValidatorNilBlock      = errors.New("focil-validator: block is nil")
-	ErrValidatorBelowMinRate  = errors.New("focil-validator: block below minimum inclusion rate")
+	ErrValidatorNilList      = errors.New("focil-validator: inclusion list is nil")
+	ErrValidatorEmptyList    = errors.New("focil-validator: inclusion list has no entries")
+	ErrValidatorListTooLarge = errors.New("focil-validator: inclusion list exceeds max size")
+	ErrValidatorDuplicateTx  = errors.New("focil-validator: duplicate transaction hash in list")
+	ErrValidatorInvalidTx    = errors.New("focil-validator: invalid transaction encoding")
+	ErrValidatorGasExceeded  = errors.New("focil-validator: transaction gas exceeds per-item limit")
+	ErrValidatorTotalGas     = errors.New("focil-validator: total gas exceeds list limit")
+	ErrValidatorSlotMismatch = errors.New("focil-validator: list slot does not match head slot")
+	ErrValidatorZeroSlot     = errors.New("focil-validator: slot must be > 0")
+	ErrValidatorUnauthorized = errors.New("focil-validator: proposer not authorized")
+	ErrValidatorNilBlock     = errors.New("focil-validator: block is nil")
+	ErrValidatorBelowMinRate = errors.New("focil-validator: block below minimum inclusion rate")
 )
 
 // ListValidatorConfig configures the InclusionListValidator.

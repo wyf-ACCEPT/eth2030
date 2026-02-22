@@ -15,10 +15,10 @@ type StateOverride map[string]AccountOverride
 
 // AccountOverride specifies replacement state for a single account.
 type AccountOverride struct {
-	Balance  *string            `json:"balance,omitempty"`
-	Nonce    *string            `json:"nonce,omitempty"`
-	Code     *string            `json:"code,omitempty"`
-	State    map[string]string  `json:"state,omitempty"`
+	Balance   *string           `json:"balance,omitempty"`
+	Nonce     *string           `json:"nonce,omitempty"`
+	Code      *string           `json:"code,omitempty"`
+	State     map[string]string `json:"state,omitempty"`
 	StateDiff map[string]string `json:"stateDiff,omitempty"`
 }
 
@@ -141,8 +141,10 @@ func applyOverrides(statedb overrideStateDB, overrides StateOverride) {
 
 // decodeRevertReason attempts to extract a human-readable revert reason
 // from EVM return data. The Solidity revert/require pattern encodes:
-//   Error(string)  selector = 0x08c379a2
-//   followed by ABI-encoded string.
+//
+//	Error(string)  selector = 0x08c379a2
+//	followed by ABI-encoded string.
+//
 // Returns an empty string if the data doesn't match the pattern.
 func decodeRevertReason(data []byte) string {
 	// Minimum length: 4 (selector) + 32 (offset) + 32 (length) + 0 (data)

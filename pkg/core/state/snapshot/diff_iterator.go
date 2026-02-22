@@ -41,16 +41,16 @@ func (ct ChangeType) String() string {
 // AccountChange describes a change to an account in a diff layer.
 type AccountChange struct {
 	Hash    types.Hash
-	Data    []byte     // nil for deletions
+	Data    []byte // nil for deletions
 	Change  ChangeType
-	LayerID int        // index of the diff layer that contains this change
+	LayerID int // index of the diff layer that contains this change
 }
 
 // StorageChange describes a change to a storage slot within an account.
 type StorageChange struct {
 	AccountHash types.Hash
 	SlotHash    types.Hash
-	Data        []byte     // nil for deletions
+	Data        []byte // nil for deletions
 	Change      ChangeType
 	LayerID     int
 }
@@ -76,8 +76,8 @@ func (cs *ChangeSet) StorageCount() int {
 // in hash-sorted order, producing account and storage changes.
 type DiffLayerIterator struct {
 	layers  []*diffLayer
-	current int        // index into layers (forward mode)
-	reverse bool       // if true, iterate backward
+	current int  // index into layers (forward mode)
+	reverse bool // if true, iterate backward
 
 	// Account iteration state.
 	accountHashes []types.Hash

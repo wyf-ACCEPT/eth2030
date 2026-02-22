@@ -29,15 +29,15 @@ const (
 
 // Chunking errors.
 var (
-	ErrChunkEmpty        = errors.New("chunk: empty payload")
-	ErrChunkSizeInvalid  = errors.New("chunk: invalid chunk size")
-	ErrChunkMissing      = errors.New("chunk: missing chunks for reassembly")
-	ErrChunkDuplicate    = errors.New("chunk: duplicate chunk index")
-	ErrChunkIndexInvalid = errors.New("chunk: index out of range")
-	ErrChunkIntegrity    = errors.New("chunk: integrity check failed")
-	ErrChunkCountExceed  = errors.New("chunk: too many chunks")
+	ErrChunkEmpty         = errors.New("chunk: empty payload")
+	ErrChunkSizeInvalid   = errors.New("chunk: invalid chunk size")
+	ErrChunkMissing       = errors.New("chunk: missing chunks for reassembly")
+	ErrChunkDuplicate     = errors.New("chunk: duplicate chunk index")
+	ErrChunkIndexInvalid  = errors.New("chunk: index out of range")
+	ErrChunkIntegrity     = errors.New("chunk: integrity check failed")
+	ErrChunkCountExceed   = errors.New("chunk: too many chunks")
 	ErrChunkTotalMismatch = errors.New("chunk: total count mismatch")
-	ErrChunkParentHash   = errors.New("chunk: parent hash mismatch")
+	ErrChunkParentHash    = errors.New("chunk: parent hash mismatch")
 )
 
 // PayloadChunk represents a single chunk of a split execution payload.

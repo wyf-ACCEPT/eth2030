@@ -38,11 +38,11 @@ const eofMaxStackHeight = 1023
 
 // opcodeStackDelta describes the stack effect and immediate size of an opcode.
 type opcodeStackDelta struct {
-	pops      int // items consumed
-	pushes    int // items produced
-	imm       int // immediate operand bytes (0 for most opcodes)
-	terminal  bool
-	validEOF  bool
+	pops     int // items consumed
+	pushes   int // items produced
+	imm      int // immediate operand bytes (0 for most opcodes)
+	terminal bool
+	validEOF bool
 }
 
 // eofOpcodeTable defines the set of valid opcodes in EOF mode with stack effects.
@@ -156,17 +156,17 @@ func init() {
 	set(INVALID, 0, 0, 0, true)
 
 	// EOF relative jumps (EIP-4200): 2-byte signed immediate
-	set(RJUMP, 0, 0, 2, false)   // unconditional, treated as terminal for flow
-	set(RJUMPI, 1, 0, 2, false)  // conditional
+	set(RJUMP, 0, 0, 2, false)  // unconditional, treated as terminal for flow
+	set(RJUMPI, 1, 0, 2, false) // conditional
 
 	// RJUMPT (EIP-4200 RJUMPV): 1 byte count + count*2 byte offsets
 	// imm=-1 signals variable-length immediate; handled specially.
 	set(RJUMPT, 1, 0, -1, false)
 
 	// EOF function calls (EIP-4750, EIP-6206)
-	set(CALLF, 0, 0, 2, false)  // stack effect depends on target type section
+	set(CALLF, 0, 0, 2, false) // stack effect depends on target type section
 	set(RETF, 0, 0, 0, true)
-	set(JUMPF, 0, 0, 2, false)  // treated as terminal
+	set(JUMPF, 0, 0, 2, false) // treated as terminal
 
 	// EOF data access (EIP-7480)
 	set(DATALOAD, 1, 1, 0, false)
@@ -185,8 +185,8 @@ func init() {
 	set(RETURNCONTRACT, 2, 0, 1, true)
 
 	// EIP-8024: extended stack
-	set(DUPN, 0, 1, 1, false)   // dynamic pops based on immediate
-	set(SWAPN, 0, 0, 1, false)  // dynamic stack access
+	set(DUPN, 0, 1, 1, false)  // dynamic pops based on immediate
+	set(SWAPN, 0, 0, 1, false) // dynamic stack access
 	set(EXCHANGE, 0, 0, 1, false)
 }
 

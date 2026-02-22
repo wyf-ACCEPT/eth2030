@@ -215,7 +215,7 @@ func TestRVWitness_IntegrationWithCPU(t *testing.T) {
 		EncodeIType(0x13, 1, 0, 0, 5),    // ADDI x1, x0, 5
 		EncodeIType(0x13, 2, 0, 0, 10),   // ADDI x2, x0, 10
 		EncodeRType(0x33, 3, 0, 1, 2, 0), // ADD x3, x1, x2
-		0x00000073,                         // ECALL (halt)
+		0x00000073,                       // ECALL (halt)
 	}
 	code := make([]byte, len(instrs)*4)
 	for i, instr := range instrs {

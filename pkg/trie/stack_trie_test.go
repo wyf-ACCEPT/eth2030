@@ -269,9 +269,9 @@ func TestEncodeRLPBytes(t *testing.T) {
 	}{
 		{nil, 0x80},
 		{[]byte{}, 0x80},
-		{[]byte{0x01}, 0x01},       // single byte < 0x80
-		{[]byte{0x80}, 0x81},       // single byte >= 0x80
-		{[]byte("hello"), 0x85},    // short string (len=5)
+		{[]byte{0x01}, 0x01},    // single byte < 0x80
+		{[]byte{0x80}, 0x81},    // single byte >= 0x80
+		{[]byte("hello"), 0x85}, // short string (len=5)
 	}
 	for _, tc := range tests {
 		enc := encodeRLPBytes(tc.input)

@@ -26,37 +26,37 @@ const (
 
 // Sparse blob pool errors.
 var (
-	ErrSparseBlobPoolFull    = errors.New("sparse blob pool is full")
-	ErrSparseNotBlobTx       = errors.New("not a blob transaction")
-	ErrSparseBlobDuplicate   = errors.New("sparse blob tx already known")
-	ErrSparseBlobMissing     = errors.New("blob tx has no versioned hashes")
-	ErrSparseBlobExpired     = errors.New("blob tx has expired")
-	ErrSparseAccountLimit    = errors.New("sparse blob per-account limit exceeded")
-	ErrSparseBlobNotFound    = errors.New("sparse blob tx not found")
-	ErrSparseInvalidVersion  = errors.New("invalid versioned hash prefix")
+	ErrSparseBlobPoolFull   = errors.New("sparse blob pool is full")
+	ErrSparseNotBlobTx      = errors.New("not a blob transaction")
+	ErrSparseBlobDuplicate  = errors.New("sparse blob tx already known")
+	ErrSparseBlobMissing    = errors.New("blob tx has no versioned hashes")
+	ErrSparseBlobExpired    = errors.New("blob tx has expired")
+	ErrSparseAccountLimit   = errors.New("sparse blob per-account limit exceeded")
+	ErrSparseBlobNotFound   = errors.New("sparse blob tx not found")
+	ErrSparseInvalidVersion = errors.New("invalid versioned hash prefix")
 )
 
 // SparseBlobEntry stores metadata for a blob transaction without holding
 // the full blob data. Only versioned hashes are kept for reference.
 type SparseBlobEntry struct {
-	TxHash         types.Hash
+	TxHash          types.Hash
 	VersionedHashes []types.Hash
-	BlobCount      int
-	BlobGas        uint64
-	BlobFeeCap     *big.Int
-	GasFeeCap      *big.Int
-	GasTipCap      *big.Int
-	From           types.Address
-	Nonce          uint64
-	InsertSlot     uint64 // slot at which the tx was inserted
-	EstimatedSize  uint64 // estimated blob data size (blobCount * FieldElements * 32)
+	BlobCount       int
+	BlobGas         uint64
+	BlobFeeCap      *big.Int
+	GasFeeCap       *big.Int
+	GasTipCap       *big.Int
+	From            types.Address
+	Nonce           uint64
+	InsertSlot      uint64 // slot at which the tx was inserted
+	EstimatedSize   uint64 // estimated blob data size (blobCount * FieldElements * 32)
 }
 
 // SparseBlobPoolConfig holds configuration for SparseBlobPool.
 type SparseBlobPoolConfig struct {
-	MaxBlobs       int    // maximum blob transactions in pool
-	MaxPerAccount  int    // maximum blob transactions per account
-	ExpirySlots    uint64 // number of slots before a tx expires
+	MaxBlobs      int    // maximum blob transactions in pool
+	MaxPerAccount int    // maximum blob transactions per account
+	ExpirySlots   uint64 // number of slots before a tx expires
 }
 
 // DefaultSparseBlobPoolConfig returns sensible defaults.
@@ -77,17 +77,17 @@ type SparseBlobPool struct {
 
 	mu          sync.RWMutex
 	txs         map[types.Hash]*types.Transaction // full transactions (without blob data)
-	entries     map[types.Hash]*SparseBlobEntry    // sparse metadata per tx hash
-	byAccount   map[types.Address][]types.Hash     // tx hashes grouped by sender
-	totalBlobs  int                                // total blob count across all txs
-	currentSlot uint64                             // current slot for expiry tracking
+	entries     map[types.Hash]*SparseBlobEntry   // sparse metadata per tx hash
+	byAccount   map[types.Address][]types.Hash    // tx hashes grouped by sender
+	totalBlobs  int                               // total blob count across all txs
+	currentSlot uint64                            // current slot for expiry tracking
 }
 
 // NewSparseBlobPool creates a new sparse blob pool with the given config.
 func NewSparseBlobPool(config SparseBlobPoolConfig) *SparseBlobPool {
 	return &SparseBlobPool{
 		config:    config,
-		txs:      make(map[types.Hash]*types.Transaction),
+		txs:       make(map[types.Hash]*types.Transaction),
 		entries:   make(map[types.Hash]*SparseBlobEntry),
 		byAccount: make(map[types.Address][]types.Hash),
 	}

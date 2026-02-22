@@ -220,7 +220,7 @@ func TestEpochManagerIsEpochBoundary(t *testing.T) {
 		{0, false},
 		{1, false},
 		{2, false},
-		{3, true},  // last slot of epoch 0
+		{3, true}, // last slot of epoch 0
 		{4, false},
 		{7, true},  // last slot of epoch 1
 		{11, true}, // last slot of epoch 2

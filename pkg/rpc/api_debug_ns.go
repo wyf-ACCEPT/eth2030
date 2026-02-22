@@ -205,7 +205,7 @@ func (d *DebugAPI) debugChaindbProperty(req *Request) *Response {
 	case "leveldb.iostats":
 		return successResponse(req.ID, "Read(MB): 0.0\nWrite(MB): 0.0\n")
 	case "version":
-		return successResponse(req.ID, "eth2030/db/v1.0")
+		return successResponse(req.ID, "ETH2030/db/v1.0")
 	default:
 		return errorResponse(req.ID, ErrCodeInvalidParams,
 			fmt.Sprintf("unknown property: %q", property))

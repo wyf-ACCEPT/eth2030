@@ -37,8 +37,8 @@ type ProofCacheStats struct {
 
 // proofCacheEntry wraps a cached result with insertion metadata for eviction.
 type proofCacheEntry struct {
-	result    *CachedProofResult
-	proofType string
+	result     *CachedProofResult
+	proofType  string
 	insertedAt int64 // unix seconds
 }
 

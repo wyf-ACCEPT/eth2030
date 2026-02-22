@@ -369,7 +369,7 @@ func TestRoutingTableRemovePromotesReplacement(t *testing.T) {
 	for i := 0; i <= BucketSize; i++ {
 		// Set byte 31 to different values, keeping byte 0 the same so they're
 		// in the same bucket (same leading bits differ from self=0x00).
-		ids[i][0] = 0x80       // same high bit = same bucket
+		ids[i][0] = 0x80 // same high bit = same bucket
 		ids[i][31] = byte(i + 1)
 		rt.AddPeer(&PeerInfo{NodeID: ids[i], Radius: MaxRadius()})
 	}

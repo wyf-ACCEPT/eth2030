@@ -7,16 +7,16 @@ import (
 
 // LogIndexEntry maps a single log to its position within a block and globally.
 type LogIndexEntry struct {
-	BlockNumber  uint64
-	TxIndex      uint16
-	LogIndex     uint16
-	GlobalIndex  uint64
+	BlockNumber uint64
+	TxIndex     uint16
+	LogIndex    uint16
+	GlobalIndex uint64
 }
 
 // BlockLogIndex holds the log index for an entire block.
 type BlockLogIndex struct {
-	Entries         []LogIndexEntry
-	BlockNumber     uint64
+	Entries          []LogIndexEntry
+	BlockNumber      uint64
 	FirstGlobalIndex uint64
 }
 

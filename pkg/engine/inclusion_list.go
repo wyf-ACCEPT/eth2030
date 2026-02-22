@@ -10,10 +10,10 @@ import (
 // InclusionListV1 is the Engine API representation of an inclusion list.
 // Sent from the CL to the EL via engine_newInclusionListV1.
 type InclusionListV1 struct {
-	Slot           uint64        `json:"slot"`
-	ValidatorIndex uint64        `json:"validatorIndex"`
-	CommitteeRoot  types.Hash    `json:"inclusionListCommitteeRoot"`
-	Transactions   [][]byte      `json:"transactions"`
+	Slot           uint64     `json:"slot"`
+	ValidatorIndex uint64     `json:"validatorIndex"`
+	CommitteeRoot  types.Hash `json:"inclusionListCommitteeRoot"`
+	Transactions   [][]byte   `json:"transactions"`
 }
 
 // InclusionListStatusV1 is the response to engine_newInclusionListV1.

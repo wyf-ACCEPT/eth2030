@@ -52,16 +52,16 @@ const (
 
 // FuturesOrder represents a limit order in the blob futures order book.
 type FuturesOrder struct {
-	ID        types.Hash
-	Side      OrderSide
-	Status    OrderStatus
-	Maker     types.Address
-	TargetSlot uint64     // Slot for which blob availability is being traded.
-	BlobIndex  uint8      // Index of the blob within the block.
-	Price      *big.Int   // Limit price in wei.
-	Quantity   uint64     // Number of futures contracts.
-	Timestamp  uint64     // Slot at which the order was placed.
-	FilledQty  uint64     // How many contracts have been filled.
+	ID         types.Hash
+	Side       OrderSide
+	Status     OrderStatus
+	Maker      types.Address
+	TargetSlot uint64   // Slot for which blob availability is being traded.
+	BlobIndex  uint8    // Index of the blob within the block.
+	Price      *big.Int // Limit price in wei.
+	Quantity   uint64   // Number of futures contracts.
+	Timestamp  uint64   // Slot at which the order was placed.
+	FilledQty  uint64   // How many contracts have been filled.
 }
 
 // MarginAccount tracks collateral for a participant in the futures market.
@@ -342,9 +342,9 @@ func (ob *FuturesOrderBook) computeOrderID(
 // a range of target slots. It provides unified price discovery and
 // margin management for participants.
 type FuturesPool struct {
-	mu       sync.RWMutex
-	books    map[uint64]*FuturesOrderBook       // targetSlot -> order book
-	margins  map[types.Address]*MarginAccount    // participant -> margin account
+	mu        sync.RWMutex
+	books     map[uint64]*FuturesOrderBook     // targetSlot -> order book
+	margins   map[types.Address]*MarginAccount // participant -> margin account
 	startSlot uint64
 	endSlot   uint64
 }

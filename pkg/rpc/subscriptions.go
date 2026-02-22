@@ -161,4 +161,3 @@ func FormatWSNotification(subID string, result interface{}) *WSNotification {
 		Params:  raw,
 	}
 }
-

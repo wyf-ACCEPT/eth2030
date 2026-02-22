@@ -16,19 +16,19 @@ import (
 
 // State sync tuning constants.
 const (
-	MaxAccountPeers     = 4
-	MaxStoragePeers     = 4
-	MaxCodePeers        = 2
-	AccountTaskSize     = 16
-	TaskRetryLimit      = 5
-	TaskRetryBackoff    = 500 * time.Millisecond
-	PivotUpdateInterval = 30 * time.Second
+	MaxAccountPeers            = 4
+	MaxStoragePeers            = 4
+	MaxCodePeers               = 2
+	AccountTaskSize            = 16
+	TaskRetryLimit             = 5
+	TaskRetryBackoff           = 500 * time.Millisecond
+	PivotUpdateInterval        = 30 * time.Second
 	MaxPivotAge         uint64 = 128
 )
 
 // StateSyncScheduler state machine phases.
 const (
-	SyncPhaseInit     uint32 = iota
+	SyncPhaseInit uint32 = iota
 	SyncPhaseAccounts
 	SyncPhaseStorage
 	SyncPhaseCodes
@@ -154,8 +154,8 @@ func NewStateSyncScheduler(writer StateWriter, callback ProgressCallback) *State
 	}
 }
 
-func (s *StateSyncScheduler) Phase() uint32        { return s.phase.Load() }
-func (s *StateSyncScheduler) IsRunning() bool       { return s.running.Load() }
+func (s *StateSyncScheduler) Phase() uint32   { return s.phase.Load() }
+func (s *StateSyncScheduler) IsRunning() bool { return s.running.Load() }
 
 // Progress returns a snapshot of current progress.
 func (s *StateSyncScheduler) Progress() StateSyncProgress {
@@ -372,7 +372,7 @@ func (s *StateSyncScheduler) runStorageDownload(peer SnapPeer) error {
 			resp, err := peer.RequestStorageRange(StorageRangeRequest{
 				ID: s.nextTaskID.Add(1), Root: root,
 				Accounts: []types.Hash{task.accountHash},
-				Origin: origin, Limit: limit, Bytes: 512 * 1024,
+				Origin:   origin, Limit: limit, Bytes: 512 * 1024,
 			})
 			if err != nil {
 				task.retries++

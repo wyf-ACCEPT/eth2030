@@ -194,7 +194,7 @@ func TestOpGasCache_HitRate(t *testing.T) {
 
 	c.Store(SLOAD, addr, slot, 2100, false, 100)
 	// 1 hit + 1 miss = 50%.
-	c.Lookup(SLOAD, addr, slot, 100) // hit
+	c.Lookup(SLOAD, addr, slot, 100)        // hit
 	c.Lookup(SLOAD, addr, testSlot(2), 100) // miss
 
 	rate := c.Stats().HitRate()

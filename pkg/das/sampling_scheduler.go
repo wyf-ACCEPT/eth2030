@@ -20,13 +20,13 @@ import (
 
 // Sampling scheduler errors.
 var (
-	ErrSchedClosed          = errors.New("das/sched: scheduler is closed")
-	ErrSchedSlotZero        = errors.New("das/sched: slot must be > 0")
-	ErrSchedRoundComplete   = errors.New("das/sched: sampling round already complete")
-	ErrSchedColumnOOB       = errors.New("das/sched: column index out of range")
-	ErrSchedQuotaExhausted  = errors.New("das/sched: sampling quota exhausted for slot")
-	ErrSchedNoActiveRound   = errors.New("das/sched: no active sampling round")
-	ErrSchedInvalidMode     = errors.New("das/sched: invalid sampling mode")
+	ErrSchedClosed         = errors.New("das/sched: scheduler is closed")
+	ErrSchedSlotZero       = errors.New("das/sched: slot must be > 0")
+	ErrSchedRoundComplete  = errors.New("das/sched: sampling round already complete")
+	ErrSchedColumnOOB      = errors.New("das/sched: column index out of range")
+	ErrSchedQuotaExhausted = errors.New("das/sched: sampling quota exhausted for slot")
+	ErrSchedNoActiveRound  = errors.New("das/sched: no active sampling round")
+	ErrSchedInvalidMode    = errors.New("das/sched: invalid sampling mode")
 )
 
 // SamplingMode determines the sampling intensity.
@@ -67,11 +67,11 @@ type SchedulerConfig struct {
 // DefaultSchedulerConfig returns production defaults.
 func DefaultSchedulerConfig() SchedulerConfig {
 	return SchedulerConfig{
-		BaseSamplesPerSlot: SamplesPerSlot,
-		NumberOfColumns:    NumberOfColumns,
-		MaxConcurrentSlots: 32,
-		AdaptiveMinRate:    0.5,
-		AdaptiveMaxRate:    3.0,
+		BaseSamplesPerSlot:   SamplesPerSlot,
+		NumberOfColumns:      NumberOfColumns,
+		MaxConcurrentSlots:   32,
+		AdaptiveMinRate:      0.5,
+		AdaptiveMaxRate:      3.0,
 		SuccessRateThreshold: 0.7,
 		HighSuccessThreshold: 0.95,
 	}

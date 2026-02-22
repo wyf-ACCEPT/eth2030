@@ -228,9 +228,9 @@ type recoverySvc struct {
 	stopped bool
 }
 
-func (s *recoverySvc) Start() error    { return nil }
-func (s *recoverySvc) Stop() error     { s.stopped = true; return s.stopErr }
-func (s *recoverySvc) Name() string    { return s.name }
+func (s *recoverySvc) Start() error { return nil }
+func (s *recoverySvc) Stop() error  { s.stopped = true; return s.stopErr }
+func (s *recoverySvc) Name() string { return s.name }
 
 func TestGracefulShutdownBasic(t *testing.T) {
 	gs := NewGracefulShutdown(5 * time.Second)

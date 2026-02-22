@@ -59,13 +59,13 @@ func DefaultSchedulerConfig() *SchedulerConfig {
 
 // MigrationProgress tracks the progress of an active migration.
 type MigrationProgress struct {
-	FromVersion, ToVersion         int
+	FromVersion, ToVersion          int
 	TotalAccounts, MigratedAccounts int
-	ErrorCount, BatchesRun         int
-	PercentComplete                float64
-	StartedAt, LastBatchAt         time.Time
-	EstimatedDoneAt                time.Time
-	Errors                         []MigrationError
+	ErrorCount, BatchesRun          int
+	PercentComplete                 float64
+	StartedAt, LastBatchAt          time.Time
+	EstimatedDoneAt                 time.Time
+	Errors                          []MigrationError
 }
 
 // MigrationError records an error for a specific account.
@@ -439,7 +439,7 @@ func restoreSnap(db *MemoryStateDB, addr types.Address, snap *accountSnapshot) {
 func V1ToV2Migration() *VersionedMigration {
 	return &VersionedMigration{
 		FromVersion: 1, ToVersion: 2,
-		Fork: ForkBoundary{Name: "Glamsterdam", ActivateAt: 0},
+		Fork:        ForkBoundary{Name: "Glamsterdam", ActivateAt: 0},
 		Description: "Convert legacy gas to multidimensional gas model",
 		TransformAccount: func(addr types.Address, db StateDB) (bool, error) {
 			legacy := types.BytesToHash([]byte{0x01})
@@ -464,7 +464,7 @@ func V1ToV2Migration() *VersionedMigration {
 func V2ToV3Migration() *VersionedMigration {
 	return &VersionedMigration{
 		FromVersion: 2, ToVersion: 3,
-		Fork: ForkBoundary{Name: "Hogota", ActivateAt: 0},
+		Fork:        ForkBoundary{Name: "Hogota", ActivateAt: 0},
 		Description: "Remove deprecated self-destruct markers",
 		TransformAccount: func(addr types.Address, db StateDB) (bool, error) {
 			return db.HasSelfDestructed(addr) || db.Empty(addr), nil
@@ -476,7 +476,7 @@ func V2ToV3Migration() *VersionedMigration {
 func V3ToV4Migration() *VersionedMigration {
 	return &VersionedMigration{
 		FromVersion: 3, ToVersion: 4,
-		Fork: ForkBoundary{Name: "I+", ActivateAt: 100},
+		Fork:        ForkBoundary{Name: "I+", ActivateAt: 100},
 		Description: "Convert nonce to announce-nonce format",
 		TransformAccount: func(addr types.Address, db StateDB) (bool, error) {
 			nonce := db.GetNonce(addr)

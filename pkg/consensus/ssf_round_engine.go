@@ -41,15 +41,15 @@ func (p SSFRoundPhase) String() string {
 
 // SSF round engine errors.
 var (
-	ErrRoundAlreadyExists   = errors.New("ssf-round: round already exists for slot")
-	ErrRoundNotFound        = errors.New("ssf-round: no round for slot")
-	ErrRoundWrongPhase      = errors.New("ssf-round: operation invalid in current phase")
+	ErrRoundAlreadyExists    = errors.New("ssf-round: round already exists for slot")
+	ErrRoundNotFound         = errors.New("ssf-round: no round for slot")
+	ErrRoundWrongPhase       = errors.New("ssf-round: operation invalid in current phase")
 	ErrRoundAlreadyFinalized = errors.New("ssf-round: round already finalized")
-	ErrRoundDuplicateVote   = errors.New("ssf-round: duplicate vote from validator")
-	ErrRoundEquivocation    = errors.New("ssf-round: equivocation detected")
-	ErrRoundNoBlockRoot     = errors.New("ssf-round: no block root proposed")
-	ErrRoundNilConfig       = errors.New("ssf-round: nil configuration")
-	ErrRoundZeroTotalStake  = errors.New("ssf-round: total stake is zero")
+	ErrRoundDuplicateVote    = errors.New("ssf-round: duplicate vote from validator")
+	ErrRoundEquivocation     = errors.New("ssf-round: equivocation detected")
+	ErrRoundNoBlockRoot      = errors.New("ssf-round: no block root proposed")
+	ErrRoundNilConfig        = errors.New("ssf-round: nil configuration")
+	ErrRoundZeroTotalStake   = errors.New("ssf-round: total stake is zero")
 )
 
 // SSFRoundVote represents a single validator's vote within an SSF round.
@@ -73,16 +73,16 @@ type SSFRoundVote struct {
 
 // SSFRound tracks the state of a single SSF finality round.
 type SSFRound struct {
-	Slot      uint64
-	Phase     SSFRoundPhase
-	BlockRoot types.Hash
-	Votes     map[types.Hash]*SSFRoundVote // keyed by ValidatorPubkeyHash
-	StakeByRoot map[types.Hash]uint64
+	Slot           uint64
+	Phase          SSFRoundPhase
+	BlockRoot      types.Hash
+	Votes          map[types.Hash]*SSFRoundVote // keyed by ValidatorPubkeyHash
+	StakeByRoot    map[types.Hash]uint64
 	TotalVoteStake uint64
 	AggregatedSig  [96]byte
-	Finalized bool
-	StartedAt time.Time
-	FinalizedAt time.Time
+	Finalized      bool
+	StartedAt      time.Time
+	FinalizedAt    time.Time
 }
 
 // SSFRoundEngineConfig configures the round engine.
@@ -111,8 +111,8 @@ func DefaultSSFRoundEngineConfig() SSFRoundEngineConfig {
 
 // SSFRoundStats tracks aggregate statistics for the round engine.
 type SSFRoundStats struct {
-	RoundsCompleted      uint64
-	TotalFinalityTimeMs  uint64
+	RoundsCompleted       uint64
+	TotalFinalityTimeMs   uint64
 	EquivocationsDetected uint64
 }
 
@@ -139,8 +139,8 @@ type SSFRoundEngine struct {
 	rounds map[uint64]*SSFRound
 
 	// History of completed rounds (bounded by MaxRoundHistory).
-	history     []uint64
-	historyMap  map[uint64]*SSFRound
+	history    []uint64
+	historyMap map[uint64]*SSFRound
 
 	// Equivocation tracking: validator pubkey hash -> first block root voted.
 	// Per-slot to detect validators voting for different roots.

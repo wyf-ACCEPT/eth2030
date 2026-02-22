@@ -24,12 +24,12 @@ import (
 
 // State checker errors.
 var (
-	ErrStateNilTx          = errors.New("state-checker: nil transaction")
-	ErrStateNilReader      = errors.New("state-checker: nil state reader")
-	ErrStateNonceMismatch  = errors.New("state-checker: nonce mismatch")
+	ErrStateNilTx           = errors.New("state-checker: nil transaction")
+	ErrStateNilReader       = errors.New("state-checker: nil state reader")
+	ErrStateNonceMismatch   = errors.New("state-checker: nonce mismatch")
 	ErrStateInsufficientBal = errors.New("state-checker: insufficient balance")
-	ErrStateGasExhausted   = errors.New("state-checker: block gas exhausted")
-	ErrStateSenderUnknown  = errors.New("state-checker: cannot recover sender")
+	ErrStateGasExhausted    = errors.New("state-checker: block gas exhausted")
+	ErrStateSenderUnknown   = errors.New("state-checker: cannot recover sender")
 )
 
 // NonceFunc returns the current nonce for an address.

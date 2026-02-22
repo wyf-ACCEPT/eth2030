@@ -1,5 +1,5 @@
 // Package metrics provides lightweight, zero-dependency metrics primitives
-// for the eth2030 Ethereum execution client. Counter and Gauge use atomic
+// for the ETH2030 Ethereum execution client. Counter and Gauge use atomic
 // operations for lock-free concurrent access; Histogram uses a mutex.
 package metrics
 

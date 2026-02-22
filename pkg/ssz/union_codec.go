@@ -2,11 +2,14 @@
 // selector byte, type registry, validation, and round-trip support.
 //
 // Per the SSZ spec, a union is encoded as:
-//   [selector_byte (1)] [value_bytes (variable)]
+//
+//	[selector_byte (1)] [value_bytes (variable)]
 //
 // The selector identifies which variant type is active, and the value
 // bytes contain the SSZ encoding of that variant. The hash tree root is:
-//   hash(hash_tree_root(value), selector_chunk)
+//
+//	hash(hash_tree_root(value), selector_chunk)
+//
 // where selector_chunk is a 32-byte chunk with the selector in byte 0.
 //
 // This codec provides a UnionTypeRegistry for registering variant types
@@ -187,7 +190,8 @@ func (uc *UnionCodec) Decode(data []byte) (*UnionValue, error) {
 }
 
 // HashTreeRoot computes the union hash tree root:
-//   hash(hash_tree_root(value), selector_chunk)
+//
+//	hash(hash_tree_root(value), selector_chunk)
 func (uc *UnionCodec) HashTreeRoot(uv *UnionValue) ([32]byte, error) {
 	if uv == nil {
 		return [32]byte{}, ErrUnionNilValue

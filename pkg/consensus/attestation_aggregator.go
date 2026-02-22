@@ -33,15 +33,15 @@ const (
 
 // Aggregate attestation errors.
 var (
-	ErrAggAttNil           = errors.New("agg_attestation: nil attestation")
-	ErrAggAttNilData       = errors.New("agg_attestation: nil attestation data")
-	ErrAggAttEmptyBits     = errors.New("agg_attestation: empty aggregation bits")
-	ErrAggAttEmptySig      = errors.New("agg_attestation: empty signature")
-	ErrAggAttDataMismatch  = errors.New("agg_attestation: data mismatch for aggregation")
-	ErrAggAttOverlapping   = errors.New("agg_attestation: overlapping aggregation bits")
-	ErrAggAttSlotFull      = errors.New("agg_attestation: slot at capacity")
-	ErrAggAttDuplicate     = errors.New("agg_attestation: duplicate attestation")
-	ErrAggAttBitfieldLen   = errors.New("agg_attestation: bitfield length mismatch")
+	ErrAggAttNil          = errors.New("agg_attestation: nil attestation")
+	ErrAggAttNilData      = errors.New("agg_attestation: nil attestation data")
+	ErrAggAttEmptyBits    = errors.New("agg_attestation: empty aggregation bits")
+	ErrAggAttEmptySig     = errors.New("agg_attestation: empty signature")
+	ErrAggAttDataMismatch = errors.New("agg_attestation: data mismatch for aggregation")
+	ErrAggAttOverlapping  = errors.New("agg_attestation: overlapping aggregation bits")
+	ErrAggAttSlotFull     = errors.New("agg_attestation: slot at capacity")
+	ErrAggAttDuplicate    = errors.New("agg_attestation: duplicate attestation")
+	ErrAggAttBitfieldLen  = errors.New("agg_attestation: bitfield length mismatch")
 )
 
 // AggregateAttestation represents an attestation that may aggregate

@@ -17,21 +17,21 @@ import (
 
 // Body downloader configuration constants.
 const (
-	DefaultBDLBatchSize     = 64   // Bodies per batch request.
-	DefaultBDLMaxConcurrent = 4    // Maximum concurrent peer downloads.
-	DefaultBDLRetryLimit    = 3    // Max retries per batch.
+	DefaultBDLBatchSize     = 64 // Bodies per batch request.
+	DefaultBDLMaxConcurrent = 4  // Maximum concurrent peer downloads.
+	DefaultBDLRetryLimit    = 3  // Max retries per batch.
 	DefaultBDLTimeout       = 15 * time.Second
 )
 
 // Body downloader errors.
 var (
-	ErrBDLClosed          = errors.New("body downloader: closed")
-	ErrBDLRunning         = errors.New("body downloader: already running")
-	ErrBDLNoPeers         = errors.New("body downloader: no peers available")
-	ErrBDLTxRootMismatch  = errors.New("body downloader: transaction root mismatch")
-	ErrBDLWdRootMismatch  = errors.New("body downloader: withdrawals root mismatch")
-	ErrBDLBodyMissing     = errors.New("body downloader: body not returned for hash")
-	ErrBDLRetryExhausted  = errors.New("body downloader: retry limit exhausted")
+	ErrBDLClosed         = errors.New("body downloader: closed")
+	ErrBDLRunning        = errors.New("body downloader: already running")
+	ErrBDLNoPeers        = errors.New("body downloader: no peers available")
+	ErrBDLTxRootMismatch = errors.New("body downloader: transaction root mismatch")
+	ErrBDLWdRootMismatch = errors.New("body downloader: withdrawals root mismatch")
+	ErrBDLBodyMissing    = errors.New("body downloader: body not returned for hash")
+	ErrBDLRetryExhausted = errors.New("body downloader: retry limit exhausted")
 )
 
 // BDLPeerInfo tracks a peer used for body downloads.

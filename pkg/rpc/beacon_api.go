@@ -50,9 +50,9 @@ type BlockResponse struct {
 
 // HeaderResponse is the response for beacon_getBlockHeader.
 type HeaderResponse struct {
-	Root      string              `json:"root"`
-	Canonical bool               `json:"canonical"`
-	Header    *SignedHeaderData   `json:"header"`
+	Root      string            `json:"root"`
+	Canonical bool              `json:"canonical"`
+	Header    *SignedHeaderData `json:"header"`
 }
 
 // SignedHeaderData wraps a beacon block header with its signature.
@@ -95,10 +95,10 @@ type ValidatorListResponse struct {
 
 // ValidatorEntry represents a single validator in the list.
 type ValidatorEntry struct {
-	Index     string           `json:"index"`
-	Balance   string           `json:"balance"`
-	Status    string           `json:"status"`
-	Validator *ValidatorData   `json:"validator"`
+	Index     string         `json:"index"`
+	Balance   string         `json:"balance"`
+	Status    string         `json:"status"`
+	Validator *ValidatorData `json:"validator"`
 }
 
 // ValidatorData contains the validator's registration fields.
@@ -162,7 +162,7 @@ type ConsensusState struct {
 
 	// Syncing state
 	IsSyncing    bool
-	SyncDistance  uint64
+	SyncDistance uint64
 
 	// Peers known to the consensus layer.
 	Peers []*BeaconPeer
@@ -196,16 +196,16 @@ func NewBeaconAPI(state *ConsensusState, backend Backend) *BeaconAPI {
 // The returned dispatch function handles requests for beacon_ prefixed methods.
 func RegisterBeaconRoutes(api *BeaconAPI) map[string]func(*Request) *Response {
 	return map[string]func(*Request) *Response{
-		"beacon_getGenesis":                   api.getGenesis,
-		"beacon_getBlock":                     api.getBlock,
-		"beacon_getBlockHeader":               api.getBlockHeader,
-		"beacon_getStateRoot":                 api.getStateRoot,
-		"beacon_getStateFinalityCheckpoints":  api.getStateFinalityCheckpoints,
-		"beacon_getStateValidators":           api.getStateValidators,
-		"beacon_getNodeVersion":               api.getNodeVersion,
-		"beacon_getNodeSyncing":               api.getNodeSyncing,
-		"beacon_getNodePeers":                 api.getNodePeers,
-		"beacon_getNodeHealth":                api.getNodeHealth,
+		"beacon_getGenesis":                  api.getGenesis,
+		"beacon_getBlock":                    api.getBlock,
+		"beacon_getBlockHeader":              api.getBlockHeader,
+		"beacon_getStateRoot":                api.getStateRoot,
+		"beacon_getStateFinalityCheckpoints": api.getStateFinalityCheckpoints,
+		"beacon_getStateValidators":          api.getStateValidators,
+		"beacon_getNodeVersion":              api.getNodeVersion,
+		"beacon_getNodeSyncing":              api.getNodeSyncing,
+		"beacon_getNodePeers":                api.getNodePeers,
+		"beacon_getNodeHealth":               api.getNodeHealth,
 	}
 }
 
@@ -362,7 +362,7 @@ func (api *BeaconAPI) getStateValidators(req *Request) *Response {
 
 func (api *BeaconAPI) getNodeVersion(req *Request) *Response {
 	return successResponse(req.ID, &VersionResponse{
-		Version: "eth2030/v0.1.0-beacon",
+		Version: "ETH2030/v0.1.0-beacon",
 	})
 }
 

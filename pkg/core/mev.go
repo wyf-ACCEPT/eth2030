@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	ErrEmptyBundle        = errors.New("mev: bundle has no transactions")
-	ErrBundleTooLarge     = errors.New("mev: bundle exceeds maximum transaction count")
-	ErrSandwichDetected   = errors.New("mev: sandwich attack pattern detected")
-	ErrFrontrunDetected   = errors.New("mev: frontrunning pattern detected")
-	ErrInvalidFairOrder   = errors.New("mev: transaction violates fair ordering rules")
+	ErrEmptyBundle      = errors.New("mev: bundle has no transactions")
+	ErrBundleTooLarge   = errors.New("mev: bundle exceeds maximum transaction count")
+	ErrSandwichDetected = errors.New("mev: sandwich attack pattern detected")
+	ErrFrontrunDetected = errors.New("mev: frontrunning pattern detected")
+	ErrInvalidFairOrder = errors.New("mev: transaction violates fair ordering rules")
 )
 
 // MaxBundleSize is the maximum number of transactions in a Flashbots bundle.
@@ -23,10 +23,10 @@ const MaxBundleSize = 32
 // All transactions in the bundle are included together or not at all.
 // The bundle specifies a target block and optional revert protection.
 type FlashbotsBundle struct {
-	Transactions []*types.Transaction
-	BlockNumber  uint64         // target block for inclusion
-	MinTimestamp uint64         // earliest valid timestamp (0 = no constraint)
-	MaxTimestamp uint64         // latest valid timestamp (0 = no constraint)
+	Transactions      []*types.Transaction
+	BlockNumber       uint64       // target block for inclusion
+	MinTimestamp      uint64       // earliest valid timestamp (0 = no constraint)
+	MaxTimestamp      uint64       // latest valid timestamp (0 = no constraint)
 	RevertingTxHashes []types.Hash // txs allowed to revert without failing bundle
 }
 

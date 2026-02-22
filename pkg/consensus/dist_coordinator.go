@@ -19,21 +19,21 @@ import (
 
 // Coordinator errors.
 var (
-	ErrCoordNoActiveRound    = errors.New("coordinator: no active round")
-	ErrCoordRoundActive      = errors.New("coordinator: round already active")
-	ErrCoordRoundFinalized   = errors.New("coordinator: round already finalized")
-	ErrCoordBuilderNotFound  = errors.New("coordinator: builder not registered")
-	ErrCoordBuilderExists    = errors.New("coordinator: builder already registered")
-	ErrCoordMaxBuilders      = errors.New("coordinator: max builders reached")
-	ErrCoordFragmentLimit    = errors.New("coordinator: builder fragment limit exceeded")
-	ErrCoordGasConflict      = errors.New("coordinator: fragment gas exceeds round limit")
-	ErrCoordDeadlinePassed   = errors.New("coordinator: submission deadline passed")
-	ErrCoordNilFragment      = errors.New("coordinator: nil fragment")
-	ErrCoordEmptyFragment    = errors.New("coordinator: fragment has no transactions")
-	ErrCoordNoFragments      = errors.New("coordinator: no fragments collected")
-	ErrCoordInvalidSlot      = errors.New("coordinator: invalid slot")
-	ErrCoordSlotMismatch     = errors.New("coordinator: fragment slot does not match round")
-	ErrCoordInvalidPubkey    = errors.New("coordinator: invalid builder pubkey")
+	ErrCoordNoActiveRound     = errors.New("coordinator: no active round")
+	ErrCoordRoundActive       = errors.New("coordinator: round already active")
+	ErrCoordRoundFinalized    = errors.New("coordinator: round already finalized")
+	ErrCoordBuilderNotFound   = errors.New("coordinator: builder not registered")
+	ErrCoordBuilderExists     = errors.New("coordinator: builder already registered")
+	ErrCoordMaxBuilders       = errors.New("coordinator: max builders reached")
+	ErrCoordFragmentLimit     = errors.New("coordinator: builder fragment limit exceeded")
+	ErrCoordGasConflict       = errors.New("coordinator: fragment gas exceeds round limit")
+	ErrCoordDeadlinePassed    = errors.New("coordinator: submission deadline passed")
+	ErrCoordNilFragment       = errors.New("coordinator: nil fragment")
+	ErrCoordEmptyFragment     = errors.New("coordinator: fragment has no transactions")
+	ErrCoordNoFragments       = errors.New("coordinator: no fragments collected")
+	ErrCoordInvalidSlot       = errors.New("coordinator: invalid slot")
+	ErrCoordSlotMismatch      = errors.New("coordinator: fragment slot does not match round")
+	ErrCoordInvalidPubkey     = errors.New("coordinator: invalid builder pubkey")
 	ErrCoordInsufficientStake = errors.New("coordinator: insufficient builder stake")
 )
 
@@ -48,15 +48,15 @@ const (
 
 // BuilderRegistration holds a registered builder's metadata.
 type BuilderRegistration struct {
-	ID            string
-	Pubkey        [48]byte // BLS public key
-	Stake         *big.Int // staked ETH in wei
-	Capabilities  BuilderCapability
-	MaxFragments  int // max fragments this builder may submit per round
-	RegisteredAt  time.Time
-	Reputation    float64 // 0.0-1.0, higher is better
-	TotalRevenue  *big.Int
-	RoundsJoined  uint64
+	ID           string
+	Pubkey       [48]byte // BLS public key
+	Stake        *big.Int // staked ETH in wei
+	Capabilities BuilderCapability
+	MaxFragments int // max fragments this builder may submit per round
+	RegisteredAt time.Time
+	Reputation   float64 // 0.0-1.0, higher is better
+	TotalRevenue *big.Int
+	RoundsJoined uint64
 }
 
 // CoordinationRound tracks state for a single slot's coordination.
@@ -65,7 +65,7 @@ type CoordinationRound struct {
 	Deadline   time.Time
 	Builders   map[string]*BuilderRegistration // registered builders in this round
 	Fragments  []*ScoredFragment               // collected fragments
-	Assembled  *AssembledBlock                  // result after assembly
+	Assembled  *AssembledBlock                 // result after assembly
 	Finalized  bool
 	StartedAt  time.Time
 	fragCounts map[string]int // builderID -> fragments submitted
@@ -94,11 +94,11 @@ type AssembledBlock struct {
 
 // CoordinatorConfig configures the distributed coordinator.
 type CoordinatorConfig struct {
-	MaxBuilders      int
-	MaxFragments     int // total fragments per round
-	GasLimit         uint64
-	RoundTimeout     time.Duration
-	MinStake         *big.Int // minimum builder stake
+	MaxBuilders       int
+	MaxFragments      int // total fragments per round
+	GasLimit          uint64
+	RoundTimeout      time.Duration
+	MinStake          *big.Int // minimum builder stake
 	DefaultReputation float64
 }
 

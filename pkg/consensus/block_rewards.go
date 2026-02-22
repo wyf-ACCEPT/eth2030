@@ -8,7 +8,8 @@
 //   - InactivityPenalty: quadratic penalty during finality leak
 //
 // Per Altair, total reward weights sum to 64:
-//   source=14, target=26, head=14, sync=2, proposer=8
+//
+//	source=14, target=26, head=14, sync=2, proposer=8
 package consensus
 
 import (
@@ -44,11 +45,11 @@ const (
 
 // Block reward errors.
 var (
-	ErrBRNilInput       = errors.New("block_rewards: nil input")
-	ErrBRNoValidators   = errors.New("block_rewards: no validators")
-	ErrBRLenMismatch    = errors.New("block_rewards: validator/balance length mismatch")
-	ErrBRZeroBalance    = errors.New("block_rewards: zero total active balance")
-	ErrBRInvalidIndex   = errors.New("block_rewards: validator index out of range")
+	ErrBRNilInput     = errors.New("block_rewards: nil input")
+	ErrBRNoValidators = errors.New("block_rewards: no validators")
+	ErrBRLenMismatch  = errors.New("block_rewards: validator/balance length mismatch")
+	ErrBRZeroBalance  = errors.New("block_rewards: zero total active balance")
+	ErrBRInvalidIndex = errors.New("block_rewards: validator index out of range")
 )
 
 // BlockRewardInput holds all inputs for block reward computation.
@@ -68,8 +69,8 @@ type BlockRewardInput struct {
 	HeadAttested   map[ValidatorIndex]bool
 
 	// Sync committee participation: validator -> number of sync duties.
-	SyncParticipants    map[ValidatorIndex]uint64
-	SyncCommitteeSize   uint64
+	SyncParticipants  map[ValidatorIndex]uint64
+	SyncCommitteeSize uint64
 
 	// Inactivity scores per validator (Altair+).
 	InactivityScores []uint64
@@ -105,12 +106,12 @@ type BlockRewardBreakdown struct {
 
 // BlockRewardOutput holds aggregate block reward computation results.
 type BlockRewardOutput struct {
-	Breakdowns       []BlockRewardBreakdown
-	ProposerTotal    int64  // total reward earned by the block proposer
-	TotalRewards     int64
-	TotalPenalties   int64
-	FinalityDelay    uint64
-	InLeakMode       bool
+	Breakdowns     []BlockRewardBreakdown
+	ProposerTotal  int64 // total reward earned by the block proposer
+	TotalRewards   int64
+	TotalPenalties int64
+	FinalityDelay  uint64
+	InLeakMode     bool
 }
 
 // BlockRewardEngine computes beacon chain block rewards per Altair spec.

@@ -54,12 +54,12 @@ const (
 
 // Bandwidth tracker errors.
 var (
-	ErrBWGlobalUploadLimit    = errors.New("bw: global upload limit exceeded")
-	ErrBWGlobalDownloadLimit  = errors.New("bw: global download limit exceeded")
-	ErrBWPeerUploadLimit      = errors.New("bw: per-peer upload limit exceeded")
-	ErrBWPeerDownloadLimit    = errors.New("bw: per-peer download limit exceeded")
-	ErrBWPriorityExhausted    = errors.New("bw: priority class bandwidth exhausted")
-	ErrBWUnknownPeer          = errors.New("bw: unknown peer")
+	ErrBWGlobalUploadLimit   = errors.New("bw: global upload limit exceeded")
+	ErrBWGlobalDownloadLimit = errors.New("bw: global download limit exceeded")
+	ErrBWPeerUploadLimit     = errors.New("bw: per-peer upload limit exceeded")
+	ErrBWPeerDownloadLimit   = errors.New("bw: per-peer download limit exceeded")
+	ErrBWPriorityExhausted   = errors.New("bw: priority class bandwidth exhausted")
+	ErrBWUnknownPeer         = errors.New("bw: unknown peer")
 )
 
 // BandwidthTrackerConfig configures the BandwidthTracker.
@@ -179,12 +179,12 @@ type BandwidthStats struct {
 
 // GlobalBandwidthStats holds a snapshot of global bandwidth statistics.
 type GlobalBandwidthStats struct {
-	UploadRate       float64 // Global upload bytes per second.
-	DownloadRate     float64 // Global download bytes per second.
-	TotalUp          int64   // Total upload bytes in window.
-	TotalDown        int64   // Total download bytes in window.
-	PeerCount        int     // Number of tracked peers.
-	PriorityRates    [bandwidthPriorityCount]float64 // Per-priority upload rate.
+	UploadRate    float64                         // Global upload bytes per second.
+	DownloadRate  float64                         // Global download bytes per second.
+	TotalUp       int64                           // Total upload bytes in window.
+	TotalDown     int64                           // Total download bytes in window.
+	PeerCount     int                             // Number of tracked peers.
+	PriorityRates [bandwidthPriorityCount]float64 // Per-priority upload rate.
 }
 
 // BandwidthTracker monitors network bandwidth per peer and globally, enforces

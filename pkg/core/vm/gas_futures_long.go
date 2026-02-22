@@ -21,14 +21,14 @@ const MaxLongFutureEpochs = 365
 
 // Long-dated futures errors.
 var (
-	ErrLongFutureNotFound     = errors.New("long_futures: future not found")
+	ErrLongFutureNotFound       = errors.New("long_futures: future not found")
 	ErrLongFutureAlreadySettled = errors.New("long_futures: future already settled")
-	ErrLongFutureExpired      = errors.New("long_futures: future has expired")
-	ErrLongFutureNotExpired   = errors.New("long_futures: future has not expired yet")
-	ErrLongFutureTooLong      = errors.New("long_futures: exceeds max epoch duration")
-	ErrLongFutureZeroAmount   = errors.New("long_futures: amount must be > 0")
-	ErrLongFutureZeroStrike   = errors.New("long_futures: strike price must be > 0")
-	ErrLongFutureInvalidExpiry = errors.New("long_futures: expiry must be > created epoch")
+	ErrLongFutureExpired        = errors.New("long_futures: future has expired")
+	ErrLongFutureNotExpired     = errors.New("long_futures: future has not expired yet")
+	ErrLongFutureTooLong        = errors.New("long_futures: exceeds max epoch duration")
+	ErrLongFutureZeroAmount     = errors.New("long_futures: amount must be > 0")
+	ErrLongFutureZeroStrike     = errors.New("long_futures: strike price must be > 0")
+	ErrLongFutureInvalidExpiry  = errors.New("long_futures: expiry must be > created epoch")
 )
 
 // LongDatedFuture represents a gas futures contract denominated in epochs.
@@ -63,10 +63,10 @@ type MarketDepth struct {
 // FuturesMarketLong manages long-dated gas futures contracts.
 // All operations are thread-safe.
 type FuturesMarketLong struct {
-	mu         sync.RWMutex
-	futures    map[types.Hash]*LongDatedFuture
+	mu          sync.RWMutex
+	futures     map[types.Hash]*LongDatedFuture
 	settlements map[types.Hash]*LongSettlement
-	nonce      uint64
+	nonce       uint64
 }
 
 // NewFuturesMarketLong creates a new long-dated futures market.

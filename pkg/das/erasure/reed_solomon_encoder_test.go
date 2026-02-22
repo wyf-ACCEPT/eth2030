@@ -331,7 +331,7 @@ func TestRSEncoderGF256VaryingSizes(t *testing.T) {
 	for _, size := range sizes {
 		data := make([]byte, size)
 		for i := range data {
-			data[i] = byte((i * 7 + 13) % 256)
+			data[i] = byte((i*7 + 13) % 256)
 		}
 
 		shards, err := enc.Encode(data)

@@ -4,8 +4,8 @@ import "github.com/eth2030/eth2030/core/types"
 
 // accessList tracks warm addresses and storage slots per EIP-2929.
 type accessList struct {
-	addresses map[types.Address]int              // address -> index into slots, or -1 if no slots
-	slots     []map[types.Hash]struct{}           // slot sets indexed by address entry
+	addresses map[types.Address]int     // address -> index into slots, or -1 if no slots
+	slots     []map[types.Hash]struct{} // slot sets indexed by address entry
 }
 
 func newAccessList() *accessList {

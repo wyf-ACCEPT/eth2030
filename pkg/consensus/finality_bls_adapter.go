@@ -33,14 +33,14 @@ var (
 // the aggregate BLS signature over the vote digests, a bitfield indicating
 // which validators participated, and the associated epoch/slot/root data.
 type FinalityProof struct {
-	Epoch              uint64
-	Slot               uint64
-	BlockRoot          types.Hash
-	StateRoot          types.Hash
-	AggregateSignature [96]byte
+	Epoch               uint64
+	Slot                uint64
+	BlockRoot           types.Hash
+	StateRoot           types.Hash
+	AggregateSignature  [96]byte
 	ParticipantBitfield []byte
-	ParticipantCount   uint64
-	TotalStake         uint64
+	ParticipantCount    uint64
+	TotalStake          uint64
 }
 
 // FinalityBLSAdapter connects the SSF round engine to real BLS12-381 crypto.

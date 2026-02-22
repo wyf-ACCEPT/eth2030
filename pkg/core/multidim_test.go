@@ -119,8 +119,8 @@ func TestCalcCalldataGasUsedMultidim(t *testing.T) {
 	}{
 		{"nil data", nil, 0},
 		{"empty data", []byte{}, 0},
-		{"single zero byte", []byte{0x00}, 4},          // 1 token * 4 gas
-		{"single nonzero byte", []byte{0xff}, 16},       // 4 tokens * 4 gas
+		{"single zero byte", []byte{0x00}, 4},               // 1 token * 4 gas
+		{"single nonzero byte", []byte{0xff}, 16},           // 4 tokens * 4 gas
 		{"mixed bytes", []byte{0x00, 0xff, 0x00, 0xab}, 40}, // (2*1 + 2*4) * 4 = 40
 		{
 			"all zeros 100 bytes",

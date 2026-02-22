@@ -15,19 +15,19 @@ import (
 
 // CommitMetrics tracks statistics about a trie commit operation.
 type CommitMetrics struct {
-	NodesWritten  int64
-	BytesFlushed  int64
-	DirtyBefore   int64
-	DirtyAfter    int64
-	CommitTimeNs  int64
-	HashTimeNs    int64
+	NodesWritten int64
+	BytesFlushed int64
+	DirtyBefore  int64
+	DirtyAfter   int64
+	CommitTimeNs int64
+	HashTimeNs   int64
 }
 
 // TrieCommitter manages the trie commit pipeline with dirty tracking,
 // reference counting, and batch writes. All methods are safe for concurrent use.
 type TrieCommitter struct {
-	mu      sync.Mutex
-	nodeDB  *NodeDatabase
+	mu     sync.Mutex
+	nodeDB *NodeDatabase
 
 	// Reference counting for GC: how many trie roots reference each node.
 	refsMu sync.RWMutex

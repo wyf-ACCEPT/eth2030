@@ -153,21 +153,21 @@ func DecodeStateSynCheckpoint(data []byte) (*StateSynCheckpoint, error) {
 
 // StateSynProgress holds a snapshot of the state sync progress.
 type StateSynProgress struct {
-	Phase         uint32
-	PivotBlock    uint64
-	PivotRoot     types.Hash
-	AccountsDone  uint64
-	AccountBytes  uint64
-	StorageDone   uint64
-	StorageBytes  uint64
-	CodesDone     uint64
-	CodeBytes     uint64
-	HealDone      uint64
-	HealBytes     uint64
-	BytesTotal    uint64
-	StartTime     time.Time
-	LastUpdate    time.Time
-	Bandwidth     float64 // estimated bytes per second
+	Phase        uint32
+	PivotBlock   uint64
+	PivotRoot    types.Hash
+	AccountsDone uint64
+	AccountBytes uint64
+	StorageDone  uint64
+	StorageBytes uint64
+	CodesDone    uint64
+	CodeBytes    uint64
+	HealDone     uint64
+	HealBytes    uint64
+	BytesTotal   uint64
+	StartTime    time.Time
+	LastUpdate   time.Time
+	Bandwidth    float64 // estimated bytes per second
 }
 
 // stateSynPartition represents a hash space partition for account iteration.

@@ -36,7 +36,7 @@ type StreamConfig struct {
 func DefaultStreamConfig() StreamConfig {
 	return StreamConfig{
 		ChunkSize:            BytesPerCell, // 2048 bytes per chunk (one cell)
-		MaxConcurrentStreams:  16,
+		MaxConcurrentStreams: 16,
 		Timeout:              30 * time.Second,
 	}
 }

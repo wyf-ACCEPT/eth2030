@@ -184,10 +184,10 @@ func TestErrorVariables(t *testing.T) {
 
 	// Check that error messages have the "pqc:" prefix.
 	msgs := map[string]error{
-		"pqc: unknown algorithm":     ErrUnknownAlgorithm,
-		"pqc: invalid key size":      ErrInvalidKeySize,
+		"pqc: unknown algorithm":      ErrUnknownAlgorithm,
+		"pqc: invalid key size":       ErrInvalidKeySize,
 		"pqc: invalid signature size": ErrInvalidSigSize,
-		"pqc: verification failed":   ErrVerifyFailed,
+		"pqc: verification failed":    ErrVerifyFailed,
 	}
 	for expected, e := range msgs {
 		if e.Error() != expected {

@@ -156,8 +156,8 @@ type EndgamePipeline struct {
 	finalized map[uint64]types.Hash
 
 	// stats tracks pipeline performance.
-	totalRuns     uint64
-	totalLatency  int64
+	totalRuns      uint64
+	totalLatency   int64
 	totalFinalized uint64
 }
 

@@ -26,12 +26,12 @@ type FullChainReader interface {
 // blocks, receipts, and transaction indices. It wraps MemoryChain and adds
 // receipt storage and transaction lookup capabilities.
 type MemoryFullChain struct {
-	mu           sync.RWMutex
-	chain        *MemoryChain
-	receipts     map[types.Hash][]*types.Receipt  // blockHash -> receipts
-	txIndex      map[types.Hash]txLookup          // txHash -> location
-	canonHashes  map[uint64]types.Hash            // number -> canonical hash
-	tdCache      map[types.Hash]*big.Int          // blockHash -> total difficulty
+	mu          sync.RWMutex
+	chain       *MemoryChain
+	receipts    map[types.Hash][]*types.Receipt // blockHash -> receipts
+	txIndex     map[types.Hash]txLookup         // txHash -> location
+	canonHashes map[uint64]types.Hash           // number -> canonical hash
+	tdCache     map[types.Hash]*big.Int         // blockHash -> total difficulty
 }
 
 // txLookup stores the location of a transaction in the chain for the

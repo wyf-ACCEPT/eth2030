@@ -13,10 +13,10 @@ import (
 // and storage slots during EVM execution. It maintains a warm set and provides
 // journaling for revert support via snapshots.
 type AccessListTracker struct {
-	addresses    map[types.Address]int               // address -> journal index of insertion (-1 if pre-populated)
-	slots        map[types.Address]map[types.Hash]int // address -> slot -> journal index
-	journal      []accessListChange                   // ordered changes for revert
-	snapshotIDs  []int                                // journal length at each snapshot
+	addresses   map[types.Address]int                // address -> journal index of insertion (-1 if pre-populated)
+	slots       map[types.Address]map[types.Hash]int // address -> slot -> journal index
+	journal     []accessListChange                   // ordered changes for revert
+	snapshotIDs []int                                // journal length at each snapshot
 }
 
 // accessListChangeKind identifies the type of change recorded in the journal.

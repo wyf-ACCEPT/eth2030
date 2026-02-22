@@ -80,11 +80,15 @@ func NewPQSigningPipelineEmpty() *PQSigningPipeline {
 }
 
 func (p *PQSigningPipeline) SetMode(mode uint8) {
-	p.mu.Lock(); p.mode = mode; p.mu.Unlock()
+	p.mu.Lock()
+	p.mode = mode
+	p.mu.Unlock()
 }
 
 func (p *PQSigningPipeline) RegisterSigner(entry *PipelineSignerEntry) error {
-	if entry == nil { return ErrPipelineEmptyKey }
+	if entry == nil {
+		return ErrPipelineEmptyKey
+	}
 	if entry.SignFn == nil || entry.VerifyFn == nil {
 		return fmt.Errorf("%w: sign/verify functions required", ErrPipelineUnknownAlg)
 	}
@@ -99,24 +103,36 @@ func (p *PQSigningPipeline) RegisterSigner(entry *PipelineSignerEntry) error {
 
 // SignTransaction signs a PQ transaction. Returns (signature, publicKey, error).
 func (p *PQSigningPipeline) SignTransaction(tx *types.PQTransaction, algID uint8, privateKey []byte) ([]byte, []byte, error) {
-	if tx == nil { return nil, nil, ErrPipelineNilTx }
-	if len(privateKey) == 0 { return nil, nil, ErrPipelineEmptyKey }
+	if tx == nil {
+		return nil, nil, ErrPipelineNilTx
+	}
+	if len(privateKey) == 0 {
+		return nil, nil, ErrPipelineEmptyKey
+	}
 	p.mu.RLock()
 	entry, exists := p.signers[algID]
 	mode := p.mode
 	p.mu.RUnlock()
-	if !exists { return nil, nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
+	if !exists {
+		return nil, nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
 	msg := pipelineTxMessage(tx, mode)
-	if len(msg) == 0 { return nil, nil, ErrPipelineEmptyTxData }
+	if len(msg) == 0 {
+		return nil, nil, ErrPipelineEmptyTxData
+	}
 	sig, err := entry.SignFn(privateKey, msg)
-	if err != nil { return nil, nil, fmt.Errorf("pq_pipeline: sign: %w", err) }
+	if err != nil {
+		return nil, nil, fmt.Errorf("pq_pipeline: sign: %w", err)
+	}
 	pk := pipelineDerivePublicKey(algID, privateKey, entry.PubKeySize)
 	return sig, pk, nil
 }
 
 // VerifyTransaction verifies a PQ transaction. Returns (valid, signerAddress, error).
 func (p *PQSigningPipeline) VerifyTransaction(tx *types.PQTransaction) (bool, types.Address, error) {
-	if tx == nil { return false, types.Address{}, ErrPipelineNilTx }
+	if tx == nil {
+		return false, types.Address{}, ErrPipelineNilTx
+	}
 	if len(tx.PQSignature) == 0 || len(tx.PQPublicKey) == 0 {
 		return false, types.Address{}, ErrPipelineInvalidSig
 	}
@@ -125,7 +141,9 @@ func (p *PQSigningPipeline) VerifyTransaction(tx *types.PQTransaction) (bool, ty
 	entry, exists := p.signers[algID]
 	mode := p.mode
 	p.mu.RUnlock()
-	if !exists { return false, types.Address{}, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
+	if !exists {
+		return false, types.Address{}, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
 	msg := pipelineTxMessage(tx, mode)
 	if !entry.VerifyFn(tx.PQPublicKey, msg, tx.PQSignature) {
 		return false, types.Address{}, ErrPipelineVerifyFailed
@@ -149,7 +167,9 @@ func (p *PQSigningPipeline) EstimateGas(algID uint8) (uint64, error) {
 	p.mu.RLock()
 	entry, exists := p.signers[algID]
 	p.mu.RUnlock()
-	if !exists { return 0, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
+	if !exists {
+		return 0, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
 	return entry.GasCost, nil
 }
 
@@ -157,8 +177,12 @@ func (p *PQSigningPipeline) GenerateKey(algID uint8) ([]byte, []byte, error) {
 	p.mu.RLock()
 	entry, exists := p.signers[algID]
 	p.mu.RUnlock()
-	if !exists { return nil, nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
-	if entry.KeyGenFn != nil { return entry.KeyGenFn() }
+	if !exists {
+		return nil, nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
+	if entry.KeyGenFn != nil {
+		return entry.KeyGenFn()
+	}
 	return nil, nil, fmt.Errorf("%w: no keygen for %d", ErrPipelineUnknownAlg, algID)
 }
 
@@ -166,7 +190,9 @@ func (p *PQSigningPipeline) GetSigner(algID uint8) (*PipelineSignerEntry, error)
 	p.mu.RLock()
 	entry, exists := p.signers[algID]
 	p.mu.RUnlock()
-	if !exists { return nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
+	if !exists {
+		return nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
 	return entry, nil
 }
 
@@ -174,13 +200,17 @@ func (p *PQSigningPipeline) RegisteredAlgorithms() []uint8 {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	algs := make([]uint8, 0, len(p.signers))
-	for id := range p.signers { algs = append(algs, id) }
+	for id := range p.signers {
+		algs = append(algs, id)
+	}
 	return algs
 }
 
 // BatchVerifyTransactions verifies multiple PQ transactions concurrently.
 func (p *PQSigningPipeline) BatchVerifyTransactions(txs []*types.PQTransaction) ([]bool, error) {
-	if len(txs) == 0 { return nil, nil }
+	if len(txs) == 0 {
+		return nil, nil
+	}
 	results := make([]bool, len(txs))
 	var wg sync.WaitGroup
 	for i, tx := range txs {
@@ -197,10 +227,10 @@ func (p *PQSigningPipeline) BatchVerifyTransactions(txs []*types.PQTransaction) 
 
 // PipelineAlgInfo holds metadata about a registered algorithm.
 type PipelineAlgInfo struct {
-	AlgID         uint8
-	Name          string
-	SecurityLevel int
-	GasCost       uint64
+	AlgID                           uint8
+	Name                            string
+	SecurityLevel                   int
+	GasCost                         uint64
 	SigSize, PubKeySize, SecKeySize int
 }
 
@@ -208,7 +238,9 @@ func (p *PQSigningPipeline) AlgorithmInfo(algID uint8) (*PipelineAlgInfo, error)
 	p.mu.RLock()
 	entry, exists := p.signers[algID]
 	p.mu.RUnlock()
-	if !exists { return nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID) }
+	if !exists {
+		return nil, fmt.Errorf("%w: %d", ErrPipelineAlgNotFound, algID)
+	}
 	return &PipelineAlgInfo{
 		AlgID: algID, Name: entry.Name, SecurityLevel: pipelineSecurityLevel(algID),
 		GasCost: entry.GasCost, SigSize: entry.SigSize, PubKeySize: entry.PubKeySize,
@@ -225,13 +257,17 @@ func (p *PQSigningPipeline) registerDefaults() {
 		SigSize: MLDSASignatureSize, PubKeySize: MLDSAPublicKeySize, SecKeySize: MLDSAPrivateKeySize,
 		SignFn: func(sk, msg []byte) ([]byte, error) {
 			kp, err := pipelineMLDSAKeyFromSK(sk)
-			if err != nil { return nil, err }
+			if err != nil {
+				return nil, err
+			}
 			return mldsa.Sign(kp, msg)
 		},
 		VerifyFn: func(pk, msg, sig []byte) bool { return mldsa.Verify(pk, msg, sig) },
 		KeyGenFn: func() ([]byte, []byte, error) {
 			kp, err := mldsa.GenerateKey()
-			if err != nil { return nil, nil, err }
+			if err != nil {
+				return nil, nil, err
+			}
 			return kp.PublicKey, kp.SecretKey, nil
 		},
 	}
@@ -243,7 +279,9 @@ func (p *PQSigningPipeline) registerDefaults() {
 		VerifyFn: func(pk, msg, sig []byte) bool { return falcon.VerifyReal(pk, msg, sig) },
 		KeyGenFn: func() ([]byte, []byte, error) {
 			kp, err := falcon.GenerateKeyReal()
-			if err != nil { return nil, nil, err }
+			if err != nil {
+				return nil, nil, err
+			}
 			return kp.PublicKey, kp.SecretKey, nil
 		},
 	}
@@ -255,28 +293,42 @@ func (p *PQSigningPipeline) registerDefaults() {
 		VerifyFn: func(pk, msg, sig []byte) bool { return sphincs.Verify(pk, msg, sig) },
 		KeyGenFn: func() ([]byte, []byte, error) {
 			kp, err := sphincs.GenerateKey()
-			if err != nil { return nil, nil, err }
+			if err != nil {
+				return nil, nil, err
+			}
 			return kp.PublicKey, kp.SecretKey, nil
 		},
 	}
 }
 
 func pipelineTxMessage(tx *types.PQTransaction, mode uint8) []byte {
-	if tx == nil { return nil }
+	if tx == nil {
+		return nil
+	}
 	var payload []byte
 	payload = append(payload, []byte(pipelineDomainTag)...)
-	if tx.ChainID != nil { payload = append(payload, tx.ChainID.Bytes()...) }
+	if tx.ChainID != nil {
+		payload = append(payload, tx.ChainID.Bytes()...)
+	}
 	var nonceBuf [8]byte
 	binary.BigEndian.PutUint64(nonceBuf[:], tx.Nonce)
 	payload = append(payload, nonceBuf[:]...)
-	if tx.To != nil { payload = append(payload, tx.To[:]...) }
-	if tx.Value != nil { payload = append(payload, tx.Value.Bytes()...) }
+	if tx.To != nil {
+		payload = append(payload, tx.To[:]...)
+	}
+	if tx.Value != nil {
+		payload = append(payload, tx.Value.Bytes()...)
+	}
 	var gasBuf [8]byte
 	binary.BigEndian.PutUint64(gasBuf[:], tx.Gas)
 	payload = append(payload, gasBuf[:]...)
-	if tx.GasPrice != nil { payload = append(payload, tx.GasPrice.Bytes()...) }
+	if tx.GasPrice != nil {
+		payload = append(payload, tx.GasPrice.Bytes()...)
+	}
 	payload = append(payload, tx.Data...)
-	if mode == SignModeDirect { return payload }
+	if mode == SignModeDirect {
+		return payload
+	}
 	h := sha256.Sum256(payload)
 	return h[:]
 }
@@ -306,24 +358,34 @@ func pipelineMLDSAKeyFromSK(sk []byte) (*MLDSAKeyPair, error) {
 	s1 := make([]mldsaPoly, mldsaL)
 	off := 128
 	for j := 0; j < mldsaL; j++ {
-		if off+polySize <= len(sk) { s1[j] = mldsaUnpackPoly(sk[off : off+polySize]) }
+		if off+polySize <= len(sk) {
+			s1[j] = mldsaUnpackPoly(sk[off : off+polySize])
+		}
 		off += polySize
 	}
 	s2 := make([]mldsaPoly, mldsaK)
 	for i := 0; i < mldsaK; i++ {
-		if off+polySize <= len(sk) { s2[i] = mldsaUnpackPoly(sk[off : off+polySize]) }
+		if off+polySize <= len(sk) {
+			s2[i] = mldsaUnpackPoly(sk[off : off+polySize])
+		}
 		off += polySize
 	}
 	t0 := make([]mldsaPoly, mldsaK)
 	for i := 0; i < mldsaK; i++ {
-		if off+polySize <= len(sk) { t0[i] = mldsaUnpackPoly(sk[off : off+polySize]) }
+		if off+polySize <= len(sk) {
+			t0[i] = mldsaUnpackPoly(sk[off : off+polySize])
+		}
 		off += polySize
 	}
 	aMatrix := mldsaExpandA(rho)
 	t := mldsaMatVecMul(aMatrix, s1)
-	for i := 0; i < mldsaK; i++ { t[i] = mldsaPolyAdd(t[i], s2[i]) }
+	for i := 0; i < mldsaK; i++ {
+		t[i] = mldsaPolyAdd(t[i], s2[i])
+	}
 	t1 := make([]mldsaPoly, mldsaK)
-	for i := 0; i < mldsaK; i++ { t1[i], _ = mldsaPower2Round(t[i]) }
+	for i := 0; i < mldsaK; i++ {
+		t1[i], _ = mldsaPower2Round(t[i])
+	}
 	return &MLDSAKeyPair{
 		PublicKey: mldsaSerializePK(rho, t1), SecretKey: sk[:MLDSAPrivateKeySize],
 		rho: copySlice(rho), kSeed: copySlice(kSeed), tr: copySlice(tr),
@@ -333,27 +395,38 @@ func pipelineMLDSAKeyFromSK(sk []byte) (*MLDSAKeyPair, error) {
 
 func pqSigTypeToPipelineAlg(sigType uint8) uint8 {
 	switch sigType {
-	case types.PQSigDilithium: return PipelineAlgMLDSA65
-	case types.PQSigFalcon:    return PipelineAlgFalcon512
-	case types.PQSigSPHINCS:   return PipelineAlgSPHINCS
-	default:                   return sigType
+	case types.PQSigDilithium:
+		return PipelineAlgMLDSA65
+	case types.PQSigFalcon:
+		return PipelineAlgFalcon512
+	case types.PQSigSPHINCS:
+		return PipelineAlgSPHINCS
+	default:
+		return sigType
 	}
 }
 
 func pipelineSecurityLevel(algID uint8) int {
 	switch algID {
-	case PipelineAlgMLDSA65: return 3
-	case PipelineAlgFalcon512, PipelineAlgSPHINCS: return 1
-	default: return 0
+	case PipelineAlgMLDSA65:
+		return 3
+	case PipelineAlgFalcon512, PipelineAlgSPHINCS:
+		return 1
+	default:
+		return 0
 	}
 }
 
 // PipelineAlgorithmName returns the name for a pipeline algorithm.
 func PipelineAlgorithmName(algID uint8) string {
 	switch algID {
-	case PipelineAlgMLDSA65:   return "ML-DSA-65"
-	case PipelineAlgFalcon512: return "Falcon-512"
-	case PipelineAlgSPHINCS:   return "SPHINCS+-SHA256"
-	default:                   return "unknown"
+	case PipelineAlgMLDSA65:
+		return "ML-DSA-65"
+	case PipelineAlgFalcon512:
+		return "Falcon-512"
+	case PipelineAlgSPHINCS:
+		return "SPHINCS+-SHA256"
+	default:
+		return "unknown"
 	}
 }

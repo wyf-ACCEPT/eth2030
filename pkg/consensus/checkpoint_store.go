@@ -34,14 +34,14 @@ const (
 
 // Checkpoint store errors.
 var (
-	ErrCSNotFound            = errors.New("checkpoint_store: checkpoint not found")
-	ErrCSEpochExists         = errors.New("checkpoint_store: epoch already stored")
-	ErrCSInvalidEpoch        = errors.New("checkpoint_store: invalid epoch")
-	ErrCSChainBroken         = errors.New("checkpoint_store: chain validation failed")
-	ErrCSWeakSubjectivity    = errors.New("checkpoint_store: outside weak subjectivity period")
-	ErrCSNoCheckpoints       = errors.New("checkpoint_store: no checkpoints stored")
-	ErrCSNilCheckpoint       = errors.New("checkpoint_store: nil checkpoint")
-	ErrCSBootstrapConflict   = errors.New("checkpoint_store: bootstrap conflicts with existing")
+	ErrCSNotFound          = errors.New("checkpoint_store: checkpoint not found")
+	ErrCSEpochExists       = errors.New("checkpoint_store: epoch already stored")
+	ErrCSInvalidEpoch      = errors.New("checkpoint_store: invalid epoch")
+	ErrCSChainBroken       = errors.New("checkpoint_store: chain validation failed")
+	ErrCSWeakSubjectivity  = errors.New("checkpoint_store: outside weak subjectivity period")
+	ErrCSNoCheckpoints     = errors.New("checkpoint_store: no checkpoints stored")
+	ErrCSNilCheckpoint     = errors.New("checkpoint_store: nil checkpoint")
+	ErrCSBootstrapConflict = errors.New("checkpoint_store: bootstrap conflicts with existing")
 )
 
 // StoredCheckpoint represents a checkpoint persisted in the store.
@@ -75,11 +75,11 @@ type CheckpointChainStatus struct {
 
 // WeakSubjectivityCheck reports the result of a WS safety check.
 type WeakSubjectivityCheck struct {
-	Safe                bool
-	CurrentEpoch        Epoch
+	Safe                 bool
+	CurrentEpoch         Epoch
 	LatestFinalizedEpoch Epoch
-	Distance            uint64 // epochs since last finalization
-	MaxAllowed          uint64 // maximum allowed distance (WS period)
+	Distance             uint64 // epochs since last finalization
+	MaxAllowed           uint64 // maximum allowed distance (WS period)
 }
 
 // CheckpointPersistenceStore provides persistence and retrieval of

@@ -61,11 +61,11 @@ type ZKTransferProof struct {
 
 // ZKTransferWitness contains the private data needed to construct a proof.
 type ZKTransferWitness struct {
-	SenderSK       [32]byte // sender's secret key
-	Amount         uint64   // transfer amount
-	RecipientPK    [32]byte // recipient's public key
-	Randomness     [32]byte // commitment randomness (blinding)
-	CommitmentIdx  uint64   // index of input commitment in the tree
+	SenderSK       [32]byte     // sender's secret key
+	Amount         uint64       // transfer amount
+	RecipientPK    [32]byte     // recipient's public key
+	Randomness     [32]byte     // commitment randomness (blinding)
+	CommitmentIdx  uint64       // index of input commitment in the tree
 	MerkleProofVal []types.Hash // Merkle path from commitment to root
 }
 

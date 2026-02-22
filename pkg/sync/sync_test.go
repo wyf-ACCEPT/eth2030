@@ -1007,8 +1007,8 @@ func TestRunSync_ConfigurableBatchSizes(t *testing.T) {
 
 	cfg := &Config{
 		Mode:          ModeFull,
-		BatchSize:     7,  // non-aligned batch size
-		BodyBatchSize: 3,  // small body batch
+		BatchSize:     7, // non-aligned batch size
+		BodyBatchSize: 3, // small body batch
 	}
 	s := NewSyncer(cfg)
 	s.SetFetchers(hs, bs, inserter)

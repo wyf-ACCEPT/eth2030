@@ -1,5 +1,5 @@
 // health_checker.go provides a subsystem health monitoring framework for the
-// eth2030 node. It aggregates health checks from registered subsystems and
+// ETH2030 node. It aggregates health checks from registered subsystems and
 // produces consolidated health reports.
 package node
 
@@ -62,10 +62,10 @@ const (
 // HealthChecker aggregates health from registered subsystem checkers.
 // All methods are safe for concurrent use.
 type HealthChecker struct {
-	mu         sync.RWMutex
-	checkers   map[string]SubsystemChecker
-	order      []string // insertion order
-	startTime  int64    // unix seconds
+	mu        sync.RWMutex
+	checkers  map[string]SubsystemChecker
+	order     []string // insertion order
+	startTime int64    // unix seconds
 }
 
 // NewHealthChecker creates a new HealthChecker with no registered subsystems.

@@ -263,12 +263,12 @@ func (s *FullBeaconState) ToMinimalState() BeaconState {
 // RecentState is a ring buffer of the last N slot -> block root mappings
 // for fast access to recent chain history.
 type RecentState struct {
-	mu      sync.RWMutex
-	slots   []Slot
-	roots   []types.Hash
-	size    int
-	head    int
-	count   int
+	mu    sync.RWMutex
+	slots []Slot
+	roots []types.Hash
+	size  int
+	head  int
+	count int
 }
 
 // NewRecentState creates a new ring buffer with capacity for n slots.
@@ -322,10 +322,10 @@ func (rs *RecentState) Len() int {
 // HistoricalState provides archived state root lookup by block root.
 // Entries beyond the limit are evicted in FIFO order.
 type HistoricalState struct {
-	mu     sync.RWMutex
-	index  map[types.Hash]types.Hash
-	order  []types.Hash // FIFO order of block roots
-	limit  int
+	mu    sync.RWMutex
+	index map[types.Hash]types.Hash
+	order []types.Hash // FIFO order of block roots
+	limit int
 }
 
 // NewHistoricalState creates a historical state archive with the given limit.

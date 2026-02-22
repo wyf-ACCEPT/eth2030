@@ -35,18 +35,18 @@ const (
 
 // Parallel BLS errors.
 var (
-	ErrParallelBLSNoAtts      = errors.New("parallel_bls: no attestations to aggregate")
+	ErrParallelBLSNoAtts       = errors.New("parallel_bls: no attestations to aggregate")
 	ErrParallelBLSDataMismatch = errors.New("parallel_bls: attestation data mismatch")
-	ErrParallelBLSDuplicate   = errors.New("parallel_bls: duplicate attestation detected")
+	ErrParallelBLSDuplicate    = errors.New("parallel_bls: duplicate attestation detected")
 )
 
 // ParallelAggResult is the result of a parallel aggregation operation.
 type ParallelAggResult struct {
-	Aggregate       *AggregateAttestation
-	ProcessedCount  int
-	DuplicateCount  int
-	MergeDepth      int
-	WorkerBatches   int
+	Aggregate      *AggregateAttestation
+	ProcessedCount int
+	DuplicateCount int
+	MergeDepth     int
+	WorkerBatches  int
 }
 
 // ParallelAggregatorConfig configures the parallel BLS aggregator.

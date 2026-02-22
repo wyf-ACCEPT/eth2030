@@ -103,15 +103,15 @@ func DefaultAsyncValidatorConfig() AsyncValidatorConfig {
 
 // ValidatorMetrics tracks async validation statistics.
 type ValidatorMetrics struct {
-	Submitted       atomic.Int64
-	Validated       atomic.Int64
-	Succeeded       atomic.Int64
-	Failed          atomic.Int64
-	Timeouts        atomic.Int64
-	QueueDepth      atomic.Int64
-	TotalLatencyNs  atomic.Int64
-	CustodyProofs   atomic.Int64
-	RandomProofs    atomic.Int64
+	Submitted      atomic.Int64
+	Validated      atomic.Int64
+	Succeeded      atomic.Int64
+	Failed         atomic.Int64
+	Timeouts       atomic.Int64
+	QueueDepth     atomic.Int64
+	TotalLatencyNs atomic.Int64
+	CustodyProofs  atomic.Int64
+	RandomProofs   atomic.Int64
 }
 
 // AvgLatencyMs returns the average validation latency in milliseconds.

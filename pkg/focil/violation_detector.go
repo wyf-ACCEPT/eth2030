@@ -1,5 +1,5 @@
 // violation_detector.go implements detection and reporting of FOCIL inclusion
-// list violations for the eth2030 Ethereum client.
+// list violations for the ETH2030 Ethereum client.
 //
 // Per EIP-7805, block builders must include transactions from the merged
 // inclusion list or risk attestation penalties. The ViolationDetector:
@@ -127,19 +127,19 @@ type ViolationDetectorConfig struct {
 // DefaultViolationDetectorConfig returns production defaults.
 func DefaultViolationDetectorConfig() ViolationDetectorConfig {
 	return ViolationDetectorConfig{
-		MissingTxPenaltyGwei:         1_000_000,   // 0.001 ETH per missing tx
-		DelayedSubmissionPenaltyGwei: 500_000,     // 0.0005 ETH
-		ConflictingILPenaltyGwei:     10_000_000,  // 0.01 ETH (severe)
-		AbsentPenaltyGwei:            2_000_000,   // 0.002 ETH
-		SubmissionDeadlineSeconds:    4,           // 4 seconds into slot
+		MissingTxPenaltyGwei:         1_000_000,  // 0.001 ETH per missing tx
+		DelayedSubmissionPenaltyGwei: 500_000,    // 0.0005 ETH
+		ConflictingILPenaltyGwei:     10_000_000, // 0.01 ETH (severe)
+		AbsentPenaltyGwei:            2_000_000,  // 0.002 ETH
+		SubmissionDeadlineSeconds:    4,          // 4 seconds into slot
 	}
 }
 
 // Violation detector errors.
 var (
-	ErrDetectorNilBlock  = errors.New("violation-detector: nil block")
-	ErrDetectorNoILs     = errors.New("violation-detector: no inclusion lists provided")
-	ErrDetectorNilIL     = errors.New("violation-detector: nil inclusion list")
+	ErrDetectorNilBlock = errors.New("violation-detector: nil block")
+	ErrDetectorNoILs    = errors.New("violation-detector: no inclusion lists provided")
+	ErrDetectorNilIL    = errors.New("violation-detector: nil inclusion list")
 )
 
 // ViolationDetector identifies FOCIL protocol violations by comparing block

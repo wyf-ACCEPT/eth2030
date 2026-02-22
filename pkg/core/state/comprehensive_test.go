@@ -25,7 +25,7 @@ func TestNestedSnapshotRevertOutOfOrder(t *testing.T) {
 	snap1 := db.Snapshot()
 	db.AddBalance(addr, big.NewInt(10)) // 110
 
-	_ = db.Snapshot() // snap2, taken but not reverted directly
+	_ = db.Snapshot()                   // snap2, taken but not reverted directly
 	db.AddBalance(addr, big.NewInt(20)) // 130
 
 	snap3 := db.Snapshot()
@@ -64,7 +64,7 @@ func TestNestedSnapshotRevertMiddleOnly(t *testing.T) {
 	db.AddBalance(addr, big.NewInt(20)) // 130
 	db.SetNonce(addr, 5)
 
-	_ = db.Snapshot() // snapInner
+	_ = db.Snapshot()                   // snapInner
 	db.AddBalance(addr, big.NewInt(30)) // 160
 	db.SetNonce(addr, 10)
 
@@ -157,7 +157,7 @@ func TestSnapshotRevertMultipleAccountsMultipleLevels(t *testing.T) {
 	db.SubBalance(a2, big.NewInt(50)) // a2: 150
 
 	snap2 := db.Snapshot()
-	db.SubBalance(a1, big.NewInt(60)) // a1: 50
+	db.SubBalance(a1, big.NewInt(60))  // a1: 50
 	db.AddBalance(a2, big.NewInt(300)) // a2: 450
 
 	// Revert snap2: undo inner changes.

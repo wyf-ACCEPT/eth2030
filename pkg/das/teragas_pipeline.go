@@ -21,10 +21,14 @@ var (
 )
 
 // DataProducer submits data with backpressure awareness.
-type DataProducer interface{ Submit(chainID uint64, data []byte) error }
+type DataProducer interface {
+	Submit(chainID uint64, data []byte) error
+}
 
 // DataConsumer receives processed data.
-type DataConsumer interface{ Receive(ctx context.Context) (*TPDataPacket, error) }
+type DataConsumer interface {
+	Receive(ctx context.Context) (*TPDataPacket, error)
+}
 
 // PipelineStage is a composable processing stage.
 type PipelineStage interface {
@@ -81,20 +85,24 @@ type TPMetricsSnapshot struct {
 }
 
 func (m *TPMetricsSnapshot) AvgLatencyMs() float64 {
-	if m.LatencyCount == 0 { return 0 }
+	if m.LatencyCount == 0 {
+		return 0
+	}
 	return float64(m.LatencySumMs) / float64(m.LatencyCount)
 }
 
 func (m *TPMetricsSnapshot) ThroughputBps(dur time.Duration) float64 {
-	if dur <= 0 { return 0 }
+	if dur <= 0 {
+		return 0
+	}
 	return float64(m.BytesOut) / dur.Seconds()
 }
 
 type tpMetrics struct {
-	bytesIn, bytesOut, packetsIn, packetsOut       atomic.Uint64
-	packetsDropped, backpressureEvents             atomic.Uint64
-	compressionSaved, stageErrors                  atomic.Uint64
-	latencySumMs, latencyCount                     atomic.Int64
+	bytesIn, bytesOut, packetsIn, packetsOut atomic.Uint64
+	packetsDropped, backpressureEvents       atomic.Uint64
+	compressionSaved, stageErrors            atomic.Uint64
+	latencySumMs, latencyCount               atomic.Int64
 }
 
 func (m *tpMetrics) snapshot() *TPMetricsSnapshot {
@@ -116,7 +124,9 @@ type BackpressureChannel struct {
 }
 
 func NewBackpressureChannel(size int, policy DropPolicy) *BackpressureChannel {
-	if size <= 0 { size = 64 }
+	if size <= 0 {
+		size = 64
+	}
 	return &BackpressureChannel{ch: make(chan *TPDataPacket, size), policy: policy}
 }
 
@@ -172,7 +182,7 @@ func (bc *BackpressureChannel) Len() int { return len(bc.ch) }
 type BandwidthGate struct{ enforcer *BandwidthEnforcer }
 
 func NewBandwidthGate(e *BandwidthEnforcer) *BandwidthGate { return &BandwidthGate{enforcer: e} }
-func (g *BandwidthGate) Name() string                       { return "bandwidth_gate" }
+func (g *BandwidthGate) Name() string                      { return "bandwidth_gate" }
 func (g *BandwidthGate) Process(pkt *TPDataPacket) (*TPDataPacket, error) {
 	if g.enforcer == nil {
 		return pkt, nil
@@ -295,7 +305,10 @@ type ReassemblyStage struct {
 	mu      sync.Mutex
 	pending map[reassemblyKey]*reassemblyState
 }
-type reassemblyKey struct{ chainID uint64; timestamp int64 }
+type reassemblyKey struct {
+	chainID   uint64
+	timestamp int64
+}
 type reassemblyState struct {
 	chunks      map[int][]byte
 	totalChunks int
@@ -477,8 +490,8 @@ func (tp *TeragasPipeline) Stop() {
 }
 
 func (tp *TeragasPipeline) Metrics() *TPMetricsSnapshot { return tp.metrics.snapshot() }
-func (tp *TeragasPipeline) IsStopped() bool              { return tp.stopped.Load() }
-func (tp *TeragasPipeline) StageCount() int              { return len(tp.stages) }
+func (tp *TeragasPipeline) IsStopped() bool             { return tp.stopped.Load() }
+func (tp *TeragasPipeline) StageCount() int             { return len(tp.stages) }
 
 func (tp *TeragasPipeline) StageNames() []string {
 	names := make([]string, len(tp.stages))

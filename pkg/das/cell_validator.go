@@ -15,14 +15,14 @@ import (
 
 // Cell validation errors.
 var (
-	ErrCellDataEmpty       = errors.New("das/cellval: cell data is empty")
-	ErrCellDataSize        = errors.New("das/cellval: cell data size mismatch")
-	ErrCellProofInvalid    = errors.New("das/cellval: cell proof verification failed")
+	ErrCellDataEmpty        = errors.New("das/cellval: cell data is empty")
+	ErrCellDataSize         = errors.New("das/cellval: cell data size mismatch")
+	ErrCellProofInvalid     = errors.New("das/cellval: cell proof verification failed")
 	ErrCellColumnOutOfRange = errors.New("das/cellval: column index out of range")
-	ErrCellRowOutOfRange   = errors.New("das/cellval: row index out of range")
-	ErrCellBatchEmpty      = errors.New("das/cellval: batch is empty")
-	ErrCellReconstructFail = errors.New("das/cellval: cell reconstruction failed")
-	ErrCellDuplicateIndex  = errors.New("das/cellval: duplicate cell index in batch")
+	ErrCellRowOutOfRange    = errors.New("das/cellval: row index out of range")
+	ErrCellBatchEmpty       = errors.New("das/cellval: batch is empty")
+	ErrCellReconstructFail  = errors.New("das/cellval: cell reconstruction failed")
+	ErrCellDuplicateIndex   = errors.New("das/cellval: duplicate cell index in batch")
 	ErrCellInsufficientData = errors.New("das/cellval: insufficient cells for reconstruction")
 )
 

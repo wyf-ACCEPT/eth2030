@@ -25,14 +25,14 @@ const (
 
 // Sync committee errors.
 var (
-	ErrNilCommittee            = errors.New("light: nil sync committee")
-	ErrCommitteeWrongSize      = errors.New("light: sync committee must have 512 pubkeys")
-	ErrNilUpdate               = errors.New("light: nil light client update")
-	ErrInvalidSignature        = errors.New("light: invalid sync committee signature")
+	ErrNilCommittee              = errors.New("light: nil sync committee")
+	ErrCommitteeWrongSize        = errors.New("light: sync committee must have 512 pubkeys")
+	ErrNilUpdate                 = errors.New("light: nil light client update")
+	ErrInvalidSignature          = errors.New("light: invalid sync committee signature")
 	ErrInsufficientParticipation = errors.New("light: insufficient sync committee participation")
-	ErrNilBootstrap            = errors.New("light: nil bootstrap data")
-	ErrBootstrapMismatch       = errors.New("light: bootstrap header root mismatch")
-	ErrUpdateNotNewer          = errors.New("light: update does not advance finalized state")
+	ErrNilBootstrap              = errors.New("light: nil bootstrap data")
+	ErrBootstrapMismatch         = errors.New("light: bootstrap header root mismatch")
+	ErrUpdateNotNewer            = errors.New("light: update does not advance finalized state")
 )
 
 // SyncCommitteePeriod computes the sync committee period index for a given slot.
@@ -185,9 +185,9 @@ func SyncCommitteeUpdate(current *SyncCommittee, next *SyncCommittee) (*SyncComm
 // LightClientBootstrap contains the data needed to initialize a light client
 // from a trusted finalized checkpoint.
 type LightClientBootstrap struct {
-	Header          *types.Header
+	Header           *types.Header
 	CurrentCommittee *SyncCommittee
-	CommitteeRoot   types.Hash
+	CommitteeRoot    types.Hash
 }
 
 // LightClientIncrementalUpdate carries data for advancing the light client

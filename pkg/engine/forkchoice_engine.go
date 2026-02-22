@@ -91,9 +91,9 @@ type ForkchoiceEngine struct {
 	syncing bool
 
 	// Statistics.
-	updateCount   uint64
-	buildCount    uint64
-	invalidCount  uint64
+	updateCount  uint64
+	buildCount   uint64
+	invalidCount uint64
 }
 
 // NewForkchoiceEngine creates a new forkchoice engine with the given block lookup.

@@ -23,9 +23,9 @@ var (
 )
 
 var (
-	ErrNoCommonVersion  = errors.New("no common protocol version found")
-	ErrPeerNotFound     = errors.New("peer not found")
-	ErrNoVersions       = errors.New("no versions provided")
+	ErrNoCommonVersion = errors.New("no common protocol version found")
+	ErrPeerNotFound    = errors.New("peer not found")
+	ErrNoVersions      = errors.New("no versions provided")
 )
 
 // String returns the protocol version in "ETH/68" format.

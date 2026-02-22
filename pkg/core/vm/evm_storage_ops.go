@@ -20,21 +20,21 @@ var (
 
 // SlotAccessCosts holds the gas costs for storage slot access per EIP-2929.
 type SlotAccessCosts struct {
-	ColdSloadGas        uint64 // first access to a slot in a tx: 2100
-	WarmStorageReadGas  uint64 // subsequent accesses: 100
-	SstoreSetGas        uint64 // zero -> non-zero: 20000
-	SstoreResetGas      uint64 // non-zero -> non-zero: 2900
-	SstoreClearsRefund  uint64 // refund for clearing: 4800
+	ColdSloadGas       uint64 // first access to a slot in a tx: 2100
+	WarmStorageReadGas uint64 // subsequent accesses: 100
+	SstoreSetGas       uint64 // zero -> non-zero: 20000
+	SstoreResetGas     uint64 // non-zero -> non-zero: 2900
+	SstoreClearsRefund uint64 // refund for clearing: 4800
 }
 
 // DefaultSlotAccessCosts returns post-London/Cancun slot access costs.
 func DefaultSlotAccessCosts() SlotAccessCosts {
 	return SlotAccessCosts{
-		ColdSloadGas:       ColdSloadCost,                // 2100
-		WarmStorageReadGas: WarmStorageReadCost,           // 100
-		SstoreSetGas:       GasSstoreSet,                  // 20000
-		SstoreResetGas:     GasSstoreReset,                // 2900
-		SstoreClearsRefund: SstoreClearsScheduleRefund,    // 4800
+		ColdSloadGas:       ColdSloadCost,              // 2100
+		WarmStorageReadGas: WarmStorageReadCost,        // 100
+		SstoreSetGas:       GasSstoreSet,               // 20000
+		SstoreResetGas:     GasSstoreReset,             // 2900
+		SstoreClearsRefund: SstoreClearsScheduleRefund, // 4800
 	}
 }
 
@@ -317,12 +317,12 @@ func NewSstoreRefundExplainer() *SstoreRefundExplainer {
 
 // SstoreRefundBreakdown describes the gas and refund components of an SSTORE.
 type SstoreRefundBreakdown struct {
-	IsCold       bool   // whether this was a cold access
-	ColdCost     uint64 // cold surcharge (0 or ColdSloadGas)
-	BaseCost     uint64 // base gas cost (set/reset/warm read)
-	TotalGas     uint64 // total gas consumed
-	RefundDelta  int64  // net refund change
-	Category     string // description of the SSTORE category
+	IsCold      bool   // whether this was a cold access
+	ColdCost    uint64 // cold surcharge (0 or ColdSloadGas)
+	BaseCost    uint64 // base gas cost (set/reset/warm read)
+	TotalGas    uint64 // total gas consumed
+	RefundDelta int64  // net refund change
+	Category    string // description of the SSTORE category
 }
 
 // Explain returns a detailed breakdown of the SSTORE gas and refund.

@@ -28,12 +28,12 @@ const (
 
 // Maximum sizes for execution requests per type.
 const (
-	MaxDepositRequests        = 8192
-	MaxWithdrawalRequests     = 16
-	MaxConsolidationRequests  = 1
-	DepositRequestSize        = 192 // pubkey(48) + withdrawal_creds(32) + amount(8) + signature(96) + index(8)
-	WithdrawalRequestSize     = 76  // source_address(20) + validator_pubkey(48) + amount(8)
-	ConsolidationRequestSize  = 116 // source_address(20) + source_pubkey(48) + target_pubkey(48)
+	MaxDepositRequests       = 8192
+	MaxWithdrawalRequests    = 16
+	MaxConsolidationRequests = 1
+	DepositRequestSize       = 192 // pubkey(48) + withdrawal_creds(32) + amount(8) + signature(96) + index(8)
+	WithdrawalRequestSize    = 76  // source_address(20) + validator_pubkey(48) + amount(8)
+	ConsolidationRequestSize = 116 // source_address(20) + source_pubkey(48) + target_pubkey(48)
 )
 
 // EngV4 errors.
@@ -59,27 +59,27 @@ func NewEngV4(backend Backend) *EngV4 {
 
 // DepositRequest represents an EIP-6110 deposit from the execution layer.
 type DepositRequest struct {
-	Pubkey                [48]byte      `json:"pubkey"`
-	WithdrawalCredentials types.Hash    `json:"withdrawalCredentials"`
-	Amount                uint64        `json:"amount"` // in Gwei
-	Signature             [96]byte      `json:"signature"`
-	Index                 uint64        `json:"index"`
+	Pubkey                [48]byte   `json:"pubkey"`
+	WithdrawalCredentials types.Hash `json:"withdrawalCredentials"`
+	Amount                uint64     `json:"amount"` // in Gwei
+	Signature             [96]byte   `json:"signature"`
+	Index                 uint64     `json:"index"`
 }
 
 // WithdrawalRequest represents an EIP-7002 withdrawal request triggered
 // from the execution layer's withdrawal request contract.
 type WithdrawalRequest struct {
-	SourceAddress  types.Address `json:"sourceAddress"`
-	ValidatorPubkey [48]byte    `json:"validatorPubkey"`
-	Amount         uint64       `json:"amount"` // in Gwei, 0 = full exit
+	SourceAddress   types.Address `json:"sourceAddress"`
+	ValidatorPubkey [48]byte      `json:"validatorPubkey"`
+	Amount          uint64        `json:"amount"` // in Gwei, 0 = full exit
 }
 
 // ConsolidationRequest represents an EIP-7251 consolidation request that
 // merges one validator's stake into another.
 type ConsolidationRequest struct {
 	SourceAddress types.Address `json:"sourceAddress"`
-	SourcePubkey  [48]byte     `json:"sourcePubkey"`
-	TargetPubkey  [48]byte     `json:"targetPubkey"`
+	SourcePubkey  [48]byte      `json:"sourcePubkey"`
+	TargetPubkey  [48]byte      `json:"targetPubkey"`
 }
 
 // ExecutionRequestsV4 holds categorized execution requests for Prague.

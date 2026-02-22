@@ -282,7 +282,7 @@ func TestE2E_ContractDeploymentAndExecution(t *testing.T) {
 		0x52,       // MSTORE
 		0x60, 0x20, // PUSH1 0x20
 		0x60, 0x00, // PUSH1 0x00
-		0xf3,       // RETURN
+		0xf3, // RETURN
 	}
 	runtimeLen := byte(len(runtimeCode)) // 11
 
@@ -295,14 +295,14 @@ func TestE2E_ContractDeploymentAndExecution(t *testing.T) {
 	initPrefix := []byte{
 		0x60, 0x42, // PUSH1 0x42
 		0x60, 0x00, // PUSH1 0x00
-		0x55,                     // SSTORE
-		0x60, runtimeLen,         // PUSH1 runtimeLen
-		0x60, 0x00,               // PUSH1 (placeholder for initLen, filled below)
-		0x60, 0x00,               // PUSH1 0x00
-		0x39,                     // CODECOPY
-		0x60, runtimeLen,         // PUSH1 runtimeLen
-		0x60, 0x00,               // PUSH1 0x00
-		0xf3,                     // RETURN
+		0x55,             // SSTORE
+		0x60, runtimeLen, // PUSH1 runtimeLen
+		0x60, 0x00, // PUSH1 (placeholder for initLen, filled below)
+		0x60, 0x00, // PUSH1 0x00
+		0x39,             // CODECOPY
+		0x60, runtimeLen, // PUSH1 runtimeLen
+		0x60, 0x00, // PUSH1 0x00
+		0xf3, // RETURN
 	}
 	// The initLen is the length of initPrefix.
 	initPrefix[8] = byte(len(initPrefix))
@@ -758,20 +758,20 @@ func TestE2E_MultiBlockContractInteraction(t *testing.T) {
 		0x60, 0x00, // PUSH1 0x00
 		0x35,       // CALLDATALOAD (load 32 bytes from calldata[0])
 		0x60, 0x00, // PUSH1 0x00
-		0x55,       // SSTORE (store at slot 0)
-		0x00,       // STOP
+		0x55, // SSTORE (store at slot 0)
+		0x00, // STOP
 	}
 	runtimeLen := byte(len(runtimeCode)) // 7
 
 	// Init code: CODECOPY runtime + RETURN
 	initPrefix := []byte{
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 (placeholder for initLen)
-		0x60, 0x00,       // PUSH1 0x00
+		0x60, 0x00, // PUSH1 (placeholder for initLen)
+		0x60, 0x00, // PUSH1 0x00
 		0x39,             // CODECOPY
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 0x00
-		0xf3,             // RETURN
+		0x60, 0x00, // PUSH1 0x00
+		0xf3, // RETURN
 	}
 	initPrefix[3] = byte(len(initPrefix))
 	initCode := append(initPrefix, runtimeCode...)

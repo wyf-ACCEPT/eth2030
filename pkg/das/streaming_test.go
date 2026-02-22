@@ -236,7 +236,7 @@ func TestBlobStreamerStartStream(t *testing.T) {
 func TestBlobStreamerMaxStreams(t *testing.T) {
 	cfg := StreamConfig{
 		ChunkSize:            BytesPerCell,
-		MaxConcurrentStreams:  2,
+		MaxConcurrentStreams: 2,
 	}
 	bs := NewBlobStreamer(cfg)
 

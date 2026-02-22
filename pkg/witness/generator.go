@@ -416,8 +416,8 @@ func (g *WitnessGenerator) ensureAccount(addr types.Address, reader StateReader)
 
 	exists := reader.Exist(addr)
 	acc := &WitnessAccount{
-		Balance:  new(big.Int),
-		Exists:   exists,
+		Balance: new(big.Int),
+		Exists:  exists,
 	}
 	if exists {
 		acc.Balance = new(big.Int).Set(reader.GetBalance(addr))

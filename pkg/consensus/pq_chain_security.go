@@ -74,9 +74,9 @@ type PQChainValidator struct {
 	totalValidatorCount map[uint64]uint64 // epoch -> total validator count
 
 	// Audit stats.
-	blocksValidated   uint64
-	blocksFailed      uint64
-	attestationsValid uint64
+	blocksValidated    uint64
+	blocksFailed       uint64
+	attestationsValid  uint64
 	attestationsFailed uint64
 }
 
@@ -349,9 +349,9 @@ func (v *PQChainValidator) ValidateChainPQSecurity(headers []*types.Header) (*PQ
 // PQChainCommitment represents a hash chain commitment using PQ-secure
 // SHA-3/SHAKE-256 instead of Keccak-256.
 type PQChainCommitment struct {
-	Epoch         uint64
-	BlockHashes   []types.Hash // PQ block hashes in the epoch
-	CommitmentRoot types.Hash  // SHA-3 Merkle root of block hashes
+	Epoch          uint64
+	BlockHashes    []types.Hash // PQ block hashes in the epoch
+	CommitmentRoot types.Hash   // SHA-3 Merkle root of block hashes
 }
 
 // NewPQChainCommitment creates a PQ chain commitment for an epoch.

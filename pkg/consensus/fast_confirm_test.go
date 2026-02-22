@@ -137,8 +137,8 @@ func TestAddAttestation_QuorumReached(t *testing.T) {
 
 func TestAddAttestation_MinAttestersNotMet(t *testing.T) {
 	cfg := &FastConfirmConfig{
-		QuorumThreshold: 0.1,  // very low threshold
-		MinAttesters:    5,    // but high minimum
+		QuorumThreshold: 0.1, // very low threshold
+		MinAttesters:    5,   // but high minimum
 		ConfirmTimeout:  10 * time.Second,
 		MaxTrackedSlots: 64,
 		TotalValidators: 10,

@@ -19,7 +19,7 @@ type PendingList struct {
 
 // accountPending holds nonce-sorted transactions for a single sender.
 type accountPending struct {
-	txs       []*types.Transaction // sorted by nonce ascending
+	txs        []*types.Transaction // sorted by nonce ascending
 	stateNonce uint64
 	balance    *big.Int
 }

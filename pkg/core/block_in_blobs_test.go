@@ -11,14 +11,14 @@ func TestCalcBlobsRequired(t *testing.T) {
 		blockSize int
 		want      int
 	}{
-		{0, 1},                          // 4 bytes prefix fits in 1 blob
-		{1, 1},                          // 5 bytes
-		{UsableBytesPerBlob - 4, 1},     // exactly fills one blob
-		{UsableBytesPerBlob - 3, 2},     // one byte over
-		{UsableBytesPerBlob, 2},         // needs prefix + data
-		{UsableBytesPerBlob*2 - 4, 2},   // exactly fills two blobs
-		{UsableBytesPerBlob*2 - 3, 3},   // one byte over two blobs
-		{1024 * 1024, 9},                // ~1MB block
+		{0, 1},                        // 4 bytes prefix fits in 1 blob
+		{1, 1},                        // 5 bytes
+		{UsableBytesPerBlob - 4, 1},   // exactly fills one blob
+		{UsableBytesPerBlob - 3, 2},   // one byte over
+		{UsableBytesPerBlob, 2},       // needs prefix + data
+		{UsableBytesPerBlob*2 - 4, 2}, // exactly fills two blobs
+		{UsableBytesPerBlob*2 - 3, 3}, // one byte over two blobs
+		{1024 * 1024, 9},              // ~1MB block
 	}
 
 	for _, tt := range tests {

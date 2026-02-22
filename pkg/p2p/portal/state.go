@@ -25,11 +25,11 @@ const (
 
 // State network errors.
 var (
-	ErrStateNotStarted     = errors.New("portal/state: network not started")
+	ErrStateNotStarted      = errors.New("portal/state: network not started")
 	ErrStateContentTooLarge = errors.New("portal/state: content exceeds max size")
 	ErrStateContentNotFound = errors.New("portal/state: content not found")
-	ErrInvalidStateKey     = errors.New("portal/state: invalid content key")
-	ErrEmptyStatePayload   = errors.New("portal/state: empty payload")
+	ErrInvalidStateKey      = errors.New("portal/state: invalid content key")
+	ErrEmptyStatePayload    = errors.New("portal/state: empty payload")
 )
 
 // EvictionPolicy controls how content is evicted when storage is full.

@@ -163,11 +163,11 @@ func forkPointString(f ForkID) string {
 // ConfigCompatError represents an incompatibility between two chain configs
 // at a specific fork.
 type ConfigCompatError struct {
-	ForkName   string
-	LocalVal   string
-	RemoteVal  string
-	HeadBlock  uint64
-	HeadTime   uint64
+	ForkName  string
+	LocalVal  string
+	RemoteVal string
+	HeadBlock uint64
+	HeadTime  uint64
 }
 
 // Error implements the error interface.

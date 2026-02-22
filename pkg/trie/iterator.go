@@ -21,8 +21,8 @@ type Iterator struct {
 	Value []byte // current value
 
 	// stack tracks our position in the trie for depth-first traversal.
-	stack []iterFrame
-	err   error
+	stack   []iterFrame
+	err     error
 	started bool
 }
 

@@ -35,13 +35,13 @@ const (
 
 // Gas settlement errors.
 var (
-	ErrSettlementContractNotFound  = errors.New("settlement: contract not found")
-	ErrSettlementNotExpired        = errors.New("settlement: contract has not reached expiry")
-	ErrSettlementAlreadySettled    = errors.New("settlement: contract already settled")
-	ErrSettlementInvalidDirection  = errors.New("settlement: invalid direction")
+	ErrSettlementContractNotFound   = errors.New("settlement: contract not found")
+	ErrSettlementNotExpired         = errors.New("settlement: contract has not reached expiry")
+	ErrSettlementAlreadySettled     = errors.New("settlement: contract already settled")
+	ErrSettlementInvalidDirection   = errors.New("settlement: invalid direction")
 	ErrSettlementInsufficientMargin = errors.New("settlement: insufficient collateral for margin")
-	ErrSettlementZeroNotional      = errors.New("settlement: notional value must be > 0")
-	ErrSettlementZeroStrike        = errors.New("settlement: strike price must be > 0")
+	ErrSettlementZeroNotional       = errors.New("settlement: notional value must be > 0")
+	ErrSettlementZeroStrike         = errors.New("settlement: strike price must be > 0")
 )
 
 // Position represents a single futures position with collateral tracking.

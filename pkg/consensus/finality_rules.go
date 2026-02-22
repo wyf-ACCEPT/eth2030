@@ -44,13 +44,13 @@ func (c CasperCheckpoint) Equals(other CasperCheckpoint) bool {
 // CasperFinalityTracker implements Casper FFG finality tracking with proper
 // justification and finalization logic. Thread-safe.
 type CasperFinalityTracker struct {
-	mu                          sync.RWMutex
-	justified                   CasperCheckpoint
-	finalized                   CasperCheckpoint
-	previousJustified           CasperCheckpoint
-	justificationBits           [4]bool
-	finalizedCheckpoints        map[Epoch]CasperCheckpoint
-	slotsPerEpoch               uint64
+	mu                   sync.RWMutex
+	justified            CasperCheckpoint
+	finalized            CasperCheckpoint
+	previousJustified    CasperCheckpoint
+	justificationBits    [4]bool
+	finalizedCheckpoints map[Epoch]CasperCheckpoint
+	slotsPerEpoch        uint64
 }
 
 // NewCasperFinalityTracker creates a finality tracker with the given slots

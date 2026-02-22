@@ -20,7 +20,7 @@ var (
 // EncryptedPool implements a commit-reveal transaction pool.
 type EncryptedPool struct {
 	mu      sync.RWMutex
-	commits map[types.Hash]*CommitEntry      // commitHash -> entry
+	commits map[types.Hash]*CommitEntry       // commitHash -> entry
 	reveals map[types.Hash]*types.Transaction // commitHash -> revealed tx
 }
 

@@ -22,13 +22,13 @@ var CanonicalGuestPrecompileAddr = types.BytesToAddress([]byte{0x02, 0x00})
 
 // Guest execution errors.
 var (
-	ErrGuestEmptyProgram     = errors.New("zkvm: empty guest program")
-	ErrGuestCycleLimit       = errors.New("zkvm: cycle limit exceeded")
-	ErrGuestMemoryLimit      = errors.New("zkvm: memory limit exceeded")
-	ErrGuestNotRegistered    = errors.New("zkvm: guest program not registered")
+	ErrGuestEmptyProgram      = errors.New("zkvm: empty guest program")
+	ErrGuestCycleLimit        = errors.New("zkvm: cycle limit exceeded")
+	ErrGuestMemoryLimit       = errors.New("zkvm: memory limit exceeded")
+	ErrGuestNotRegistered     = errors.New("zkvm: guest program not registered")
 	ErrGuestAlreadyRegistered = errors.New("zkvm: guest program already registered")
-	ErrGuestInvalidProof     = errors.New("zkvm: guest proof verification failed")
-	ErrGuestInputTooShort    = errors.New("zkvm: precompile input too short")
+	ErrGuestInvalidProof      = errors.New("zkvm: guest proof verification failed")
+	ErrGuestInputTooShort     = errors.New("zkvm: precompile input too short")
 )
 
 // Default configuration values.
@@ -38,7 +38,7 @@ const (
 	DefaultProofSystem = "stark"
 
 	// Gas costs for the canonical guest precompile.
-	GuestPrecompileBaseGas   = 100_000
+	GuestPrecompileBaseGas     = 100_000
 	GuestPrecompilePerCycleGas = 1 // 1 gas per cycle
 )
 

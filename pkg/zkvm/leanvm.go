@@ -15,15 +15,15 @@ import (
 
 // LeanVM errors.
 var (
-	ErrLeanEmptyProgram     = errors.New("leanvm: empty program")
-	ErrLeanEmptyInputs      = errors.New("leanvm: no inputs provided")
-	ErrLeanInvalidOpcode    = errors.New("leanvm: invalid opcode")
-	ErrLeanStackUnderflow   = errors.New("leanvm: stack underflow")
-	ErrLeanCycleLimit       = errors.New("leanvm: cycle limit exceeded")
-	ErrLeanInvalidOperand   = errors.New("leanvm: operand index out of range")
-	ErrLeanAggregateEmpty   = errors.New("leanvm: no proofs to aggregate")
-	ErrLeanVerifyMismatch   = errors.New("leanvm: aggregated proof does not match commitments")
-	ErrLeanCompileEmpty     = errors.New("leanvm: empty EVM bytecode")
+	ErrLeanEmptyProgram       = errors.New("leanvm: empty program")
+	ErrLeanEmptyInputs        = errors.New("leanvm: no inputs provided")
+	ErrLeanInvalidOpcode      = errors.New("leanvm: invalid opcode")
+	ErrLeanStackUnderflow     = errors.New("leanvm: stack underflow")
+	ErrLeanCycleLimit         = errors.New("leanvm: cycle limit exceeded")
+	ErrLeanInvalidOperand     = errors.New("leanvm: operand index out of range")
+	ErrLeanAggregateEmpty     = errors.New("leanvm: no proofs to aggregate")
+	ErrLeanVerifyMismatch     = errors.New("leanvm: aggregated proof does not match commitments")
+	ErrLeanCompileEmpty       = errors.New("leanvm: empty EVM bytecode")
 	ErrLeanCompileUnsupported = errors.New("leanvm: unsupported EVM opcode")
 )
 

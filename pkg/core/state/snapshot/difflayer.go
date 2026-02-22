@@ -15,13 +15,13 @@ import (
 // The goal of a diff layer is to act as a journal, tracking recent modifications
 // made to the state, that have not yet graduated into a semi-immutable state.
 type diffLayer struct {
-	parent snapshot    // Parent snapshot modified by this one, never nil
+	parent snapshot   // Parent snapshot modified by this one, never nil
 	root   types.Hash // Root hash to which this snapshot diff belongs to
 	stale  atomic.Bool
 
-	accountData map[types.Hash][]byte                 // Keyed accounts for direct retrieval (nil means deleted)
+	accountData map[types.Hash][]byte                // Keyed accounts for direct retrieval (nil means deleted)
 	storageData map[types.Hash]map[types.Hash][]byte // Keyed storage slots for direct retrieval (nil means deleted)
-	memory      uint64                                // Approximate memory usage in bytes
+	memory      uint64                               // Approximate memory usage in bytes
 
 	lock sync.RWMutex
 }

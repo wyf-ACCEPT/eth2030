@@ -177,9 +177,9 @@ func AggregateSignatures(sigs [][96]byte) [96]byte {
 
 // HashToG2 hashes a message to a G2 point using a domain separation tag.
 // Follows a simplified hash-to-field + map-to-curve approach:
-//   1. Expand message to two Fp2 elements using SHA-256
-//   2. Map each to G2 via the map-to-curve function
-//   3. Add them and clear cofactor
+//  1. Expand message to two Fp2 elements using SHA-256
+//  2. Map each to G2 via the map-to-curve function
+//  3. Add them and clear cofactor
 func HashToG2(msg []byte, dst []byte) *BlsG2Point {
 	// Expand message to 4 field elements (2 Fp2 elements = 4 Fp).
 	u0c0 := hashToField(msg, dst, 0)

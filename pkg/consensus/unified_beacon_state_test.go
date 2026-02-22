@@ -27,12 +27,12 @@ func TestUnifiedBeaconStateNewDefaultSlots(t *testing.T) {
 func TestUnifiedBeaconStateAddValidator(t *testing.T) {
 	s := NewUnifiedBeaconState(32)
 	v := &UnifiedValidator{
-		Pubkey:           [48]byte{1, 2, 3},
-		EffectiveBalance: 32 * GweiPerETH,
-		Balance:          32 * GweiPerETH,
-		ActivationEpoch:  0,
-		ExitEpoch:        FarFutureEpoch,
-		WithdrawableEpoch: FarFutureEpoch,
+		Pubkey:                     [48]byte{1, 2, 3},
+		EffectiveBalance:           32 * GweiPerETH,
+		Balance:                    32 * GweiPerETH,
+		ActivationEpoch:            0,
+		ExitEpoch:                  FarFutureEpoch,
+		WithdrawableEpoch:          FarFutureEpoch,
 		ActivationEligibilityEpoch: FarFutureEpoch,
 	}
 	idx := s.AddValidator(v)
@@ -401,9 +401,9 @@ func TestUnifiedValidatorIsActiveAt(t *testing.T) {
 
 func TestUnifiedValidatorIsSlashableAt(t *testing.T) {
 	v := &UnifiedValidator{
-		ActivationEpoch: 5,
+		ActivationEpoch:   5,
 		WithdrawableEpoch: 200,
-		Slashed:         false,
+		Slashed:           false,
 	}
 	if !v.IsSlashableAt(10) {
 		t.Error("should be slashable")

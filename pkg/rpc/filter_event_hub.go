@@ -82,8 +82,8 @@ type ChainEvent struct {
 	TxHash types.Hash
 
 	// EventReorg payload.
-	OldHead types.Hash
-	NewHead types.Hash
+	OldHead    types.Hash
+	NewHead    types.Hash
 	ReorgDepth uint64
 }
 

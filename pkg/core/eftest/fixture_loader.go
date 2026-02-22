@@ -11,12 +11,12 @@ import (
 
 // TestResult holds the outcome of running a single test vector.
 type TestResult struct {
-	File    string
-	Name    string
-	Fork    string
-	Index   int
-	Passed  bool
-	Error   error
+	File   string
+	Name   string
+	Fork   string
+	Index  int
+	Passed bool
+	Error  error
 }
 
 // BatchResult holds aggregate results for a batch of tests.
@@ -69,24 +69,24 @@ func RunSingleFixture(path string, forkFilter string) ([]*TestResult, error) {
 		for _, sub := range subs {
 			if forkFilter != "" && sub.Fork != forkFilter {
 				results = append(results, &TestResult{
-					File:    path,
-					Name:    name,
-					Fork:    sub.Fork,
-					Index:   sub.Index,
-					Passed:  false,
-					Error:   fmt.Errorf("skipped: fork filter %q", forkFilter),
+					File:   path,
+					Name:   name,
+					Fork:   sub.Fork,
+					Index:  sub.Index,
+					Passed: false,
+					Error:  fmt.Errorf("skipped: fork filter %q", forkFilter),
 				})
 				continue
 			}
 
 			if !ForkSupported(sub.Fork) {
 				results = append(results, &TestResult{
-					File:    path,
-					Name:    name,
-					Fork:    sub.Fork,
-					Index:   sub.Index,
-					Passed:  false,
-					Error:   fmt.Errorf("skipped: unsupported fork %q", sub.Fork),
+					File:   path,
+					Name:   name,
+					Fork:   sub.Fork,
+					Index:  sub.Index,
+					Passed: false,
+					Error:  fmt.Errorf("skipped: unsupported fork %q", sub.Fork),
 				})
 				continue
 			}

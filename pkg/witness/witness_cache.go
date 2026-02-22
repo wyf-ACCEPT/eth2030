@@ -51,9 +51,9 @@ type witnessCacheEntry struct {
 // It stores witnesses keyed by block hash and supports size-bounded
 // eviction based on block count.
 type WitnessCache struct {
-	mu         sync.RWMutex
-	entries    map[[32]byte]*witnessCacheEntry
-	maxBlocks  int
+	mu          sync.RWMutex
+	entries     map[[32]byte]*witnessCacheEntry
+	maxBlocks   int
 	insertOrder [][32]byte // tracks insertion order for eviction
 
 	hits   atomic.Uint64

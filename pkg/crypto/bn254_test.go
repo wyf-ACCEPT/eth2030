@@ -158,9 +158,9 @@ func TestBN254ScalarMulPrecompile(t *testing.T) {
 
 	// 1 * G = G
 	input2 := make([]byte, 96)
-	input2[31] = 1  // x=1
-	input2[63] = 2  // y=2
-	input2[95] = 1  // scalar=1
+	input2[31] = 1 // x=1
+	input2[63] = 2 // y=2
+	input2[95] = 1 // scalar=1
 	out2, err := BN254ScalarMul(input2)
 	if err != nil {
 		t.Fatalf("BN254ScalarMul(1*G): %v", err)

@@ -17,19 +17,19 @@ import (
 
 // Blob sync protocol constants from Deneb spec.
 const (
-	MaxBlobsPerBlockV2           = 6    // MAX_BLOBS_PER_BLOCK
-	MaxRequestBlocksDeneb        = 128  // MAX_REQUEST_BLOCKS_DENEB
-	MaxRequestBlobSidecars       = MaxRequestBlocksDeneb * MaxBlobsPerBlockV2
-	MinEpochsForBlobSidecars     = 4096 // MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS
-	KZGCommitmentInclusionDepth  = 17   // KZG_COMMITMENT_INCLUSION_PROOF_DEPTH
-	BlobSidecarSubnetCount       = 6    // BLOB_SIDECAR_SUBNET_COUNT
+	MaxBlobsPerBlockV2          = 6   // MAX_BLOBS_PER_BLOCK
+	MaxRequestBlocksDeneb       = 128 // MAX_REQUEST_BLOCKS_DENEB
+	MaxRequestBlobSidecars      = MaxRequestBlocksDeneb * MaxBlobsPerBlockV2
+	MinEpochsForBlobSidecars    = 4096 // MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS
+	KZGCommitmentInclusionDepth = 17   // KZG_COMMITMENT_INCLUSION_PROOF_DEPTH
+	BlobSidecarSubnetCount      = 6    // BLOB_SIDECAR_SUBNET_COUNT
 
 	// Peer scoring defaults.
-	defaultMaxScore    = 100
-	defaultMinScore    = -100
-	scoreRewardGood    = 1
-	scorePenaltyBad    = -10
-	scorePenaltyEmpty  = -5
+	defaultMaxScore   = 100
+	defaultMinScore   = -100
+	scoreRewardGood   = 1
+	scorePenaltyBad   = -10
+	scorePenaltyEmpty = -5
 
 	// Rate limiting defaults.
 	defaultRateWindow  = 60 * time.Second
@@ -38,29 +38,29 @@ const (
 
 // BlobSyncProtocol errors.
 var (
-	ErrBlobProtoNilSidecar       = errors.New("blob_proto: nil sidecar")
-	ErrBlobProtoIndexOutOfRange  = errors.New("blob_proto: blob index >= MAX_BLOBS_PER_BLOCK")
-	ErrBlobProtoSlotMismatch     = errors.New("blob_proto: sidecar slot mismatch")
-	ErrBlobProtoZeroCommitment   = errors.New("blob_proto: zero KZG commitment")
-	ErrBlobProtoZeroProof        = errors.New("blob_proto: zero KZG proof")
-	ErrBlobProtoCommitmentHash   = errors.New("blob_proto: KZG commitment does not match blob")
-	ErrBlobProtoInvalidRange     = errors.New("blob_proto: invalid slot range")
-	ErrBlobProtoRangeTooLarge    = errors.New("blob_proto: range exceeds MAX_REQUEST_BLOCKS_DENEB")
-	ErrBlobProtoNoPeers          = errors.New("blob_proto: no peers available")
-	ErrBlobProtoRateLimited      = errors.New("blob_proto: peer rate limited")
-	ErrBlobProtoPeerBanned       = errors.New("blob_proto: peer score too low")
+	ErrBlobProtoNilSidecar      = errors.New("blob_proto: nil sidecar")
+	ErrBlobProtoIndexOutOfRange = errors.New("blob_proto: blob index >= MAX_BLOBS_PER_BLOCK")
+	ErrBlobProtoSlotMismatch    = errors.New("blob_proto: sidecar slot mismatch")
+	ErrBlobProtoZeroCommitment  = errors.New("blob_proto: zero KZG commitment")
+	ErrBlobProtoZeroProof       = errors.New("blob_proto: zero KZG proof")
+	ErrBlobProtoCommitmentHash  = errors.New("blob_proto: KZG commitment does not match blob")
+	ErrBlobProtoInvalidRange    = errors.New("blob_proto: invalid slot range")
+	ErrBlobProtoRangeTooLarge   = errors.New("blob_proto: range exceeds MAX_REQUEST_BLOCKS_DENEB")
+	ErrBlobProtoNoPeers         = errors.New("blob_proto: no peers available")
+	ErrBlobProtoRateLimited     = errors.New("blob_proto: peer rate limited")
+	ErrBlobProtoPeerBanned      = errors.New("blob_proto: peer score too low")
 )
 
 // BlobSidecarV2 represents a blob sidecar per the Deneb spec.
 type BlobSidecarV2 struct {
-	Index                      uint64
-	Blob                       [131072]byte // 128 KiB blob
-	KZGCommitment              [48]byte
-	KZGProof                   [48]byte
-	SignedBlockHeaderRoot      [32]byte
-	Slot                       uint64
-	ProposerIndex              uint64
-	InclusionProof             [KZGCommitmentInclusionDepth][32]byte
+	Index                 uint64
+	Blob                  [131072]byte // 128 KiB blob
+	KZGCommitment         [48]byte
+	KZGProof              [48]byte
+	SignedBlockHeaderRoot [32]byte
+	Slot                  uint64
+	ProposerIndex         uint64
+	InclusionProof        [KZGCommitmentInclusionDepth][32]byte
 }
 
 // BlobSidecarRequest describes a request for blob sidecars.
@@ -79,8 +79,8 @@ type BlobSidecarResponse struct {
 
 // BlobSyncProtocolConfig configures the blob sync protocol.
 type BlobSyncProtocolConfig struct {
-	MaxBlobsPerBlock uint64
-	RateWindow       time.Duration
+	MaxBlobsPerBlock     uint64
+	RateWindow           time.Duration
 	MaxRequestsPerWindow int
 }
 
@@ -95,10 +95,10 @@ func DefaultBlobSyncProtocolConfig() BlobSyncProtocolConfig {
 
 // peerState tracks a peer's quality score and rate limiting.
 type peerState struct {
-	score       int
-	requests    []time.Time // timestamps of recent requests
-	totalGood   int
-	totalBad    int
+	score     int
+	requests  []time.Time // timestamps of recent requests
+	totalGood int
+	totalBad  int
 }
 
 // BlobSyncProtocol manages blob sidecar requests and responses.

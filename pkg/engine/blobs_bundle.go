@@ -43,14 +43,14 @@ const (
 
 // Blob bundle errors.
 var (
-	ErrBlobBundleEmpty         = errors.New("blobs bundle: empty bundle")
-	ErrBlobBundleMismatch      = errors.New("blobs bundle: commitments/proofs/blobs length mismatch")
-	ErrBlobBundleTooMany       = errors.New("blobs bundle: too many blobs")
-	ErrBlobInvalidSize         = errors.New("blobs bundle: invalid blob size")
-	ErrCommitmentInvalidSize   = errors.New("blobs bundle: invalid commitment size")
-	ErrProofInvalidSize        = errors.New("blobs bundle: invalid proof size")
-	ErrVersionedHashMismatch   = errors.New("blobs bundle: versioned hash does not match commitment")
-	ErrBlobBundleSidecarIndex  = errors.New("blobs bundle: sidecar index out of range")
+	ErrBlobBundleEmpty        = errors.New("blobs bundle: empty bundle")
+	ErrBlobBundleMismatch     = errors.New("blobs bundle: commitments/proofs/blobs length mismatch")
+	ErrBlobBundleTooMany      = errors.New("blobs bundle: too many blobs")
+	ErrBlobInvalidSize        = errors.New("blobs bundle: invalid blob size")
+	ErrCommitmentInvalidSize  = errors.New("blobs bundle: invalid commitment size")
+	ErrProofInvalidSize       = errors.New("blobs bundle: invalid proof size")
+	ErrVersionedHashMismatch  = errors.New("blobs bundle: versioned hash does not match commitment")
+	ErrBlobBundleSidecarIndex = errors.New("blobs bundle: sidecar index out of range")
 )
 
 // KZGVerifier defines the interface for verifying KZG commitments against
@@ -69,11 +69,11 @@ type KZGVerifier interface {
 // BlobSidecar pairs a single blob with its KZG commitment, proof, and
 // metadata needed for propagation on the gossip network.
 type BlobSidecar struct {
-	Index            uint64     `json:"index"`
-	Blob             []byte     `json:"blob"`
-	KZGCommitment    []byte     `json:"kzgCommitment"`
-	KZGProof         []byte     `json:"kzgProof"`
-	SignedBlockHeader types.Hash `json:"signedBlockHeader"` // block hash
+	Index                    uint64       `json:"index"`
+	Blob                     []byte       `json:"blob"`
+	KZGCommitment            []byte       `json:"kzgCommitment"`
+	KZGProof                 []byte       `json:"kzgProof"`
+	SignedBlockHeader        types.Hash   `json:"signedBlockHeader"` // block hash
 	CommitmentInclusionProof []types.Hash `json:"kzgCommitmentInclusionProof"`
 }
 

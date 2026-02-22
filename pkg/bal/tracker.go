@@ -19,8 +19,8 @@ type slotKey struct {
 // AccessTracker records state accesses during block execution and
 // produces a BlockAccessList from the recorded data.
 type AccessTracker struct {
-	reads          map[slotKey]types.Hash            // slot -> value read
-	changes        map[slotKey][2]types.Hash         // slot -> [old, new]
+	reads          map[slotKey]types.Hash    // slot -> value read
+	changes        map[slotKey][2]types.Hash // slot -> [old, new]
 	balanceChanges map[addrKey]*BalanceChange
 	nonceChanges   map[addrKey]*NonceChange
 	codeChanges    map[addrKey]*CodeChange

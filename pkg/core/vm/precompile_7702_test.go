@@ -159,7 +159,7 @@ func TestRecoverSigner_BadSignature(t *testing.T) {
 	auth := &Authorization7702{
 		ChainID: 1,
 		Address: types.HexToAddress("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
-		V: []byte{0}, R: make([]byte, 32), S: make([]byte, 32),
+		V:       []byte{0}, R: make([]byte, 32), S: make([]byte, 32),
 	}
 	auth.R[0] = 0xFF
 	auth.S[0] = 0xFF
@@ -172,7 +172,7 @@ func TestEncodeAuthorization(t *testing.T) {
 	auth := &Authorization7702{
 		ChainID: 42,
 		Address: types.HexToAddress("0x1111111111111111111111111111111111111111"),
-		Nonce: 99, V: []byte{1}, R: make([]byte, 32), S: make([]byte, 32),
+		Nonce:   99, V: []byte{1}, R: make([]byte, 32), S: make([]byte, 32),
 	}
 	auth.R[31] = 0xAB
 	auth.S[31] = 0xCD

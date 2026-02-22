@@ -23,15 +23,15 @@ import (
 
 // Unified hash signer errors.
 var (
-	ErrXMSSInvalidHeight     = errors.New("xmss: tree height must be 10, 16, or 20")
-	ErrXMSSKeysExhausted     = errors.New("xmss: all OTS keys exhausted")
-	ErrXMSSNotInitialized    = errors.New("xmss: key pair not initialized")
-	ErrXMSSInvalidSignature  = errors.New("xmss: invalid signature")
-	ErrXMSSInvalidAuthPath   = errors.New("xmss: auth path length mismatch")
-	ErrXMSSInvalidLeafIndex  = errors.New("xmss: leaf index out of range")
-	ErrXMSSEmptyMessage      = errors.New("xmss: empty message")
-	ErrXMSSRotationNeeded    = errors.New("xmss: key rotation required")
-	ErrXMSSManagerEmpty      = errors.New("xmss: key manager has no active trees")
+	ErrXMSSInvalidHeight    = errors.New("xmss: tree height must be 10, 16, or 20")
+	ErrXMSSKeysExhausted    = errors.New("xmss: all OTS keys exhausted")
+	ErrXMSSNotInitialized   = errors.New("xmss: key pair not initialized")
+	ErrXMSSInvalidSignature = errors.New("xmss: invalid signature")
+	ErrXMSSInvalidAuthPath  = errors.New("xmss: auth path length mismatch")
+	ErrXMSSInvalidLeafIndex = errors.New("xmss: leaf index out of range")
+	ErrXMSSEmptyMessage     = errors.New("xmss: empty message")
+	ErrXMSSRotationNeeded   = errors.New("xmss: key rotation required")
+	ErrXMSSManagerEmpty     = errors.New("xmss: key manager has no active trees")
 )
 
 // Supported tree heights.
@@ -43,10 +43,10 @@ const (
 
 // XMSS constants.
 const (
-	xmssSeedSize   = 32  // SHA-256 output / seed size
-	xmssWOTSW      = 16  // Winternitz parameter
-	xmssChainLen   = 67  // ceil(256/4) + 3 checksum chains for w=16
-	xmssRotateWarn = 90  // warn at 90% exhaustion
+	xmssSeedSize   = 32 // SHA-256 output / seed size
+	xmssWOTSW      = 16 // Winternitz parameter
+	xmssChainLen   = 67 // ceil(256/4) + 3 checksum chains for w=16
+	xmssRotateWarn = 90 // warn at 90% exhaustion
 )
 
 // Domain separators for XMSS SHA-256 hashing.
@@ -151,7 +151,7 @@ func XMSSSign(sk *XMSSPrivateKey, msg []byte) (*XMSSSignature, error) {
 		LeafIndex:    leafIndex,
 		AuthPath:     authPath,
 		OTSSignature: otsSig,
-		PublicRoot:    tree[1],
+		PublicRoot:   tree[1],
 	}, nil
 }
 

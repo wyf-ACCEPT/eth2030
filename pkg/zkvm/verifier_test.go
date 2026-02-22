@@ -278,11 +278,11 @@ func TestRejectingVerifierVerifyNilProof(t *testing.T) {
 
 func TestVerifierErrorMessages(t *testing.T) {
 	tests := map[string]error{
-		"zkvm: nil verification key":  ErrNilVerificationKey,
-		"zkvm: nil proof":             ErrNilProof,
-		"zkvm: empty proof data":      ErrEmptyProofData,
+		"zkvm: nil verification key":        ErrNilVerificationKey,
+		"zkvm: nil proof":                   ErrNilProof,
+		"zkvm: empty proof data":            ErrEmptyProofData,
 		"zkvm: empty verification key data": ErrEmptyVKData,
-		"zkvm: invalid proof":         ErrInvalidProof,
+		"zkvm: invalid proof":               ErrInvalidProof,
 	}
 	for expected, e := range tests {
 		if e == nil {

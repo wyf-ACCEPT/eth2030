@@ -53,7 +53,7 @@ func DefaultDHTRouterConfig() DHTRouterConfig {
 		LookupAlpha:         3,
 		LookupResultSize:    16,
 		MaxOfferPeers:       8,
-		MinRadiusPercent:     1,
+		MinRadiusPercent:    1,
 	}
 }
 

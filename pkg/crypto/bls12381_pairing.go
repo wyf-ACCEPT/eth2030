@@ -381,7 +381,8 @@ func blsMillerLoop(p *BlsG1Point, q *BlsG2Point) *blsFp12 {
 
 // blsFinalExponentiation computes f^((p^12-1)/r).
 // This is split into:
-//   f^((p^12-1)/r) = f^((p^6-1) * (p^2+1) * ((p^4-p^2+1)/r))
+//
+//	f^((p^12-1)/r) = f^((p^6-1) * (p^2+1) * ((p^4-p^2+1)/r))
 func blsFinalExponentiation(f *blsFp12) *blsFp12 {
 	// Easy part: f^(p^6-1) * f^(p^2+1)
 

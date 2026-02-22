@@ -29,16 +29,16 @@ const MaxDepositsPerBlock = 8192
 
 // Deposit processing errors.
 var (
-	ErrDepositEmptyPubkey          = errors.New("eip6110: empty validator pubkey")
-	ErrDepositInvalidPubkeySize    = errors.New("eip6110: pubkey must be 48 bytes")
-	ErrDepositInvalidSigSize       = errors.New("eip6110: signature must be 96 bytes")
-	ErrDepositInvalidCredentials   = errors.New("eip6110: invalid withdrawal credentials")
-	ErrDepositZeroAmount           = errors.New("eip6110: deposit amount is zero")
-	ErrDepositBelowMinimum         = errors.New("eip6110: deposit amount below minimum (1 ETH)")
-	ErrTooManyDeposits             = errors.New("eip6110: too many deposits in block")
-	ErrDepositLogWrongAddress      = errors.New("eip6110: log not from deposit contract")
-	ErrDepositLogWrongTopic        = errors.New("eip6110: log topic mismatch")
-	ErrDepositLogDataTooShort      = errors.New("eip6110: log data too short")
+	ErrDepositEmptyPubkey        = errors.New("eip6110: empty validator pubkey")
+	ErrDepositInvalidPubkeySize  = errors.New("eip6110: pubkey must be 48 bytes")
+	ErrDepositInvalidSigSize     = errors.New("eip6110: signature must be 96 bytes")
+	ErrDepositInvalidCredentials = errors.New("eip6110: invalid withdrawal credentials")
+	ErrDepositZeroAmount         = errors.New("eip6110: deposit amount is zero")
+	ErrDepositBelowMinimum       = errors.New("eip6110: deposit amount below minimum (1 ETH)")
+	ErrTooManyDeposits           = errors.New("eip6110: too many deposits in block")
+	ErrDepositLogWrongAddress    = errors.New("eip6110: log not from deposit contract")
+	ErrDepositLogWrongTopic      = errors.New("eip6110: log topic mismatch")
+	ErrDepositLogDataTooShort    = errors.New("eip6110: log data too short")
 )
 
 // MinDepositAmount is the minimum deposit amount in Gwei (1 ETH).

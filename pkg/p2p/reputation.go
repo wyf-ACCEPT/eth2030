@@ -15,12 +15,12 @@ var (
 
 // Event type constants for reputation tracking.
 const (
-	EventGoodBlock      = "good_block"
-	EventBadBlock       = "bad_block"
-	EventTimeout        = "timeout"
-	EventDisconnect     = "disconnect"
+	EventGoodBlock       = "good_block"
+	EventBadBlock        = "bad_block"
+	EventTimeout         = "timeout"
+	EventDisconnect      = "disconnect"
 	EventGoodAttestation = "good_attestation"
-	EventBadAttestation = "bad_attestation"
+	EventBadAttestation  = "bad_attestation"
 )
 
 // eventDeltas maps event types to their default score adjustments.
@@ -55,12 +55,12 @@ func DefaultReputationConfig() ReputationConfig {
 
 // PeerReputation holds reputation state for a single peer.
 type PeerReputation struct {
-	PeerID     string
-	Score      float64
-	Events     int
-	LastEvent  time.Time
-	Banned     bool
-	BanUntil   time.Time
+	PeerID    string
+	Score     float64
+	Events    int
+	LastEvent time.Time
+	Banned    bool
+	BanUntil  time.Time
 }
 
 // ReputationEvent records a single reputation-affecting event.

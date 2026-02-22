@@ -37,14 +37,14 @@ const (
 // During snap sync the pipeline progresses through multiple stages;
 // during full sync it stays in StageBlocks.
 const (
-	StageNone            uint32 = 0
-	StageHeaders         uint32 = 1 // Downloading headers (full sync)
-	StageSnapAccounts    uint32 = 2 // Downloading accounts (snap sync)
-	StageSnapStorage     uint32 = 3 // Downloading storage (snap sync)
-	StageSnapBytecodes   uint32 = 4 // Downloading bytecodes (snap sync)
-	StageSnapHealing     uint32 = 5 // Healing trie (snap sync)
-	StageBlocks          uint32 = 6 // Downloading remaining blocks (post-snap or full)
-	StageCaughtUp        uint32 = 7 // Sync complete, chain is caught up
+	StageNone          uint32 = 0
+	StageHeaders       uint32 = 1 // Downloading headers (full sync)
+	StageSnapAccounts  uint32 = 2 // Downloading accounts (snap sync)
+	StageSnapStorage   uint32 = 3 // Downloading storage (snap sync)
+	StageSnapBytecodes uint32 = 4 // Downloading bytecodes (snap sync)
+	StageSnapHealing   uint32 = 5 // Healing trie (snap sync)
+	StageBlocks        uint32 = 6 // Downloading remaining blocks (post-snap or full)
+	StageCaughtUp      uint32 = 7 // Sync complete, chain is caught up
 )
 
 // StageName returns a human-readable name for a sync stage.
@@ -75,24 +75,24 @@ func StageName(stage uint32) string {
 const maxFutureTimestamp = 15
 
 var (
-	ErrAlreadySyncing   = errors.New("already syncing")
-	ErrNoPeers          = errors.New("no peers available")
-	ErrCancelled        = errors.New("sync cancelled")
-	ErrInvalidChain     = errors.New("invalid chain received")
-	ErrTimeout          = errors.New("sync timeout")
-	ErrBadParentHash    = errors.New("invalid parent hash")
-	ErrBadBlockNumber   = errors.New("non-contiguous block number")
-	ErrFutureTimestamp  = errors.New("header timestamp too far in the future")
-	ErrTimestampOrder   = errors.New("header timestamp not after parent")
-	ErrBodyHeaderCount  = errors.New("body count does not match header count")
-	ErrNoBlockInserter  = errors.New("no block inserter configured")
-	ErrNoHeaderFetcher  = errors.New("no header fetcher configured")
-	ErrNoBodyFetcher    = errors.New("no body fetcher configured")
-	ErrEmptyHeaders     = errors.New("received empty header set")
-	ErrInsertionFailed  = errors.New("block insertion failed")
-	ErrSnapSyncFailed   = errors.New("snap sync failed, falling back to full sync")
-	ErrNoSnapPeerSet    = errors.New("no snap peer configured for snap sync")
-	ErrNoStateWriter    = errors.New("no state writer configured for snap sync")
+	ErrAlreadySyncing  = errors.New("already syncing")
+	ErrNoPeers         = errors.New("no peers available")
+	ErrCancelled       = errors.New("sync cancelled")
+	ErrInvalidChain    = errors.New("invalid chain received")
+	ErrTimeout         = errors.New("sync timeout")
+	ErrBadParentHash   = errors.New("invalid parent hash")
+	ErrBadBlockNumber  = errors.New("non-contiguous block number")
+	ErrFutureTimestamp = errors.New("header timestamp too far in the future")
+	ErrTimestampOrder  = errors.New("header timestamp not after parent")
+	ErrBodyHeaderCount = errors.New("body count does not match header count")
+	ErrNoBlockInserter = errors.New("no block inserter configured")
+	ErrNoHeaderFetcher = errors.New("no header fetcher configured")
+	ErrNoBodyFetcher   = errors.New("no body fetcher configured")
+	ErrEmptyHeaders    = errors.New("received empty header set")
+	ErrInsertionFailed = errors.New("block insertion failed")
+	ErrSnapSyncFailed  = errors.New("snap sync failed, falling back to full sync")
+	ErrNoSnapPeerSet   = errors.New("no snap peer configured for snap sync")
+	ErrNoStateWriter   = errors.New("no state writer configured for snap sync")
 )
 
 // HeaderSource retrieves headers from a remote peer or local chain.
@@ -113,13 +113,13 @@ type BlockInserter interface {
 
 // Progress tracks the current sync progress.
 type Progress struct {
-	StartingBlock uint64 // block number where sync started
-	CurrentBlock  uint64 // current block being synced
-	HighestBlock  uint64 // highest block known from peers
-	PulledHeaders uint64 // number of headers downloaded
-	PulledBodies  uint64 // number of bodies downloaded
-	Stage         uint32 // current sync stage (SyncStage constant)
-	Mode          string // sync mode ("full" or "snap")
+	StartingBlock uint64        // block number where sync started
+	CurrentBlock  uint64        // current block being synced
+	HighestBlock  uint64        // highest block known from peers
+	PulledHeaders uint64        // number of headers downloaded
+	PulledBodies  uint64        // number of bodies downloaded
+	Stage         uint32        // current sync stage (SyncStage constant)
+	Mode          string        // sync mode ("full" or "snap")
 	SnapProgress  *SnapProgress // snap sync progress (nil for full sync)
 }
 

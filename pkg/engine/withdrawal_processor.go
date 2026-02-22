@@ -37,14 +37,14 @@ const (
 
 // Withdrawal processing errors.
 var (
-	ErrWPNilState             = errors.New("withdrawal_processor: nil state database")
-	ErrWPNilWithdrawal        = errors.New("withdrawal_processor: nil withdrawal entry")
-	ErrWPZeroAddress          = errors.New("withdrawal_processor: zero withdrawal address")
-	ErrWPZeroAmount           = errors.New("withdrawal_processor: zero withdrawal amount")
-	ErrWPTooManyWithdrawals   = errors.New("withdrawal_processor: too many withdrawals")
-	ErrWPIndexNotMonotonic    = errors.New("withdrawal_processor: withdrawal indices not monotonically increasing")
-	ErrWPDuplicateIndex       = errors.New("withdrawal_processor: duplicate withdrawal index")
-	ErrWPOverflow             = errors.New("withdrawal_processor: withdrawal amount overflows Wei conversion")
+	ErrWPNilState           = errors.New("withdrawal_processor: nil state database")
+	ErrWPNilWithdrawal      = errors.New("withdrawal_processor: nil withdrawal entry")
+	ErrWPZeroAddress        = errors.New("withdrawal_processor: zero withdrawal address")
+	ErrWPZeroAmount         = errors.New("withdrawal_processor: zero withdrawal amount")
+	ErrWPTooManyWithdrawals = errors.New("withdrawal_processor: too many withdrawals")
+	ErrWPIndexNotMonotonic  = errors.New("withdrawal_processor: withdrawal indices not monotonically increasing")
+	ErrWPDuplicateIndex     = errors.New("withdrawal_processor: duplicate withdrawal index")
+	ErrWPOverflow           = errors.New("withdrawal_processor: withdrawal amount overflows Wei conversion")
 )
 
 // WithdrawalResult holds the result of processing a set of withdrawals.

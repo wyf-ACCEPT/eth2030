@@ -110,10 +110,10 @@ func TestNestedSnapshotSkipMiddle(t *testing.T) {
 	snap1 := db.Snapshot()
 	db.AddBalance(addr, big.NewInt(10)) // 110
 
-	_ = db.Snapshot() // snap2 -- not used for revert
+	_ = db.Snapshot()                   // snap2 -- not used for revert
 	db.AddBalance(addr, big.NewInt(20)) // 130
 
-	_ = db.Snapshot() // snap3 -- not used for revert
+	_ = db.Snapshot()                   // snap3 -- not used for revert
 	db.AddBalance(addr, big.NewInt(30)) // 160
 
 	// Revert directly to snap1, skipping snap2 and snap3.
@@ -692,9 +692,9 @@ func TestJournalLength(t *testing.T) {
 		t.Fatalf("expected journal length 0, got %d", initial)
 	}
 
-	db.CreateAccount(addr)          // +1
+	db.CreateAccount(addr)              // +1
 	db.AddBalance(addr, big.NewInt(10)) // +1
-	db.SetNonce(addr, 1)            // +1
+	db.SetNonce(addr, 1)                // +1
 
 	if db.journal.length() != 3 {
 		t.Fatalf("expected journal length 3, got %d", db.journal.length())
@@ -702,7 +702,7 @@ func TestJournalLength(t *testing.T) {
 
 	snap := db.Snapshot()
 	db.AddBalance(addr, big.NewInt(5)) // +1
-	db.SetNonce(addr, 2)           // +1
+	db.SetNonce(addr, 2)               // +1
 
 	if db.journal.length() != 5 {
 		t.Fatalf("expected journal length 5, got %d", db.journal.length())

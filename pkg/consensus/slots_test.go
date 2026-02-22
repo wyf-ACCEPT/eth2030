@@ -14,14 +14,14 @@ func TestSlotClock_CurrentSlot(t *testing.T) {
 		now  uint64
 		want Slot
 	}{
-		{999, 0},     // before genesis
-		{1000, 0},    // at genesis
-		{1001, 0},    // 1s in
-		{1011, 0},    // 11s in (still slot 0)
-		{1012, 1},    // slot 1 starts
-		{1023, 1},    // end of slot 1
-		{1024, 2},    // slot 2 starts
-		{1384, 32},   // epoch 1, slot 32
+		{999, 0},   // before genesis
+		{1000, 0},  // at genesis
+		{1001, 0},  // 1s in
+		{1011, 0},  // 11s in (still slot 0)
+		{1012, 1},  // slot 1 starts
+		{1023, 1},  // end of slot 1
+		{1024, 2},  // slot 2 starts
+		{1384, 32}, // epoch 1, slot 32
 	}
 	for _, tt := range tests {
 		got := sc.CurrentSlot(tt.now)
@@ -41,10 +41,10 @@ func TestSlotClock_CurrentEpoch(t *testing.T) {
 		want Epoch
 	}{
 		{0, 0},
-		{383, 0},     // last second of epoch 0
-		{384, 1},     // epoch 1 starts at slot 32 * 12 = 384
-		{767, 1},     // last second of epoch 1
-		{768, 2},     // epoch 2
+		{383, 0}, // last second of epoch 0
+		{384, 1}, // epoch 1 starts at slot 32 * 12 = 384
+		{767, 1}, // last second of epoch 1
+		{768, 2}, // epoch 2
 	}
 	for _, tt := range tests {
 		got := sc.CurrentEpoch(tt.now)
@@ -143,7 +143,7 @@ func TestSlotClock_NextSlotIn(t *testing.T) {
 		now  uint64
 		want time.Duration
 	}{
-		{0, 12 * time.Second},  // at slot boundary, next is 12s away
+		{0, 12 * time.Second}, // at slot boundary, next is 12s away
 		{1, 11 * time.Second},
 		{6, 6 * time.Second},
 		{11, 1 * time.Second},
@@ -239,13 +239,13 @@ func TestSlotSchedule_SlotAtTime(t *testing.T) {
 		t    uint64
 		want Slot
 	}{
-		{0, 0},      // genesis
-		{12, 1},     // slot 1 at 12s
-		{24, 2},     // slot 2 at 24s
-		{119, 9},    // last full slot before fork: 119/12 = 9
-		{120, 10},   // fork at t=120: 120/12 = 10 slots in pre-fork
-		{126, 11},   // 10 + (126-120)/6 = 10 + 1 = 11
-		{132, 12},   // 10 + (132-120)/6 = 10 + 2 = 12
+		{0, 0},    // genesis
+		{12, 1},   // slot 1 at 12s
+		{24, 2},   // slot 2 at 24s
+		{119, 9},  // last full slot before fork: 119/12 = 9
+		{120, 10}, // fork at t=120: 120/12 = 10 slots in pre-fork
+		{126, 11}, // 10 + (126-120)/6 = 10 + 1 = 11
+		{132, 12}, // 10 + (132-120)/6 = 10 + 2 = 12
 	}
 	for _, tt := range tests {
 		got := ss.SlotAtTime(tt.t)

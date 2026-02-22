@@ -62,10 +62,10 @@ type CRCommitteeAssignment struct {
 
 // CREpochCommittees holds all committee assignments for one epoch.
 type CREpochCommittees struct {
-	Epoch            Epoch
-	SlotsPerEpoch    uint64
+	Epoch             Epoch
+	SlotsPerEpoch     uint64
 	CommitteesPerSlot uint64
-	TotalValidators  int
+	TotalValidators   int
 
 	// committees is indexed as [slotOffset][committeeIdx] -> members.
 	committees [][][]ValidatorIndex

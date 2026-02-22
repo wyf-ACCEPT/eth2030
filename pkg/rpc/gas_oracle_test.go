@@ -110,7 +110,7 @@ func TestSuggestGasTipCapIgnoresLowFees(t *testing.T) {
 	o := NewGasOracle(cfg)
 
 	tips := []*big.Int{
-		big.NewInt(1),  // below IgnorePrice, should be filtered
+		big.NewInt(1), // below IgnorePrice, should be filtered
 		gwei(5),
 		gwei(10),
 	}

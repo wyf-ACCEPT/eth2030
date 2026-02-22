@@ -13,10 +13,10 @@ import (
 
 // Kademlia table constants.
 const (
-	BucketSize = 16  // max entries per bucket
-	NumBuckets = 256 // one bucket per possible log distance
-	Alpha      = 3   // concurrency factor for lookups
-	MaxReplacements = 10 // max replacement cache per bucket
+	BucketSize      = 16  // max entries per bucket
+	NumBuckets      = 256 // one bucket per possible log distance
+	Alpha           = 3   // concurrency factor for lookups
+	MaxReplacements = 10  // max replacement cache per bucket
 )
 
 // Bucket holds nodes at a given XOR log distance.

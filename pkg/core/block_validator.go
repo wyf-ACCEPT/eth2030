@@ -18,7 +18,7 @@ var (
 	ErrInvalidNumber          = errors.New("invalid block number")
 	ErrInvalidGasLimit        = errors.New("invalid gas limit")
 	ErrInvalidGasUsed         = errors.New("gas used exceeds gas limit")
-	ErrInvalidTimestamp        = errors.New("timestamp not greater than parent")
+	ErrInvalidTimestamp       = errors.New("timestamp not greater than parent")
 	ErrExtraDataTooLong       = errors.New("extra data too long")
 	ErrInvalidBaseFee         = errors.New("invalid base fee")
 	ErrInvalidDifficulty      = errors.New("invalid difficulty for post-merge block")

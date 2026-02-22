@@ -49,32 +49,32 @@ const (
 
 // Blob pool error codes.
 var (
-	ErrBlobPoolFull         = errors.New("blob pool is full")
-	ErrNotBlobTx            = errors.New("not a blob transaction")
-	ErrBlobAccountLimit     = errors.New("blob per-account limit exceeded")
-	ErrBlobAlreadyKnown     = errors.New("blob transaction already known")
-	ErrBlobNonceTooLow      = errors.New("blob tx nonce too low")
-	ErrBlobMissingHashes    = errors.New("blob transaction missing versioned hashes")
-	ErrBlobFeeCapTooLow     = errors.New("blob fee cap below blob base fee")
-	ErrBlobReplaceTooLow    = errors.New("blob replacement gas price too low")
-	ErrBlobNotCustodied     = errors.New("blob not in custody column set")
-	ErrBlobDatacapExceeded  = errors.New("blob pool datacap exceeded")
-	ErrBlobSidecarNotFound  = errors.New("blob sidecar not found")
-	ErrBlobOversized        = errors.New("blob sidecar exceeds maximum size")
+	ErrBlobPoolFull        = errors.New("blob pool is full")
+	ErrNotBlobTx           = errors.New("not a blob transaction")
+	ErrBlobAccountLimit    = errors.New("blob per-account limit exceeded")
+	ErrBlobAlreadyKnown    = errors.New("blob transaction already known")
+	ErrBlobNonceTooLow     = errors.New("blob tx nonce too low")
+	ErrBlobMissingHashes   = errors.New("blob transaction missing versioned hashes")
+	ErrBlobFeeCapTooLow    = errors.New("blob fee cap below blob base fee")
+	ErrBlobReplaceTooLow   = errors.New("blob replacement gas price too low")
+	ErrBlobNotCustodied    = errors.New("blob not in custody column set")
+	ErrBlobDatacapExceeded = errors.New("blob pool datacap exceeded")
+	ErrBlobSidecarNotFound = errors.New("blob sidecar not found")
+	ErrBlobOversized       = errors.New("blob sidecar exceeds maximum size")
 )
 
 // BlobMetadata tracks blob-related metadata without holding full blob data in memory.
 type BlobMetadata struct {
-	TxHash         types.Hash
-	BlobHashes     []types.Hash // versioned hashes of the blobs
-	BlobCount      int
-	BlobGas        uint64
-	BlobFeeCap     *big.Int
-	GasFeeCap      *big.Int
-	GasTipCap      *big.Int
-	From           types.Address
-	Nonce          uint64
-	DataSize       uint64 // total sidecar data size in bytes
+	TxHash     types.Hash
+	BlobHashes []types.Hash // versioned hashes of the blobs
+	BlobCount  int
+	BlobGas    uint64
+	BlobFeeCap *big.Int
+	GasFeeCap  *big.Int
+	GasTipCap  *big.Int
+	From       types.Address
+	Nonce      uint64
+	DataSize   uint64 // total sidecar data size in bytes
 }
 
 // BlobSidecar represents a blob sidecar for persistent storage.
@@ -168,7 +168,7 @@ func DefaultBlobPoolConfig() BlobPoolConfig {
 
 // journalEntry is the on-disk format for WAL journal entries.
 type journalEntry struct {
-	Op       string        `json:"op"`       // "add" or "remove"
+	Op       string        `json:"op"` // "add" or "remove"
 	TxHash   types.Hash    `json:"tx_hash"`
 	Sidecar  *BlobSidecar  `json:"sidecar,omitempty"`
 	Metadata *BlobMetadata `json:"metadata,omitempty"`

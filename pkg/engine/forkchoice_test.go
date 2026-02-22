@@ -342,7 +342,7 @@ func TestForkchoiceUpdatedV4_WithILAttributes(t *testing.T) {
 			},
 			ParentBeaconBlockRoot: types.HexToHash("0xbeacon"),
 		},
-		SlotNumber:               42,
+		SlotNumber:                42,
 		InclusionListTransactions: [][]byte{},
 	}
 

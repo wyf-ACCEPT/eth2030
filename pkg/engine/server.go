@@ -302,7 +302,7 @@ func (api *EngineAPI) GetClientVersionV1(peerVersion ClientVersionV1) []ClientVe
 	return []ClientVersionV1{
 		{
 			Code:    "ET",
-			Name:    "eth2030",
+			Name:    "ETH2030",
 			Version: "v0.1.0",
 			Commit:  "000000",
 		},

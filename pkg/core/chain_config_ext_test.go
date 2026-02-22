@@ -146,7 +146,7 @@ func TestActiveFork_Progression(t *testing.T) {
 
 func TestActiveFork_PreMerge(t *testing.T) {
 	cfg := &ChainConfig{
-		ChainID:    big.NewInt(1),
+		ChainID:     big.NewInt(1),
 		LondonBlock: big.NewInt(0),
 		// No TTD set = pre-merge.
 	}

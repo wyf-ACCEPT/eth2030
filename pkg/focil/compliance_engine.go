@@ -19,11 +19,11 @@ import (
 
 // Compliance engine errors.
 var (
-	ErrComplianceNilBlock      = errors.New("compliance: nil block")
-	ErrComplianceNoLists       = errors.New("compliance: no inclusion lists for slot")
+	ErrComplianceNilBlock       = errors.New("compliance: nil block")
+	ErrComplianceNoLists        = errors.New("compliance: no inclusion lists for slot")
 	ErrComplianceUnknownBuilder = errors.New("compliance: unknown builder")
-	ErrComplianceZeroSlot      = errors.New("compliance: slot must be > 0")
-	ErrComplianceDuplicateEval = errors.New("compliance: block already evaluated for slot")
+	ErrComplianceZeroSlot       = errors.New("compliance: slot must be > 0")
+	ErrComplianceDuplicateEval  = errors.New("compliance: block already evaluated for slot")
 )
 
 // BlockCompliance records the compliance evaluation result for a single block.

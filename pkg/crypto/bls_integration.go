@@ -85,7 +85,7 @@ var (
 var (
 	ErrBLSInvalidPubkeyLen    = errors.New("bls: pubkey must be 48 bytes")
 	ErrBLSInvalidPubkeyFormat = errors.New("bls: invalid compressed G1 format")
-	ErrBLSInvalidPubkeyInf   = errors.New("bls: pubkey is point at infinity")
+	ErrBLSInvalidPubkeyInf    = errors.New("bls: pubkey is point at infinity")
 	ErrBLSInvalidSigLen       = errors.New("bls: signature must be 96 bytes")
 	ErrBLSInvalidSigFormat    = errors.New("bls: invalid compressed G2 format")
 )

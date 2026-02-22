@@ -439,10 +439,10 @@ func TestSnapProgress_ETA_Complete(t *testing.T) {
 
 func TestSnapProgress_BytesTotal(t *testing.T) {
 	p := &SnapProgress{
-		AccountBytes: 100,
-		StorageBytes: 200,
+		AccountBytes:  100,
+		StorageBytes:  200,
 		BytecodeBytes: 300,
-		HealBytes:    400,
+		HealBytes:     400,
 	}
 
 	if p.BytesTotal() != 1000 {

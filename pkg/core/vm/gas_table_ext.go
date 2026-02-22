@@ -28,9 +28,9 @@ type GasTableExt struct {
 	SstoreNoopCost     uint64 // cost when current == new (no-op)
 
 	// EIP-3860: CREATE/CREATE2 initcode limits.
-	CreateBaseCost    uint64 // base gas for CREATE
-	InitCodeWordCost  uint64 // per-word gas for initcode
-	MaxInitCodeBytes  uint64 // maximum allowed initcode size
+	CreateBaseCost   uint64 // base gas for CREATE
+	InitCodeWordCost uint64 // per-word gas for initcode
+	MaxInitCodeBytes uint64 // maximum allowed initcode size
 
 	// Code deposit cost (per byte of deployed contract code).
 	CodeDepositPerByte uint64
@@ -49,20 +49,20 @@ type GasTableExt struct {
 func GasTableBerlin() *GasTableExt {
 	return &GasTableExt{
 		ForkName:           "Berlin",
-		WarmStorageRead:    WarmStorageReadCost,   // 100
-		ColdSload:          ColdSloadCost,         // 2100
-		ColdAccountAccess:  ColdAccountAccessCost, // 2600
-		SstoreSet:          GasSstoreSet,          // 20000
-		SstoreReset:        GasSstoreReset,        // 2900
+		WarmStorageRead:    WarmStorageReadCost,        // 100
+		ColdSload:          ColdSloadCost,              // 2100
+		ColdAccountAccess:  ColdAccountAccessCost,      // 2600
+		SstoreSet:          GasSstoreSet,               // 20000
+		SstoreReset:        GasSstoreReset,             // 2900
 		SstoreClearsRefund: SstoreClearsScheduleRefund, // 4800
-		SstoreNoopCost:     WarmStorageReadCost,   // 100
-		CreateBaseCost:     GasCreate,             // 32000
-		InitCodeWordCost:   InitCodeWordGas,       // 2
-		MaxInitCodeBytes:   uint64(MaxInitCodeSize), // 49152
-		CodeDepositPerByte: CreateDataGas,         // 200
-		CallGasFrac:        CallGasFraction,       // 64
-		CallValueTransfer:  CallValueTransferGas,  // 9000
-		CallNewAccount:     CallNewAccountGas,     // 25000
+		SstoreNoopCost:     WarmStorageReadCost,        // 100
+		CreateBaseCost:     GasCreate,                  // 32000
+		InitCodeWordCost:   InitCodeWordGas,            // 2
+		MaxInitCodeBytes:   uint64(MaxInitCodeSize),    // 49152
+		CodeDepositPerByte: CreateDataGas,              // 200
+		CallGasFrac:        CallGasFraction,            // 64
+		CallValueTransfer:  CallValueTransferGas,       // 9000
+		CallNewAccount:     CallNewAccountGas,          // 25000
 	}
 }
 
@@ -71,20 +71,20 @@ func GasTableBerlin() *GasTableExt {
 func GasTableGlamsterdam() *GasTableExt {
 	return &GasTableExt{
 		ForkName:           "Glamsterdam",
-		WarmStorageRead:    WarmStorageReadGlamst,         // 150
-		ColdSload:          ColdSloadGlamst,               // 2800
-		ColdAccountAccess:  ColdAccountAccessGlamst,       // 3500
-		SstoreSet:          GasSstoreSetGlamsterdam,       // 24084
-		SstoreReset:        GasSstoreReset,                // 2900 (unchanged)
-		SstoreClearsRefund: SstoreClearsRefundGlam,        // 6400
-		SstoreNoopCost:     WarmStorageReadGlamst,         // 150
-		CreateBaseCost:     GasCreateGlamsterdam,          // 83144
-		InitCodeWordCost:   InitCodeWordGas,               // 2 (unchanged)
-		MaxInitCodeBytes:   uint64(MaxInitCodeSize),       // 49152
-		CodeDepositPerByte: GasCodeDepositGlamsterdam,     // 662
-		CallGasFrac:        CallGasFraction,               // 64 (unchanged)
-		CallValueTransfer:  CallValueTransferGlamst,       // 2000
-		CallNewAccount:     CallNewAccountGlamst,          // 26000
+		WarmStorageRead:    WarmStorageReadGlamst,     // 150
+		ColdSload:          ColdSloadGlamst,           // 2800
+		ColdAccountAccess:  ColdAccountAccessGlamst,   // 3500
+		SstoreSet:          GasSstoreSetGlamsterdam,   // 24084
+		SstoreReset:        GasSstoreReset,            // 2900 (unchanged)
+		SstoreClearsRefund: SstoreClearsRefundGlam,    // 6400
+		SstoreNoopCost:     WarmStorageReadGlamst,     // 150
+		CreateBaseCost:     GasCreateGlamsterdam,      // 83144
+		InitCodeWordCost:   InitCodeWordGas,           // 2 (unchanged)
+		MaxInitCodeBytes:   uint64(MaxInitCodeSize),   // 49152
+		CodeDepositPerByte: GasCodeDepositGlamsterdam, // 662
+		CallGasFrac:        CallGasFraction,           // 64 (unchanged)
+		CallValueTransfer:  CallValueTransferGlamst,   // 2000
+		CallNewAccount:     CallNewAccountGlamst,      // 26000
 	}
 }
 

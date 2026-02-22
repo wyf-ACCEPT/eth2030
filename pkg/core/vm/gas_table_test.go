@@ -291,7 +291,7 @@ func TestGasExpDynamic(t *testing.T) {
 
 	// Exponent = large (32 bytes).
 	bigExp := new(big.Int).Lsh(big.NewInt(1), 255) // 2^255: 32 bytes
-	stack = testStack(bigExp, big.NewInt(2))         // exp=2^255, base=2
+	stack = testStack(bigExp, big.NewInt(2))       // exp=2^255, base=2
 	gas, _ = gasExp(evm, contract, stack, mem, 0)
 	if gas != 50*32 {
 		t.Errorf("gasExp(exp=2^255) = %d, want %d", gas, 50*32)
@@ -581,17 +581,19 @@ func (m *accessListStateDB) Exist(addr types.Address) bool {
 	return m.exists[addr]
 }
 
-func (m *accessListStateDB) CreateAccount(addr types.Address)                        { m.exists[addr] = true }
-func (m *accessListStateDB) GetNonce(addr types.Address) uint64                      { return m.nonces[addr] }
-func (m *accessListStateDB) SetNonce(addr types.Address, n uint64)                   { m.nonces[addr] = n }
-func (m *accessListStateDB) GetCode(addr types.Address) []byte                       { return m.codes[addr] }
-func (m *accessListStateDB) SetCode(addr types.Address, code []byte)                 { m.codes[addr] = code }
-func (m *accessListStateDB) GetCodeHash(addr types.Address) types.Hash               { return m.codeHashes[addr] }
-func (m *accessListStateDB) GetCodeSize(addr types.Address) int                      { return len(m.codes[addr]) }
+func (m *accessListStateDB) CreateAccount(addr types.Address)          { m.exists[addr] = true }
+func (m *accessListStateDB) GetNonce(addr types.Address) uint64        { return m.nonces[addr] }
+func (m *accessListStateDB) SetNonce(addr types.Address, n uint64)     { m.nonces[addr] = n }
+func (m *accessListStateDB) GetCode(addr types.Address) []byte         { return m.codes[addr] }
+func (m *accessListStateDB) SetCode(addr types.Address, code []byte)   { m.codes[addr] = code }
+func (m *accessListStateDB) GetCodeHash(addr types.Address) types.Hash { return m.codeHashes[addr] }
+func (m *accessListStateDB) GetCodeSize(addr types.Address) int        { return len(m.codes[addr]) }
 func (m *accessListStateDB) GetCommittedState(addr types.Address, key types.Hash) types.Hash {
 	return m.GetState(addr, key)
 }
-func (m *accessListStateDB) GetTransientState(types.Address, types.Hash) types.Hash  { return types.Hash{} }
+func (m *accessListStateDB) GetTransientState(types.Address, types.Hash) types.Hash {
+	return types.Hash{}
+}
 func (m *accessListStateDB) SetTransientState(types.Address, types.Hash, types.Hash) {}
 func (m *accessListStateDB) ClearTransientStorage()                                  {}
 func (m *accessListStateDB) SelfDestruct(types.Address)                              {}
@@ -1488,18 +1490,18 @@ func TestYellowPaperCopyBaseGas(t *testing.T) {
 // formula: memory_cost = memory_size_word^2 / 512 + 3 * memory_size_word
 func TestYellowPaperMemoryExpansionFormula(t *testing.T) {
 	tests := []struct {
-		name    string
-		size    uint64
-		want    uint64
+		name string
+		size uint64
+		want uint64
 	}{
 		{"0 bytes", 0, 0},
-		{"1 word (32 bytes)", 32, 3},         // 1^2/512 + 3*1 = 0 + 3
-		{"2 words (64 bytes)", 64, 6},         // 4/512 + 6 = 0 + 6
-		{"10 words (320 bytes)", 320, 30},     // 100/512 + 30 = 0 + 30
-		{"22 words (704 bytes)", 704, 66},     // 484/512 + 66 = 0 + 66
-		{"23 words (736 bytes)", 736, 70},     // 529/512 + 69 = 1 + 69
-		{"32 words (1024 bytes)", 1024, 98},   // 1024/512 + 96 = 2 + 96
-		{"100 words (3200 bytes)", 3200, 319}, // 10000/512 + 300 = 19 + 300
+		{"1 word (32 bytes)", 32, 3},              // 1^2/512 + 3*1 = 0 + 3
+		{"2 words (64 bytes)", 64, 6},             // 4/512 + 6 = 0 + 6
+		{"10 words (320 bytes)", 320, 30},         // 100/512 + 30 = 0 + 30
+		{"22 words (704 bytes)", 704, 66},         // 484/512 + 66 = 0 + 66
+		{"23 words (736 bytes)", 736, 70},         // 529/512 + 69 = 1 + 69
+		{"32 words (1024 bytes)", 1024, 98},       // 1024/512 + 96 = 2 + 96
+		{"100 words (3200 bytes)", 3200, 319},     // 10000/512 + 300 = 19 + 300
 		{"1024 words (32768 bytes)", 32768, 5120}, // 1048576/512 + 3072 = 2048 + 3072
 	}
 
@@ -1529,13 +1531,13 @@ func TestLogGas_AllTopicCounts(t *testing.T) {
 // TestExpGas_ByteLengths verifies EXP gas: 10 + 50 * byte_size_of_exponent.
 func TestExpGas_ByteLengths(t *testing.T) {
 	tests := []struct {
-		name     string
-		exp      *big.Int
-		wantGas  uint64
+		name    string
+		exp     *big.Int
+		wantGas uint64
 	}{
-		{"zero", big.NewInt(0), GasHigh},                     // 10 + 0
-		{"1 (1 byte)", big.NewInt(1), GasHigh + 50},          // 10 + 50
-		{"255 (1 byte)", big.NewInt(255), GasHigh + 50},      // 10 + 50
+		{"zero", big.NewInt(0), GasHigh},                      // 10 + 0
+		{"1 (1 byte)", big.NewInt(1), GasHigh + 50},           // 10 + 50
+		{"255 (1 byte)", big.NewInt(255), GasHigh + 50},       // 10 + 50
 		{"256 (2 bytes)", big.NewInt(256), GasHigh + 100},     // 10 + 100
 		{"65535 (2 bytes)", big.NewInt(65535), GasHigh + 100}, // 10 + 100
 		{"65536 (3 bytes)", big.NewInt(65536), GasHigh + 150}, // 10 + 150
@@ -1557,14 +1559,14 @@ func TestSha3Gas_WordSizes(t *testing.T) {
 		size    uint64
 		wantGas uint64
 	}{
-		{0, 30},    // 30 + 6*0
-		{1, 36},    // 30 + 6*1
-		{31, 36},   // 30 + 6*1
-		{32, 36},   // 30 + 6*1
-		{33, 42},   // 30 + 6*2
-		{64, 42},   // 30 + 6*2
-		{65, 48},   // 30 + 6*3
-		{256, 78},  // 30 + 6*8
+		{0, 30},   // 30 + 6*0
+		{1, 36},   // 30 + 6*1
+		{31, 36},  // 30 + 6*1
+		{32, 36},  // 30 + 6*1
+		{33, 42},  // 30 + 6*2
+		{64, 42},  // 30 + 6*2
+		{65, 48},  // 30 + 6*3
+		{256, 78}, // 30 + 6*8
 	}
 
 	for _, tt := range tests {
@@ -1676,10 +1678,10 @@ func TestSafeAdd(t *testing.T) {
 		{100, 200, 300},
 		{math.MaxUint64, 0, math.MaxUint64},
 		{0, math.MaxUint64, math.MaxUint64},
-		{math.MaxUint64, 1, math.MaxUint64},         // overflow
+		{math.MaxUint64, 1, math.MaxUint64},              // overflow
 		{math.MaxUint64, math.MaxUint64, math.MaxUint64}, // overflow
-		{math.MaxUint64 - 1, 1, math.MaxUint64},     // exactly max
-		{math.MaxUint64 - 1, 2, math.MaxUint64},     // overflow by 1
+		{math.MaxUint64 - 1, 1, math.MaxUint64},          // exactly max
+		{math.MaxUint64 - 1, 2, math.MaxUint64},          // overflow by 1
 	}
 	for _, tt := range tests {
 		got := safeAdd(tt.a, tt.b)
@@ -1699,10 +1701,10 @@ func TestSafeMul(t *testing.T) {
 		{100, 0, 0},
 		{1, math.MaxUint64, math.MaxUint64},
 		{math.MaxUint64, 1, math.MaxUint64},
-		{2, math.MaxUint64, math.MaxUint64},          // overflow
-		{math.MaxUint64, 2, math.MaxUint64},          // overflow
+		{2, math.MaxUint64, math.MaxUint64}, // overflow
+		{math.MaxUint64, 2, math.MaxUint64}, // overflow
 		{3, 5, 15},
-		{1 << 32, 1 << 31, 1 << 63},                  // large but no overflow
+		{1 << 32, 1 << 31, 1 << 63}, // large but no overflow
 	}
 	for _, tt := range tests {
 		got := safeMul(tt.a, tt.b)
@@ -1801,32 +1803,32 @@ func TestSstoreGas_DirtySlotRefunds(t *testing.T) {
 		wantRefund int64
 	}{
 		{
-			name:       "dirty: undo clear (orig=1, cur=0, new=2)",
-			original:   val1, current: zero, newVal: val2,
-			wantGas:    WarmStorageReadCost,                    // 100
-			wantRefund: -int64(SstoreClearsScheduleRefund),     // -4800
-		},
-		{
-			name:       "dirty: clear non-zero (orig=1, cur=2, new=0)",
-			original:   val1, current: val2, newVal: zero,
+			name:     "dirty: undo clear (orig=1, cur=0, new=2)",
+			original: val1, current: zero, newVal: val2,
 			wantGas:    WarmStorageReadCost,                // 100
-			wantRefund: int64(SstoreClearsScheduleRefund),  // +4800
+			wantRefund: -int64(SstoreClearsScheduleRefund), // -4800
 		},
 		{
-			name:       "dirty: restore original nonzero (orig=1, cur=2, new=1)",
-			original:   val1, current: val2, newVal: val1,
-			wantGas:    WarmStorageReadCost,                                           // 100
-			wantRefund: int64(GasSstoreReset) - int64(WarmStorageReadCost),            // 2900 - 100 = 2800
+			name:     "dirty: clear non-zero (orig=1, cur=2, new=0)",
+			original: val1, current: val2, newVal: zero,
+			wantGas:    WarmStorageReadCost,               // 100
+			wantRefund: int64(SstoreClearsScheduleRefund), // +4800
 		},
 		{
-			name:       "dirty: restore original zero (orig=0, cur=1, new=0)",
-			original:   zero, current: val1, newVal: zero,
-			wantGas:    WarmStorageReadCost,                                           // 100
-			wantRefund: int64(GasSstoreSet) - int64(WarmStorageReadCost),              // 20000 - 100 = 19900
+			name:     "dirty: restore original nonzero (orig=1, cur=2, new=1)",
+			original: val1, current: val2, newVal: val1,
+			wantGas:    WarmStorageReadCost,                                // 100
+			wantRefund: int64(GasSstoreReset) - int64(WarmStorageReadCost), // 2900 - 100 = 2800
 		},
 		{
-			name:       "dirty: change dirty value (orig=1, cur=2, new=3)",
-			original:   val1, current: val2, newVal: [32]byte{0: 3},
+			name:     "dirty: restore original zero (orig=0, cur=1, new=0)",
+			original: zero, current: val1, newVal: zero,
+			wantGas:    WarmStorageReadCost,                              // 100
+			wantRefund: int64(GasSstoreSet) - int64(WarmStorageReadCost), // 20000 - 100 = 19900
+		},
+		{
+			name:     "dirty: change dirty value (orig=1, cur=2, new=3)",
+			original: val1, current: val2, newVal: [32]byte{0: 3},
 			wantGas:    WarmStorageReadCost, // 100
 			wantRefund: 0,
 		},
@@ -1871,15 +1873,15 @@ func TestGasSstoreEIP2929_SecondAccessIsWarm(t *testing.T) {
 	stack := NewStack()
 
 	slotNum := big.NewInt(7)
-	stack.Push(new(big.Int))                // value (doesn't matter for gas)
-	stack.Push(new(big.Int).Set(slotNum))   // slot
+	stack.Push(new(big.Int))              // value (doesn't matter for gas)
+	stack.Push(new(big.Int).Set(slotNum)) // slot
 
 	// First access: cold
 	gas1, _ := gasSstoreEIP2929(evm, contract, stack, nil, 0)
 
 	// Re-push for second access
-	stack.Push(new(big.Int))                // value
-	stack.Push(new(big.Int).Set(slotNum))   // same slot
+	stack.Push(new(big.Int))              // value
+	stack.Push(new(big.Int).Set(slotNum)) // same slot
 
 	// Second access: warm (slot was warmed by first call)
 	gas2, _ := gasSstoreEIP2929(evm, contract, stack, nil, 0)

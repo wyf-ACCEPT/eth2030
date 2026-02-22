@@ -34,13 +34,13 @@ func NewCallHandler(evm *EVM) *CallHandler {
 
 // CallHandlerParams holds validated parameters for a call operation.
 type CallHandlerParams struct {
-	Kind      CallKind
-	Caller    types.Address
-	Target    types.Address
-	Value     *big.Int
-	Input     []byte
-	Gas       uint64
-	IsStatic  bool
+	Kind     CallKind
+	Caller   types.Address
+	Target   types.Address
+	Value    *big.Int
+	Input    []byte
+	Gas      uint64
+	IsStatic bool
 }
 
 // CallHandlerResult holds the outcome of a call handler execution.

@@ -34,16 +34,16 @@ type PayloadBuilderV2Config struct {
 
 // PayloadResult holds the result of an async payload build.
 type PayloadResult struct {
-	Block          *types.Block
-	Receipts       []*types.Receipt
-	BlockValue     *big.Int
-	BlobsBundle    *BlobsBundleV1
-	GasUsed        uint64
-	BlobGasUsed    uint64
-	TxCount        int
-	Elapsed        time.Duration
-	StateRoot      types.Hash
-	ReceiptsRoot   types.Hash
+	Block        *types.Block
+	Receipts     []*types.Receipt
+	BlockValue   *big.Int
+	BlobsBundle  *BlobsBundleV1
+	GasUsed      uint64
+	BlobGasUsed  uint64
+	TxCount      int
+	Elapsed      time.Duration
+	StateRoot    types.Hash
+	ReceiptsRoot types.Hash
 }
 
 // txInclusion tracks a transaction's inclusion status during payload building.

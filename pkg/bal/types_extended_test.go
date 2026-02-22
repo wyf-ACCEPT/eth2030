@@ -124,8 +124,8 @@ func TestConflictMatrixBasic(t *testing.T) {
 
 func TestConflictMatrixOutOfBounds(t *testing.T) {
 	cm := NewConflictMatrix(2)
-	cm.Set(-1, 0)  // should not panic
-	cm.Set(5, 0)   // should not panic
+	cm.Set(-1, 0) // should not panic
+	cm.Set(5, 0)  // should not panic
 	if cm.Get(-1, 0) {
 		t.Fatal("out-of-bounds should return false")
 	}

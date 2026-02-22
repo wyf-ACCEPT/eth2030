@@ -108,8 +108,8 @@ func ValidateIPAIntegrationConfig(cfg *IPAIntegrationConfig) error {
 
 var (
 	ipaBackendMu      sync.RWMutex
-	activeIPABackend   IPABackend
-	defaultIPABackend  = &PureGoIPABackend{}
+	activeIPABackend  IPABackend
+	defaultIPABackend = &PureGoIPABackend{}
 )
 
 // DefaultIPABackend returns the currently active IPA backend.

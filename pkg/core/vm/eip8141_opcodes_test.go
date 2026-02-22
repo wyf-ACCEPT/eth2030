@@ -394,9 +394,9 @@ func TestTxParamLoad_MaxFees(t *testing.T) {
 	evm := newFrameTestEVM(sender, []Frame{{Mode: 0, Target: sender, GasLimit: 100000}})
 
 	tests := []struct {
-		name  string
-		in1   byte
-		want  uint64
+		name string
+		in1  byte
+		want uint64
 	}{
 		{"max_priority_fee", 0x03, 1000000000},
 		{"max_fee", 0x04, 2000000000},
@@ -1068,7 +1068,7 @@ func (m *MockStateDB) SubBalance(addr types.Address, amount *big.Int) {
 	m.balances[addr].Sub(m.balances[addr], amount)
 }
 
-func (m *MockStateDB) GetNonce(addr types.Address) uint64       { return m.nonces[addr] }
+func (m *MockStateDB) GetNonce(addr types.Address) uint64        { return m.nonces[addr] }
 func (m *MockStateDB) SetNonce(addr types.Address, nonce uint64) { m.nonces[addr] = nonce }
 
 func (m *MockStateDB) GetCode(addr types.Address) []byte { return m.code[addr] }
@@ -1123,14 +1123,14 @@ func (m *MockStateDB) HasSelfDestructed(addr types.Address) bool {
 	return m.selfdestructed[addr]
 }
 
-func (m *MockStateDB) Exist(addr types.Address) bool  { return m.exists[addr] }
-func (m *MockStateDB) Empty(addr types.Address) bool  { return !m.exists[addr] }
-func (m *MockStateDB) Snapshot() int                   { return len(m.snapshots) }
-func (m *MockStateDB) RevertToSnapshot(id int)         {}
-func (m *MockStateDB) AddLog(log *types.Log)           { m.logs = append(m.logs, log) }
-func (m *MockStateDB) AddRefund(gas uint64)            { m.refund += gas }
-func (m *MockStateDB) SubRefund(gas uint64)            { m.refund -= gas }
-func (m *MockStateDB) GetRefund() uint64               { return m.refund }
+func (m *MockStateDB) Exist(addr types.Address) bool { return m.exists[addr] }
+func (m *MockStateDB) Empty(addr types.Address) bool { return !m.exists[addr] }
+func (m *MockStateDB) Snapshot() int                 { return len(m.snapshots) }
+func (m *MockStateDB) RevertToSnapshot(id int)       {}
+func (m *MockStateDB) AddLog(log *types.Log)         { m.logs = append(m.logs, log) }
+func (m *MockStateDB) AddRefund(gas uint64)          { m.refund += gas }
+func (m *MockStateDB) SubRefund(gas uint64)          { m.refund -= gas }
+func (m *MockStateDB) GetRefund() uint64             { return m.refund }
 
 func (m *MockStateDB) AddAddressToAccessList(addr types.Address) {
 	if m.accessList[addr] == nil {

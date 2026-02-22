@@ -127,7 +127,9 @@ type WeightedPubkey struct {
 
 // AggregateWeightedPubkeys aggregates public keys with scalar weights.
 // Each pubkey is multiplied by its weight before summation:
-//   result = sum(weight_i * pk_i)
+//
+//	result = sum(weight_i * pk_i)
+//
 // This is used when validators have different effective balances.
 func AggregateWeightedPubkeys(entries []WeightedPubkey) ([BLSPubkeySize]byte, error) {
 	if len(entries) == 0 {
@@ -156,11 +158,11 @@ func AggregateWeightedPubkeys(entries []WeightedPubkey) ([BLSPubkeySize]byte, er
 // individual signatures arrive. Useful for streaming scenarios where
 // signatures trickle in over time (e.g., attestation aggregation).
 type IncrementalAggregator struct {
-	mu       sync.Mutex
-	aggSig   *BlsG2Point
-	aggPK    *BlsG1Point
-	count    int
-	pubkeys  map[[BLSPubkeySize]byte]bool
+	mu      sync.Mutex
+	aggSig  *BlsG2Point
+	aggPK   *BlsG1Point
+	count   int
+	pubkeys map[[BLSPubkeySize]byte]bool
 }
 
 // NewIncrementalAggregator creates an empty incremental aggregator.

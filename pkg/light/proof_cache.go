@@ -65,14 +65,14 @@ func (s *CacheStats) HitRate() float64 {
 // ProofCache is an LRU cache for Merkle proofs used by light clients.
 // It supports configurable size limits and time-to-live expiration.
 type ProofCache struct {
-	mu       sync.Mutex
-	maxSize  int
-	ttl      time.Duration
-	entries  map[CacheKey]*lruEntry
-	order    lruList // doubly-linked list for LRU ordering
-	stats    CacheStats
-	memUsed  uint64
-	nowFunc  func() time.Time // injectable clock for testing
+	mu      sync.Mutex
+	maxSize int
+	ttl     time.Duration
+	entries map[CacheKey]*lruEntry
+	order   lruList // doubly-linked list for LRU ordering
+	stats   CacheStats
+	memUsed uint64
+	nowFunc func() time.Time // injectable clock for testing
 }
 
 // lruEntry is a node in the LRU doubly-linked list.

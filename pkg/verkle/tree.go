@@ -16,12 +16,12 @@ import (
 
 // Tree width: each node has 256 children (1 byte per level).
 const (
-	NodeWidth    = 256
-	StemSize     = 31
-	KeySize      = 32
-	ValueSize    = 32
-	CommitSize   = 32
-	MaxDepth     = 31 // Maximum tree depth (one level per stem byte)
+	NodeWidth  = 256
+	StemSize   = 31
+	KeySize    = 32
+	ValueSize  = 32
+	CommitSize = 32
+	MaxDepth   = 31 // Maximum tree depth (one level per stem byte)
 )
 
 // NodeType distinguishes between internal nodes and leaf nodes.
@@ -206,7 +206,9 @@ func (n *LeafNode) ValueCount() int {
 
 // Commit computes the leaf Pedersen commitment.
 // The commitment encodes the stem and all stored values:
-//   C = stem_hash * G_0 + sum(value[i] * G_{i+1})
+//
+//	C = stem_hash * G_0 + sum(value[i] * G_{i+1})
+//
 // where stem_hash maps the stem bytes to a scalar.
 func (n *LeafNode) Commit() Commitment {
 	if !n.dirty {
@@ -255,7 +257,7 @@ func (n *LeafNode) Serialize() []byte {
 // EmptyNode represents an empty slot in the tree.
 type EmptyNode struct{}
 
-func (n *EmptyNode) Type() NodeType    { return EmptyNodeType }
+func (n *EmptyNode) Type() NodeType     { return EmptyNodeType }
 func (n *EmptyNode) Commit() Commitment { return Commitment{} }
 func (n *EmptyNode) Hash() types.Hash   { return types.Hash{} }
 func (n *EmptyNode) Serialize() []byte  { return []byte{byte(EmptyNodeType)} }

@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a new feature or improvement for eth2030
+about: Suggest a new feature or improvement for ETH2030
 title: '[FEATURE] '
 labels: 'enhancement'
 assignees: ''

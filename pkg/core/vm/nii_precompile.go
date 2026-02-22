@@ -14,33 +14,33 @@ import (
 
 // Errors for the enhanced NII precompile.
 var (
-	ErrNIIInvalidProof      = errors.New("nii_enhanced: invalid inclusion proof")
-	ErrNIIBatchTooLarge     = errors.New("nii_enhanced: batch size exceeds maximum")
+	ErrNIIInvalidProof       = errors.New("nii_enhanced: invalid inclusion proof")
+	ErrNIIBatchTooLarge      = errors.New("nii_enhanced: batch size exceeds maximum")
 	ErrNIIProofDepthExceeded = errors.New("nii_enhanced: proof depth exceeds maximum")
-	ErrNIIEmptyKey          = errors.New("nii_enhanced: key is empty")
-	ErrNIIEmptyRoot         = errors.New("nii_enhanced: root is empty")
+	ErrNIIEmptyKey           = errors.New("nii_enhanced: key is empty")
+	ErrNIIEmptyRoot          = errors.New("nii_enhanced: root is empty")
 )
 
 // Gas cost constants for the enhanced NII precompile.
 const (
-	niiEnhancedBaseGas     = 100   // base gas for any verification
-	niiEnhancedPerStepGas  = 50    // gas per proof step (hash computation)
-	niiEnhancedBatchBonus  = 80    // percentage discount for batching (80% of individual)
+	niiEnhancedBaseGas    = 100 // base gas for any verification
+	niiEnhancedPerStepGas = 50  // gas per proof step (hash computation)
+	niiEnhancedBatchBonus = 80  // percentage discount for batching (80% of individual)
 )
 
 // NIIEnhancedConfig configures the enhanced NII precompile.
 type NIIEnhancedConfig struct {
-	MaxBatchSize int // maximum number of items in a batch verification
+	MaxBatchSize  int // maximum number of items in a batch verification
 	MaxProofDepth int // maximum depth of a Merkle proof path
-	CacheSize    int // maximum number of cached proof results
+	CacheSize     int // maximum number of cached proof results
 }
 
 // NIIBatchProof holds the result of a batch inclusion verification.
 type NIIBatchProof struct {
-	Proofs       []bool // per-item verification results
-	BatchRoot    []byte // the root hash used for all verifications
-	TotalGas     uint64 // total gas consumed for the batch
-	VerifiedCount int   // number of items that verified successfully
+	Proofs        []bool // per-item verification results
+	BatchRoot     []byte // the root hash used for all verifications
+	TotalGas      uint64 // total gas consumed for the batch
+	VerifiedCount int    // number of items that verified successfully
 }
 
 // NIIInclusionItem represents a single inclusion proof item for batch verification.

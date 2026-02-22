@@ -338,8 +338,8 @@ type prefixedIterator struct {
 	prefixSz int
 }
 
-func (it *prefixedIterator) Next() bool  { return it.inner.Next() }
-func (it *prefixedIterator) Release()    { it.inner.Release() }
+func (it *prefixedIterator) Next() bool    { return it.inner.Next() }
+func (it *prefixedIterator) Release()      { it.inner.Release() }
 func (it *prefixedIterator) Value() []byte { return it.inner.Value() }
 
 func (it *prefixedIterator) Key() []byte {

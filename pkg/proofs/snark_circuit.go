@@ -62,7 +62,7 @@ type CircuitDefinition struct {
 }
 
 func (cd *CircuitDefinition) TotalVariables() int  { return len(cd.Variables) }
-func (cd *CircuitDefinition) ConstraintCount() int  { return len(cd.Constraints) }
+func (cd *CircuitDefinition) ConstraintCount() int { return len(cd.Constraints) }
 
 // CircuitWitness holds concrete values assigned to circuit variables.
 type CircuitWitness struct {
@@ -130,7 +130,7 @@ func NewStateTransitionCircuit(txSlots int) *StateTransitionCircuit {
 	return &StateTransitionCircuit{def: def}
 }
 
-func (stc *StateTransitionCircuit) Definition() *CircuitDefinition     { return stc.def }
+func (stc *StateTransitionCircuit) Definition() *CircuitDefinition         { return stc.def }
 func (stc *StateTransitionCircuit) SetVerificationKey(vk *VerificationKey) { stc.vk = vk }
 
 // GenerateWitness produces a witness from pre/post state roots and tx data.

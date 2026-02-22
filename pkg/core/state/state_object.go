@@ -47,14 +47,14 @@ type StateObject struct {
 
 // stateObjectChange records a single reversible modification to the object.
 type stateObjectChange struct {
-	kind        changeKind
-	prevBalance *big.Int
-	prevNonce   uint64
-	prevCode    []byte
-	prevHash    types.Hash
-	slotKey     types.Hash
-	prevSlot    types.Hash
-	prevExists  bool // whether the dirty slot existed before this write
+	kind         changeKind
+	prevBalance  *big.Int
+	prevNonce    uint64
+	prevCode     []byte
+	prevHash     types.Hash
+	slotKey      types.Hash
+	prevSlot     types.Hash
+	prevExists   bool // whether the dirty slot existed before this write
 	prevDestruct bool
 }
 
@@ -62,7 +62,7 @@ type stateObjectChange struct {
 type changeKind uint8
 
 const (
-	changeBalance    changeKind = iota
+	changeBalance changeKind = iota
 	changeNonce
 	changeCode
 	changeStorage

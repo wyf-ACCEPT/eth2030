@@ -67,9 +67,9 @@ type ProposerHistoryEntry struct {
 
 // ProposerRotationConfig configures the proposer rotation system.
 type ProposerRotationConfig struct {
-	SlotsPerEpoch  uint64
-	MaxLookahead   uint64
-	UseWeighted    bool // if true, weight selection by effective balance
+	SlotsPerEpoch uint64
+	MaxLookahead  uint64
+	UseWeighted   bool // if true, weight selection by effective balance
 }
 
 // DefaultProposerRotationConfig returns the default config for quick-slot epochs.

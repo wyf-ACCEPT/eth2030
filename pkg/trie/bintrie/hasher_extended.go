@@ -153,9 +153,9 @@ func (bh *BinaryHasher) CacheSize() int {
 // HashWithStats computes the hash and returns statistics about the
 // computation.
 type HashStats struct {
-	NodesHashed  int
-	CacheHits    int
-	ParallelOps  int
+	NodesHashed int
+	CacheHits   int
+	ParallelOps int
 }
 
 // hashWithStatsNode is a recursive hasher that collects statistics.

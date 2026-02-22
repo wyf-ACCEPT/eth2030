@@ -17,17 +17,17 @@ import (
 
 // KPS errors.
 var (
-	ErrKPSInvalidThreshold  = errors.New("kps: threshold must be > 0 and <= total shares")
-	ErrKPSInvalidShares     = errors.New("kps: total shares must be > 0")
+	ErrKPSInvalidThreshold   = errors.New("kps: threshold must be > 0 and <= total shares")
+	ErrKPSInvalidShares      = errors.New("kps: total shares must be > 0")
 	ErrKPSInsufficientShares = errors.New("kps: insufficient shares for recombination")
-	ErrKPSDuplicateShare    = errors.New("kps: duplicate share index")
-	ErrKPSInvalidShareData  = errors.New("kps: invalid share data")
-	ErrKPSInvalidPrivateKey = errors.New("kps: invalid private key")
-	ErrKPSGroupFull         = errors.New("kps: group is full")
-	ErrKPSMemberExists      = errors.New("kps: member already exists")
-	ErrKPSMemberNotFound    = errors.New("kps: member not found")
-	ErrKPSGroupNotFound     = errors.New("kps: group not found")
-	ErrKPSKeyGenFailed      = errors.New("kps: key generation failed")
+	ErrKPSDuplicateShare     = errors.New("kps: duplicate share index")
+	ErrKPSInvalidShareData   = errors.New("kps: invalid share data")
+	ErrKPSInvalidPrivateKey  = errors.New("kps: invalid private key")
+	ErrKPSGroupFull          = errors.New("kps: group is full")
+	ErrKPSMemberExists       = errors.New("kps: member already exists")
+	ErrKPSMemberNotFound     = errors.New("kps: member not found")
+	ErrKPSGroupNotFound      = errors.New("kps: group not found")
+	ErrKPSKeyGenFailed       = errors.New("kps: key generation failed")
 )
 
 // KPS key size constant.
@@ -60,8 +60,8 @@ type KeyShare struct {
 type KPSKeyPair struct {
 	PublicKey     []byte
 	PrivateShares []*KeyShare
-	Threshold    int
-	TotalShares  int
+	Threshold     int
+	TotalShares   int
 }
 
 // KeyGroup manages a group of key holders who collectively hold shares
@@ -206,8 +206,8 @@ func (m *KPSManager) GenerateKeyPair() (*KPSKeyPair, error) {
 	return &KPSKeyPair{
 		PublicKey:     pubKey,
 		PrivateShares: shares,
-		Threshold:    threshold,
-		TotalShares:  totalShares,
+		Threshold:     threshold,
+		TotalShares:   totalShares,
 	}, nil
 }
 
@@ -363,8 +363,8 @@ func (m *KPSManager) RotateKeys(groupID types.Hash) (*KPSKeyPair, error) {
 	kp := &KPSKeyPair{
 		PublicKey:     pubKey,
 		PrivateShares: shares,
-		Threshold:    threshold,
-		TotalShares:  totalShares,
+		Threshold:     threshold,
+		TotalShares:   totalShares,
 	}
 
 	m.keys[groupID] = kp
@@ -459,8 +459,8 @@ func lagrangeInterpolateGF256(shares []*KeyShare, byteIdx int) byte {
 				continue
 			}
 			xj := byte(shares[j].Index)
-			num = gf256Mul(num, xj)       // 0 - xj = xj in GF(256)
-			den = gf256Mul(den, xi^xj)     // xi - xj = xi ^ xj in GF(256)
+			num = gf256Mul(num, xj)    // 0 - xj = xj in GF(256)
+			den = gf256Mul(den, xi^xj) // xi - xj = xi ^ xj in GF(256)
 		}
 
 		// L_i(0) = num / den

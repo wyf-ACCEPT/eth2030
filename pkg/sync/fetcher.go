@@ -27,7 +27,7 @@ type FetchResponse struct {
 type HeaderFetcher struct {
 	mu       sync.Mutex
 	pending  map[PeerID]*FetchRequest // active requests
-	results  chan FetchResponse        // completed results
+	results  chan FetchResponse       // completed results
 	maxBatch int
 }
 

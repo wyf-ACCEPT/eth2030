@@ -50,7 +50,7 @@ type GasCacheEntry struct {
 	Addr     types.Address
 	Slot     types.Hash
 	GasCost  uint64
-	IsWarm   bool  // Whether the access was warm at time of caching.
+	IsWarm   bool   // Whether the access was warm at time of caching.
 	BlockNum uint64 // Block number when this entry was cached.
 }
 

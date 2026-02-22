@@ -28,10 +28,10 @@ type InclusionListEntry struct {
 // Per EIP-7805, the inclusion list is created by a committee of validators
 // for a given slot and referenced by the committee root.
 type InclusionList struct {
-	Slot           uint64        // beacon slot this IL targets
-	ValidatorIndex uint64        // index of the IL committee member
-	CommitteeRoot  Hash          // root of the inclusion list committee
-	Transactions   [][]byte      // RLP-encoded transactions to be included
+	Slot           uint64               // beacon slot this IL targets
+	ValidatorIndex uint64               // index of the IL committee member
+	CommitteeRoot  Hash                 // root of the inclusion list committee
+	Transactions   [][]byte             // RLP-encoded transactions to be included
 	Summary        []InclusionListEntry // summary entries (address + gas limit)
 }
 

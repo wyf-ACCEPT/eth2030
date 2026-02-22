@@ -49,12 +49,12 @@ type ExtBeaconState struct {
 	Fork              BeaconFork
 
 	// Consensus bookkeeping.
-	Slot                 Slot
-	Epoch                Epoch
-	FinalizedCheckpoint  Checkpoint
-	JustifiedCheckpoint  Checkpoint
-	PreviousJustified    Checkpoint
-	JustificationBits    JustificationBits
+	Slot                Slot
+	Epoch               Epoch
+	FinalizedCheckpoint Checkpoint
+	JustifiedCheckpoint Checkpoint
+	PreviousJustified   Checkpoint
+	JustificationBits   JustificationBits
 
 	// Block roots.
 	LatestBlockRoot types.Hash

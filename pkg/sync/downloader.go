@@ -33,8 +33,8 @@ type SyncProgress struct {
 	PulledBodies  uint64
 	Syncing       bool
 	Percentage    float64
-	Mode          string // "full" or "snap"
-	Stage         string // human-readable stage name
+	Mode          string        // "full" or "snap"
+	Stage         string        // human-readable stage name
 	SnapProgress  *SnapProgress // snap sync progress (nil during full sync)
 }
 

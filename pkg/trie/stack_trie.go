@@ -24,21 +24,21 @@ var (
 type stackTrieNodeType byte
 
 const (
-	stEmpty    stackTrieNodeType = iota // empty / unused slot
-	stLeaf                              // leaf node (key suffix + value)
-	stExt                               // extension node (shared prefix + child)
-	stBranch                            // branch node (16 children + value)
-	stHash                              // already hashed/committed subtree
+	stEmpty  stackTrieNodeType = iota // empty / unused slot
+	stLeaf                            // leaf node (key suffix + value)
+	stExt                             // extension node (shared prefix + child)
+	stBranch                          // branch node (16 children + value)
+	stHash                            // already hashed/committed subtree
 )
 
 // stackTrieNode is a node in the StackTrie's working stack. Nodes transition
 // through types as new keys are inserted: empty -> leaf -> branch (via split).
 type stackTrieNode struct {
 	typ      stackTrieNodeType
-	key      []byte              // nibble key (for leaf: full remaining key; for ext: shared prefix)
-	val      []byte              // value bytes (for leaf nodes)
-	children [16]*stackTrieNode  // branch children (only for stBranch)
-	hash     []byte              // cached hash (only for stHash)
+	key      []byte             // nibble key (for leaf: full remaining key; for ext: shared prefix)
+	val      []byte             // value bytes (for leaf nodes)
+	children [16]*stackTrieNode // branch children (only for stBranch)
+	hash     []byte             // cached hash (only for stHash)
 }
 
 // StackTrie builds a Merkle Patricia Trie from key-value pairs inserted in

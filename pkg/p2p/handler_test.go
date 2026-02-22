@@ -14,17 +14,17 @@ import (
 // ---------------------------------------------------------------------------
 
 type mockBackend struct {
-	headers    map[types.Hash]*types.Header
-	byNumber   map[uint64]*types.Header
-	bodies     map[types.Hash]*BlockBody
-	receipts   map[types.Hash][]*types.Receipt
-	pooledTxs  map[types.Hash]*types.Transaction
+	headers   map[types.Hash]*types.Header
+	byNumber  map[uint64]*types.Header
+	bodies    map[types.Hash]*BlockBody
+	receipts  map[types.Hash][]*types.Receipt
+	pooledTxs map[types.Hash]*types.Transaction
 
 	// Recorded broadcast calls.
-	newBlocks       []newBlockCall
-	newBlockHashes  [][]NewBlockHashesEntry
-	transactions    [][]*types.Transaction
-	pooledTxHashes  []pooledTxHashCall
+	newBlocks      []newBlockCall
+	newBlockHashes [][]NewBlockHashesEntry
+	transactions   [][]*types.Transaction
+	pooledTxHashes []pooledTxHashCall
 }
 
 type newBlockCall struct {

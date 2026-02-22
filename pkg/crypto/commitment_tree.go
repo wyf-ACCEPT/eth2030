@@ -85,8 +85,8 @@ type CommitmentTreeProof struct {
 // incremental root updates.
 type CommitmentTree struct {
 	mu       sync.RWMutex
-	leaves   []types.Hash    // raw commitments
-	hashes   [][32]byte      // leaf hashes
+	leaves   []types.Hash              // raw commitments
+	hashes   [][32]byte                // leaf hashes
 	filledAt [CommitTreeDepth][32]byte // cache of filled subtrees at each level
 	nextIdx  uint64
 	root     [32]byte

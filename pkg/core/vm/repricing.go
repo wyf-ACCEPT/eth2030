@@ -69,8 +69,8 @@ func baseGasCosts() [256]uint64 {
 	var costs [256]uint64
 
 	// State access opcodes (EIP-2929 Berlin costs).
-	costs[byte(SLOAD)] = ColdSloadCost        // 2100
-	costs[byte(BALANCE)] = ColdAccountAccessCost // 2600
+	costs[byte(SLOAD)] = ColdSloadCost               // 2100
+	costs[byte(BALANCE)] = ColdAccountAccessCost     // 2600
 	costs[byte(EXTCODESIZE)] = ColdAccountAccessCost // 2600
 	costs[byte(EXTCODECOPY)] = ColdAccountAccessCost // 2600
 	costs[byte(EXTCODEHASH)] = ColdAccountAccessCost // 2600
@@ -79,12 +79,12 @@ func baseGasCosts() [256]uint64 {
 	costs[byte(SSTORE)] = GasSstoreSet // 20000 (set cost; reset is separate)
 
 	// Contract creation.
-	costs[byte(CREATE)] = GasCreate   // 32000
-	costs[byte(CREATE2)] = GasCreate  // 32000
+	costs[byte(CREATE)] = GasCreate  // 32000
+	costs[byte(CREATE2)] = GasCreate // 32000
 
 	// Call family (cold access cost).
-	costs[byte(CALL)] = GasCallCold        // 2600
-	costs[byte(CALLCODE)] = GasCallCold    // 2600
+	costs[byte(CALL)] = GasCallCold         // 2600
+	costs[byte(CALLCODE)] = GasCallCold     // 2600
 	costs[byte(DELEGATECALL)] = GasCallCold // 2600
 	costs[byte(STATICCALL)] = GasCallCold   // 2600
 

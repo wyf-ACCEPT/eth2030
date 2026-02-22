@@ -22,9 +22,9 @@ import (
 
 // EIP-2929 gas accounting errors.
 var (
-	ErrEIP2929NoState       = errors.New("eip2929: no state database for access tracking")
-	ErrEIP2929GasExhausted  = errors.New("eip2929: insufficient gas for state access")
-	ErrEIP2929InvalidAddr   = errors.New("eip2929: invalid address")
+	ErrEIP2929NoState      = errors.New("eip2929: no state database for access tracking")
+	ErrEIP2929GasExhausted = errors.New("eip2929: insufficient gas for state access")
+	ErrEIP2929InvalidAddr  = errors.New("eip2929: invalid address")
 )
 
 // EIP2929GasParams holds all gas cost parameters for the EIP-2929 model.
@@ -38,10 +38,10 @@ type EIP2929GasParams struct {
 // DefaultEIP2929GasParams returns the standard post-Berlin gas parameters.
 func DefaultEIP2929GasParams() EIP2929GasParams {
 	return EIP2929GasParams{
-		ColdAccountAccess: ColdAccountAccessCost,  // 2600
-		WarmAccountAccess: WarmStorageReadCost,     // 100
-		ColdSlotAccess:    ColdSloadCost,           // 2100
-		WarmSlotAccess:    WarmStorageReadCost,      // 100
+		ColdAccountAccess: ColdAccountAccessCost, // 2600
+		WarmAccountAccess: WarmStorageReadCost,   // 100
+		ColdSlotAccess:    ColdSloadCost,         // 2100
+		WarmSlotAccess:    WarmStorageReadCost,   // 100
 	}
 }
 
@@ -49,9 +49,9 @@ func DefaultEIP2929GasParams() EIP2929GasParams {
 func GlamsterdamEIP2929Params() EIP2929GasParams {
 	return EIP2929GasParams{
 		ColdAccountAccess: ColdAccountAccessGlamst, // 3500
-		WarmAccountAccess: WarmStorageReadGlamst,    // 150
-		ColdSlotAccess:    ColdSloadGlamst,          // 2800
-		WarmSlotAccess:    WarmStorageReadGlamst,     // 150
+		WarmAccountAccess: WarmStorageReadGlamst,   // 150
+		ColdSlotAccess:    ColdSloadGlamst,         // 2800
+		WarmSlotAccess:    WarmStorageReadGlamst,   // 150
 	}
 }
 
@@ -336,11 +336,11 @@ func (g *EIP2929OpGasCosts) SelfDestructGas(
 
 // WarmColdReport describes the result of a single address or slot access.
 type WarmColdReport struct {
-	Address  types.Address
-	Slot     *types.Hash // nil for address-only access
-	WasCold  bool
-	GasCost  uint64
-	GasType  string // "account" or "slot"
+	Address types.Address
+	Slot    *types.Hash // nil for address-only access
+	WasCold bool
+	GasCost uint64
+	GasType string // "account" or "slot"
 }
 
 // TraceAccountAccess records and returns the warm/cold status of an account access.

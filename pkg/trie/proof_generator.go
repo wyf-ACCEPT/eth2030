@@ -14,18 +14,18 @@ import (
 
 // Proof generation errors.
 var (
-	ErrProofGenNilKey     = errors.New("proof_generator: nil key")
-	ErrProofGenEmptyTrie  = errors.New("proof_generator: empty trie")
-	ErrProofGenSerialize  = errors.New("proof_generator: serialization error")
+	ErrProofGenNilKey      = errors.New("proof_generator: nil key")
+	ErrProofGenEmptyTrie   = errors.New("proof_generator: empty trie")
+	ErrProofGenSerialize   = errors.New("proof_generator: serialization error")
 	ErrProofGenDeserialize = errors.New("proof_generator: deserialization error")
 )
 
 // ProofGenerator generates Merkle proofs from a trie. It supports inclusion
 // proofs, exclusion proofs, batch (multi) proofs, and serialization.
 type ProofGenerator struct {
-	trie     *Trie
-	resTrie  *ResolvableTrie
-	nodeDB   *NodeDatabase
+	trie    *Trie
+	resTrie *ResolvableTrie
+	nodeDB  *NodeDatabase
 }
 
 // NewProofGenerator creates a proof generator for an in-memory trie.

@@ -67,8 +67,12 @@ func NewAncientStore(config AncientStoreConfig) (*AncientStore, error) {
 	return &AncientStore{config: config, freezer: freezer}, nil
 }
 
-func (as *AncientStore) Frozen() uint64 { as.mu.RLock(); defer as.mu.RUnlock(); return as.freezer.Frozen() }
-func (as *AncientStore) Tail() uint64   { as.mu.RLock(); defer as.mu.RUnlock(); return as.freezer.Tail() }
+func (as *AncientStore) Frozen() uint64 {
+	as.mu.RLock()
+	defer as.mu.RUnlock()
+	return as.freezer.Frozen()
+}
+func (as *AncientStore) Tail() uint64 { as.mu.RLock(); defer as.mu.RUnlock(); return as.freezer.Tail() }
 
 // HasBlock returns true if the block number is in the frozen range.
 func (as *AncientStore) HasBlock(number uint64) bool {
@@ -284,16 +288,20 @@ func (as *AncientStore) compactTable(tableName string) error {
 		physIdx := num - t.indexBase
 		idxBuf := make([]byte, indexEntrySize)
 		if _, e := t.indexFile.ReadAt(idxBuf, int64(physIdx)*indexEntrySize); e != nil {
-			tmpData.Close(); tmpIndex.Close()
-			os.Remove(tmpData.Name()); os.Remove(tmpIndex.Name())
+			tmpData.Close()
+			tmpIndex.Close()
+			os.Remove(tmpData.Name())
+			os.Remove(tmpIndex.Name())
 			return e
 		}
 		entry := decodeIndexEntry(idxBuf)
 		data := make([]byte, entry.Length)
 		if entry.Length > 0 {
 			if _, e := t.dataFile.ReadAt(data, int64(entry.Offset)); e != nil {
-				tmpData.Close(); tmpIndex.Close()
-				os.Remove(tmpData.Name()); os.Remove(tmpIndex.Name())
+				tmpData.Close()
+				tmpIndex.Close()
+				os.Remove(tmpData.Name())
+				os.Remove(tmpIndex.Name())
 				return e
 			}
 		}

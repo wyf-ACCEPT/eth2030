@@ -70,12 +70,12 @@ type blkAnnouncement struct {
 
 // blkPeerInfo tracks announcement state for a single peer.
 type blkPeerInfo struct {
-	id           string
-	announced    map[types.Hash]uint64 // hash -> block number
-	fetching     bool                   // currently fetching from this peer
-	lastFetch    time.Time
-	latency      time.Duration
-	announcedAt  []time.Time // for age-based pruning
+	id          string
+	announced   map[types.Hash]uint64 // hash -> block number
+	fetching    bool                  // currently fetching from this peer
+	lastFetch   time.Time
+	latency     time.Duration
+	announcedAt []time.Time // for age-based pruning
 }
 
 // BlkAnnounce processes NewBlockHashes messages, deduplicates known blocks,

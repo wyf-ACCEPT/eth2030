@@ -825,8 +825,8 @@ func TestConformance_Web3ClientVersion(t *testing.T) {
 	requireSuccess(t, resp)
 
 	version := mustString(t, resp)
-	if !strings.HasPrefix(version, "eth2030") {
-		t.Fatalf("expected eth2030 prefix, got %s", version)
+	if !strings.HasPrefix(version, "ETH2030") {
+		t.Fatalf("expected ETH2030 prefix, got %s", version)
 	}
 }
 

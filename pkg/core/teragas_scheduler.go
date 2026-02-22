@@ -14,11 +14,11 @@ import (
 
 // Teragas scheduler errors.
 var (
-	ErrTeragasQueueFull      = errors.New("core/teragas: scheduling queue is full")
-	ErrTeragasDeadlineExpired = errors.New("core/teragas: blob request deadline has expired")
-	ErrTeragasInvalidPriority = errors.New("core/teragas: priority must be >= 0")
-	ErrTeragasEmptyData       = errors.New("core/teragas: blob request data is empty")
-	ErrTeragasBandwidthZero   = errors.New("core/teragas: max bandwidth must be > 0")
+	ErrTeragasQueueFull        = errors.New("core/teragas: scheduling queue is full")
+	ErrTeragasDeadlineExpired  = errors.New("core/teragas: blob request deadline has expired")
+	ErrTeragasInvalidPriority  = errors.New("core/teragas: priority must be >= 0")
+	ErrTeragasEmptyData        = errors.New("core/teragas: blob request data is empty")
+	ErrTeragasBandwidthZero    = errors.New("core/teragas: max bandwidth must be > 0")
 	ErrTeragasSchedulerStopped = errors.New("core/teragas: scheduler is stopped")
 )
 
@@ -107,7 +107,7 @@ type TeragasMetrics struct {
 	PeakQueueDepth atomic.Int64
 
 	// Latency tracking uses a simple sum/count for average.
-	latencySum   atomic.Int64  // nanoseconds
+	latencySum   atomic.Int64 // nanoseconds
 	latencyCount atomic.Int64
 }
 

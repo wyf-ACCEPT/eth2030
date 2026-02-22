@@ -76,10 +76,10 @@ type ValidatorProof struct {
 
 // AttestationProof proves attestation data for a slot and committee.
 type AttestationProof struct {
-	Slot             uint64
-	CommitteeIndex   uint64
-	AggregationBits  []byte
-	Proof            []types.Hash
+	Slot            uint64
+	CommitteeIndex  uint64
+	AggregationBits []byte
+	Proof           []types.Hash
 }
 
 // clProverCacheKey is the internal cache key for the prover.

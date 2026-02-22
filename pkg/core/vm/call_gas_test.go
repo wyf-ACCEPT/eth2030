@@ -460,9 +460,9 @@ func TestCallWithValue_StipendProvided(t *testing.T) {
 	// Target: GAS opcode pushes current gas, store to slot 0, STOP
 	// This lets us observe how much gas the callee actually received.
 	targetCode := []byte{
-		byte(GAS),        // push gas remaining onto stack
+		byte(GAS), // push gas remaining onto stack
 		byte(PUSH1), 0x00,
-		byte(MSTORE),     // store gas in memory at offset 0
+		byte(MSTORE),      // store gas in memory at offset 0
 		byte(PUSH1), 0x20, // return 32 bytes
 		byte(PUSH1), 0x00,
 		byte(RETURN),

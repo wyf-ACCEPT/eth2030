@@ -194,8 +194,8 @@ func TestGetLogsWithContract(t *testing.T) {
 	logCode := []byte{
 		0x60, 0x20, // PUSH1 0x20 (size = 32)
 		0x60, 0x00, // PUSH1 0x00 (offset = 0)
-		0xa0,       // LOG0
-		0x00,       // STOP
+		0xa0, // LOG0
+		0x00, // STOP
 	}
 	statedb.CreateAccount(contractAddr)
 	statedb.SetCode(contractAddr, logCode)

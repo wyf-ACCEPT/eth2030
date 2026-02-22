@@ -11,10 +11,10 @@ import (
 
 // Genesis validation errors.
 var (
-	ErrInvalidGenesis        = errors.New("genesis: invalid genesis configuration")
-	ErrGenesisExtraDataLong  = errors.New("genesis: extra data exceeds 32 bytes")
-	ErrGenesisZeroGasLimit   = errors.New("genesis: gas limit must be non-zero")
-	ErrGenesisNilConfig      = errors.New("genesis: chain config is nil")
+	ErrInvalidGenesis       = errors.New("genesis: invalid genesis configuration")
+	ErrGenesisExtraDataLong = errors.New("genesis: extra data exceeds 32 bytes")
+	ErrGenesisZeroGasLimit  = errors.New("genesis: gas limit must be non-zero")
+	ErrGenesisNilConfig     = errors.New("genesis: chain config is nil")
 )
 
 // Note: MaxExtraDataSize is defined in block_validator.go (= 32 bytes).
@@ -55,7 +55,7 @@ func DevGenesis() *Genesis {
 		Config:     TestConfig,
 		Nonce:      0,
 		Timestamp:  0,
-		ExtraData:  []byte("eth2030 dev genesis"),
+		ExtraData:  []byte("ETH2030 dev genesis"),
 		GasLimit:   30_000_000,
 		Difficulty: big.NewInt(1),
 		Alloc:      alloc,
@@ -141,4 +141,3 @@ func VerifyGenesisHash(g *Genesis, expected types.Hash) error {
 	}
 	return nil
 }
-

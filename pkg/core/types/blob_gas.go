@@ -4,12 +4,12 @@ import "math/big"
 
 // EIP-4844 blob gas constants.
 const (
-	BlobTxBlobGasPerBlob         = 1 << 17 // 131072
-	MaxBlobGasPerBlock           = 786432
-	TargetBlobGasPerBlock        = 393216
-	BlobTxMinBlobGasprice        = 1
-	BlobBaseFeeUpdateFraction    = 3338477
-	VersionedHashVersionKZG byte = 0x01
+	BlobTxBlobGasPerBlob           = 1 << 17 // 131072
+	MaxBlobGasPerBlock             = 786432
+	TargetBlobGasPerBlock          = 393216
+	BlobTxMinBlobGasprice          = 1
+	BlobBaseFeeUpdateFraction      = 3338477
+	VersionedHashVersionKZG   byte = 0x01
 )
 
 // CalcExcessBlobGas calculates the excess blob gas for a block given

@@ -12,18 +12,18 @@ import (
 // aaTestStateDB is a minimal StateDB for testing the AA executor.
 // Named to avoid collision with mockStateDB in instructions_test.go.
 type aaTestStateDB struct {
-	balances    map[types.Address]*big.Int
-	nonces      map[types.Address]uint64
-	codes       map[types.Address][]byte
-	codeHashes  map[types.Address]types.Hash
-	storage     map[types.Address]map[types.Hash]types.Hash
-	transient   map[types.Address]map[types.Hash]types.Hash
-	accessList  map[types.Address]bool
-	slotAccess  map[types.Address]map[types.Hash]bool
-	snapCount   int
-	refund      uint64
-	logs        []*types.Log
-	selfDestr   map[types.Address]bool
+	balances   map[types.Address]*big.Int
+	nonces     map[types.Address]uint64
+	codes      map[types.Address][]byte
+	codeHashes map[types.Address]types.Hash
+	storage    map[types.Address]map[types.Hash]types.Hash
+	transient  map[types.Address]map[types.Hash]types.Hash
+	accessList map[types.Address]bool
+	slotAccess map[types.Address]map[types.Hash]bool
+	snapCount  int
+	refund     uint64
+	logs       []*types.Log
+	selfDestr  map[types.Address]bool
 }
 
 func newAATestStateDB() *aaTestStateDB {
@@ -132,9 +132,9 @@ func (m *aaTestStateDB) RevertToSnapshot(id int) {}
 func (m *aaTestStateDB) AddLog(log *types.Log) {
 	m.logs = append(m.logs, log)
 }
-func (m *aaTestStateDB) AddRefund(gas uint64)  { m.refund += gas }
-func (m *aaTestStateDB) SubRefund(gas uint64)  { m.refund -= gas }
-func (m *aaTestStateDB) GetRefund() uint64     { return m.refund }
+func (m *aaTestStateDB) AddRefund(gas uint64) { m.refund += gas }
+func (m *aaTestStateDB) SubRefund(gas uint64) { m.refund -= gas }
+func (m *aaTestStateDB) GetRefund() uint64    { return m.refund }
 func (m *aaTestStateDB) AddAddressToAccessList(addr types.Address) {
 	m.accessList[addr] = true
 }

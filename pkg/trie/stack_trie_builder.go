@@ -26,8 +26,8 @@ type StackTrieBuilder struct {
 	store    NodeWriter
 	rootHash types.Hash
 	built    bool
-	nodeSize int    // approximate total bytes of encoded nodes
-	nodeNum  int    // number of nodes written
+	nodeSize int // approximate total bytes of encoded nodes
+	nodeNum  int // number of nodes written
 }
 
 // NewStackTrieBuilder creates a new builder. If store is nil, nodes are

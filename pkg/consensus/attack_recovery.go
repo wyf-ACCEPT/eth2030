@@ -32,11 +32,11 @@ const (
 
 // Recommended recovery actions for each severity level.
 const (
-	ActionNone             = "none"
-	ActionMonitor          = "monitor"
-	ActionIsolate          = "isolate_attacker_peers"
-	ActionFallback         = "fallback_to_finalized_checkpoint"
-	ActionSocialOverride   = "social_consensus_override"
+	ActionNone           = "none"
+	ActionMonitor        = "monitor"
+	ActionIsolate        = "isolate_attacker_peers"
+	ActionFallback       = "fallback_to_finalized_checkpoint"
+	ActionSocialOverride = "social_consensus_override"
 )
 
 // Errors returned by attack recovery operations.
@@ -54,7 +54,7 @@ type AttackReport struct {
 	ReorgDepth        uint64
 	FinalizedEpoch    uint64
 	CurrentEpoch      uint64
-	AffectedEpochs   []uint64
+	AffectedEpochs    []uint64
 	RecommendedAction string
 }
 
@@ -175,7 +175,7 @@ func (ad *AttackDetector) DetectAttack(reorgDepth, finalizedEpoch, currentEpoch 
 		ReorgDepth:        reorgDepth,
 		FinalizedEpoch:    finalizedEpoch,
 		CurrentEpoch:      currentEpoch,
-		AffectedEpochs:   affectedEpochs(reorgDepth, finalizedEpoch, currentEpoch),
+		AffectedEpochs:    affectedEpochs(reorgDepth, finalizedEpoch, currentEpoch),
 		RecommendedAction: recommendedAction(severity),
 	}
 

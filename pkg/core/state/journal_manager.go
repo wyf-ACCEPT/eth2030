@@ -33,12 +33,12 @@ var (
 type ModKind uint8
 
 const (
-	ModAccountCreate  ModKind = iota // New account created
-	ModBalanceChange                 // Balance modified
-	ModNonceChange                   // Nonce modified
-	ModStorageWrite                  // Storage slot written
-	ModCodeDeploy                    // Code set on account
-	ModSelfDestruct                  // Account self-destructed
+	ModAccountCreate ModKind = iota // New account created
+	ModBalanceChange                // Balance modified
+	ModNonceChange                  // Nonce modified
+	ModStorageWrite                 // Storage slot written
+	ModCodeDeploy                   // Code set on account
+	ModSelfDestruct                 // Account self-destructed
 )
 
 // String returns a human-readable label for the modification kind.
@@ -419,8 +419,8 @@ func (jm *JournalManager) Finalize() {
 }
 
 // Metrics returns a snapshot of the current journal manager metrics.
-func (jm *JournalManager) Metrics() JournalManagerMetrics {
-	var m JournalManagerMetrics
+func (jm *JournalManager) Metrics() *JournalManagerMetrics {
+	m := new(JournalManagerMetrics)
 	m.TotalModifications.Store(jm.metrics.TotalModifications.Load())
 	m.AccountCreates.Store(jm.metrics.AccountCreates.Load())
 	m.BalanceChanges.Store(jm.metrics.BalanceChanges.Load())

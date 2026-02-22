@@ -20,9 +20,9 @@ import (
 type CacheAccessKind uint8
 
 const (
-	CacheL1Hit  CacheAccessKind = iota // found in per-tx L1 cache
-	CacheL2Hit                         // found in per-block L2 cache
-	CacheMiss                          // not in any cache, required trie read
+	CacheL1Hit CacheAccessKind = iota // found in per-tx L1 cache
+	CacheL2Hit                        // found in per-block L2 cache
+	CacheMiss                         // not in any cache, required trie read
 )
 
 // storageSlotKey is defined in state_prefetch.go as:
@@ -225,10 +225,10 @@ type StorageCacheEntry struct {
 // BlockStorageCache is the per-block L2 storage cache shared across all
 // transactions. It is safe for concurrent access.
 type BlockStorageCache struct {
-	mu       sync.RWMutex
-	entries  map[storageSlotKey]types.Hash
-	maxSize  int
-	stats    *CacheStats
+	mu      sync.RWMutex
+	entries map[storageSlotKey]types.Hash
+	maxSize int
+	stats   *CacheStats
 }
 
 // NewBlockStorageCache creates a new L2 cache with the given maximum

@@ -22,7 +22,7 @@ var ForkOrder = []string{
 	"London",
 	"ArrowGlacier",
 	"GrayGlacier",
-	"Paris",      // The Merge
+	"Paris", // The Merge
 	"Shanghai",
 	"Cancun",
 	"Prague",

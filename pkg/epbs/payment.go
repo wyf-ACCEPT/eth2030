@@ -75,19 +75,19 @@ func (s PaymentState) String() string {
 
 // EscrowRecord tracks a single payment through its lifecycle.
 type EscrowRecord struct {
-	Slot           uint64        `json:"slot"`
-	BuilderAddr    types.Address `json:"builderAddr"`
-	ProposerAddr   types.Address `json:"proposerAddr"`
-	BidValue       uint64        `json:"bidValue"`       // total bid in Gwei
-	PaymentAmount  uint64        `json:"paymentAmount"`  // amount to proposer in Gwei
-	State          PaymentState  `json:"state"`
-	BidHash        types.Hash    `json:"bidHash"`
-	PayloadHash    types.Hash    `json:"payloadHash"`    // committed block hash
-	EscrowedAt     time.Time     `json:"escrowedAt"`
-	SettledAt      time.Time     `json:"settledAt"`
-	SlashAmount    uint64        `json:"slashAmount"`    // amount slashed (0 if not slashed)
-	BurnAmount     uint64        `json:"burnAmount"`     // amount burned on slash
-	CompensationAmt uint64       `json:"compensationAmt"` // compensation to proposer on slash
+	Slot            uint64        `json:"slot"`
+	BuilderAddr     types.Address `json:"builderAddr"`
+	ProposerAddr    types.Address `json:"proposerAddr"`
+	BidValue        uint64        `json:"bidValue"`      // total bid in Gwei
+	PaymentAmount   uint64        `json:"paymentAmount"` // amount to proposer in Gwei
+	State           PaymentState  `json:"state"`
+	BidHash         types.Hash    `json:"bidHash"`
+	PayloadHash     types.Hash    `json:"payloadHash"` // committed block hash
+	EscrowedAt      time.Time     `json:"escrowedAt"`
+	SettledAt       time.Time     `json:"settledAt"`
+	SlashAmount     uint64        `json:"slashAmount"`     // amount slashed (0 if not slashed)
+	BurnAmount      uint64        `json:"burnAmount"`      // amount burned on slash
+	CompensationAmt uint64        `json:"compensationAmt"` // compensation to proposer on slash
 }
 
 // PaymentConfig configures the payment processor.
@@ -124,9 +124,9 @@ func DefaultPaymentConfig() PaymentConfig {
 type PaymentProcessor struct {
 	mu       sync.RWMutex
 	config   PaymentConfig
-	escrows  map[uint64]*EscrowRecord     // slot -> escrow
-	balances map[types.Address]*big.Int    // builder/proposer balances
-	history  []*EscrowRecord              // settled records for auditing
+	escrows  map[uint64]*EscrowRecord   // slot -> escrow
+	balances map[types.Address]*big.Int // builder/proposer balances
+	history  []*EscrowRecord            // settled records for auditing
 }
 
 // NewPaymentProcessor creates a new payment processor with the given config.

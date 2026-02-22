@@ -14,8 +14,8 @@ import (
 // STF configuration defaults.
 const (
 	DefaultMaxWitnessSize = 16 * 1024 * 1024 // 16 MiB
-	DefaultMaxProofSize   = 1 * 1024 * 1024   // 1 MiB
-	DefaultTargetCycles   = 1 << 24           // ~16M cycles
+	DefaultMaxProofSize   = 1 * 1024 * 1024  // 1 MiB
+	DefaultTargetCycles   = 1 << 24          // ~16M cycles
 	DefaultSTFProofSystem = "plonk"
 
 	// Simulated cycle costs per operation type.

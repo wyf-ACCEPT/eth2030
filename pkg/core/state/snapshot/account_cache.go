@@ -13,12 +13,12 @@ import (
 
 // SnapshotCacheStats holds hit/miss statistics for SnapshotAccountCache.
 type SnapshotCacheStats struct {
-	Hits       uint64
-	Misses     uint64
-	Evictions  uint64
-	Preloads   uint64
-	Size       int
-	Capacity   int
+	Hits      uint64
+	Misses    uint64
+	Evictions uint64
+	Preloads  uint64
+	Size      int
+	Capacity  int
 }
 
 // HitRate returns the hit rate as a value between 0.0 and 1.0.

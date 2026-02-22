@@ -38,19 +38,19 @@ type AATx struct {
 	Nonce                uint64
 	Sender               Address
 	SenderValidationData []byte
-	Deployer             *Address  // nil if no deployer
+	Deployer             *Address // nil if no deployer
 	DeployerData         []byte
-	Paymaster            *Address  // nil if no paymaster
+	Paymaster            *Address // nil if no paymaster
 	PaymasterData        []byte
 	SenderExecutionData  []byte
 	MaxPriorityFeePerGas *big.Int
 	MaxFeePerGas         *big.Int
 
 	// Per-phase gas limits.
-	SenderValidationGas   uint64
+	SenderValidationGas    uint64
 	PaymasterValidationGas uint64
-	SenderExecutionGas    uint64
-	PaymasterPostOpGas    uint64
+	SenderExecutionGas     uint64
+	PaymasterPostOpGas     uint64
 
 	AccessList        AccessList
 	AuthorizationList []Authorization
@@ -58,17 +58,17 @@ type AATx struct {
 
 // TxData interface implementation for AATx.
 
-func (tx *AATx) txType() byte      { return AATxType }
-func (tx *AATx) chainID() *big.Int  { return tx.ChainID }
+func (tx *AATx) txType() byte           { return AATxType }
+func (tx *AATx) chainID() *big.Int      { return tx.ChainID }
 func (tx *AATx) accessList() AccessList { return tx.AccessList }
-func (tx *AATx) data() []byte       { return tx.SenderExecutionData }
-func (tx *AATx) gas() uint64        { return tx.totalGas() }
-func (tx *AATx) gasPrice() *big.Int { return tx.MaxFeePerGas }
-func (tx *AATx) gasTipCap() *big.Int { return tx.MaxPriorityFeePerGas }
-func (tx *AATx) gasFeeCap() *big.Int { return tx.MaxFeePerGas }
-func (tx *AATx) value() *big.Int    { return new(big.Int) }
-func (tx *AATx) nonce() uint64      { return tx.Nonce }
-func (tx *AATx) to() *Address       { return &tx.Sender }
+func (tx *AATx) data() []byte           { return tx.SenderExecutionData }
+func (tx *AATx) gas() uint64            { return tx.totalGas() }
+func (tx *AATx) gasPrice() *big.Int     { return tx.MaxFeePerGas }
+func (tx *AATx) gasTipCap() *big.Int    { return tx.MaxPriorityFeePerGas }
+func (tx *AATx) gasFeeCap() *big.Int    { return tx.MaxFeePerGas }
+func (tx *AATx) value() *big.Int        { return new(big.Int) }
+func (tx *AATx) nonce() uint64          { return tx.Nonce }
+func (tx *AATx) to() *Address           { return &tx.Sender }
 
 func (tx *AATx) totalGas() uint64 {
 	total := AABaseCost
@@ -115,23 +115,23 @@ func (tx *AATx) copy() TxData {
 
 // aaTxRLP is the RLP encoding layout for AATx per EIP-7701.
 type aaTxRLP struct {
-	ChainID              *big.Int
-	Nonce                uint64
-	Sender               Address
-	SenderValidationData []byte
-	Deployer             []byte // empty for nil, 20 bytes otherwise
-	DeployerData         []byte
-	Paymaster            []byte // empty for nil, 20 bytes otherwise
-	PaymasterData        []byte
-	SenderExecutionData  []byte
-	MaxPriorityFeePerGas *big.Int
-	MaxFeePerGas         *big.Int
-	SenderValidationGas   uint64
+	ChainID                *big.Int
+	Nonce                  uint64
+	Sender                 Address
+	SenderValidationData   []byte
+	Deployer               []byte // empty for nil, 20 bytes otherwise
+	DeployerData           []byte
+	Paymaster              []byte // empty for nil, 20 bytes otherwise
+	PaymasterData          []byte
+	SenderExecutionData    []byte
+	MaxPriorityFeePerGas   *big.Int
+	MaxFeePerGas           *big.Int
+	SenderValidationGas    uint64
 	PaymasterValidationGas uint64
-	SenderExecutionGas    uint64
-	PaymasterPostOpGas    uint64
-	AccessList           []accessTupleRLP
-	AuthorizationList    []authorizationRLP
+	SenderExecutionGas     uint64
+	PaymasterPostOpGas     uint64
+	AccessList             []accessTupleRLP
+	AuthorizationList      []authorizationRLP
 }
 
 // EncodeAATx encodes an AATx as a typed transaction envelope: 0x05 || RLP([...]).

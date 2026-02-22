@@ -84,10 +84,10 @@ type UnifiedBeaconState struct {
 	Slashings [8192]uint64
 
 	// Justification and finalization.
-	JustificationBitsU     [4]bool
-	PreviousJustified      UnifiedCheckpoint
-	CurrentJustified       UnifiedCheckpoint
-	FinalizedCheckpointU   UnifiedCheckpoint
+	JustificationBitsU   [4]bool
+	PreviousJustified    UnifiedCheckpoint
+	CurrentJustified     UnifiedCheckpoint
+	FinalizedCheckpointU UnifiedCheckpoint
 
 	// Block / state root history (ring buffer).
 	BlockRoots [8192][32]byte

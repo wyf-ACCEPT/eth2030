@@ -29,10 +29,10 @@ var (
 type GateType uint8
 
 const (
-	GateAdd   GateType = 0x01 // output = left + right (mod p)
-	GateMul   GateType = 0x02 // output = left * right (mod p)
-	GateConst GateType = 0x03 // output = constant value
-	GateSub   GateType = 0x04 // output = left - right (mod p)
+	GateAdd    GateType = 0x01 // output = left + right (mod p)
+	GateMul    GateType = 0x02 // output = left * right (mod p)
+	GateConst  GateType = 0x03 // output = constant value
+	GateSub    GateType = 0x04 // output = left - right (mod p)
 	GateAssert GateType = 0x05 // assert left == right (no output wire)
 )
 

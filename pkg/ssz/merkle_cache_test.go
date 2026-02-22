@@ -165,8 +165,8 @@ func TestMerkleCacheHitRate(t *testing.T) {
 	key := makeHash(0x01)
 	mc.PutHash(key, makeHash(0xaa))
 
-	mc.GetHash(key) // hit
-	mc.GetHash(key) // hit
+	mc.GetHash(key)            // hit
+	mc.GetHash(key)            // hit
 	mc.GetHash(makeHash(0x99)) // miss
 
 	rate := mc.HitRate()

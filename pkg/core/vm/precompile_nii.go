@@ -22,12 +22,12 @@ var (
 
 // NII precompile errors.
 var (
-	ErrNiiInputTooShort   = errors.New("nii: input too short")
-	ErrNiiZeroModulus     = errors.New("nii: zero modulus")
-	ErrNiiZeroFieldSize   = errors.New("nii: zero field size")
+	ErrNiiInputTooShort     = errors.New("nii: input too short")
+	ErrNiiZeroModulus       = errors.New("nii: zero modulus")
+	ErrNiiZeroFieldSize     = errors.New("nii: zero field size")
 	ErrNiiFieldSizeTooLarge = errors.New("nii: field size exceeds 256 bytes")
-	ErrNiiNoInverse       = errors.New("nii: no modular inverse exists")
-	ErrNiiInvalidSigCount = errors.New("nii: invalid signature count")
+	ErrNiiNoInverse         = errors.New("nii: no modular inverse exists")
+	ErrNiiInvalidSigCount   = errors.New("nii: invalid signature count")
 )
 
 // Maximum field size in bytes (2048 bits).

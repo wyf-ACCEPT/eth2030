@@ -41,12 +41,12 @@ func TestRunMstoreReturn(t *testing.T) {
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 100000)
 	// PUSH1 0x42, PUSH1 0x00, MSTORE, PUSH1 0x20, PUSH1 0x00, RETURN
 	contract.Code = []byte{
-		byte(PUSH1), 0x42,  // push 0x42
-		byte(PUSH1), 0x00,  // push offset 0
-		byte(MSTORE),       // mstore(0, 0x42)
-		byte(PUSH1), 0x20,  // push size 32
-		byte(PUSH1), 0x00,  // push offset 0
-		byte(RETURN),       // return mem[0:32]
+		byte(PUSH1), 0x42, // push 0x42
+		byte(PUSH1), 0x00, // push offset 0
+		byte(MSTORE),      // mstore(0, 0x42)
+		byte(PUSH1), 0x20, // push size 32
+		byte(PUSH1), 0x00, // push offset 0
+		byte(RETURN), // return mem[0:32]
 	}
 
 	ret, err := evm.Run(contract, nil)
@@ -74,13 +74,13 @@ func TestRunCalldataload(t *testing.T) {
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 100000)
 	// PUSH1 0x00, CALLDATALOAD, PUSH1 0x00, MSTORE, PUSH1 0x20, PUSH1 0x00, RETURN
 	contract.Code = []byte{
-		byte(PUSH1), 0x00,  // push offset 0
+		byte(PUSH1), 0x00, // push offset 0
 		byte(CALLDATALOAD), // load 32 bytes from calldata at offset 0
 		byte(PUSH1), 0x00,  // push offset 0
-		byte(MSTORE),       // store in memory at 0
-		byte(PUSH1), 0x20,  // push size 32
-		byte(PUSH1), 0x00,  // push offset 0
-		byte(RETURN),       // return mem[0:32]
+		byte(MSTORE),      // store in memory at 0
+		byte(PUSH1), 0x20, // push size 32
+		byte(PUSH1), 0x00, // push offset 0
+		byte(RETURN), // return mem[0:32]
 	}
 
 	// Provide 32 bytes of calldata
@@ -123,15 +123,15 @@ func TestRunRevertIntegration(t *testing.T) {
 	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 100000)
 	// Store 0xABCD at memory[0], then REVERT with offset=0, size=32
 	contract.Code = []byte{
-		byte(PUSH1), 0xAB,  // push 0xAB
-		byte(PUSH1), 0x00,  // push offset 0
-		byte(MSTORE8),      // mstore8(0, 0xAB)
-		byte(PUSH1), 0xCD,  // push 0xCD
-		byte(PUSH1), 0x01,  // push offset 1
-		byte(MSTORE8),      // mstore8(1, 0xCD)
-		byte(PUSH1), 0x02,  // push size 2
-		byte(PUSH1), 0x00,  // push offset 0
-		byte(REVERT),       // revert with mem[0:2]
+		byte(PUSH1), 0xAB, // push 0xAB
+		byte(PUSH1), 0x00, // push offset 0
+		byte(MSTORE8),     // mstore8(0, 0xAB)
+		byte(PUSH1), 0xCD, // push 0xCD
+		byte(PUSH1), 0x01, // push offset 1
+		byte(MSTORE8),     // mstore8(1, 0xCD)
+		byte(PUSH1), 0x02, // push size 2
+		byte(PUSH1), 0x00, // push offset 0
+		byte(REVERT), // revert with mem[0:2]
 	}
 
 	ret, err := evm.Run(contract, nil)
@@ -215,10 +215,10 @@ func TestRunJumpDestIntegration(t *testing.T) {
 	// PUSH1 0x04, JUMP, INVALID, JUMPDEST, STOP
 	// Jump over the INVALID to the JUMPDEST at position 4, then STOP.
 	contract.Code = []byte{
-		byte(PUSH1), 0x04,  // push jump target
-		byte(JUMP),         // jump to position 4
-		byte(INVALID),      // should be skipped
-		byte(JUMPDEST),     // position 4: valid target
+		byte(PUSH1), 0x04, // push jump target
+		byte(JUMP),     // jump to position 4
+		byte(INVALID),  // should be skipped
+		byte(JUMPDEST), // position 4: valid target
 		byte(STOP),
 	}
 
@@ -241,18 +241,18 @@ func TestRunKeccak256(t *testing.T) {
 		// First, expand memory to 64 bytes by storing a zero at offset 32
 		byte(PUSH1), 0x00,
 		byte(PUSH1), 0x20,
-		byte(MSTORE),       // store 0 at offset 32 (expands memory to 64)
+		byte(MSTORE), // store 0 at offset 32 (expands memory to 64)
 		byte(PUSH1), 0x00,
 		byte(PUSH1), 0x00,
-		byte(MSTORE),       // store 0 at offset 0
-		byte(PUSH1), 0x20,  // size = 32
-		byte(PUSH1), 0x00,  // offset = 0
-		byte(KECCAK256),    // hash mem[0:32]
-		byte(PUSH1), 0x00,  // offset = 0
-		byte(MSTORE),       // store hash at offset 0
-		byte(PUSH1), 0x20,  // size = 32
-		byte(PUSH1), 0x00,  // offset = 0
-		byte(RETURN),       // return mem[0:32]
+		byte(MSTORE),      // store 0 at offset 0
+		byte(PUSH1), 0x20, // size = 32
+		byte(PUSH1), 0x00, // offset = 0
+		byte(KECCAK256),   // hash mem[0:32]
+		byte(PUSH1), 0x00, // offset = 0
+		byte(MSTORE),      // store hash at offset 0
+		byte(PUSH1), 0x20, // size = 32
+		byte(PUSH1), 0x00, // offset = 0
+		byte(RETURN), // return mem[0:32]
 	}
 
 	ret, err := evm.Run(contract, nil)
@@ -351,7 +351,7 @@ func TestRunSstoreSloadWithState(t *testing.T) {
 	// PUSH1 0x20, PUSH1 0x00, RETURN      -- return 32 bytes
 	contract := NewContract(
 		types.BytesToAddress([]byte{0x01}), // caller
-		contractAddr,                        // contract address
+		contractAddr,                       // contract address
 		big.NewInt(0),
 		1000000,
 	)
@@ -415,9 +415,9 @@ func TestRunLogEmission(t *testing.T) {
 		byte(PUSH1), 0xCD,
 		byte(PUSH1), 0x01,
 		byte(MSTORE8),
-		byte(PUSH1), 0xFF,  // topic
-		byte(PUSH1), 0x02,  // size
-		byte(PUSH1), 0x00,  // offset
+		byte(PUSH1), 0xFF, // topic
+		byte(PUSH1), 0x02, // size
+		byte(PUSH1), 0x00, // offset
 		byte(LOG1),
 		byte(STOP),
 	}
@@ -472,17 +472,17 @@ func TestRunContractCallAndVerifyState(t *testing.T) {
 	// 6. Return the new counter value
 	contract := NewContract(callerAddr, contractAddr, big.NewInt(0), 1000000)
 	contract.Code = []byte{
-		byte(PUSH1), 0x00,  // slot 0
-		byte(SLOAD),        // load current value
-		byte(PUSH1), 0x01,  // push 1
-		byte(ADD),          // counter + 1
-		byte(DUP1),         // dup for return
-		byte(PUSH1), 0x00,  // slot 0
-		byte(SSTORE),       // store counter + 1
-		byte(PUSH1), 0x00,  // mem offset
-		byte(MSTORE),       // store in memory
-		byte(PUSH1), 0x20,  // size
-		byte(PUSH1), 0x00,  // offset
+		byte(PUSH1), 0x00, // slot 0
+		byte(SLOAD),       // load current value
+		byte(PUSH1), 0x01, // push 1
+		byte(ADD),         // counter + 1
+		byte(DUP1),        // dup for return
+		byte(PUSH1), 0x00, // slot 0
+		byte(SSTORE),      // store counter + 1
+		byte(PUSH1), 0x00, // mem offset
+		byte(MSTORE),      // store in memory
+		byte(PUSH1), 0x20, // size
+		byte(PUSH1), 0x00, // offset
 		byte(RETURN),
 	}
 

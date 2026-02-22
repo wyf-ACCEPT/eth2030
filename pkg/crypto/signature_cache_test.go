@@ -265,7 +265,7 @@ func TestSignatureCache_Purge(t *testing.T) {
 	for i := byte(0); i < 10; i++ {
 		c.Add(testHash(i), testEntry(i, true, SigTypeECDSA))
 	}
-	c.Get(testHash(0)) // hit
+	c.Get(testHash(0))  // hit
 	c.Get(testHash(99)) // miss
 
 	c.Purge()

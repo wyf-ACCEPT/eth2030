@@ -35,12 +35,12 @@ type WitnessFetcher interface {
 // without the full state trie. It includes account data, storage slots,
 // and bytecodes referenced during execution.
 type ExecutionWitness struct {
-	BlockRoot   types.Hash
-	StateRoot   types.Hash
-	Accounts    map[types.Address]*WitnessAccountData
-	Storage     map[types.Address]map[types.Hash]types.Hash
-	Bytecodes   map[types.Hash][]byte
-	CreatedAt   time.Time
+	BlockRoot types.Hash
+	StateRoot types.Hash
+	Accounts  map[types.Address]*WitnessAccountData
+	Storage   map[types.Address]map[types.Hash]types.Hash
+	Bytecodes map[types.Hash][]byte
+	CreatedAt time.Time
 }
 
 // WitnessAccountData holds account fields included in a witness.
@@ -110,9 +110,9 @@ func (sp *StatePrefill) PendingCount() int {
 
 // BeamCacheEntry holds a cached state entry with access tracking for LRU.
 type BeamCacheEntry struct {
-	Account    *WitnessAccountData
-	Storage    map[types.Hash]types.Hash
-	LastAccess time.Time
+	Account     *WitnessAccountData
+	Storage     map[types.Hash]types.Hash
+	LastAccess  time.Time
 	AccessCount uint64
 }
 
@@ -154,14 +154,14 @@ func DefaultFallbackConfig() FallbackConfig {
 
 // BeamStateSyncStats holds performance metrics for beam state sync.
 type BeamStateSyncStats struct {
-	WitnessesFetched uint64
-	WitnessErrors    uint64
-	CacheHits        uint64
-	CacheMisses      uint64
-	HitRate          float64
-	CacheSize        int
-	BlocksExecuted   uint64
-	FallbackActive   bool
+	WitnessesFetched  uint64
+	WitnessErrors     uint64
+	CacheHits         uint64
+	CacheMisses       uint64
+	HitRate           float64
+	CacheSize         int
+	BlocksExecuted    uint64
+	FallbackActive    bool
 	ConsecutiveMisses int
 }
 

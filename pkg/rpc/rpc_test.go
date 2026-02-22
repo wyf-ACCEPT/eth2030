@@ -264,8 +264,8 @@ func TestWeb3ClientVersion(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error: %v", resp.Error.Message)
 	}
-	if resp.Result != "eth2030/v0.1.0" {
-		t.Fatalf("want eth2030/v0.1.0, got %v", resp.Result)
+	if resp.Result != "ETH2030/v0.1.0" {
+		t.Fatalf("want ETH2030/v0.1.0, got %v", resp.Result)
 	}
 }
 

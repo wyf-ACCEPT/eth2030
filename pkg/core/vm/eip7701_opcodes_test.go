@@ -149,9 +149,9 @@ func TestOpAcceptRole_Success(t *testing.T) {
 	mem.Set(0, 4, []byte{0xDE, 0xAD, 0xBE, 0xEF})
 
 	// Push stack: frame_role, offset, length.
-	stack.Push(new(big.Int).SetUint64(4))                       // length
-	stack.Push(new(big.Int).SetUint64(0))                       // offset
-	stack.Push(new(big.Int).SetUint64(AARoleSenderValidation))  // frame_role
+	stack.Push(new(big.Int).SetUint64(4))                      // length
+	stack.Push(new(big.Int).SetUint64(0))                      // offset
+	stack.Push(new(big.Int).SetUint64(AARoleSenderValidation)) // frame_role
 
 	ret, err := opAcceptRole(&pc, evm, nil, mem, stack)
 	if err != nil {
@@ -180,9 +180,9 @@ func TestOpAcceptRole_RoleMismatch(t *testing.T) {
 	mem.Resize(32)
 
 	// Push wrong role.
-	stack.Push(new(big.Int).SetUint64(0))                      // length
-	stack.Push(new(big.Int).SetUint64(0))                      // offset
-	stack.Push(new(big.Int).SetUint64(AARoleSenderExecution))  // wrong role
+	stack.Push(new(big.Int).SetUint64(0))                     // length
+	stack.Push(new(big.Int).SetUint64(0))                     // offset
+	stack.Push(new(big.Int).SetUint64(AARoleSenderExecution)) // wrong role
 
 	_, err := opAcceptRole(&pc, evm, nil, mem, stack)
 	if err != ErrRoleMismatch {

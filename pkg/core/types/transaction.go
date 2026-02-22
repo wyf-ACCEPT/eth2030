@@ -82,17 +82,17 @@ type LegacyTx struct {
 	V, R, S  *big.Int
 }
 
-func (tx *LegacyTx) txType() byte      { return LegacyTxType }
-func (tx *LegacyTx) chainID() *big.Int  { return deriveChainID(tx.V) }
+func (tx *LegacyTx) txType() byte           { return LegacyTxType }
+func (tx *LegacyTx) chainID() *big.Int      { return deriveChainID(tx.V) }
 func (tx *LegacyTx) accessList() AccessList { return nil }
-func (tx *LegacyTx) data() []byte       { return tx.Data }
-func (tx *LegacyTx) gas() uint64        { return tx.Gas }
-func (tx *LegacyTx) gasPrice() *big.Int { return tx.GasPrice }
-func (tx *LegacyTx) gasTipCap() *big.Int { return tx.GasPrice }
-func (tx *LegacyTx) gasFeeCap() *big.Int { return tx.GasPrice }
-func (tx *LegacyTx) value() *big.Int    { return tx.Value }
-func (tx *LegacyTx) nonce() uint64      { return tx.Nonce }
-func (tx *LegacyTx) to() *Address       { return tx.To }
+func (tx *LegacyTx) data() []byte           { return tx.Data }
+func (tx *LegacyTx) gas() uint64            { return tx.Gas }
+func (tx *LegacyTx) gasPrice() *big.Int     { return tx.GasPrice }
+func (tx *LegacyTx) gasTipCap() *big.Int    { return tx.GasPrice }
+func (tx *LegacyTx) gasFeeCap() *big.Int    { return tx.GasPrice }
+func (tx *LegacyTx) value() *big.Int        { return tx.Value }
+func (tx *LegacyTx) nonce() uint64          { return tx.Nonce }
+func (tx *LegacyTx) to() *Address           { return tx.To }
 func (tx *LegacyTx) copy() TxData {
 	cpy := &LegacyTx{
 		Nonce: tx.Nonce,
@@ -132,16 +132,16 @@ type AccessListTx struct {
 }
 
 func (tx *AccessListTx) txType() byte           { return AccessListTxType }
-func (tx *AccessListTx) chainID() *big.Int       { return tx.ChainID }
-func (tx *AccessListTx) accessList() AccessList  { return tx.AccessList }
-func (tx *AccessListTx) data() []byte            { return tx.Data }
-func (tx *AccessListTx) gas() uint64             { return tx.Gas }
-func (tx *AccessListTx) gasPrice() *big.Int      { return tx.GasPrice }
-func (tx *AccessListTx) gasTipCap() *big.Int     { return tx.GasPrice }
-func (tx *AccessListTx) gasFeeCap() *big.Int     { return tx.GasPrice }
-func (tx *AccessListTx) value() *big.Int         { return tx.Value }
-func (tx *AccessListTx) nonce() uint64           { return tx.Nonce }
-func (tx *AccessListTx) to() *Address            { return tx.To }
+func (tx *AccessListTx) chainID() *big.Int      { return tx.ChainID }
+func (tx *AccessListTx) accessList() AccessList { return tx.AccessList }
+func (tx *AccessListTx) data() []byte           { return tx.Data }
+func (tx *AccessListTx) gas() uint64            { return tx.Gas }
+func (tx *AccessListTx) gasPrice() *big.Int     { return tx.GasPrice }
+func (tx *AccessListTx) gasTipCap() *big.Int    { return tx.GasPrice }
+func (tx *AccessListTx) gasFeeCap() *big.Int    { return tx.GasPrice }
+func (tx *AccessListTx) value() *big.Int        { return tx.Value }
+func (tx *AccessListTx) nonce() uint64          { return tx.Nonce }
+func (tx *AccessListTx) to() *Address           { return tx.To }
 func (tx *AccessListTx) copy() TxData {
 	cpy := &AccessListTx{
 		Nonce: tx.Nonce,
@@ -188,16 +188,16 @@ type DynamicFeeTx struct {
 }
 
 func (tx *DynamicFeeTx) txType() byte           { return DynamicFeeTxType }
-func (tx *DynamicFeeTx) chainID() *big.Int       { return tx.ChainID }
-func (tx *DynamicFeeTx) accessList() AccessList  { return tx.AccessList }
-func (tx *DynamicFeeTx) data() []byte            { return tx.Data }
-func (tx *DynamicFeeTx) gas() uint64             { return tx.Gas }
-func (tx *DynamicFeeTx) gasPrice() *big.Int      { return tx.GasFeeCap }
-func (tx *DynamicFeeTx) gasTipCap() *big.Int     { return tx.GasTipCap }
-func (tx *DynamicFeeTx) gasFeeCap() *big.Int     { return tx.GasFeeCap }
-func (tx *DynamicFeeTx) value() *big.Int         { return tx.Value }
-func (tx *DynamicFeeTx) nonce() uint64           { return tx.Nonce }
-func (tx *DynamicFeeTx) to() *Address            { return tx.To }
+func (tx *DynamicFeeTx) chainID() *big.Int      { return tx.ChainID }
+func (tx *DynamicFeeTx) accessList() AccessList { return tx.AccessList }
+func (tx *DynamicFeeTx) data() []byte           { return tx.Data }
+func (tx *DynamicFeeTx) gas() uint64            { return tx.Gas }
+func (tx *DynamicFeeTx) gasPrice() *big.Int     { return tx.GasFeeCap }
+func (tx *DynamicFeeTx) gasTipCap() *big.Int    { return tx.GasTipCap }
+func (tx *DynamicFeeTx) gasFeeCap() *big.Int    { return tx.GasFeeCap }
+func (tx *DynamicFeeTx) value() *big.Int        { return tx.Value }
+func (tx *DynamicFeeTx) nonce() uint64          { return tx.Nonce }
+func (tx *DynamicFeeTx) to() *Address           { return tx.To }
 func (tx *DynamicFeeTx) copy() TxData {
 	cpy := &DynamicFeeTx{
 		Nonce: tx.Nonce,
@@ -249,16 +249,16 @@ type BlobTx struct {
 }
 
 func (tx *BlobTx) txType() byte           { return BlobTxType }
-func (tx *BlobTx) chainID() *big.Int       { return tx.ChainID }
-func (tx *BlobTx) accessList() AccessList  { return tx.AccessList }
-func (tx *BlobTx) data() []byte            { return tx.Data }
-func (tx *BlobTx) gas() uint64             { return tx.Gas }
-func (tx *BlobTx) gasPrice() *big.Int      { return tx.GasFeeCap }
-func (tx *BlobTx) gasTipCap() *big.Int     { return tx.GasTipCap }
-func (tx *BlobTx) gasFeeCap() *big.Int     { return tx.GasFeeCap }
-func (tx *BlobTx) value() *big.Int         { return tx.Value }
-func (tx *BlobTx) nonce() uint64           { return tx.Nonce }
-func (tx *BlobTx) to() *Address            { addr := tx.To; return &addr }
+func (tx *BlobTx) chainID() *big.Int      { return tx.ChainID }
+func (tx *BlobTx) accessList() AccessList { return tx.AccessList }
+func (tx *BlobTx) data() []byte           { return tx.Data }
+func (tx *BlobTx) gas() uint64            { return tx.Gas }
+func (tx *BlobTx) gasPrice() *big.Int     { return tx.GasFeeCap }
+func (tx *BlobTx) gasTipCap() *big.Int    { return tx.GasTipCap }
+func (tx *BlobTx) gasFeeCap() *big.Int    { return tx.GasFeeCap }
+func (tx *BlobTx) value() *big.Int        { return tx.Value }
+func (tx *BlobTx) nonce() uint64          { return tx.Nonce }
+func (tx *BlobTx) to() *Address           { addr := tx.To; return &addr }
 func (tx *BlobTx) copy() TxData {
 	cpy := &BlobTx{
 		Nonce: tx.Nonce,
@@ -316,16 +316,16 @@ type SetCodeTx struct {
 }
 
 func (tx *SetCodeTx) txType() byte           { return SetCodeTxType }
-func (tx *SetCodeTx) chainID() *big.Int       { return tx.ChainID }
-func (tx *SetCodeTx) accessList() AccessList  { return tx.AccessList }
-func (tx *SetCodeTx) data() []byte            { return tx.Data }
-func (tx *SetCodeTx) gas() uint64             { return tx.Gas }
-func (tx *SetCodeTx) gasPrice() *big.Int      { return tx.GasFeeCap }
-func (tx *SetCodeTx) gasTipCap() *big.Int     { return tx.GasTipCap }
-func (tx *SetCodeTx) gasFeeCap() *big.Int     { return tx.GasFeeCap }
-func (tx *SetCodeTx) value() *big.Int         { return tx.Value }
-func (tx *SetCodeTx) nonce() uint64           { return tx.Nonce }
-func (tx *SetCodeTx) to() *Address            { addr := tx.To; return &addr }
+func (tx *SetCodeTx) chainID() *big.Int      { return tx.ChainID }
+func (tx *SetCodeTx) accessList() AccessList { return tx.AccessList }
+func (tx *SetCodeTx) data() []byte           { return tx.Data }
+func (tx *SetCodeTx) gas() uint64            { return tx.Gas }
+func (tx *SetCodeTx) gasPrice() *big.Int     { return tx.GasFeeCap }
+func (tx *SetCodeTx) gasTipCap() *big.Int    { return tx.GasTipCap }
+func (tx *SetCodeTx) gasFeeCap() *big.Int    { return tx.GasFeeCap }
+func (tx *SetCodeTx) value() *big.Int        { return tx.Value }
+func (tx *SetCodeTx) nonce() uint64          { return tx.Nonce }
+func (tx *SetCodeTx) to() *Address           { addr := tx.To; return &addr }
 func (tx *SetCodeTx) copy() TxData {
 	cpy := &SetCodeTx{
 		Nonce: tx.Nonce,

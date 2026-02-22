@@ -1,4 +1,4 @@
-<h1 align="center">eth2030</h1>
+<h1 align="center">ETH2030</h1>
 
 <p align="center">
   <strong>Ethereum execution client targeting the EF Protocol L1 Strawmap roadmap</strong>
@@ -94,7 +94,7 @@ go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
           |
  +--------v--------------------------+     +--------------------+
  |     go-ethereum EVM (v1.17.0)     |     | Consensus Layer    |
- |  + 13 eth2030 custom precompiles  |     | SSF, Attestations  |
+ |  + 13 ETH2030 custom precompiles  |     | SSF, Attestations  |
  +--------+--------------------------+     +--------------------+
           |
  +--------v--------------------------+     +-------------------+
@@ -115,14 +115,14 @@ go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
 
 ## go-ethereum Integration
 
-eth2030 imports go-ethereum v1.17.0 as a library for EVM execution, achieving 100% EF state test conformance:
+ETH2030 imports go-ethereum v1.17.0 as a library for EVM execution, achieving 100% EF state test conformance:
 
 | Component | Description |
 |-----------|-------------|
 | `pkg/geth/processor.go` | Block processor using `gethcore.ApplyMessage` |
 | `pkg/geth/extensions.go` | 13 custom precompile injection via `evm.SetPrecompiles()` |
 | `pkg/geth/statedb.go` | State creation using go-ethereum's real trie DB |
-| `pkg/geth/config.go` | Chain config mapping (eth2030 forks to go-ethereum params) |
+| `pkg/geth/config.go` | Chain config mapping (ETH2030 forks to go-ethereum params) |
 
 **Custom precompiles injected:** 4 Glamsterdam repriced (0x06, 0x08, 0x09, 0x0a), 1 NTT (0x15), 4 NII (0x0201-0x0204), 4 field arithmetic (0x0205-0x0208).
 

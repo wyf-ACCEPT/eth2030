@@ -40,10 +40,10 @@ func (d DimensionType) String() string {
 
 // Multidimensional fee market errors.
 var (
-	ErrFeeMarketInvalidConfig  = errors.New("fee_market: invalid config")
-	ErrFeeBelowBaseFee         = errors.New("fee_market: max fee below base fee")
-	ErrBlobFeeBelowBaseFee     = errors.New("fee_market: max blob fee below base fee")
-	ErrAccessFeeBelowBaseFee   = errors.New("fee_market: max access fee below base fee")
+	ErrFeeMarketInvalidConfig = errors.New("fee_market: invalid config")
+	ErrFeeBelowBaseFee        = errors.New("fee_market: max fee below base fee")
+	ErrBlobFeeBelowBaseFee    = errors.New("fee_market: max blob fee below base fee")
+	ErrAccessFeeBelowBaseFee  = errors.New("fee_market: max access fee below base fee")
 )
 
 // DimensionConfig holds the parameters for a single gas dimension's
@@ -219,11 +219,11 @@ func adjustBaseFee(currentFee *big.Int, gasUsed uint64, cfg DimensionConfig) *bi
 
 // MultidimTx represents a transaction with multidimensional gas parameters.
 type MultidimTx struct {
-	GasLimit         uint64   // execution gas limit
-	BlobCount        uint64   // number of blobs attached
-	AccessListSize   uint64   // access gas budget requested
-	MaxFeePerGas     *big.Int // max fee per execution gas (wei)
-	MaxBlobFeePerGas *big.Int // max fee per blob gas (wei)
+	GasLimit           uint64   // execution gas limit
+	BlobCount          uint64   // number of blobs attached
+	AccessListSize     uint64   // access gas budget requested
+	MaxFeePerGas       *big.Int // max fee per execution gas (wei)
+	MaxBlobFeePerGas   *big.Int // max fee per blob gas (wei)
 	MaxAccessFeePerGas *big.Int // max fee per access gas (wei)
 }
 

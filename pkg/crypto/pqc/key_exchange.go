@@ -28,9 +28,9 @@ const (
 	KyberEta2 = 2    // CBD noise parameter for encryption noise.
 
 	// Derived sizes.
-	kyberPolyBytes        = 384  // 12 bits per coefficient, 256 coeffs.
-	kyberPolyCompBytes    = 320  // Compressed polynomial (du=10 bits): 256*10/8.
-	kyberPolyCompBytesV   = 128  // Compressed polynomial v (dv=4 bits): 256*4/8.
+	kyberPolyBytes        = 384 // 12 bits per coefficient, 256 coeffs.
+	kyberPolyCompBytes    = 320 // Compressed polynomial (du=10 bits): 256*10/8.
+	kyberPolyCompBytesV   = 128 // Compressed polynomial v (dv=4 bits): 256*4/8.
 	kyberPublicKeySize    = KyberK*kyberPolyBytes + 32
 	kyberSecretKeySize    = KyberK * kyberPolyBytes
 	kyberCiphertextSize   = KyberK*kyberPolyCompBytes + kyberPolyCompBytesV

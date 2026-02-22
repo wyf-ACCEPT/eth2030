@@ -2,14 +2,14 @@
 // commit-reveal to prevent vote manipulation (CL Cryptography track).
 //
 // Extends the basic PrequorumEngine with:
-// - SecurePrequorumConfig: additional security parameters (min validators,
-//   signature verification flag, timeout).
-// - SecurePrequorumVote: vote with VRF proof for leader-selection weight and
-//   a commitment hash for the commit-reveal scheme.
-// - SecurePrequorumState: manages the two-phase protocol with vote tracking,
-//   commitment storage, and VRF-based quorum weighting.
-// - Two-phase commit-reveal: validators first commit a blinded vote, then
-//   reveal the actual vote, preventing front-running and last-revealer attacks.
+//   - SecurePrequorumConfig: additional security parameters (min validators,
+//     signature verification flag, timeout).
+//   - SecurePrequorumVote: vote with VRF proof for leader-selection weight and
+//     a commitment hash for the commit-reveal scheme.
+//   - SecurePrequorumState: manages the two-phase protocol with vote tracking,
+//     commitment storage, and VRF-based quorum weighting.
+//   - Two-phase commit-reveal: validators first commit a blinded vote, then
+//     reveal the actual vote, preventing front-running and last-revealer attacks.
 package consensus
 
 import (

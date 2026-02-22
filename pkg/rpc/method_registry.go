@@ -31,7 +31,7 @@ type MethodInfo struct {
 	Name        string
 	Handler     MethodHandler
 	Description string
-	ParamCount  int    // expected param count; -1 for variadic
+	ParamCount  int // expected param count; -1 for variadic
 	Deprecated  bool
 	Namespace   string // e.g. "eth", "debug", "admin"
 }

@@ -60,16 +60,16 @@ type PQRealSignerEntry struct {
 
 // Errors for the real PQ transaction validator.
 var (
-	ErrPQRealNilTx          = errors.New("pq_real_validator: nil transaction")
-	ErrPQRealNoSig          = errors.New("pq_real_validator: missing signature")
-	ErrPQRealNoPubKey       = errors.New("pq_real_validator: missing public key")
-	ErrPQRealUnknownAlg     = errors.New("pq_real_validator: unknown algorithm")
-	ErrPQRealSigSizeBad     = errors.New("pq_real_validator: signature size mismatch")
-	ErrPQRealPKSizeBad      = errors.New("pq_real_validator: public key size mismatch")
-	ErrPQRealVerifyFailed   = errors.New("pq_real_validator: signature verification failed")
-	ErrPQRealNoVerifier     = errors.New("pq_real_validator: no verifier registered")
-	ErrPQRealBatchEmpty     = errors.New("pq_real_validator: empty batch")
-	ErrPQRealHybridNoSig    = errors.New("pq_real_validator: hybrid mode requires classic signature")
+	ErrPQRealNilTx        = errors.New("pq_real_validator: nil transaction")
+	ErrPQRealNoSig        = errors.New("pq_real_validator: missing signature")
+	ErrPQRealNoPubKey     = errors.New("pq_real_validator: missing public key")
+	ErrPQRealUnknownAlg   = errors.New("pq_real_validator: unknown algorithm")
+	ErrPQRealSigSizeBad   = errors.New("pq_real_validator: signature size mismatch")
+	ErrPQRealPKSizeBad    = errors.New("pq_real_validator: public key size mismatch")
+	ErrPQRealVerifyFailed = errors.New("pq_real_validator: signature verification failed")
+	ErrPQRealNoVerifier   = errors.New("pq_real_validator: no verifier registered")
+	ErrPQRealBatchEmpty   = errors.New("pq_real_validator: empty batch")
+	ErrPQRealHybridNoSig  = errors.New("pq_real_validator: hybrid mode requires classic signature")
 )
 
 // PQTxValidatorReal validates PQ transactions by dispatching to real PQ

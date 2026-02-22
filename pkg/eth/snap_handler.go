@@ -44,11 +44,11 @@ const (
 
 // SnapAccountEntry represents an account in a range response.
 type SnapAccountEntry struct {
-	Hash    types.Hash
-	Address types.Address
-	Nonce   uint64
-	Balance []byte // big-endian encoded balance
-	Root    types.Hash
+	Hash     types.Hash
+	Address  types.Address
+	Nonce    uint64
+	Balance  []byte // big-endian encoded balance
+	Root     types.Hash
 	CodeHash types.Hash
 }
 
@@ -148,7 +148,7 @@ type RequestThrottler struct {
 
 // throttleWindow tracks request counts per peer.
 type throttleWindow struct {
-	count    int
+	count       int
 	windowStart time.Time
 }
 

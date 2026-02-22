@@ -7,9 +7,9 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	gethcore "github.com/ethereum/go-ethereum/core"
 	gethstate "github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/tracing"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethvm "github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/core/tracing"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
@@ -18,13 +18,13 @@ import (
 	"github.com/eth2030/eth2030/core/types"
 )
 
-// GethBlockProcessor executes eth2030 blocks using go-ethereum's EVM and
+// GethBlockProcessor executes ETH2030 blocks using go-ethereum's EVM and
 // state transition engine. It produces correct state roots and gas accounting
-// for all forks from Frontier through Prague, with optional eth2030 custom
+// for all forks from Frontier through Prague, with optional ETH2030 custom
 // precompile injection for Glamsterdam+ forks.
 type GethBlockProcessor struct {
-	config      *params.ChainConfig
-	eth2030Cfg  *eth2030core.ChainConfig // optional, for custom precompile injection
+	config     *params.ChainConfig
+	eth2030Cfg *eth2030core.ChainConfig // optional, for custom precompile injection
 }
 
 // NewGethBlockProcessor creates a processor for the given chain config.

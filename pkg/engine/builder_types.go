@@ -14,7 +14,7 @@ import (
 
 // BLS public key and signature sizes (BLS12-381).
 const (
-	BLSPubkeySize   = 48
+	BLSPubkeySize    = 48
 	BLSSignatureSize = 96
 )
 
@@ -31,9 +31,9 @@ type BuilderIndex uint64
 type BuilderStatus uint8
 
 const (
-	BuilderStatusActive      BuilderStatus = iota // actively participating
-	BuilderStatusExiting                          // requested exit, in cooldown
-	BuilderStatusWithdrawn                        // fully withdrawn
+	BuilderStatusActive    BuilderStatus = iota // actively participating
+	BuilderStatusExiting                        // requested exit, in cooldown
+	BuilderStatusWithdrawn                      // fully withdrawn
 )
 
 // Builder represents a registered builder in the ePBS system.
@@ -43,7 +43,7 @@ type Builder struct {
 	Index            BuilderIndex  `json:"index"`
 	FeeRecipient     types.Address `json:"feeRecipient"`
 	GasLimit         uint64        `json:"gasLimit"`
-	Balance          *big.Int      `json:"balance"`          // builder stake in wei
+	Balance          *big.Int      `json:"balance"` // builder stake in wei
 	Status           BuilderStatus `json:"status"`
 	RegistrationTime uint64        `json:"registrationTime"` // unix timestamp
 }
@@ -52,17 +52,17 @@ type Builder struct {
 // Per EIP-7732, the bid commits to the payload hash without revealing
 // the full payload contents until the reveal phase.
 type ExecutionPayloadBid struct {
-	ParentBlockHash types.Hash    `json:"parentBlockHash"`
-	ParentBlockRoot types.Hash    `json:"parentBlockRoot"`
-	BlockHash       types.Hash    `json:"blockHash"`
-	PrevRandao      types.Hash    `json:"prevRandao"`
-	FeeRecipient    types.Address `json:"feeRecipient"`
-	GasLimit        uint64        `json:"gasLimit"`
-	BuilderIndex    BuilderIndex  `json:"builderIndex"`
-	Slot            uint64        `json:"slot"`
-	Value           uint64        `json:"value"`            // payment to proposer in Gwei
-	ExecutionPayment uint64       `json:"executionPayment"` // payment on execution layer in Gwei
-	BlobKZGCommitments [][]byte   `json:"blobKzgCommitments"`
+	ParentBlockHash    types.Hash    `json:"parentBlockHash"`
+	ParentBlockRoot    types.Hash    `json:"parentBlockRoot"`
+	BlockHash          types.Hash    `json:"blockHash"`
+	PrevRandao         types.Hash    `json:"prevRandao"`
+	FeeRecipient       types.Address `json:"feeRecipient"`
+	GasLimit           uint64        `json:"gasLimit"`
+	BuilderIndex       BuilderIndex  `json:"builderIndex"`
+	Slot               uint64        `json:"slot"`
+	Value              uint64        `json:"value"`            // payment to proposer in Gwei
+	ExecutionPayment   uint64        `json:"executionPayment"` // payment on execution layer in Gwei
+	BlobKZGCommitments [][]byte      `json:"blobKzgCommitments"`
 }
 
 // SignedExecutionPayloadBid wraps an ExecutionPayloadBid with a BLS signature.

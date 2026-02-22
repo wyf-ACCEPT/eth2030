@@ -122,7 +122,8 @@ func blsFp2Sgn0(e *blsFp2) int {
 // blsFp2Sqrt returns a square root of e in Fp2, or nil if none exists.
 // For p = 3 mod 4: sqrt(a) = a^((p^2+7)/16) with verification.
 // We use the algorithm: since p = 3 mod 4, for Fp2 = Fp[u]/(u^2+1):
-//   sqrt(a+bu) via the formula for sqrt in Fp2.
+//
+//	sqrt(a+bu) via the formula for sqrt in Fp2.
 func blsFp2Sqrt(e *blsFp2) *blsFp2 {
 	if e.isZero() {
 		return blsFp2Zero()

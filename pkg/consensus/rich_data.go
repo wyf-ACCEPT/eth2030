@@ -19,10 +19,10 @@ var (
 type FieldType int
 
 const (
-	FieldString  FieldType = iota // string value
-	FieldInt                      // integer value
-	FieldBool                     // boolean value
-	FieldBytes                    // raw byte data
+	FieldString FieldType = iota // string value
+	FieldInt                     // integer value
+	FieldBool                    // boolean value
+	FieldBytes                   // raw byte data
 )
 
 // String returns a human-readable field type name.
@@ -76,8 +76,8 @@ type entryKey struct {
 // validators attaching structured metadata to consensus objects.
 type RichDataRegistry struct {
 	mu      sync.RWMutex
-	schemas map[string]*RichDataSchema       // name -> schema
-	entries map[entryKey][]*RichDataEntry     // (schema, slot) -> entries
+	schemas map[string]*RichDataSchema    // name -> schema
+	entries map[entryKey][]*RichDataEntry // (schema, slot) -> entries
 }
 
 // NewRichDataRegistry creates a new empty registry.

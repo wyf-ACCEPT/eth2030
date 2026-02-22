@@ -38,14 +38,14 @@ const (
 
 // Versioned hash errors.
 var (
-	ErrVHCommitmentNil       = errors.New("versioned_hashes: nil commitment")
-	ErrVHCommitmentSize      = errors.New("versioned_hashes: invalid commitment size")
-	ErrVHInvalidVersion      = errors.New("versioned_hashes: invalid version byte")
-	ErrVHCountMismatch       = errors.New("versioned_hashes: hash count mismatch")
-	ErrVHHashMismatch        = errors.New("versioned_hashes: hash mismatch at index")
-	ErrVHEmptyCommitments    = errors.New("versioned_hashes: empty commitments list")
-	ErrVHTxNotBlob           = errors.New("versioned_hashes: transaction is not a blob transaction")
-	ErrVHTxNoBlobHashes      = errors.New("versioned_hashes: blob transaction has no versioned hashes")
+	ErrVHCommitmentNil    = errors.New("versioned_hashes: nil commitment")
+	ErrVHCommitmentSize   = errors.New("versioned_hashes: invalid commitment size")
+	ErrVHInvalidVersion   = errors.New("versioned_hashes: invalid version byte")
+	ErrVHCountMismatch    = errors.New("versioned_hashes: hash count mismatch")
+	ErrVHHashMismatch     = errors.New("versioned_hashes: hash mismatch at index")
+	ErrVHEmptyCommitments = errors.New("versioned_hashes: empty commitments list")
+	ErrVHTxNotBlob        = errors.New("versioned_hashes: transaction is not a blob transaction")
+	ErrVHTxNoBlobHashes   = errors.New("versioned_hashes: blob transaction has no versioned hashes")
 )
 
 // ComputeVersionedHash computes an EIP-4844 versioned hash from a raw KZG

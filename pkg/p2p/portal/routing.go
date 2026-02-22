@@ -8,10 +8,10 @@ import (
 
 // Routing table constants for the portal content-addressed DHT.
 const (
-	BucketSize     = 16  // max entries per k-bucket
-	NumBuckets     = 256 // one bucket per XOR log distance
-	LookupAlpha    = 3   // concurrent lookup parallelism
-	MaxReplacements = 10 // replacement cache per bucket
+	BucketSize      = 16  // max entries per k-bucket
+	NumBuckets      = 256 // one bucket per XOR log distance
+	LookupAlpha     = 3   // concurrent lookup parallelism
+	MaxReplacements = 10  // replacement cache per bucket
 )
 
 // PeerInfo holds metadata about a portal peer in the routing table.

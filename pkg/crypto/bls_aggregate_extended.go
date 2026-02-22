@@ -195,10 +195,12 @@ func (ss *BLSSignatureSet) Len() int {
 //
 // Instead of checking each e(pk_i, H(m_i)) == e(G1, sig_i) individually,
 // the batch check picks random scalars r_i and verifies:
-//   e(sum(r_i * pk_i), H(m_i_shared)) * e(-G1, sum(r_i * sig_i)) == 1
+//
+//	e(sum(r_i * pk_i), H(m_i_shared)) * e(-G1, sum(r_i * sig_i)) == 1
 //
 // For distinct messages, the full multi-pairing form is used:
-//   product(e(r_i * pk_i, H(m_i))) * e(-G1, sum(r_i * sig_i)) == 1
+//
+//	product(e(r_i * pk_i, H(m_i))) * e(-G1, sum(r_i * sig_i)) == 1
 //
 // If any individual signature is invalid, the batch check fails.
 func (ss *BLSSignatureSet) Verify() bool {
@@ -434,7 +436,8 @@ func ComputeSigningRoot(domain [32]byte, messageRoot [32]byte) [32]byte {
 
 // ComputeDomain computes the beacon chain domain for a given domain type
 // and fork version. Per the spec:
-//   domain = domain_type(4) || fork_data_root(28)
+//
+//	domain = domain_type(4) || fork_data_root(28)
 func ComputeDomain(domainType [4]byte, forkVersion [4]byte, genesisValidatorsRoot [32]byte) [32]byte {
 	// fork_data_root = SHA-256(fork_version || genesis_validators_root)[:28]
 	h := sha256.New()

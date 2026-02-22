@@ -183,7 +183,7 @@ func (s *QuickSlotScheduler) GetDuties(slot uint64, validatorCount int) *Validat
 	}
 
 	return &ValidatorDuties{
-		ProposerIndex:   proposer,
+		ProposerIndex:    proposer,
 		CommitteeIndices: committee,
 	}
 }

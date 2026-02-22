@@ -219,7 +219,7 @@ func TestExtcall_InsufficientBalance(t *testing.T) {
 
 	// EXTCALL with value=100, but caller has no balance -> light failure (status 1).
 	code := []byte{
-		byte(PUSH1), 100,  // value = 100
+		byte(PUSH1), 100, // value = 100
 		byte(PUSH1), 0x00,
 		byte(PUSH1), 0x00,
 		byte(PUSH1), 0x02,
@@ -923,7 +923,7 @@ func TestEofcreate_InsufficientBalance(t *testing.T) {
 		byte(PUSH1), 0x00, // input_size
 		byte(PUSH1), 0x00, // input_offset
 		byte(PUSH1), 0x00, // salt
-		byte(PUSH1), 100,  // value = 100 (no balance)
+		byte(PUSH1), 100, // value = 100 (no balance)
 		byte(EOFCREATE), 0x00,
 		byte(PUSH1), 0x00,
 		byte(MSTORE),
@@ -962,7 +962,7 @@ func TestReturncontract_Basic(t *testing.T) {
 
 		// RETURNCONTRACT: aux_data_size=2, aux_data_offset=30 (0xaa is at byte 30, 0xbb at 31)
 		byte(PUSH1), 0x02, // aux_data_size
-		byte(PUSH1), 30,   // aux_data_offset
+		byte(PUSH1), 30, // aux_data_offset
 		byte(RETURNCONTRACT), 0x00,
 	}
 	contract := NewContract(types.Address{0x01}, types.Address{0x01}, nil, 100000)

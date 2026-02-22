@@ -12,10 +12,10 @@ import (
 
 // Errors for the slot-based state advancer.
 var (
-	ErrAdvanceTooFar         = errors.New("advance: slot exceeds lookahead limit")
-	ErrBranchNotFound        = errors.New("advance: speculative branch not found")
+	ErrAdvanceTooFar          = errors.New("advance: slot exceeds lookahead limit")
+	ErrBranchNotFound         = errors.New("advance: speculative branch not found")
 	ErrBranchAlreadyConfirmed = errors.New("advance: branch already confirmed")
-	ErrMaxBranches           = errors.New("advance: maximum speculative branches reached")
+	ErrMaxBranches            = errors.New("advance: maximum speculative branches reached")
 )
 
 // BranchStatus tracks the lifecycle of a speculative branch.
@@ -43,9 +43,9 @@ func (s BranchStatus) String() string {
 
 // AdvanceConfig configures the slot-based StateAdvancement system.
 type AdvanceConfig struct {
-	LookaheadSlots       uint64 // how many slots ahead we can speculate
-	MaxSpecBranches      int    // maximum concurrent speculative branches
-	PruneInterval        uint64 // prune branches older than this many slots
+	LookaheadSlots  uint64 // how many slots ahead we can speculate
+	MaxSpecBranches int    // maximum concurrent speculative branches
+	PruneInterval   uint64 // prune branches older than this many slots
 }
 
 // DefaultAdvanceConfig returns sensible defaults for advance state.
@@ -59,12 +59,12 @@ func DefaultAdvanceConfig() AdvanceConfig {
 
 // SpeculativeBranch represents a speculative state computed ahead of a block.
 type SpeculativeBranch struct {
-	ID             string       // unique branch identifier
-	ParentHash     types.Hash   // parent block hash this branch extends
-	Slot           uint64       // target slot number
-	PredictedRoot  types.Hash   // predicted state root after advance
-	Status         BranchStatus // current lifecycle status
-	CreatedAtSlot  uint64       // slot at which this branch was created
+	ID            string       // unique branch identifier
+	ParentHash    types.Hash   // parent block hash this branch extends
+	Slot          uint64       // target slot number
+	PredictedRoot types.Hash   // predicted state root after advance
+	Status        BranchStatus // current lifecycle status
+	CreatedAtSlot uint64       // slot at which this branch was created
 }
 
 // SlotAdvancer pre-computes state for upcoming slots before blocks arrive,

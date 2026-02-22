@@ -26,14 +26,14 @@ const (
 
 // Attestation errors.
 var (
-	ErrAttestationNilData        = errors.New("attestation: nil attestation data")
-	ErrAttestationEmptyBits      = errors.New("attestation: empty aggregation bits")
-	ErrAttestationEmptySig       = errors.New("attestation: empty signature")
+	ErrAttestationNilData           = errors.New("attestation: nil attestation data")
+	ErrAttestationEmptyBits         = errors.New("attestation: empty aggregation bits")
+	ErrAttestationEmptySig          = errors.New("attestation: empty signature")
 	ErrAttestationSourceAfterTarget = errors.New("attestation: source epoch after target epoch")
-	ErrAttestationFutureSlot     = errors.New("attestation: slot is in the future")
-	ErrAttestationEmptyCommittee = errors.New("attestation: empty committee bits")
-	ErrAttestationDataMismatch   = errors.New("attestation: data mismatch for aggregation")
-	ErrAttestationOverlapping    = errors.New("attestation: overlapping aggregation bits")
+	ErrAttestationFutureSlot        = errors.New("attestation: slot is in the future")
+	ErrAttestationEmptyCommittee    = errors.New("attestation: empty committee bits")
+	ErrAttestationDataMismatch      = errors.New("attestation: data mismatch for aggregation")
+	ErrAttestationOverlapping       = errors.New("attestation: overlapping aggregation bits")
 )
 
 // AttestationData represents the data that validators sign when attesting.

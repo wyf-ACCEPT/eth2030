@@ -16,11 +16,11 @@ import (
 
 // Call operation errors.
 var (
-	ErrCallDepthExceeded      = errors.New("call: max depth exceeded")
+	ErrCallDepthExceeded       = errors.New("call: max depth exceeded")
 	ErrCallInsufficientBalance = errors.New("call: insufficient balance for value transfer")
-	ErrCallReadOnlyValue      = errors.New("call: value transfer in static context")
-	ErrCallGasOverflow        = errors.New("call: gas calculation overflow")
-	ErrCallInputBoundsCheck   = errors.New("call: input bounds exceed memory")
+	ErrCallReadOnlyValue       = errors.New("call: value transfer in static context")
+	ErrCallGasOverflow         = errors.New("call: gas calculation overflow")
+	ErrCallInputBoundsCheck    = errors.New("call: input bounds exceed memory")
 )
 
 // CallKind identifies the type of call operation.
@@ -89,7 +89,7 @@ type CallGasCalculator struct {
 // NewCallGasCalculator returns a CallGasCalculator with standard parameters.
 func NewCallGasCalculator() *CallGasCalculator {
 	return &CallGasCalculator{
-		GasStipend:  CallStipend,    // 2300
+		GasStipend:  CallStipend,     // 2300
 		GasFraction: CallGasFraction, // 64
 	}
 }

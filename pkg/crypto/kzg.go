@@ -67,7 +67,8 @@ func KZGGetTrustedSetupG2() *BlsG2Point {
 // Verifies: e(C - [y]G1, G2) == e(pi, [s]G2 - [z]G2)
 //
 // This is equivalent to the pairing check:
-//   e(C - [y]G1, G2) * e(-pi, [s]G2 - [z]G2) == 1
+//
+//	e(C - [y]G1, G2) * e(-pi, [s]G2 - [z]G2) == 1
 func KZGVerifyProof(commitment *BlsG1Point, z, y *big.Int, proof *BlsG1Point) bool {
 	// Validate scalars are in range [0, r).
 	if z.Sign() < 0 || z.Cmp(blsR) >= 0 {
@@ -250,7 +251,8 @@ func KZGCommit(polyAtS *big.Int) *BlsG1Point {
 
 // KZGComputeProof computes a KZG opening proof for a polynomial commitment.
 // Given the secret s, evaluation point z, and polynomial value p(s), y = p(z):
-//   proof = [(p(s) - y) / (s - z)]G1
+//
+//	proof = [(p(s) - y) / (s - z)]G1
 //
 // This function is for testing: in practice the prover knows the polynomial
 // coefficients and computes the proof differently.

@@ -50,10 +50,10 @@ type RangeProof struct {
 
 // ShieldNote represents a note in the shielded pool.
 type ShieldNote struct {
-	Commitment     types.Hash    // Pedersen commitment to the value
-	NullifierHash  types.Hash    // hash used to mark this note as spent
-	EncryptedValue []byte        // encrypted value data for the recipient
-	RangeProof     *RangeProof   // proof that value is in valid range
+	Commitment     types.Hash  // Pedersen commitment to the value
+	NullifierHash  types.Hash  // hash used to mark this note as spent
+	EncryptedValue []byte      // encrypted value data for the recipient
+	RangeProof     *RangeProof // proof that value is in valid range
 }
 
 // ShieldedTransfer represents a complete shielded value transfer with

@@ -17,28 +17,28 @@ import (
 
 // Chain downloader errors.
 var (
-	ErrChainNoPeers     = errors.New("chain_downloader: no peers available")
-	ErrChainInvalidNum  = errors.New("chain_downloader: invalid block number sequence")
-	ErrChainParentHash  = errors.New("chain_downloader: parent hash mismatch")
-	ErrChainTimeout     = errors.New("chain_downloader: operation timed out")
-	ErrChainBadRange    = errors.New("chain_downloader: from > to in download range")
-	ErrChainEmptyBatch  = errors.New("chain_downloader: empty header or body batch")
+	ErrChainNoPeers    = errors.New("chain_downloader: no peers available")
+	ErrChainInvalidNum = errors.New("chain_downloader: invalid block number sequence")
+	ErrChainParentHash = errors.New("chain_downloader: parent hash mismatch")
+	ErrChainTimeout    = errors.New("chain_downloader: operation timed out")
+	ErrChainBadRange   = errors.New("chain_downloader: from > to in download range")
+	ErrChainEmptyBatch = errors.New("chain_downloader: empty header or body batch")
 )
 
 // Default chain downloader constants.
 const (
-	DefaultCDMaxPeers   = 25
-	DefaultCDMaxBlocks  = 1024
-	DefaultCDBatchSize  = 64
-	DefaultCDTimeout    = 15 * time.Second
+	DefaultCDMaxPeers  = 25
+	DefaultCDMaxBlocks = 1024
+	DefaultCDBatchSize = 64
+	DefaultCDTimeout   = 15 * time.Second
 )
 
 // DownloadConfig configures the ChainDownloader.
 type DownloadConfig struct {
-	MaxPeers   int           // maximum number of tracked peers
-	MaxBlocks  int           // max blocks to download per round
-	BatchSize  int           // number of headers per fetch request
-	Timeout    time.Duration // per-request timeout
+	MaxPeers  int           // maximum number of tracked peers
+	MaxBlocks int           // max blocks to download per round
+	BatchSize int           // number of headers per fetch request
+	Timeout   time.Duration // per-request timeout
 }
 
 // DefaultDownloadConfig returns a DownloadConfig with sensible defaults.
@@ -85,7 +85,7 @@ type ChainDownloader struct {
 	mu     gosync.RWMutex
 	config *DownloadConfig
 
-	peers        map[string]*PeerInfo
+	peers         map[string]*PeerInfo
 	announcements []announcement
 
 	progress DownloadProgress

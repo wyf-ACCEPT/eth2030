@@ -62,14 +62,14 @@ const (
 type ForkID string
 
 const (
-	ExtForkPhase0       ForkID = "phase0"
-	ExtForkAltair       ForkID = "altair"
-	ExtForkBellatrix    ForkID = "bellatrix"
-	ExtForkCapella      ForkID = "capella"
-	ExtForkDeneb        ForkID = "deneb"
-	ExtForkElectra      ForkID = "electra"
-	ExtForkGlamsterdam  ForkID = "glamsterdam"
-	ExtForkHogota       ForkID = "hogota"
+	ExtForkPhase0      ForkID = "phase0"
+	ExtForkAltair      ForkID = "altair"
+	ExtForkBellatrix   ForkID = "bellatrix"
+	ExtForkCapella     ForkID = "capella"
+	ExtForkDeneb       ForkID = "deneb"
+	ExtForkElectra     ForkID = "electra"
+	ExtForkGlamsterdam ForkID = "glamsterdam"
+	ExtForkHogota      ForkID = "hogota"
 )
 
 // ForkScheduleEntry records the activation epoch for a fork.
@@ -97,11 +97,11 @@ type ExtConsensusConfig struct {
 	TargetAggregatorsPerCommit uint64
 
 	// Rewards and penalties.
-	BaseRewardFactor              uint64
-	ProposerRewardQuotient        uint64
-	WhistleblowerRewardQuotient   uint64
-	InactivityPenaltyQuotient     uint64
-	MinSlashingPenaltyQuotient    uint64
+	BaseRewardFactor               uint64
+	ProposerRewardQuotient         uint64
+	WhistleblowerRewardQuotient    uint64
+	InactivityPenaltyQuotient      uint64
+	MinSlashingPenaltyQuotient     uint64
 	ProportionalSlashingMultiplier uint64
 
 	// Fork schedule.

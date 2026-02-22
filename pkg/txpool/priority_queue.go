@@ -16,18 +16,18 @@ import (
 
 // Priority queue errors.
 var (
-	ErrPQFull          = errors.New("txpool/pq: priority queue is full")
-	ErrPQDuplicate     = errors.New("txpool/pq: transaction already in queue")
-	ErrPQNotFound      = errors.New("txpool/pq: transaction not found")
-	ErrPQNilTx         = errors.New("txpool/pq: nil transaction")
-	ErrPQNonceGap      = errors.New("txpool/pq: nonce gap detected")
+	ErrPQFull      = errors.New("txpool/pq: priority queue is full")
+	ErrPQDuplicate = errors.New("txpool/pq: transaction already in queue")
+	ErrPQNotFound  = errors.New("txpool/pq: transaction not found")
+	ErrPQNilTx     = errors.New("txpool/pq: nil transaction")
+	ErrPQNonceGap  = errors.New("txpool/pq: nonce gap detected")
 )
 
 // TxPriorityQueueConfig configures the priority queue.
 type TxPriorityQueueConfig struct {
-	MaxSize       int      // max entries in queue (0 = unlimited)
-	BaseFee       *big.Int // current block base fee
-	BlobBaseFee   *big.Int // current blob base fee
+	MaxSize     int      // max entries in queue (0 = unlimited)
+	BaseFee     *big.Int // current block base fee
+	BlobBaseFee *big.Int // current blob base fee
 }
 
 // QueueEntry holds a transaction with cached priority metadata.

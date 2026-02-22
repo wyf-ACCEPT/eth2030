@@ -14,15 +14,15 @@ import (
 
 // Circuit builder errors.
 var (
-	ErrCircuitFinalized  = errors.New("circuit: already finalized")
-	ErrCircuitNotReady   = errors.New("circuit: not finalized")
-	ErrInvalidVariable   = errors.New("circuit: invalid variable index")
-	ErrConstraintFailed  = errors.New("circuit: constraint not satisfied")
-	ErrVerificationFail  = errors.New("circuit: proof verification failed")
-	ErrNilValue          = errors.New("circuit: nil value")
-	ErrDuplicatePublic   = errors.New("circuit: duplicate public input")
-	ErrProofTooShort     = errors.New("circuit: proof data too short")
-	ErrPublicInputCount  = errors.New("circuit: public input count mismatch")
+	ErrCircuitFinalized = errors.New("circuit: already finalized")
+	ErrCircuitNotReady  = errors.New("circuit: not finalized")
+	ErrInvalidVariable  = errors.New("circuit: invalid variable index")
+	ErrConstraintFailed = errors.New("circuit: constraint not satisfied")
+	ErrVerificationFail = errors.New("circuit: proof verification failed")
+	ErrNilValue         = errors.New("circuit: nil value")
+	ErrDuplicatePublic  = errors.New("circuit: duplicate public input")
+	ErrProofTooShort    = errors.New("circuit: proof data too short")
+	ErrPublicInputCount = errors.New("circuit: public input count mismatch")
 )
 
 // Variable represents a wire in the R1CS circuit.

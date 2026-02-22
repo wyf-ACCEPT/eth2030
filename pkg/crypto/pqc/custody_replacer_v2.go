@@ -56,11 +56,11 @@ func DefaultCustodyReplacerV2Config() CustodyReplacerV2Config {
 
 // PQCustodyKey holds a post-quantum custody key pair.
 type PQCustodyKey struct {
-	KeyID      string // unique key identifier
-	PublicKey  []byte // PQ-secure public key
-	PrivateKey []byte // PQ-secure private key (seed)
+	KeyID        string // unique key identifier
+	PublicKey    []byte // PQ-secure public key
+	PrivateKey   []byte // PQ-secure private key (seed)
 	CreatedEpoch uint64 // epoch when key was created
-	Expired    bool   // whether this key has been expired
+	Expired      bool   // whether this key has been expired
 }
 
 // PQCustodyProof is a post-quantum custody proof for data.
@@ -78,8 +78,8 @@ type PQCustodyProof struct {
 type CustodyReplacerV2 struct {
 	mu         sync.RWMutex
 	config     CustodyReplacerV2Config
-	keys       map[string]*PQCustodyKey    // keyID -> key pair
-	proofCache map[string]*PQCustodyProof  // "keyID:dataHash" -> proof
+	keys       map[string]*PQCustodyKey   // keyID -> key pair
+	proofCache map[string]*PQCustodyProof // "keyID:dataHash" -> proof
 }
 
 // NewCustodyReplacerV2 creates a new V2 custody replacer with the given config.

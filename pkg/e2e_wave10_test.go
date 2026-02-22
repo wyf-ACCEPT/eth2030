@@ -350,10 +350,10 @@ func (b *blockchainBackend) SendTransaction(tx *types.Transaction) error { retur
 func (b *blockchainBackend) GetTransaction(hash types.Hash) (*types.Transaction, uint64, uint64) {
 	return nil, 0, 0
 }
-func (b *blockchainBackend) SuggestGasPrice() *big.Int { return big.NewInt(1000000000) }
+func (b *blockchainBackend) SuggestGasPrice() *big.Int                         { return big.NewInt(1000000000) }
 func (b *blockchainBackend) GetReceipts(blockHash types.Hash) []*types.Receipt { return nil }
-func (b *blockchainBackend) GetLogs(blockHash types.Hash) []*types.Log     { return nil }
-func (b *blockchainBackend) GetBlockReceipts(number uint64) []*types.Receipt { return nil }
+func (b *blockchainBackend) GetLogs(blockHash types.Hash) []*types.Log         { return nil }
+func (b *blockchainBackend) GetBlockReceipts(number uint64) []*types.Receipt   { return nil }
 func (b *blockchainBackend) EVMCall(from types.Address, to *types.Address, data []byte, gas uint64, value *big.Int, blockNumber rpc.BlockNumber) ([]byte, uint64, error) {
 	return nil, 0, nil
 }
@@ -442,8 +442,8 @@ func TestRPCE2E_ClientVersion(t *testing.T) {
 	if resp.Error != nil {
 		t.Fatalf("error: %v", resp.Error.Message)
 	}
-	if resp.Result != "eth2030/v0.1.0" {
-		t.Fatalf("want eth2030/v0.1.0, got %v", resp.Result)
+	if resp.Result != "ETH2030/v0.1.0" {
+		t.Fatalf("want ETH2030/v0.1.0, got %v", resp.Result)
 	}
 }
 
@@ -664,7 +664,8 @@ func deployContract(t *testing.T, evm *vm.EVM, statedb *state.MemoryStateDB, sen
 // CREATE -> CALL boundary and that gas accounting is correct.
 //
 // Contract A (deployed via CREATE):
-//   Runtime: CALLDATALOAD(0) -> SSTORE(slot 0) -> SLOAD(slot 0) -> MSTORE(0) -> RETURN(0,32)
+//
+//	Runtime: CALLDATALOAD(0) -> SSTORE(slot 0) -> SLOAD(slot 0) -> MSTORE(0) -> RETURN(0,32)
 //
 // The test:
 //  1. Deploys A.
@@ -698,11 +699,11 @@ func TestE2E_CrossPackage_CreateCallStorage(t *testing.T) {
 	// Init code: CODECOPY(0, initLen, runtimeLen) -> RETURN(0, runtimeLen)
 	initPrefix := []byte{
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 initLen (placeholder)
-		0x60, 0x00,       // PUSH1 0x00
+		0x60, 0x00, // PUSH1 initLen (placeholder)
+		0x60, 0x00, // PUSH1 0x00
 		0x39,             // CODECOPY
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 0x00
+		0x60, 0x00, // PUSH1 0x00
 		0xf3, // RETURN
 	}
 	initPrefix[3] = byte(len(initPrefix))
@@ -771,8 +772,8 @@ func TestE2E_CrossPackage_CreateCallStorage_LowGas(t *testing.T) {
 		0x55,       // SSTORE slot 0
 		0x60, 0x43, // PUSH1 0x43
 		0x60, 0x01, // PUSH1 0x01
-		0x55,       // SSTORE slot 1
-		0x00,       // STOP
+		0x55, // SSTORE slot 1
+		0x00, // STOP
 	}
 	runtimeLen := byte(len(runtimeCode))
 	initPrefix := []byte{
@@ -833,7 +834,7 @@ func TestE2E_StateReversion_NestedCallFailure(t *testing.T) {
 		0x55,       // SSTORE
 		0x60, 0x00, // PUSH1 0x00
 		0x60, 0x00, // PUSH1 0x00
-		0xfd,       // REVERT
+		0xfd, // REVERT
 	}
 	initPrefixB := makeInitCode(runtimeB)
 	addrB := deployContract(t, evmInst, statedb, sender, initPrefixB, 500_000)
@@ -862,8 +863,8 @@ func TestE2E_StateReversion_NestedCallFailure(t *testing.T) {
 		// SSTORE(slot 1, 0xBB) - should execute regardless of CALL failure
 		0x60, 0xBB, // PUSH1 0xBB
 		0x60, 0x01, // PUSH1 0x01
-		0x55,       // SSTORE
-		0x00,       // STOP
+		0x55, // SSTORE
+		0x00, // STOP
 	)
 
 	initPrefixA := makeInitCode(runtimeA)
@@ -1093,7 +1094,7 @@ func TestE2E_MemoryExpansion_MCOPY_ZeroLength(t *testing.T) {
 
 	// Contract: MCOPY(dest=1000, src=2000, size=0), MSIZE, PUSH1 0, MSTORE, PUSH1 32, PUSH1 0, RETURN
 	runtimeCode := []byte{
-		0x60, 0x00,       // PUSH1 0 (size=0)
+		0x60, 0x00, // PUSH1 0 (size=0)
 		0x61, 0x07, 0xD0, // PUSH2 2000 (src)
 		0x61, 0x03, 0xE8, // PUSH2 1000 (dest)
 		0x5e,       // MCOPY -- should be no-op since size=0
@@ -1595,11 +1596,11 @@ func makeInitCode(runtimeCode []byte) []byte {
 	runtimeLen := byte(len(runtimeCode))
 	initPrefix := []byte{
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 initLen (placeholder)
-		0x60, 0x00,       // PUSH1 0x00
+		0x60, 0x00, // PUSH1 initLen (placeholder)
+		0x60, 0x00, // PUSH1 0x00
 		0x39,             // CODECOPY
 		0x60, runtimeLen, // PUSH1 runtimeLen
-		0x60, 0x00,       // PUSH1 0x00
+		0x60, 0x00, // PUSH1 0x00
 		0xf3, // RETURN
 	}
 	initPrefix[3] = byte(len(initPrefix))
@@ -1615,7 +1616,7 @@ func buildCallContract(value byte, slot byte, target types.Address) []byte {
 	targetBytes := target[:]
 	code := []byte{
 		0x60, value, // PUSH1 value
-		0x60, slot,  // PUSH1 slot
+		0x60, slot, // PUSH1 slot
 		0x55, // SSTORE
 		// CALL args
 		0x60, 0x00, // retLen

@@ -5,7 +5,7 @@ import "github.com/eth2030/eth2030/core/types"
 // ExecutionResult holds the outcome of a transaction execution.
 type ExecutionResult struct {
 	UsedGas         uint64
-	BlockGasUsed    uint64        // EIP-7778: pre-refund gas used for block accounting
+	BlockGasUsed    uint64 // EIP-7778: pre-refund gas used for block accounting
 	Err             error
 	ReturnData      []byte
 	ContractAddress types.Address // set for contract creation

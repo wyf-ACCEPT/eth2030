@@ -482,4 +482,3 @@ func TestPayloadLRUCacheClearAndReuse(t *testing.T) {
 		t.Fatal("cache should be usable after clear")
 	}
 }
-

@@ -469,7 +469,11 @@ func (ch *ConcurrentTrieHealer) Run(peers []SnapPeer) error {
 }
 
 // Progress returns the current healing progress.
-func (ch *ConcurrentTrieHealer) Progress() ConcurrentHealProgress { ch.mu.Lock(); defer ch.mu.Unlock(); return ch.progress }
+func (ch *ConcurrentTrieHealer) Progress() ConcurrentHealProgress {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+	return ch.progress
+}
 
 // Scheduler returns the heal scheduler for access pattern recording.
 func (ch *ConcurrentTrieHealer) Scheduler() *HealScheduler { return ch.scheduler }
@@ -478,7 +482,12 @@ func (ch *ConcurrentTrieHealer) Scheduler() *HealScheduler { return ch.scheduler
 func (ch *ConcurrentTrieHealer) Close() { ch.closed.Store(true) }
 
 // Reset clears all healing state.
-func (ch *ConcurrentTrieHealer) Reset() { ch.mu.Lock(); defer ch.mu.Unlock(); ch.scheduler.Reset(); ch.progress = ConcurrentHealProgress{} }
+func (ch *ConcurrentTrieHealer) Reset() {
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
+	ch.scheduler.Reset()
+	ch.progress = ConcurrentHealProgress{}
+}
 
 // FormatETA formats an ETA duration for display.
 func FormatETA(d time.Duration) string {

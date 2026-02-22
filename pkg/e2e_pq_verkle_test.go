@@ -514,11 +514,11 @@ func TestE2E_PQVerkle_NativeRollupExecution(t *testing.T) {
 	// Build a minimal input: chainID(8) + preStateRoot(32) + lengths(12) + blockData
 	blockData := []byte{0x01, 0x02, 0x03, 0x04}
 	input := make([]byte, 52+len(blockData))
-	binary.BigEndian.PutUint64(input[0:8], 42)                    // chainID
-	copy(input[8:40], e2e.DeterministicHash(1).Bytes())           // preStateRoot
+	binary.BigEndian.PutUint64(input[0:8], 42)                       // chainID
+	copy(input[8:40], e2e.DeterministicHash(1).Bytes())              // preStateRoot
 	binary.BigEndian.PutUint32(input[40:44], uint32(len(blockData))) // blockDataLen
-	binary.BigEndian.PutUint32(input[44:48], 0)                   // witnessLen
-	binary.BigEndian.PutUint32(input[48:52], 0)                   // anchorLen
+	binary.BigEndian.PutUint32(input[44:48], 0)                      // witnessLen
+	binary.BigEndian.PutUint32(input[48:52], 0)                      // anchorLen
 	copy(input[52:], blockData)
 
 	gas := precompile.RequiredGas(input)

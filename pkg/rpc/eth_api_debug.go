@@ -96,15 +96,15 @@ type DbgStorageEntry struct {
 
 // DbgBadBlock represents a rejected block returned by debug_getBadBlocks.
 type DbgBadBlock struct {
-	Hash   string   `json:"hash"`
+	Hash   string    `json:"hash"`
 	Block  *RPCBlock `json:"block"`
-	Reason string   `json:"reason,omitempty"`
+	Reason string    `json:"reason,omitempty"`
 }
 
 // DbgStateDump is the response for debug_dumpBlock.
 type DbgStateDump struct {
-	Root     string                       `json:"root"`
-	Accounts map[string]*DbgDumpAccount   `json:"accounts"`
+	Root     string                     `json:"root"`
+	Accounts map[string]*DbgDumpAccount `json:"accounts"`
 }
 
 // DbgDumpAccount is a single account in the state dump.

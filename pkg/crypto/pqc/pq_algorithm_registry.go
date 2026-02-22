@@ -42,11 +42,11 @@ type AlgorithmDescriptor struct {
 
 // PQ algorithm gas costs per EIP-8051.
 const (
-	GasCostMLDSA44    uint64 = 3500
-	GasCostMLDSA65    uint64 = 4500
-	GasCostMLDSA87    uint64 = 5500
-	GasCostFalcon512  uint64 = 3000
-	GasCostSLHDSA     uint64 = 8000
+	GasCostMLDSA44   uint64 = 3500
+	GasCostMLDSA65   uint64 = 4500
+	GasCostMLDSA87   uint64 = 5500
+	GasCostFalcon512 uint64 = 3000
+	GasCostSLHDSA    uint64 = 8000
 )
 
 // Errors for algorithm registry operations.

@@ -79,7 +79,10 @@ func TestCRShuffleListEdgeCases(t *testing.T) {
 	s2, _ := crShuffleList(crMakeIndices(50), seed2)
 	different := false
 	for i := range s1 {
-		if s1[i] != s2[i] { different = true; break }
+		if s1[i] != s2[i] {
+			different = true
+			break
+		}
 	}
 	if !different {
 		t.Error("different seeds produced identical shuffle")
@@ -107,12 +110,12 @@ func TestCRComputeCommitteeCount(t *testing.T) {
 		spe    uint64
 		want   uint64
 	}{
-		{128, 32, 1},       // 128/32/128 = 0 -> 1
-		{4096, 32, 1},      // 4096/32/128 = 1
-		{262144, 32, 64},   // 262144/32/128 = 64
-		{1000000, 32, 64},  // capped at 64
-		{512, 4, 1},        // SSF mode: 512/4/128 = 1
-		{65536, 4, 64},     // SSF mode: 65536/4/128 = 128 -> capped 64
+		{128, 32, 1},      // 128/32/128 = 0 -> 1
+		{4096, 32, 1},     // 4096/32/128 = 1
+		{262144, 32, 64},  // 262144/32/128 = 64
+		{1000000, 32, 64}, // capped at 64
+		{512, 4, 1},       // SSF mode: 512/4/128 = 1
+		{65536, 4, 64},    // SSF mode: 65536/4/128 = 128 -> capped 64
 	}
 	for _, tc := range tests {
 		got := crComputeCommitteeCount(tc.active, tc.spe, CRTargetCommitteeSize, CRMaxCommitteesPerSlot)

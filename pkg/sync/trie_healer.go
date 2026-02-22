@@ -45,11 +45,11 @@ func (n *TrieHealNode) isStorageTrie() bool { return n.AccountHash != (types.Has
 
 // TrieHealCheckpoint stores healing state for resume after restart.
 type TrieHealCheckpoint struct {
-	StateRoot       types.Hash
+	StateRoot                                 types.Hash
 	NodesHealed, NodesFailed, BytesDownloaded uint64
-	PendingPaths    [][]byte
-	AccountRoots    []types.Hash
-	Timestamp       time.Time
+	PendingPaths                              [][]byte
+	AccountRoots                              []types.Hash
+	Timestamp                                 time.Time
 }
 
 // TrieHealProgress tracks overall healing progress.
@@ -63,8 +63,10 @@ type TrieHealProgress struct {
 	Complete                                                     bool
 }
 
-func (p *TrieHealProgress) TotalHealed() uint64   { return p.StateNodesHealed + p.StorageNodesHealed }
-func (p *TrieHealProgress) TotalDetected() uint64  { return p.StateNodesDetected + p.StorageNodesDetected }
+func (p *TrieHealProgress) TotalHealed() uint64 { return p.StateNodesHealed + p.StorageNodesHealed }
+func (p *TrieHealProgress) TotalDetected() uint64 {
+	return p.StateNodesDetected + p.StorageNodesDetected
+}
 
 // Percentage returns an estimated healing completion percentage.
 func (p *TrieHealProgress) Percentage() float64 {
@@ -98,9 +100,9 @@ func DefaultTrieHealConfig() TrieHealConfig {
 // trieHealPriorityQueue implements a min-heap on node depth (shallowest first).
 type trieHealPriorityQueue []*TrieHealNode
 
-func (pq trieHealPriorityQueue) Len() int            { return len(pq) }
-func (pq trieHealPriorityQueue) Less(i, j int) bool   { return pq[i].Depth < pq[j].Depth }
-func (pq trieHealPriorityQueue) Swap(i, j int)        { pq[i], pq[j] = pq[j], pq[i] }
+func (pq trieHealPriorityQueue) Len() int           { return len(pq) }
+func (pq trieHealPriorityQueue) Less(i, j int) bool { return pq[i].Depth < pq[j].Depth }
+func (pq trieHealPriorityQueue) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
 
 func (pq *trieHealPriorityQueue) Push(node *TrieHealNode) {
 	*pq = append(*pq, node)
@@ -164,13 +166,13 @@ type TrieHealer struct {
 	running  atomic.Bool
 	progress TrieHealProgress
 
-	queue            trieHealPriorityQueue
-	seen             map[string]bool
-	failed           map[string]*TrieHealNode
-	storageRoots     map[types.Hash]types.Hash // account hash -> storage root
-	lastCheckpoint   TrieHealCheckpoint
+	queue             trieHealPriorityQueue
+	seen              map[string]bool
+	failed            map[string]*TrieHealNode
+	storageRoots      map[types.Hash]types.Hash // account hash -> storage root
+	lastCheckpoint    TrieHealCheckpoint
 	nodesSinceCheckpt uint64
-	saveCheckpoint   func(TrieHealCheckpoint) error
+	saveCheckpoint    func(TrieHealCheckpoint) error
 }
 
 // NewTrieHealer creates a new trie healer for the given state root.
@@ -443,10 +445,14 @@ func (th *TrieHealer) Run(peer SnapPeer) error {
 	return ErrTrieHealerClosed
 }
 
-func (th *TrieHealer) Progress() TrieHealProgress { th.mu.Lock(); defer th.mu.Unlock(); return th.progress }
-func (th *TrieHealer) QueueLen() int              { th.mu.Lock(); defer th.mu.Unlock(); return th.queue.Len() }
-func (th *TrieHealer) FailedCount() int            { th.mu.Lock(); defer th.mu.Unlock(); return len(th.failed) }
-func (th *TrieHealer) Close()                      { th.closed.Store(true) }
+func (th *TrieHealer) Progress() TrieHealProgress {
+	th.mu.Lock()
+	defer th.mu.Unlock()
+	return th.progress
+}
+func (th *TrieHealer) QueueLen() int    { th.mu.Lock(); defer th.mu.Unlock(); return th.queue.Len() }
+func (th *TrieHealer) FailedCount() int { th.mu.Lock(); defer th.mu.Unlock(); return len(th.failed) }
+func (th *TrieHealer) Close()           { th.closed.Store(true) }
 
 // Reset clears all healing state.
 func (th *TrieHealer) Reset() {

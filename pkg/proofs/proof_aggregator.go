@@ -1,4 +1,4 @@
-// proof_aggregator.go implements proof aggregation for the eth2030 client.
+// proof_aggregator.go implements proof aggregation for the ETH2030 client.
 // This aligns with the EL EVM roadmap: proof aggregation. It provides a
 // multi-proof aggregator that collects individual proofs (Merkle, KZG, STARK),
 // aggregates them into a single batched proof, and supports verification,

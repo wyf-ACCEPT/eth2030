@@ -20,20 +20,20 @@ var (
 // hard fork. All fields default to Cancun/post-London values.
 type GasPricingRules struct {
 	// SSTORE costs (EIP-2200 / EIP-3529).
-	SstoreSetGas     uint64 // zero -> non-zero (default 20000)
-	SstoreResetGas   uint64 // non-zero -> non-zero (default 2900)
-	WarmReadGas      uint64 // warm storage read (default 100)
-	ColdSloadGas     uint64 // cold SLOAD cost (default 2100)
-	SstoreClearsRef  uint64 // refund for clearing a slot (default 4800)
+	SstoreSetGas    uint64 // zero -> non-zero (default 20000)
+	SstoreResetGas  uint64 // non-zero -> non-zero (default 2900)
+	WarmReadGas     uint64 // warm storage read (default 100)
+	ColdSloadGas    uint64 // cold SLOAD cost (default 2100)
+	SstoreClearsRef uint64 // refund for clearing a slot (default 4800)
 
 	// EXP costs.
-	ExpBaseCost    uint64 // base cost of EXP (default 10)
-	ExpByteCost    uint64 // per-byte cost of exponent (default 50)
+	ExpBaseCost uint64 // base cost of EXP (default 10)
+	ExpByteCost uint64 // per-byte cost of exponent (default 50)
 
 	// LOG costs.
-	LogBaseCost   uint64 // per LOG operation (default 375)
-	LogTopicCost  uint64 // per topic (default 375)
-	LogDataCost   uint64 // per byte of data (default 8)
+	LogBaseCost  uint64 // per LOG operation (default 375)
+	LogTopicCost uint64 // per topic (default 375)
+	LogDataCost  uint64 // per byte of data (default 8)
 
 	// KECCAK256 (SHA3) costs.
 	Keccak256BaseCost uint64 // base cost (default 30)
@@ -60,18 +60,18 @@ type GasPricingRules struct {
 // DefaultPricingRules returns post-London/Cancun gas pricing rules.
 func DefaultPricingRules() GasPricingRules {
 	return GasPricingRules{
-		SstoreSetGas:     GasSstoreSet,
-		SstoreResetGas:   GasSstoreReset,
-		WarmReadGas:      WarmStorageReadCost,
-		ColdSloadGas:     ColdSloadCost,
-		SstoreClearsRef:  SstoreClearsScheduleRefund,
+		SstoreSetGas:    GasSstoreSet,
+		SstoreResetGas:  GasSstoreReset,
+		WarmReadGas:     WarmStorageReadCost,
+		ColdSloadGas:    ColdSloadCost,
+		SstoreClearsRef: SstoreClearsScheduleRefund,
 
-		ExpBaseCost:    GasHigh,
-		ExpByteCost:    50,
+		ExpBaseCost: GasHigh,
+		ExpByteCost: 50,
 
-		LogBaseCost:   GasLog,
-		LogTopicCost:  GasLogTopic,
-		LogDataCost:   GasLogData,
+		LogBaseCost:  GasLog,
+		LogTopicCost: GasLogTopic,
+		LogDataCost:  GasLogData,
 
 		Keccak256BaseCost: GasKeccak256,
 		Keccak256WordCost: GasKeccak256Word,

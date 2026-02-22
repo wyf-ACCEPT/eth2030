@@ -15,10 +15,10 @@ import (
 
 // Server extension errors.
 var (
-	ErrServerClosed   = errors.New("rpc server: closed")
-	ErrServerStarted  = errors.New("rpc server: already started")
-	ErrAuthFailed     = errors.New("rpc server: authentication failed")
-	ErrRateLimited    = errors.New("rpc server: rate limited")
+	ErrServerClosed    = errors.New("rpc server: closed")
+	ErrServerStarted   = errors.New("rpc server: already started")
+	ErrAuthFailed      = errors.New("rpc server: authentication failed")
+	ErrRateLimited     = errors.New("rpc server: rate limited")
 	ErrRequestTooLarge = errors.New("rpc server: request body too large")
 )
 
@@ -100,15 +100,15 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // ExtServer is a full-featured JSON-RPC server with middleware, CORS,
 // auth, rate limiting, batch handling, and graceful shutdown.
 type ExtServer struct {
-	config      ServerConfig
-	api         *EthAPI
-	batch       *BatchHandler
-	rateLimiter *RateLimiter
-	httpServer  *http.Server
-	listener    net.Listener
-	mu          sync.Mutex
-	started     atomic.Bool
-	middlewares []MiddlewareFunc
+	config       ServerConfig
+	api          *EthAPI
+	batch        *BatchHandler
+	rateLimiter  *RateLimiter
+	httpServer   *http.Server
+	listener     net.Listener
+	mu           sync.Mutex
+	started      atomic.Bool
+	middlewares  []MiddlewareFunc
 	requestCount atomic.Int64
 }
 

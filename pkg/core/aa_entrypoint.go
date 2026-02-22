@@ -58,21 +58,21 @@ var (
 // intent of a smart account owner, including gas parameters, paymaster info,
 // and factory data for account deployment.
 type UserOperation struct {
-	Sender               types.Address
-	Nonce                *big.Int
-	Factory              *types.Address // nil if account already deployed
-	FactoryData          []byte
-	CallData             []byte
-	CallGasLimit         uint64
-	VerificationGasLimit uint64
-	PreVerificationGas   uint64
-	MaxFeePerGas         *big.Int
-	MaxPriorityFeePerGas *big.Int
-	Paymaster            *types.Address // nil if self-sponsored
+	Sender                        types.Address
+	Nonce                         *big.Int
+	Factory                       *types.Address // nil if account already deployed
+	FactoryData                   []byte
+	CallData                      []byte
+	CallGasLimit                  uint64
+	VerificationGasLimit          uint64
+	PreVerificationGas            uint64
+	MaxFeePerGas                  *big.Int
+	MaxPriorityFeePerGas          *big.Int
+	Paymaster                     *types.Address // nil if self-sponsored
 	PaymasterVerificationGasLimit uint64
 	PaymasterPostOpGasLimit       uint64
-	PaymasterData        []byte
-	Signature            []byte
+	PaymasterData                 []byte
+	Signature                     []byte
 }
 
 // UserOpHash computes the keccak256 hash of the UserOperation for signing.

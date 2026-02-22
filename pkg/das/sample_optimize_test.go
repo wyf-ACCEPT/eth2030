@@ -113,8 +113,8 @@ func TestCalculateOptimalSamplesZeroInputs(t *testing.T) {
 
 func TestCalculateOptimalSamplesClampedToMax(t *testing.T) {
 	so := NewSampleOptimizer(SampleOptimizerConfig{
-		MinSamples:     4,
-		MaxSamples:     16,
+		MinSamples:       4,
+		MaxSamples:       16,
 		TargetConfidence: 0.99,
 	})
 

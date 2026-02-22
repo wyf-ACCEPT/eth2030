@@ -70,12 +70,12 @@ var (
 // gas dimension. Each dimension can have its own target, max, elasticity,
 // and adjustment speed.
 type DimGasConfig struct {
-	Target               uint64   // target gas usage per block
-	MaxGas               uint64   // maximum gas per block (limit)
-	ElasticityMul        uint64   // limit / target ratio
-	BaseFeeChangeDenom   uint64   // controls adjustment speed (higher = slower)
-	MinBaseFee           *big.Int // floor for the base fee
-	MaxBaseFee           *big.Int // ceiling for the base fee (nil = unlimited)
+	Target             uint64   // target gas usage per block
+	MaxGas             uint64   // maximum gas per block (limit)
+	ElasticityMul      uint64   // limit / target ratio
+	BaseFeeChangeDenom uint64   // controls adjustment speed (higher = slower)
+	MinBaseFee         *big.Int // floor for the base fee
+	MaxBaseFee         *big.Int // ceiling for the base fee (nil = unlimited)
 }
 
 // validate checks that the config is self-consistent.

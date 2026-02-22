@@ -197,9 +197,9 @@ func TestEWASMEngineLocals(t *testing.T) {
 
 func TestEWASMEngineDrop(t *testing.T) {
 	code := []byte{
-		engineOpI32Const, 0x2A,       // push 42
+		engineOpI32Const, 0x2A, // push 42
 		engineOpI32Const, 0xE3, 0x00, // push 99 (signed LEB128)
-		engineOpDrop,                 // drop 99
+		engineOpDrop, // drop 99
 	}
 	wasm := BuildEngineWasm(code, 0, "main")
 	engine := NewEWASMEngine()
@@ -256,10 +256,10 @@ func TestEWASMEngineMemoryLoadStore(t *testing.T) {
 	// addr = 100 (0x64) in signed LEB128: 0xE4 0x00 (bit 6 set, needs 2 bytes)
 	code := []byte{
 		engineOpI32Const, 0xE4, 0x00, // addr = 100
-		engineOpI32Const, 0x2A,       // val = 42
+		engineOpI32Const, 0x2A, // val = 42
 		engineOpI32Store, 0x02, 0x00, // alignment=2, offset=0
 		engineOpI32Const, 0xE4, 0x00, // addr = 100
-		engineOpI32Load, 0x02, 0x00,  // alignment=2, offset=0
+		engineOpI32Load, 0x02, 0x00, // alignment=2, offset=0
 	}
 	wasm := BuildEngineWasm(code, 0, "main")
 	engine := NewEWASMEngine()
@@ -482,7 +482,7 @@ func TestEWASMEngineInputToMemory(t *testing.T) {
 	binary.LittleEndian.PutUint32(input, 12345)
 
 	code := []byte{
-		engineOpI32Const, 0x00,      // addr = 0
+		engineOpI32Const, 0x00, // addr = 0
 		engineOpI32Load, 0x02, 0x00, // load from memory[0]
 	}
 	wasm := BuildEngineWasm(code, 0, "main")
@@ -670,11 +670,11 @@ func TestEWASMEngineNegativeConst(t *testing.T) {
 
 func TestEWASMEngineMemoryStoreOffset(t *testing.T) {
 	code := []byte{
-		engineOpI32Const, 0x00,       // addr = 0
-		engineOpI32Const, 0x2A,       // val = 42
+		engineOpI32Const, 0x00, // addr = 0
+		engineOpI32Const, 0x2A, // val = 42
 		engineOpI32Store, 0x02, 0x08, // alignment=2, offset=8
-		engineOpI32Const, 0x00,       // addr = 0
-		engineOpI32Load, 0x02, 0x08,  // alignment=2, offset=8
+		engineOpI32Const, 0x00, // addr = 0
+		engineOpI32Load, 0x02, 0x08, // alignment=2, offset=8
 	}
 	wasm := BuildEngineWasm(code, 0, "main")
 	engine := NewEWASMEngine()

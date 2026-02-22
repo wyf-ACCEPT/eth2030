@@ -19,14 +19,14 @@ import (
 // Commitment scheme identifiers.
 const (
 	SchemeLatticeBlobCommit = "lattice-blob-commit-v0"
-	SchemeLegacyKZG        = "kzg-v1"
+	SchemeLegacyKZG         = "kzg-v1"
 )
 
 // PQ blob commitment errors.
 var (
-	ErrPQCommitNilData       = errors.New("pqc: nil blob data")
-	ErrPQCommitEmptyData     = errors.New("pqc: empty blob data")
-	ErrPQCommitInvalid       = errors.New("pqc: invalid commitment")
+	ErrPQCommitNilData        = errors.New("pqc: nil blob data")
+	ErrPQCommitEmptyData      = errors.New("pqc: empty blob data")
+	ErrPQCommitInvalid        = errors.New("pqc: invalid commitment")
 	ErrPQCommitSchemeMismatch = errors.New("pqc: commitment scheme mismatch")
 )
 

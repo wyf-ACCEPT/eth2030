@@ -1,6 +1,6 @@
 // Package eftest implements an Ethereum Foundation state test runner.
 // It parses the standard EF state test JSON format and executes tests
-// against eth2030's EVM and state implementation.
+// against ETH2030's EVM and state implementation.
 package eftest
 
 import (
@@ -23,55 +23,55 @@ var rlpEmptyList = []byte{0xc0}
 
 // stJSON is the top-level JSON structure for a single state test.
 type stJSON struct {
-	Env  stEnv                          `json:"env"`
-	Pre  map[string]stAccount           `json:"pre"`
-	Tx   stTransaction                  `json:"transaction"`
-	Post map[string][]stPostState       `json:"post"`
-	Out  string                         `json:"out"`
+	Env  stEnv                    `json:"env"`
+	Pre  map[string]stAccount     `json:"pre"`
+	Tx   stTransaction            `json:"transaction"`
+	Post map[string][]stPostState `json:"post"`
+	Out  string                   `json:"out"`
 }
 
 // stEnv holds the block environment fields.
 type stEnv struct {
-	CurrentCoinbase  string `json:"currentCoinbase"`
+	CurrentCoinbase   string `json:"currentCoinbase"`
 	CurrentDifficulty string `json:"currentDifficulty"`
-	CurrentGasLimit  string `json:"currentGasLimit"`
-	CurrentNumber    string `json:"currentNumber"`
-	CurrentTimestamp string `json:"currentTimestamp"`
-	PreviousHash     string `json:"previousHash"`
-	CurrentBaseFee   string `json:"currentBaseFee"`
-	CurrentRandom    string `json:"currentRandom"`
-	ExcessBlobGas    string `json:"currentExcessBlobGas"`
+	CurrentGasLimit   string `json:"currentGasLimit"`
+	CurrentNumber     string `json:"currentNumber"`
+	CurrentTimestamp  string `json:"currentTimestamp"`
+	PreviousHash      string `json:"previousHash"`
+	CurrentBaseFee    string `json:"currentBaseFee"`
+	CurrentRandom     string `json:"currentRandom"`
+	ExcessBlobGas     string `json:"currentExcessBlobGas"`
 }
 
 // stAccount holds the pre-state for a single account.
 type stAccount struct {
-	Balance string                 `json:"balance"`
-	Code    string                 `json:"code"`
-	Nonce   string                 `json:"nonce"`
-	Storage map[string]string      `json:"storage"`
+	Balance string            `json:"balance"`
+	Code    string            `json:"code"`
+	Nonce   string            `json:"nonce"`
+	Storage map[string]string `json:"storage"`
 }
 
 // stTransaction holds the transaction specification.
 type stTransaction struct {
-	Data      []string          `json:"data"`
-	GasLimit  []string          `json:"gasLimit"`
-	Value     []string          `json:"value"`
-	GasPrice  string            `json:"gasPrice"`
-	Nonce     string            `json:"nonce"`
-	To        string            `json:"to"`
-	Sender    string            `json:"sender"`
-	SecretKey string            `json:"secretKey"`
-	MaxFeePerGas         string `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
+	Data                 []string `json:"data"`
+	GasLimit             []string `json:"gasLimit"`
+	Value                []string `json:"value"`
+	GasPrice             string   `json:"gasPrice"`
+	Nonce                string   `json:"nonce"`
+	To                   string   `json:"to"`
+	Sender               string   `json:"sender"`
+	SecretKey            string   `json:"secretKey"`
+	MaxFeePerGas         string   `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas string   `json:"maxPriorityFeePerGas"`
 }
 
 // stPostState holds expected results for a specific fork and index combination.
 type stPostState struct {
-	Hash            string          `json:"hash"`
-	Logs            string          `json:"logs"`
-	Indexes         stIndexes       `json:"indexes"`
-	ExpectException string          `json:"expectException"`
-	TxBytes         string          `json:"txbytes"`
+	Hash            string    `json:"hash"`
+	Logs            string    `json:"logs"`
+	Indexes         stIndexes `json:"indexes"`
+	ExpectException string    `json:"expectException"`
+	TxBytes         string    `json:"txbytes"`
 }
 
 // stIndexes selects which data/gas/value variant to use from the transaction.
@@ -89,8 +89,8 @@ type StateTest struct {
 
 // StateSubtest identifies a specific subtest within a state test.
 type StateSubtest struct {
-	Fork    string
-	Index   int
+	Fork  string
+	Index int
 }
 
 // RunResult holds the outcome of running a single subtest.
@@ -383,7 +383,7 @@ func computeLogsHash(logs []*types.Log) types.Hash {
 var forkLevel = map[string]int{
 	"Frontier": 0, "Homestead": 1, "EIP150": 2,
 	"EIP158": 3, "SpuriousDragon": 3, "TangerineWhistle": 3,
-	"Byzantium": 4,
+	"Byzantium":      4,
 	"Constantinople": 5, "ConstantinopleFix": 5,
 	"Istanbul": 6, "Berlin": 7, "London": 8,
 	"Merge": 9, "Paris": 9,
@@ -399,18 +399,44 @@ func ForkConfig(fork string) *core.ChainConfig {
 	zero := big.NewInt(0)
 	ts := uint64(0)
 	c := &core.ChainConfig{ChainID: big.NewInt(1)}
-	if level >= 1 { c.HomesteadBlock = zero }
-	if level >= 2 { c.EIP150Block = zero }
-	if level >= 3 { c.EIP155Block = zero; c.EIP158Block = zero }
-	if level >= 4 { c.ByzantiumBlock = zero }
-	if level >= 5 { c.ConstantinopleBlock = zero; c.PetersburgBlock = zero }
-	if level >= 6 { c.IstanbulBlock = zero }
-	if level >= 7 { c.BerlinBlock = zero }
-	if level >= 8 { c.LondonBlock = zero }
-	if level >= 9 { c.TerminalTotalDifficulty = zero }
-	if level >= 10 { c.ShanghaiTime = &ts }
-	if level >= 11 { c.CancunTime = &ts }
-	if level >= 12 { c.PragueTime = &ts }
+	if level >= 1 {
+		c.HomesteadBlock = zero
+	}
+	if level >= 2 {
+		c.EIP150Block = zero
+	}
+	if level >= 3 {
+		c.EIP155Block = zero
+		c.EIP158Block = zero
+	}
+	if level >= 4 {
+		c.ByzantiumBlock = zero
+	}
+	if level >= 5 {
+		c.ConstantinopleBlock = zero
+		c.PetersburgBlock = zero
+	}
+	if level >= 6 {
+		c.IstanbulBlock = zero
+	}
+	if level >= 7 {
+		c.BerlinBlock = zero
+	}
+	if level >= 8 {
+		c.LondonBlock = zero
+	}
+	if level >= 9 {
+		c.TerminalTotalDifficulty = zero
+	}
+	if level >= 10 {
+		c.ShanghaiTime = &ts
+	}
+	if level >= 11 {
+		c.CancunTime = &ts
+	}
+	if level >= 12 {
+		c.PragueTime = &ts
+	}
 	return c
 }
 

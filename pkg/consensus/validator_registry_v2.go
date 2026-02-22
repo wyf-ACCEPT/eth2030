@@ -38,15 +38,15 @@ const (
 
 // Validator registry v2 errors.
 var (
-	ErrVRNotFound          = errors.New("validator_registry_v2: validator not found")
-	ErrVRDuplicatePubkey   = errors.New("validator_registry_v2: duplicate pubkey")
-	ErrVRNotActive         = errors.New("validator_registry_v2: validator not active")
-	ErrVRAlreadyExiting    = errors.New("validator_registry_v2: already exiting")
-	ErrVRAlreadySlashed    = errors.New("validator_registry_v2: already slashed")
-	ErrVRInsufficientBal   = errors.New("validator_registry_v2: insufficient balance")
-	ErrVRTooEarlyExit      = errors.New("validator_registry_v2: has not been active long enough")
-	ErrVRIndexOutOfRange   = errors.New("validator_registry_v2: index out of range")
-	ErrVRRegistryFull      = errors.New("validator_registry_v2: registry full")
+	ErrVRNotFound        = errors.New("validator_registry_v2: validator not found")
+	ErrVRDuplicatePubkey = errors.New("validator_registry_v2: duplicate pubkey")
+	ErrVRNotActive       = errors.New("validator_registry_v2: validator not active")
+	ErrVRAlreadyExiting  = errors.New("validator_registry_v2: already exiting")
+	ErrVRAlreadySlashed  = errors.New("validator_registry_v2: already slashed")
+	ErrVRInsufficientBal = errors.New("validator_registry_v2: insufficient balance")
+	ErrVRTooEarlyExit    = errors.New("validator_registry_v2: has not been active long enough")
+	ErrVRIndexOutOfRange = errors.New("validator_registry_v2: index out of range")
+	ErrVRRegistryFull    = errors.New("validator_registry_v2: registry full")
 )
 
 // WithdrawalCredentialType identifies the credential type.
@@ -118,13 +118,13 @@ func (v *ValidatorRecordV2) HasCompoundingCreds() bool {
 
 // ValidatorRegistryV2Config configures the v2 registry.
 type ValidatorRegistryV2Config struct {
-	MaxValidators     int
-	SlotsPerEpoch     uint64
-	ChurnQuotient     uint64
-	MinPerEpochChurn  uint64
-	MaxSeedLookahead  uint64
-	MinWithdrawDelay  Epoch
-	ShardCommPeriod   Epoch
+	MaxValidators    int
+	SlotsPerEpoch    uint64
+	ChurnQuotient    uint64
+	MinPerEpochChurn uint64
+	MaxSeedLookahead uint64
+	MinWithdrawDelay Epoch
+	ShardCommPeriod  Epoch
 }
 
 // DefaultValidatorRegistryV2Config returns mainnet defaults.

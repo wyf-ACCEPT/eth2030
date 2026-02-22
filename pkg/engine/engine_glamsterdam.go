@@ -88,12 +88,12 @@ type GetPayloadV5Response struct {
 
 // ClientVersionV2 extends ClientVersionV1 with additional fields.
 type ClientVersionV2 struct {
-	Code       string   `json:"code"`
-	Name       string   `json:"name"`
-	Version    string   `json:"version"`
-	Commit     string   `json:"commit"`
-	OS         string   `json:"os"`
-	Language   string   `json:"language"`
+	Code         string   `json:"code"`
+	Name         string   `json:"name"`
+	Version      string   `json:"version"`
+	Commit       string   `json:"commit"`
+	OS           string   `json:"os"`
+	Language     string   `json:"language"`
 	Capabilities []string `json:"capabilities"`
 }
 
@@ -225,11 +225,11 @@ func (e *EngineGlamsterdam) HandleGetClientVersionV2(_ *ClientVersionV1) []Clien
 
 	return []ClientVersionV2{
 		{
-			Code:    "ET",
-			Name:    "eth2030",
-			Version: "v0.2.0",
-			Commit:  "000000",
-			OS:      "linux",
+			Code:     "ET",
+			Name:     "ETH2030",
+			Version:  "v0.2.0",
+			Commit:   "000000",
+			OS:       "linux",
 			Language: "go",
 			Capabilities: []string{
 				"engine_newPayloadV5",

@@ -173,8 +173,8 @@ type SnapSync struct {
 // NewSnapSync creates a new SnapSync coordinator.
 func NewSnapSync(writer StateWriter) *SnapSync {
 	return &SnapSync{
-		cancel:   make(chan struct{}),
-		writer:   writer,
+		cancel:    make(chan struct{}),
+		writer:    writer,
 		codeQueue: make(map[types.Hash]struct{}),
 		codeSeen:  make(map[types.Hash]struct{}),
 	}

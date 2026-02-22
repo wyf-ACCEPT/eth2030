@@ -25,12 +25,12 @@ const (
 
 // MigrationProgress tracks the progress of an MPT-to-binary-trie migration.
 type MigrationProgress struct {
-	KeysMigrated   uint64
-	TotalKeys      uint64
-	LastKey        []byte
-	MPTRoot        types.Hash
-	BinaryRoot     types.Hash
-	State          MigrationState
+	KeysMigrated uint64
+	TotalKeys    uint64
+	LastKey      []byte
+	MPTRoot      types.Hash
+	BinaryRoot   types.Hash
+	State        MigrationState
 }
 
 // MigrationSnapshot captures a point-in-time state for rollback.

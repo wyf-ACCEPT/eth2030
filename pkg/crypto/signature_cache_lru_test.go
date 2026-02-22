@@ -118,8 +118,8 @@ func TestSigLRU_CacheHitRate(t *testing.T) {
 	sig := makeSigTestSig(0x01)
 	c.Add(hash, sig, makeSigTestAddr(0x01))
 
-	c.Lookup(hash, sig)                                     // hit
-	c.Lookup(makeSigTestHash(0x99), makeSigTestSig(0x99))    // miss
+	c.Lookup(hash, sig)                                   // hit
+	c.Lookup(makeSigTestHash(0x99), makeSigTestSig(0x99)) // miss
 
 	rate := c.HitRate()
 	if rate < 0.49 || rate > 0.51 {
@@ -154,7 +154,7 @@ func TestSigLRU_Clear(t *testing.T) {
 	for i := byte(0); i < 10; i++ {
 		c.Add(makeSigTestHash(i), makeSigTestSig(i), makeSigTestAddr(i))
 	}
-	c.Lookup(makeSigTestHash(0), makeSigTestSig(0)) // hit
+	c.Lookup(makeSigTestHash(0), makeSigTestSig(0))   // hit
 	c.Lookup(makeSigTestHash(99), makeSigTestSig(99)) // miss
 
 	c.Clear()
@@ -238,7 +238,7 @@ func TestSigLRU_Stats(t *testing.T) {
 	sig := makeSigTestSig(0x01)
 	c.Add(hash, sig, makeSigTestAddr(0x01))
 
-	c.Lookup(hash, sig)                                  // hit
+	c.Lookup(hash, sig)                                   // hit
 	c.Lookup(makeSigTestHash(0x99), makeSigTestSig(0x99)) // miss
 
 	stats := c.Stats()

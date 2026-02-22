@@ -264,8 +264,8 @@ func TestTopPeersExcludesBanned(t *testing.T) {
 
 func TestBottomPeers(t *testing.T) {
 	rt := NewReputationTracker(defaultRepConfig())
-	rt.RecordEvent("peer1", EventGoodBlock, "")  // 110
-	rt.RecordEvent("peer2", EventBadBlock, "")    // 75
+	rt.RecordEvent("peer1", EventGoodBlock, "")       // 110
+	rt.RecordEvent("peer2", EventBadBlock, "")        // 75
 	rt.RecordEvent("peer3", EventGoodAttestation, "") // 105
 
 	bottom := rt.BottomPeers(2)

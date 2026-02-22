@@ -45,7 +45,7 @@ func DefaultDASNetworkConfig() DASNetworkConfig {
 		NumSubnets:        DataColumnSidecarSubnetCount, // 64
 		SamplesPerSlot:    SamplesPerSlot,               // 8
 		MinCustodySubnets: CustodyRequirement,           // 4
-		ColumnSize:        BytesPerCell,                  // 2048
+		ColumnSize:        BytesPerCell,                 // 2048
 	}
 }
 
@@ -297,11 +297,11 @@ func IsCustodian(nodeID types.Hash, subnetID uint64) bool {
 // ColumnReconstructor accumulates fragments of a column and reconstructs the
 // full column data once enough fragments have been received.
 type ColumnReconstructor struct {
-	mu        sync.Mutex
-	threshold int
+	mu         sync.Mutex
+	threshold  int
 	columnSize int
-	fragments map[uint64][]byte
-	complete  bool
+	fragments  map[uint64][]byte
+	complete   bool
 }
 
 // NewColumnReconstructor creates a new column reconstructor.

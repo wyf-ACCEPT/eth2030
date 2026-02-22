@@ -349,9 +349,9 @@ func TestStreamManagerDuplicateBlob(t *testing.T) {
 func TestStreamManagerMaxSessions(t *testing.T) {
 	cfg := StreamSessionConfig{
 		MaxConcurrentStreams: 2,
-		DefaultChunkSize:    1024,
-		StreamTimeout:       time.Minute,
-		MaxBlobSize:         100000,
+		DefaultChunkSize:     1024,
+		StreamTimeout:        time.Minute,
+		MaxBlobSize:          100000,
 	}
 	m := NewStreamManager(cfg)
 
@@ -493,9 +493,9 @@ func TestStreamManagerCancelStreamNotFound(t *testing.T) {
 func TestStreamManagerCancelFreesSlot(t *testing.T) {
 	cfg := StreamSessionConfig{
 		MaxConcurrentStreams: 1,
-		DefaultChunkSize:    1024,
-		StreamTimeout:       time.Minute,
-		MaxBlobSize:         100000,
+		DefaultChunkSize:     1024,
+		StreamTimeout:        time.Minute,
+		MaxBlobSize:          100000,
 	}
 	m := NewStreamManager(cfg)
 
@@ -519,9 +519,9 @@ func TestStreamManagerCancelFreesSlot(t *testing.T) {
 func TestStreamManagerFullWorkflow(t *testing.T) {
 	cfg := StreamSessionConfig{
 		MaxConcurrentStreams: 4,
-		DefaultChunkSize:    512,
-		StreamTimeout:       time.Minute,
-		MaxBlobSize:         100000,
+		DefaultChunkSize:     512,
+		StreamTimeout:        time.Minute,
+		MaxBlobSize:          100000,
 	}
 	m := NewStreamManager(cfg)
 
@@ -598,9 +598,9 @@ func TestStreamManagerFullWorkflow(t *testing.T) {
 func TestStreamManagerConcurrentStartAndReceive(t *testing.T) {
 	cfg := StreamSessionConfig{
 		MaxConcurrentStreams: 100,
-		DefaultChunkSize:    256,
-		StreamTimeout:       time.Minute,
-		MaxBlobSize:         100000,
+		DefaultChunkSize:     256,
+		StreamTimeout:        time.Minute,
+		MaxBlobSize:          100000,
 	}
 	m := NewStreamManager(cfg)
 
@@ -655,9 +655,9 @@ func TestStreamManagerConcurrentStartAndReceive(t *testing.T) {
 func TestStreamManagerCleanupExpired(t *testing.T) {
 	cfg := StreamSessionConfig{
 		MaxConcurrentStreams: 10,
-		DefaultChunkSize:    1024,
-		StreamTimeout:       1 * time.Millisecond, // very short timeout
-		MaxBlobSize:         100000,
+		DefaultChunkSize:     1024,
+		StreamTimeout:        1 * time.Millisecond, // very short timeout
+		MaxBlobSize:          100000,
 	}
 	m := NewStreamManager(cfg)
 
