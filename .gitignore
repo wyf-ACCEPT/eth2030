@@ -31,3 +31,6 @@ Thumbs.db
 # Coverage
 coverage.out
 coverage.html
+
+# Claude
+CLAUDE.md
