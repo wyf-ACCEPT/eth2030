@@ -144,13 +144,13 @@ EIP-8077, EIP-8079, EIP-8141
 | Phase | Year | Coverage | Key Items |
 |-------|------|----------|-----------|
 | Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool, frame tx |
-| Hogota | 2026-2027 | ~85% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks |
-| I+ | 2027 | ~80% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync |
-| J+ | 2027-2028 | ~75% | Verkle migration, encrypted mempool, light client, variable blobs |
-| K+ | 2028 | ~80% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce, CL proof circuits |
-| L+ | 2029 | ~80% | Endgame finality (BLS adapter), PQ attestations, APS, custody proofs, distributed builder, jeanVM aggregation |
-| M+ | 2029+ | ~75% | PQ L1 (ML-DSA-65 signer), gigagas integration, sharded mempool, real-time CL proofs, PQ chain security |
-| 2030++ | Long term | ~75% | VDF randomness, 51% auto-recovery, AA proof circuits, shielded transfers (BN254 ZK proofs), unified beacon state |
+| Hogota | 2026-2027 | ~95% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks |
+| I+ | 2027 | ~95% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync |
+| J+ | 2027-2028 | ~90% | Verkle migration, encrypted mempool, light client, variable blobs |
+| K+ | 2028 | ~95% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce, CL proof circuits |
+| L+ | 2029 | ~95% | Endgame finality (BLS adapter), PQ attestations, APS, custody proofs, distributed builder, jeanVM aggregation |
+| M+ | 2029+ | ~90% | PQ L1 (ML-DSA-65 signer), gigagas integration, sharded mempool, real-time CL proofs, PQ chain security |
+| 2030++ | Long term | ~90% | VDF randomness, 51% auto-recovery, AA proof circuits, shielded transfers (BN254 ZK proofs), unified beacon state |
 
 ## Remaining Gaps for Production
 
