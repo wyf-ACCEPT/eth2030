@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	ErrDuplicateVote     = errors.New("endgame: duplicate vote from validator")
-	ErrInvalidSlot       = errors.New("endgame: vote slot too old or too far ahead")
-	ErrZeroWeight        = errors.New("endgame: vote weight must be > 0")
-	ErrUnknownValidator  = errors.New("endgame: unknown validator index")
-	ErrInvalidSignature  = errors.New("endgame: BLS signature verification failed")
-	ErrBlockExecFailed   = errors.New("endgame: block execution verification failed")
+	ErrDuplicateVote    = errors.New("endgame: duplicate vote from validator")
+	ErrInvalidSlot      = errors.New("endgame: vote slot too old or too far ahead")
+	ErrZeroWeight       = errors.New("endgame: vote weight must be > 0")
+	ErrUnknownValidator = errors.New("endgame: unknown validator index")
+	ErrInvalidSignature = errors.New("endgame: BLS signature verification failed")
+	ErrBlockExecFailed  = errors.New("endgame: block execution verification failed")
 )
 
 // EndgameEngineConfig holds the configuration for the endgame finality engine.
@@ -58,7 +58,7 @@ type EndgameVote struct {
 	ValidatorIndex uint64
 	BlockHash      types.Hash
 	Weight         uint64
-	Timestamp      uint64                      // unix timestamp in ms when the vote was cast
+	Timestamp      uint64                        // unix timestamp in ms when the vote was cast
 	Signature      [crypto.BLSSignatureSize]byte // BLS signature over slot||block_root
 }
 
@@ -100,15 +100,15 @@ func newSlotState() *slotState {
 // EndgameEngine is the core engine for sub-second endgame finality.
 // It is fully thread-safe.
 type EndgameEngine struct {
-	mu               sync.RWMutex
-	config           EndgameEngineConfig
-	slots            map[uint64]*slotState
-	validatorWeights map[uint64]uint64                      // validator index -> weight
-	validatorPubkeys map[uint64][crypto.BLSPubkeySize]byte  // validator index -> BLS pubkey
-	totalWeight      uint64                                 // sum of all validator weights
-	finalizedChain   []types.Hash                           // ordered list of finalized block hashes
-	latestFinalized  uint64                                 // highest finalized slot
-	blockExecutor    func(root [32]byte) bool               // optional block execution verifier
+	mu                sync.RWMutex
+	config            EndgameEngineConfig
+	slots             map[uint64]*slotState
+	validatorWeights  map[uint64]uint64                     // validator index -> weight
+	validatorPubkeys  map[uint64][crypto.BLSPubkeySize]byte // validator index -> BLS pubkey
+	totalWeight       uint64                                // sum of all validator weights
+	finalizedChain    []types.Hash                          // ordered list of finalized block hashes
+	latestFinalized   uint64                                // highest finalized slot
+	blockExecutor     func(root [32]byte) bool              // optional block execution verifier
 	FinalizedCallback func(slot uint64, root [32]byte)      // called when finality is reached
 }
 

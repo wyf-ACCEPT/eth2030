@@ -17,14 +17,14 @@ import (
 
 // Teradata L2 errors.
 var (
-	ErrTeradataDataTooLarge     = errors.New("teradata: data exceeds maximum size")
-	ErrTeradataDataEmpty        = errors.New("teradata: data is empty")
-	ErrTeradataNotFound         = errors.New("teradata: data not found")
-	ErrTeradataTooManyChains    = errors.New("teradata: maximum L2 chains reached")
-	ErrTeradataStorageFull      = errors.New("teradata: total storage limit exceeded")
-	ErrTeradataInvalidReceipt   = errors.New("teradata: invalid receipt")
-	ErrTeradataInvalidChainID   = errors.New("teradata: invalid chain ID (must be > 0)")
-	ErrTeradataBandwidthDenied  = errors.New("teradata: bandwidth request denied")
+	ErrTeradataDataTooLarge    = errors.New("teradata: data exceeds maximum size")
+	ErrTeradataDataEmpty       = errors.New("teradata: data is empty")
+	ErrTeradataNotFound        = errors.New("teradata: data not found")
+	ErrTeradataTooManyChains   = errors.New("teradata: maximum L2 chains reached")
+	ErrTeradataStorageFull     = errors.New("teradata: total storage limit exceeded")
+	ErrTeradataInvalidReceipt  = errors.New("teradata: invalid receipt")
+	ErrTeradataInvalidChainID  = errors.New("teradata: invalid chain ID (must be > 0)")
+	ErrTeradataBandwidthDenied = errors.New("teradata: bandwidth request denied")
 )
 
 // TeradataConfig holds configuration for the TeradataManager.
