@@ -698,6 +698,19 @@ func applyMessage(config *ChainConfig, getHash vm.GetHashFunc, statedb state.Sta
 		return nil, fmt.Errorf("%w: address %v, tx nonce: %d, state nonce: %d", ErrNonceTooHigh, msg.From, msg.Nonce, stateNonce)
 	}
 
+	// EIP-3607: Reject transactions from senders with deployed code.
+	// Only EOAs (externally owned accounts) can originate transactions.
+	// Exception: accounts with EIP-7702 delegation designators (0xef0100 prefix)
+	// are allowed to send transactions since they are still EOAs that have
+	// delegated their code execution.
+	if codeHash := statedb.GetCodeHash(msg.From); codeHash != (types.Hash{}) && codeHash != types.EmptyCodeHash {
+		// Check if the sender has EIP-7702 delegated code, which is allowed.
+		if code := statedb.GetCode(msg.From); !types.HasDelegationPrefix(code) {
+			gp.AddGas(msg.GasLimit)
+			return nil, fmt.Errorf("sender not an EOA: address %v, codehash: %v", msg.From, codeHash)
+		}
+	}
+
 	// Calculate effective gas price per EIP-1559.
 	gasPrice := msgEffectiveGasPrice(msg, header.BaseFee)
 	gasCost := new(big.Int).Mul(gasPrice, new(big.Int).SetUint64(msg.GasLimit))

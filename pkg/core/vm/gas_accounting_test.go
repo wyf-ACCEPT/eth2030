@@ -722,25 +722,25 @@ func TestCallFamilyGasWiring_BerlinTable(t *testing.T) {
 func TestCreateGasWiring_BerlinTable(t *testing.T) {
 	tbl := NewBerlinJumpTable()
 
-	// CREATE has constantGas 0, dynamic gas for init code word gas.
+	// CREATE has constantGas = GasCreate (32000), dynamic gas for init code word gas.
 	createOp := tbl[CREATE]
 	if createOp == nil {
 		t.Fatal("CREATE: nil in Berlin table")
 	}
-	if createOp.constantGas != 0 {
-		t.Errorf("CREATE: constantGas = %d, want 0", createOp.constantGas)
+	if createOp.constantGas != GasCreate {
+		t.Errorf("CREATE: constantGas = %d, want %d", createOp.constantGas, GasCreate)
 	}
 	if createOp.dynamicGas == nil {
 		t.Error("CREATE: dynamicGas is nil")
 	}
 
-	// CREATE2 has constantGas 0, dynamic gas for init code + hash.
+	// CREATE2 has constantGas = GasCreate (32000), dynamic gas for init code + hash.
 	create2Op := tbl[CREATE2]
 	if create2Op == nil {
 		t.Fatal("CREATE2: nil in Berlin table")
 	}
-	if create2Op.constantGas != 0 {
-		t.Errorf("CREATE2: constantGas = %d, want 0", create2Op.constantGas)
+	if create2Op.constantGas != GasCreate {
+		t.Errorf("CREATE2: constantGas = %d, want %d", create2Op.constantGas, GasCreate)
 	}
 	if create2Op.dynamicGas == nil {
 		t.Error("CREATE2: dynamicGas is nil")

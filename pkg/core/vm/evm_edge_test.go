@@ -154,29 +154,38 @@ func TestRecursiveCallReturns0AtMaxDepth(t *testing.T) {
 //    with different init code sizes
 // --------------------------------------------------------------------------
 
-// TestCreateGasConsumption tests that CREATE charges base gas (32000)
-// plus initcode word gas (2 per word).
+// TestCreateGasConsumption tests that evm.Create() executes init code and
+// returns a contract address. GasCreate (32000) and InitCodeWordGas are
+// charged by the jump table (via opcode) or by intrinsicGas (via processor),
+// not by evm.Create() directly.
 func TestCreateGasConsumption(t *testing.T) {
 	evm, stateDB := newIntegrationEVM()
 
-	callerAddr := types.BytesToAddress([]byte{0x01})
+	callerAddr := types.BytesToAddress([]byte{0xc1})
 	stateDB.CreateAccount(callerAddr)
 	stateDB.AddBalance(callerAddr, big.NewInt(100000000))
 
-	// Small init code (1 byte): STOP
-	initCode := []byte{byte(STOP)}
+	// Init code that returns 1 byte of deployed code (PUSH1 0x60 PUSH1 0 RETURN).
+	// This triggers code deposit gas (200 per byte).
+	initCode := []byte{
+		byte(PUSH1), 0x01, // push 1 (size)
+		byte(PUSH1), 0x00, // push 0 (offset)
+		byte(RETURN), // return 1 byte from memory
+	}
 	initialGas := uint64(1000000)
 
-	_, _, gasLeft, err := evm.Create(callerAddr, initCode, initialGas, big.NewInt(0))
+	_, addr, gasLeft, err := evm.Create(callerAddr, initCode, initialGas, big.NewInt(0))
 	if err != nil {
-		t.Fatalf("CREATE with 1-byte init code failed: %v", err)
+		t.Fatalf("CREATE failed: %v", err)
 	}
 
 	gasUsed := initialGas - gasLeft
-	// Must include at minimum: GasCreate(32000) + initcode_word_gas(2*1 word = 2)
-	minExpected := GasCreate + InitCodeWordGas*1
-	if gasUsed < minExpected {
-		t.Errorf("CREATE gas used = %d, expected at least %d (base + initcode word gas)", gasUsed, minExpected)
+	// Code deposit costs 200 per byte of deployed code (1 byte = 200 gas).
+	if gasUsed < CreateDataGas {
+		t.Errorf("CREATE gas used = %d, expected at least %d for code deposit", gasUsed, CreateDataGas)
+	}
+	if addr == (types.Address{}) {
+		t.Error("CREATE should produce non-zero contract address")
 	}
 }
 
@@ -225,41 +234,37 @@ func TestCreate2GasViaOpcodeIncludesHashingCost(t *testing.T) {
 	}
 }
 
-// TestCreateLargeInitCodeGas verifies that larger init code costs more gas.
+// TestCreateLargeInitCodeGas verifies that the dynamic gas functions charge
+// more for larger init code. GasCreate and InitCodeWordGas are charged by the
+// jump table (via opcode), not by evm.Create() directly.
 func TestCreateLargeInitCodeGas(t *testing.T) {
-	evm, stateDB := newIntegrationEVM()
-
-	callerAddr := types.BytesToAddress([]byte{0x01})
-	stateDB.CreateAccount(callerAddr)
-	stateDB.AddBalance(callerAddr, big.NewInt(1000000000))
-
-	initialGas := uint64(10000000)
+	evm := newTestEVM()
+	contract := NewContract(types.Address{}, types.Address{}, big.NewInt(0), 10000000)
+	mem := NewMemory()
+	st := NewStack()
 
 	// Small init code: 32 bytes (1 word)
-	smallCode := make([]byte, 32)
-	smallCode[0] = byte(STOP)
-
-	_, _, gasLeftSmall, err := evm.Create(callerAddr, smallCode, initialGas, big.NewInt(0))
+	// Stack for CREATE: value=0, offset=0, length=32
+	st.Push(big.NewInt(32))
+	st.Push(big.NewInt(0))
+	st.Push(big.NewInt(0))
+	gasSmall, err := gasCreateDynamic(evm, contract, st, mem, 32)
 	if err != nil {
-		t.Fatalf("CREATE small failed: %v", err)
+		t.Fatalf("gasCreateDynamic(32) failed: %v", err)
 	}
 
 	// Large init code: 1024 bytes (32 words)
-	largeCode := make([]byte, 1024)
-	largeCode[0] = byte(STOP)
-
-	_, _, gasLeftLarge, err := evm.Create(callerAddr, largeCode, initialGas, big.NewInt(0))
+	st.Push(big.NewInt(1024))
+	st.Push(big.NewInt(0))
+	st.Push(big.NewInt(0))
+	gasLarge, err := gasCreateDynamic(evm, contract, st, mem, 1024)
 	if err != nil {
-		t.Fatalf("CREATE large failed: %v", err)
+		t.Fatalf("gasCreateDynamic(1024) failed: %v", err)
 	}
 
-	gasSmall := initialGas - gasLeftSmall
-	gasLarge := initialGas - gasLeftLarge
-
-	// Large init code should cost more: 32 words * InitCodeWordGas(2) = 64 more
-	// than 1 word * InitCodeWordGas(2) = 2 (difference of 62).
+	// Large init code dynamic gas should be higher by InitCodeWordGas * (32-1) = 62
 	if gasLarge <= gasSmall {
-		t.Errorf("CREATE with 1024-byte init code (%d gas) should cost more than 32-byte (%d gas)", gasLarge, gasSmall)
+		t.Errorf("CREATE dynamic gas for 1024-byte init code (%d) should exceed 32-byte (%d)", gasLarge, gasSmall)
 	}
 
 	// The difference should be at least (32-1) * InitCodeWordGas = 62.

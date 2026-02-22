@@ -177,6 +177,10 @@ func (st *StateTest) Run(subtest StateSubtest) *RunResult {
 		}
 	}
 
+	// Finalize pre-state so GetCommittedState returns correct original values
+	// for SSTORE gas calculations (EIP-2200, EIP-3529).
+	statedb.FinalizePreState()
+
 	// Determine sender address.
 	var senderAddr types.Address
 	if st.json.Tx.Sender != "" {

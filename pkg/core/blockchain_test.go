@@ -211,8 +211,8 @@ func TestBlockchain_InsertSingleBlock(t *testing.T) {
 
 func TestBlockchain_InsertBlockWithTx(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
@@ -567,8 +567,8 @@ func TestBlockchain_WriteReadBlock_EmptyBlock(t *testing.T) {
 
 func TestBlockchain_WriteReadBlock_WithTransactions(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
@@ -712,8 +712,8 @@ func TestBlockchain_StateCacheNotPopulatedAtNonInterval(t *testing.T) {
 
 func TestBlockchain_StateAtUsesCachedState(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(100_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))

@@ -791,10 +791,18 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 		return nil, types.Address{}, gas, ErrMaxInitCodeSizeExceeded
 	}
 
+	// Collision check: fail if address already has non-zero nonce or non-empty code.
+	if evm.StateDB.GetNonce(contractAddr) != 0 || len(evm.StateDB.GetCode(contractAddr)) > 0 {
+		return nil, types.Address{}, gas, errors.New("contract address collision")
+	}
+
 	snapshot := evm.StateDB.Snapshot()
 
 	// Create the account
 	evm.StateDB.CreateAccount(contractAddr)
+
+	// EIP-161: set contract nonce to 1 (post Spurious Dragon).
+	evm.StateDB.SetNonce(contractAddr, 1)
 
 	// Transfer value
 	if value != nil && value.Sign() > 0 {
@@ -811,21 +819,8 @@ func (evm *EVM) create(caller types.Address, code []byte, gas uint64, value *big
 		}
 	}
 
-	// Deduct CREATE base gas.
-	if gas < GasCreate {
-		return nil, types.Address{}, 0, ErrOutOfGas
-	}
-	gas -= GasCreate
-
-	// EIP-3860: charge initcode word gas (2 per 32-byte word).
-	if len(code) > 0 {
-		words := toWordSize(uint64(len(code)))
-		initCodeGas := InitCodeWordGas * words
-		if gas < initCodeGas {
-			return nil, types.Address{}, 0, ErrOutOfGas
-		}
-		gas -= initCodeGas
-	}
+	// GasCreate and InitCodeWordGas are already charged by the jump table's
+	// constantGas and dynamicGas functions. Do not charge them again here.
 
 	// Apply the 63/64 rule (EIP-150) to gas available for init code.
 	callGas := gas - gas/CallGasFraction

@@ -37,8 +37,8 @@ func TestProcessWithBAL_EmptyBlock(t *testing.T) {
 // BAL entries tracking balance and nonce changes.
 func TestProcessWithBAL_WithTransactions(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	proc := NewStateProcessor(TestConfig)
@@ -126,8 +126,8 @@ func TestProcessWithBAL_PreAmsterdam(t *testing.T) {
 // TestBALHash_Computed verifies the BAL hash computation is deterministic.
 func TestBALHash_Computed(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	proc := NewStateProcessor(TestConfig)
@@ -177,8 +177,8 @@ func TestBALHash_Computed(t *testing.T) {
 // BlockAccessListHash in the header when Amsterdam is active.
 func TestBlockBuilder_SetsBALHash(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	builder := newLegacyBuilder(TestConfig, statedb)
@@ -241,8 +241,8 @@ func TestBlockBuilder_EmptyBlock_SetsBALHash(t *testing.T) {
 // TestBlockBuilder_BuildBlock_SetsBALHash tests the new BuildBlock API sets BAL hash.
 func TestBlockBuilder_BuildBlock_SetsBALHash(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
@@ -377,8 +377,8 @@ func TestValidator_AcceptsCorrectBAL(t *testing.T) {
 // build a block, insert it, and verify the BAL hash is validated.
 func TestBlockchain_BALValidation_EndToEnd(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
@@ -432,8 +432,8 @@ func TestBlockchain_BALValidation_EndToEnd(t *testing.T) {
 // BAL hash is rejected during insertion.
 func TestBlockchain_RejectsWrongBALHash(t *testing.T) {
 	statedb := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiver := types.BytesToAddress([]byte{0x02})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiver := types.BytesToAddress([]byte{0xab})
 	statedb.AddBalance(sender, big.NewInt(10_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))

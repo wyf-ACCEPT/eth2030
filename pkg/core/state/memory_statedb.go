@@ -642,5 +642,16 @@ func (s *MemoryStateDB) PrefetchStorage(addr types.Address, keys []types.Hash) {
 	// of the specified storage keys from the backing store.
 }
 
+// FinalizePreState copies current dirty storage into committed storage for all accounts.
+// Call this after loading pre-state but before executing transactions, so that
+// GetCommittedState returns correct "original" values for SSTORE gas calculations.
+func (s *MemoryStateDB) FinalizePreState() {
+	for _, obj := range s.stateObjects {
+		for key, value := range obj.dirtyStorage {
+			obj.committedStorage[key] = value
+		}
+	}
+}
+
 // Verify interface compliance at compile time.
 var _ StateDB = (*MemoryStateDB)(nil)

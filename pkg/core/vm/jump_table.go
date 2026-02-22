@@ -511,7 +511,7 @@ func NewFrontierJumpTable() JumpTable {
 	tbl[CALLCODE] = &operation{execute: opCallCode, constantGas: GasCallFrontier, minStack: 7, maxStack: 1024, memorySize: memoryCallCode, dynamicGas: gasCallCodeFrontier}
 
 	// CREATE
-	tbl[CREATE] = &operation{execute: opCreate, constantGas: 0, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasCreateDynamic, writes: true}
+	tbl[CREATE] = &operation{execute: opCreate, constantGas: GasCreate, minStack: 3, maxStack: 1024, memorySize: memoryCreate, dynamicGas: gasCreateDynamic, writes: true}
 
 	// Return / Invalid / Selfdestruct
 	tbl[RETURN] = &operation{execute: opReturn, constantGas: GasReturn, minStack: 2, maxStack: 1024, halts: true, memorySize: memoryReturn, dynamicGas: gasMemExpansion}
@@ -568,7 +568,7 @@ func NewConstantinopleJumpTable() JumpTable {
 	tbl[SHR] = &operation{execute: opSHR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[SAR] = &operation{execute: opSAR, constantGas: GasVerylow, minStack: 2, maxStack: 1024}
 	tbl[EXTCODEHASH] = &operation{execute: opExtcodehash, constantGas: GasExtcodeHashConst, minStack: 1, maxStack: 1024}
-	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: 0, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasCreate2Dynamic, writes: true}
+	tbl[CREATE2] = &operation{execute: opCreate2, constantGas: GasCreate, minStack: 4, maxStack: 1024, memorySize: memoryCreate2, dynamicGas: gasCreate2Dynamic, writes: true}
 	return tbl
 }
 

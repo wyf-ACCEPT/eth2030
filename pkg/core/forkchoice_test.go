@@ -692,9 +692,9 @@ func TestForkChoice_SafeNotInHeadAncestry(t *testing.T) {
 
 func TestForkChoice_StateRollbackOnReorg(t *testing.T) {
 	genesisState := state.NewMemoryStateDB()
-	sender := types.BytesToAddress([]byte{0x01})
-	receiverA := types.BytesToAddress([]byte{0x02})
-	receiverB := types.BytesToAddress([]byte{0x03})
+	sender := types.BytesToAddress([]byte{0xaa})
+	receiverA := types.BytesToAddress([]byte{0xab})
+	receiverB := types.BytesToAddress([]byte{0xac})
 	genesisState.AddBalance(sender, big.NewInt(100_000_000))
 
 	genesis := makeGenesis(30_000_000, big.NewInt(1))
