@@ -246,13 +246,13 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 | Phase | Year | Coverage | Highlights |
 |-------|------|----------|------------|
 | Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
-| Hogota | 2026-2027 | **~95%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool |
-| I+ | 2027 | **~95%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync |
-| J+ | 2027-2028 | **~90%** | Verkle migration, light client, block-in-blobs, variable blobs |
-| K+ | 2028 | **~95%** | SSF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs |
-| L+ | 2029 | **~95%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM |
-| M+ | 2029+ | **~90%** | Gigagas, canonical zkVM, gas futures, sharded mempool |
-| 2030++ | Long term | **~90%** | VDF randomness, distributed builders, shielded transfers |
+| Hogota | 2026-2027 | **~97%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool reveal |
+| I+ | 2027 | **~97%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync, verkle gas |
+| J+ | 2027-2028 | **~95%** | Verkle migration batching, light client, block-in-blobs, variable blobs |
+| K+ | 2028 | **~97%** | SSF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs, proof aggregation |
+| L+ | 2029 | **~97%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM, BPO4 schedule |
+| M+ | 2029+ | **~95%** | Gigagas integration, canonical zkVM, gas futures settlement, sharded mempool |
+| 2030++ | Long term | **~95%** | VDF randomness, distributed builders, shielded transfers |
 
 **Gap analysis:** 65 roadmap items audited -- **65 COMPLETE**, 0 FUNCTIONAL, 0 PARTIAL, 0 MISSING. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
 
