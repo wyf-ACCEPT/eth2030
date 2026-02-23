@@ -57,23 +57,41 @@
 ```bash
 # Clone
 git clone https://github.com/jiayaoqijia/eth2030.git
-cd eth2030
+cd eth2030/pkg
 
 # Build all packages
-cd pkg && go build ./...
+go build ./...
+
+# Build the geth-embedded node (syncs with mainnet/testnets)
+go build -o eth2030-geth ./cmd/eth2030-geth/
+
+# Sync with Sepolia testnet (requires a consensus client on port 8551)
+./eth2030-geth --network sepolia --datadir ~/.eth2030-sepolia
+
+# Sync with mainnet
+./eth2030-geth --datadir ~/.eth2030-geth --authrpc.jwtsecret /path/to/jwt.hex
 
 # Run all tests (49 packages, 18,000+ tests)
 go test ./...
 
 # Run EF state test validation (36,126 vectors, 100% pass rate)
 go test ./core/eftest/ -run TestGethCategorySummary -timeout=10m
-
-# Run a specific package
-go test -v ./core/vm/...
-
-# Fuzz testing
-go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
 ```
+
+### eth2030-geth Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--datadir` | `~/.eth2030-geth` | Data directory for chain data |
+| `--network` | `mainnet` | Network: mainnet, sepolia, holesky |
+| `--syncmode` | `snap` | Sync mode: snap, full |
+| `--port` | `30303` | P2P listening port |
+| `--http.port` | `8545` | HTTP-RPC server port |
+| `--authrpc.port` | `8551` | Engine API port (for CL client) |
+| `--authrpc.jwtsecret` | auto | Path to JWT secret for Engine API auth |
+| `--maxpeers` | `50` | Maximum P2P peers |
+| `--verbosity` | `3` | Log level (0=silent, 5=trace) |
+| `--override.glamsterdam` | - | Test Glamsterdam fork at timestamp |
 
 ## Architecture
 
