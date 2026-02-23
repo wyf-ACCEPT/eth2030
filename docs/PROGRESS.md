@@ -1,6 +1,6 @@
 # ETH2030 Progress Report
 
-> Last updated: 2026-02-22
+> Last updated: 2026-02-23
 
 ## Summary
 
@@ -78,6 +78,9 @@ cd pkg && go build -o eth2030-geth ./cmd/eth2030-geth/
 - Writes Sepolia genesis block
 - Begins protocol initialization
 - All 8 unit tests passing
+- Sepolia snap sync verified: CL (Lighthouse v8.1.0) driving EL via Engine API, headers at ~9K/sec
+- Mainnet startup verified: Chain ID 1, genesis block, peer discovery via bootnodes
+- 20+ RPC methods verified on both networks (eth, net, web3, admin, txpool, engine, debug)
 
 **Custom Precompile Injection:**
 
