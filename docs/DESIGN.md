@@ -55,7 +55,7 @@
 
 ## 2. L1 Strawmap Phase Mapping
 
-The L1 Strawmap (strawmap.org) defines three layers with the following upgrade timeline:
+The L1 Strawmap defines three layers with the following upgrade timeline:
 
 ### Upgrade Timeline
 
