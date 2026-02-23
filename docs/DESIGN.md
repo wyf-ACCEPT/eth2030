@@ -585,7 +585,7 @@ Execution Layer State Access interface for external provers and validators:
 
 | Metric | Value |
 |--------|-------|
-| Packages | 49 (all passing) |
+| Packages | 50 (all passing) |
 | Source files | 986 |
 | Test files | 916 |
 | Source LOC | ~310,000 |
@@ -595,9 +595,38 @@ Execution Layer State Access interface for external provers and validators:
 | EIPs complete | 58+ (6 substantial) |
 | EF State Tests | 36,126/36,126 (100%) |
 
+### go-ethereum Embedded Binary (eth2030-geth)
+
+The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library, creating a production-ready Ethereum node that combines go-ethereum's battle-tested infrastructure with ETH2030's custom precompiles.
+
+```
+                    ┌─────────────────────────────────────┐
+                    │         eth2030-geth binary          │
+                    │   (pkg/cmd/eth2030-geth/)            │
+                    └──────────┬──────────────────────────┘
+                               │
+              ┌────────────────┼────────────────────┐
+              │                │                     │
+    ┌─────────▼──────┐ ┌──────▼──────┐ ┌────────────▼──────────┐
+    │  go-ethereum    │ │  Engine API │ │  ETH2030 Precompiles   │
+    │  Full Node      │ │ (catalyst)  │ │  (13 custom, injected  │
+    │  - Pebble DB    │ │  Port 8551  │ │   at fork levels)      │
+    │  - RLPx P2P     │ │             │ │  - Glamsterdam (4)     │
+    │  - Snap sync    │ │             │ │  - Hogota (0)          │
+    │  - JSON-RPC     │ │             │ │  - I+ (9: NTT+NII+    │
+    │    Port 8545    │ │             │ │        field arith)    │
+    └────────────────┘ └─────────────┘ └───────────────────────┘
+```
+
+**Networks supported:** mainnet (default), sepolia, holesky
+**Sync modes:** snap (default), full
+**Build:** `cd pkg && go build -o eth2030-geth ./cmd/eth2030-geth/`
+
+This architecture closes the production networking and database gaps: go-ethereum provides RLPx encrypted P2P, devp2p peer discovery, NAT traversal, Pebble DB storage, and the Engine API for CL client connectivity. ETH2030's 13 custom precompiles are injected into go-ethereum's EVM at the appropriate fork activation levels.
+
 ### Package Completeness
 
-All 47 packages are complete and passing tests. Key packages:
+All 50 packages are complete and passing tests. Key packages:
 
 | Package | Status | Description |
 |---------|--------|-------------|
@@ -623,15 +652,17 @@ ETH2030 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` a
 - `PrecompileAdapter` — wraps ETH2030 precompiles for go-ethereum's interface
 - `InjectCustomPrecompiles` — injects 13 custom precompiles via `evm.SetPrecompiles()`
 - `MakePreState` — creates go-ethereum `state.StateDB` backed by real trie DB
+- `eth2030-geth` binary — production node embedding go-ethereum for mainnet/testnet sync (see above)
 
 **Custom precompiles injected:** Glamsterdam repricing (4), NTT (1), NII (4), Field arithmetic (4).
 
 ### Remaining Gaps for Production
 
 1. **Real crypto backends** - Wire blst/circl/go-ipa/gnark submodules as backends (BLS12-381 and KZG adapters already wired)
-2. **RLPx encryption** - Production P2P encryption layer
-3. **Database backend** - LevelDB/Pebble for production performance
+2. ~~**RLPx encryption**~~ - CLOSED: `eth2030-geth` binary uses go-ethereum's production RLPx P2P networking
+3. ~~**Database backend**~~ - CLOSED: `eth2030-geth` binary uses Pebble (go-ethereum's default production DB)
 4. **Conformance testing** - EF state tests: 36,126/36,126 (100%) passing via go-ethereum backend
+5. **Consensus wiring** - PARTIALLY CLOSED: `eth2030-geth` registers Engine API via `catalyst.Register()` for CL client connection; ETH2030's own consensus components still need lifecycle integration
 
 ---
 

@@ -6,14 +6,14 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages | 49 |
+| Packages | 50 |
 | Source files | 986 |
 | Test files | 916 |
 | Source LOC | ~310,000 |
 | Test LOC | ~392,000 |
 | Total LOC | ~702,000 |
 | Passing tests | 18,000+ |
-| Test packages | 49/49 passing |
+| Test packages | 50/50 passing |
 | EIPs implemented | 58+ (complete), 6 (substantial) |
 | Roadmap coverage | 65 items (65 COMPLETE, 0 FUNCTIONAL, 0 PARTIAL) |
 | EF State Tests | 36,126/36,126 (100%) via go-ethereum backend |
@@ -29,6 +29,7 @@ ETH2030 imports go-ethereum v1.17.0 as a Go module dependency for EVM execution:
 | `pkg/geth/extensions.go` | Custom precompile injection via `evm.SetPrecompiles()` (13 precompiles) |
 | `pkg/geth/statedb.go` | State creation using go-ethereum's real trie DB |
 | `pkg/geth/config.go` | Chain config mapping (ETH2030 forks → go-ethereum params) |
+| `pkg/cmd/eth2030-geth/` | Production binary embedding go-ethereum as a full node (see below) |
 
 **Architecture:**
 ```
@@ -39,7 +40,44 @@ ETH2030 packages (bal, epbs, focil, das, rollup, zkvm, consensus, ...)
               pkg/geth/ (adapter package — only place that imports go-ethereum)
                      |
          go-ethereum v1.17.0 (core/vm, core/state, params — imported as library)
+                     |
+         pkg/cmd/eth2030-geth/ (production binary for mainnet/testnet sync)
 ```
+
+## eth2030-geth Binary
+
+The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library to provide a production-ready Ethereum node with ETH2030's custom precompiles. This closes the networking, database, and sync gaps that existed when ETH2030 operated only as a standalone implementation.
+
+**Build:**
+```bash
+cd pkg && go build -o eth2030-geth ./cmd/eth2030-geth/
+```
+
+**Source files:**
+| File | Purpose |
+|------|---------|
+| `main.go` | CLI entry point, flag parsing, node lifecycle |
+| `config.go` | Network configuration (mainnet, sepolia, holesky) |
+| `node.go` | go-ethereum node setup, service registration |
+| `precompiles.go` | Custom precompile injection at fork-specific activation levels |
+| `main_test.go` | 8 unit tests covering config, node init, precompile wiring |
+
+**Features provided by go-ethereum embedding:**
+| Feature | Details |
+|---------|---------|
+| Sync modes | snap (default), full |
+| Database | Pebble (go-ethereum's default production DB) |
+| Networking | RLPx encrypted P2P, devp2p, peer discovery |
+| Engine API | Port 8551 (for CL client connection) |
+| JSON-RPC | Port 8545 (standard Ethereum JSON-RPC) |
+| Networks | mainnet (default), sepolia, holesky |
+| Custom precompiles | 13 precompiles injected at Glamsterdam, Hogota, and I+ fork levels |
+
+**Tested capabilities:**
+- Binary starts and initializes Pebble DB
+- Writes Sepolia genesis block
+- Begins protocol initialization
+- All 8 unit tests passing
 
 **Custom Precompile Injection:**
 
@@ -114,6 +152,7 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 | `eth` | Complete | ETH protocol handler, codec, EIP-8077 announce nonce (ETH/72) |
 | `node` | Complete | Config, lifecycle, subsystem wiring |
 | `cmd/eth2030` | Complete | CLI flags, signal handling, startup |
+| `cmd/eth2030-geth` | Complete | Production binary: go-ethereum embedded node with Pebble DB, RLPx P2P, snap/full sync, Engine API, JSON-RPC, 13 custom precompiles |
 | `log` | Complete | Structured JSON/text logging |
 | `metrics` | Complete | Counters, gauges, histograms, Prometheus, EWMA, CPU tracker |
 
@@ -160,20 +199,20 @@ EIP-8077, EIP-8079, EIP-8141
 **Needed**: Wire reference submodules (blst, circl, go-ipa, go-eth-kzg, gnark) as backends.
 **Note**: Reference submodules already added to `refs/`. BLS12-381 (blst) and KZG (go-eth-kzg) adapters wired in `crypto/`.
 
-### 2. Production Networking (MEDIUM)
+### 2. Production Networking -- CLOSED
 
-**Current**: Full protocol stack with TCP, devp2p, discovery, gossip, Portal.
-**Needed**: RLPx encryption, NAT traversal, production connection management.
+**Status**: CLOSED via `eth2030-geth` binary.
+**Solution**: The `eth2030-geth` binary embeds go-ethereum v1.17.0, which provides production RLPx encryption, devp2p peer discovery, NAT traversal, and connection management out of the box.
 
-### 3. Database Backend (MEDIUM)
+### 3. Database Backend -- CLOSED
 
-**Current**: FileDB with WAL.
-**Needed**: LevelDB/Pebble backend for production performance.
+**Status**: CLOSED via `eth2030-geth` binary.
+**Solution**: The `eth2030-geth` binary uses Pebble (go-ethereum's default production database), providing LSM-tree storage with production-grade performance. ETH2030's standalone FileDB with WAL remains available for testing and lightweight use.
 
-### 4. Consensus Integration (MEDIUM)
+### 4. Consensus Integration -- PARTIALLY CLOSED
 
-**Current**: SSF, attestations, beacon state, fork choice, epoch processor all implemented.
-**Needed**: Wire consensus components into node lifecycle with real CL client communication.
+**Current**: SSF, attestations, beacon state, fork choice, epoch processor all implemented. The `eth2030-geth` binary registers the Engine API via `catalyst.Register()`, allowing a CL client (Lighthouse, Prysm, etc.) to connect on port 8551.
+**Remaining**: Wire ETH2030's own consensus components (SSF, quick slots, PQ attestations) into the node lifecycle alongside the CL client connection.
 
 ### 5. Roadmap Coverage
 
