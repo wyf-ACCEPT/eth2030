@@ -45,7 +45,7 @@ func TestMapEthConfigHolesky(t *testing.T) {
 }
 
 func TestMapNodeConfig(t *testing.T) {
-	cfg := mapNodeConfig("/tmp/test", "test-node", 30303, 8545, 8551, 25,
+	cfg := mapNodeConfig("/tmp/test", "test-node", "mainnet", 30303, 8545, 8551, 25,
 		[]string{"eth", "web3"}, "/tmp/jwt")
 	if cfg.DataDir != "/tmp/test" {
 		t.Fatalf("expected datadir /tmp/test, got %s", cfg.DataDir)

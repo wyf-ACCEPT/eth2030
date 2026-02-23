@@ -61,9 +61,9 @@ func run(args []string) int {
 	// Build go-ethereum configuration from CLI flags.
 	cfg := &eth2030GethConfig{
 		Node: mapNodeConfig(
-			*datadir, "eth2030-geth",
+			*datadir, "eth2030-geth", *network,
 			*p2pPort, *httpPort, *authPort, *maxPeers,
-			[]string{"eth", "net", "web3", "txpool", "engine"},
+			[]string{"eth", "net", "web3", "txpool", "engine", "admin", "debug"},
 			*jwtSecret,
 		),
 		Eth: mapEthConfig(*network, *syncMode),
