@@ -312,6 +312,18 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 - [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
 - [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
 
+## Development Stats
+
+This project was built with [Claude Code](https://claude.ai/code) (Claude Opus 4) over ~6 days:
+
+| Metric | Value |
+|--------|-------|
+| Total tokens | 1.14 billion |
+| Unique API calls | 11,198 |
+| Output tokens | 920,659 |
+| Estimated API cost | ~$2,300 |
+| Cost per 1K LOC | ~$3.28 |
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding guidelines, and contribution categories.
