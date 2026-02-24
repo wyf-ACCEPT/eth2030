@@ -11,7 +11,7 @@
 | 2026-2027 | Hogota | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~75% |
 | 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~55% |
 | 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~40% |
-| 2028 | K+ | SSF, quick slots, mandatory proofs, canonical guest | ~50% |
+| 2028 | K+ | 3SF, quick slots, mandatory proofs, canonical guest | ~50% |
 | 2029 | L+ | Endgame finality, PQ attestations, LETHE, blob streaming | ~55% |
 | 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~45% |
 | 2030++ | Long term | VDF, distributed builders, shielded transfers | ~30% |

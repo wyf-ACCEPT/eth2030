@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'Experimental Ethereum execution client implementing the EF Protocol L1 Strawmap. 50 packages, 18,000+ tests, 58 EIPs, 100% EF state test conformance. Built in Go.',
   keywords: [
     'Ethereum', 'ETH2030', 'execution client', 'EVM', 'zkVM',
-    'PeerDAS', 'SSF', 'post-quantum', 'ePBS', 'native rollups',
+    'PeerDAS', '3SF', 'post-quantum', 'ePBS', 'native rollups',
   ],
   authors: [{ name: 'ETH2030' }],
   icons: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ETH2030 — Ethereum Client for the 2028 Roadmap',
     description:
-      '50 packages, 18,000+ tests, 58 EIPs, 702K LOC. Full EVM, PQ crypto, native rollups, zkVM, SSF, PeerDAS, ePBS.',
+      '50 packages, 18,000+ tests, 58 EIPs, 702K LOC. Full EVM, PQ crypto, native rollups, zkVM, 3SF, PeerDAS, ePBS.',
     siteName: 'ETH2030',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'ETH2030' }],
     locale: 'en_US',

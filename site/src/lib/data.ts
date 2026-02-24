@@ -65,11 +65,11 @@ export const features: Feature[] = [
     tags: ['RISC-V', 'STF', 'zkISA'],
   },
   {
-    title: 'Single-Slot Finality',
-    description: 'SSF with quick slots (6s), 4-slot epochs, 1-epoch finality, 1M attestations/slot via parallel BLS.',
+    title: '3-Slot Finality',
+    description: '3SF with quick slots (6s), 4-slot epochs, 1-epoch finality, 1M attestations/slot via parallel BLS.',
     icon: '\u26A1',
     color: 'purple',
-    tags: ['SSF', '6s slots', '1M attestations'],
+    tags: ['3SF', '6s slots', '1M attestations'],
   },
   {
     title: 'PeerDAS',
@@ -151,7 +151,7 @@ export const roadmapPhases: RoadmapPhase[] = [
     name: 'K+',
     year: '2028',
     coverage: '~97%',
-    highlights: ['SSF', '6-sec slots', 'Mandatory 3-of-5 proofs', '1M attestations', 'CL proof circuits'],
+    highlights: ['3SF', '6-sec slots', 'Mandatory 3-of-5 proofs', '1M attestations', 'CL proof circuits'],
   },
   {
     name: 'L+',
@@ -178,7 +178,7 @@ export const architectureLayers: ArchitectureLayer[] = [
     name: 'Consensus Layer',
     color: 'purple',
     tracks: [
-      { name: 'Latency', items: ['Quick slots', 'SSF', '1-epoch finality', '6s slots'] },
+      { name: 'Latency', items: ['Quick slots', '3SF', '1-epoch finality', '6s slots'] },
       { name: 'Accessibility', items: ['ePBS', 'FOCIL', 'APS', '1M attestations'] },
       { name: 'Cryptography', items: ['PQ attestations', 'CL proofs', 'VDF', 'Secret proposers'] },
     ],

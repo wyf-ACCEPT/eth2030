@@ -123,7 +123,7 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 | `ssz` | Complete | SSZ encode/decode, merkleization, EIP-7916 ProgressiveList |
 | `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381 (incl. aggregate sigs), Banderwagon, IPA, VDF, threshold, shielded |
 | `crypto/pqc` | Complete | Dilithium3 (real lattice crypto), Falcon512, SPHINCS+ (hash-based), hybrid signer, lattice blob commitments |
-| `consensus` | Complete | SSF, quick slots, Casper FFG finality, committee selection, BLS operations, attestations, beacon state, block producer, reward calc, slashing |
+| `consensus` | Complete | 3SF (3-slot finality), quick slots, Casper FFG finality, committee selection, BLS operations, attestations, beacon state, block producer, reward calc, slashing |
 | `consensus/lethe` | Complete | LETHE insulation protocol for validator privacy |
 | `engine` | Complete | Engine API V3-V7, forkchoice, payload building, ePBS, distributed builder, Vickrey auctions |
 | `epbs` | Complete | Enshrined PBS: BuilderBid, PayloadEnvelope, builder registry, auctions |

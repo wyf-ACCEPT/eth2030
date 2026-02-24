@@ -103,7 +103,7 @@ Status of production-readiness gaps beyond roadmap feature coverage:
 |-----|--------|------------|
 | Production Networking | CLOSED | `eth2030-geth` binary embeds go-ethereum's RLPx encryption, devp2p, peer discovery, NAT traversal |
 | Database Backend | CLOSED | `eth2030-geth` binary uses Pebble (go-ethereum's default production LSM-tree DB) |
-| Consensus Integration | PARTIALLY CLOSED | `eth2030-geth` registers Engine API via `catalyst.Register()`, CL client can connect on port 8551; ETH2030's own consensus components (SSF, quick slots, PQ attestations) still need wiring into the node lifecycle |
+| Consensus Integration | PARTIALLY CLOSED | `eth2030-geth` registers Engine API via `catalyst.Register()`, CL client can connect on port 8551; ETH2030's own consensus components (3SF, quick slots, PQ attestations) still need wiring into the node lifecycle |
 | Real Cryptographic Backends | OPEN | Pure-Go implementations remain in ETH2030's own packages; need to wire blst, circl, go-ipa, go-eth-kzg, gnark as backends (see Library Integration Opportunities below) |
 
 The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library, providing snap/full sync, Pebble DB, RLPx P2P networking, Engine API (port 8551), and JSON-RPC (port 8545). It supports mainnet (default), sepolia, and holesky networks, with 13 custom precompiles injected at Glamsterdam, Hogota, and I+ fork levels.

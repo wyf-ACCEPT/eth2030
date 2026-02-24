@@ -35,3 +35,4 @@ coverage.html
 # Claude
 CLAUDE.md
 .claude/
+.vercel

@@ -48,7 +48,7 @@
 - **Post-quantum ready** -- ML-DSA-65 (FIPS 204), Dilithium3, Falcon512, SPHINCS+ signers with hybrid mode
 - **Native rollups** -- EIP-8079 EXECUTE precompile and anchor contract
 - **zkVM framework** -- RISC-V RV32IM CPU, STF executor, zkISA bridge, proof backend
-- **Full consensus** -- Single-slot finality, quick slots (6s), 1-epoch finality, PQ attestations
+- **Full consensus** -- 3-slot finality (3SF), quick slots (6s), 1-epoch finality, PQ attestations
 - **PeerDAS** -- Data availability sampling, custody proofs, blob streaming, variable-size blobs
 - **ePBS + FOCIL** -- Enshrined PBS with distributed builder and fork-choice enforced inclusion lists
 - **Complete networking** -- devp2p, discovery V5, gossip (pub/sub), Portal network, snap sync
@@ -120,7 +120,7 @@ go test ./core/eftest/ -run TestGethCategorySummary -timeout=10m
           |
  +--------v--------------------------+     +--------------------+
  |     go-ethereum EVM (v1.17.0)     |     | Consensus Layer    |
- |  + 13 ETH2030 custom precompiles  |     | SSF, Attestations  |
+ |  + 13 ETH2030 custom precompiles  |     | 3SF, Attestations  |
  +--------+--------------------------+     +--------------------+
           |
  +--------v--------------------------+     +-------------------+
@@ -173,7 +173,7 @@ The `eth2030-geth` binary has been verified syncing with live Ethereum networks:
 | `pkg/core/vm` | EVM interpreter, 164+ opcodes, 24 precompiles, gas tables, EOF | Complete |
 | `pkg/core/eftest` | EF state test runner: 36,126/36,126 (100%) via go-ethereum backend | Complete |
 | `pkg/geth` | go-ethereum adapter: type conversion, block processor, precompile injection | Complete |
-| `pkg/consensus` | SSF, quick slots, 1-epoch finality, attestations, beacon state, BLS adapter | Complete |
+| `pkg/consensus` | 3SF (3-slot finality), quick slots, 1-epoch finality, attestations, beacon state, BLS adapter | Complete |
 | `pkg/crypto` | Keccak-256, secp256k1, BN254, BLS12-381, Banderwagon, IPA, VDF, shielded | Complete |
 | `pkg/crypto/pqc` | ML-DSA-65, Dilithium3, Falcon512, SPHINCS+, hybrid signer, lattice blobs | Complete |
 | `pkg/engine` | Engine API V3-V7, forkchoice, payload building, ePBS, distributed builder | Complete |
@@ -281,7 +281,7 @@ Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phase
 | Hogota | 2026-2027 | **~97%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool reveal |
 | I+ | 2027 | **~97%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync, verkle gas |
 | J+ | 2027-2028 | **~95%** | Verkle migration batching, light client, block-in-blobs, variable blobs |
-| K+ | 2028 | **~97%** | SSF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs, proof aggregation |
+| K+ | 2028 | **~97%** | 3SF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs, proof aggregation |
 | L+ | 2029 | **~97%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM, BPO4 schedule |
 | M+ | 2029+ | **~95%** | Gigagas integration, canonical zkVM, gas futures settlement, sharded mempool |
 | 2030++ | Long term | **~95%** | VDF randomness, distributed builders, shielded transfers |

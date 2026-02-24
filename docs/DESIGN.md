@@ -62,7 +62,7 @@ The L1 Strawmap defines three layers with the following upgrade timeline:
 | Phase | Year | CL Headline | DL Headline | EL Headline |
 |-------|------|-------------|-------------|-------------|
 | **Glamsterdan** | 2026 | fast confirmation, ePBS, FOCIL | peerDAS | native AA, BALS, conversion repricing |
-| **Hogota** | 2026-2027 | single slot, modernized beacon state | blob throughput increase, local blob reconstruction | Hogota repricing, payload shrinking, multidimensional pricing |
+| **Hogota** | 2026-2027 | quick slots, modernized beacon specs | blob throughput increase, local blob reconstruction | Hogota repricing, payload shrinking, multidimensional pricing |
 | **I+** | 2027 | 1-epoch finality, post-quantum custody | decrease sample size | announce binary tree, NII precompile(s), encrypted mempool |
 | **J+** | 2027-2028 | 4-slot epochs, beacon & blob sync | short-dated blob futures | verkle/portal state, precompiles in eWASM, STF in eRISC |
 | **K+** | 2028 | 6-sec slots, 1MiB attestor cap, KPS | 3-RPO slots increase | block in blobs, mandatory 3-of-5 proofs, canonical guest |
@@ -634,7 +634,7 @@ All 50 packages are complete and passing tests. Key packages:
 | `core/state` | COMPLETE | In-memory, trie-backed, stateless StateDB, snapshots, pruner |
 | `core/vm` | COMPLETE | 164+ opcodes, 24 precompiles, EOF, gas tables |
 | `core/` | COMPLETE | Blockchain, processor, validator, gas futures, genesis init |
-| `consensus` | COMPLETE | SSF, quick slots, attestations, beacon state, block producer |
+| `consensus` | COMPLETE | 3SF, quick slots, attestations, beacon state, block producer |
 | `crypto` | COMPLETE | Keccak, secp256k1, BN254, BLS12-381, Banderwagon, VDF |
 | `crypto/pqc` | COMPLETE | Dilithium3, Falcon512, SPHINCS+, hybrid signer |
 | `engine` | COMPLETE | Engine API V3-V7, forkchoice, ePBS, distributed builder |
