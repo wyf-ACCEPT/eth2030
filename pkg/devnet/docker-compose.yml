@@ -1,0 +1,110 @@
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100m
+      max-file: "3"
+
+services:
+  # JWT secret initialization (runs once before EL/CL start)
+  init-jwt:
+    image: alpine:latest
+    restart: "no"
+    volumes:
+      - jwtsecret:/jwt
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        if [ -n "$${JWT_SECRET}" ]; then
+          echo -n "$${JWT_SECRET}" > /jwt/jwtsecret
+        elif [ ! -f /jwt/jwtsecret ]; then
+          apk add --no-cache openssl > /dev/null 2>&1
+          openssl rand -hex 32 | tr -d "\n" | tee /jwt/jwtsecret
+        fi
+        chmod 644 /jwt/jwtsecret
+        echo "JWT secret ready"
+
+  # Execution Layer — eth2030-geth
+  execution:
+    <<: *logging
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    image: eth2030:local
+    restart: unless-stopped
+    stop_grace_period: 30s
+    depends_on:
+      init-jwt:
+        condition: service_completed_successfully
+    ports:
+      - "${EL_P2P_PORT:-30303}:${EL_P2P_PORT:-30303}/tcp"
+      - "${EL_P2P_PORT:-30303}:${EL_P2P_PORT:-30303}/udp"
+      - "${EL_HTTP_PORT:-8545}:${EL_HTTP_PORT:-8545}/tcp"
+    volumes:
+      - el-data:${EL_DATADIR:-/data/eth2030-geth}
+      - jwtsecret:/jwt:ro
+    entrypoint: eth2030-geth
+    command:
+      - --network=${NETWORK:-sepolia}
+      - --datadir=${EL_DATADIR:-/data/eth2030-geth}
+      - --port=${EL_P2P_PORT:-30303}
+      - --http.addr=0.0.0.0
+      - --http.port=${EL_HTTP_PORT:-8545}
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=${EL_ENGINE_PORT:-8551}
+      - --authrpc.vhosts=*
+      - --authrpc.jwtsecret=/jwt/jwtsecret
+      - --syncmode=${EL_SYNCMODE:-snap}
+      - --maxpeers=${EL_MAXPEERS:-50}
+      - --verbosity=${EL_VERBOSITY:-3}
+    networks:
+      default:
+        aliases:
+          - eth1
+
+  # Consensus Layer — Lighthouse beacon node
+  consensus:
+    <<: *logging
+    image: sigp/lighthouse:${LIGHTHOUSE_TAG:-latest}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    depends_on:
+      init-jwt:
+        condition: service_completed_successfully
+      execution:
+        condition: service_started
+    ports:
+      - "${CL_P2P_PORT:-9000}:${CL_P2P_PORT:-9000}/tcp"
+      - "${CL_P2P_PORT:-9000}:${CL_P2P_PORT:-9000}/udp"
+      - "${CL_QUIC_PORT:-9001}:${CL_QUIC_PORT:-9001}/udp"
+      - "127.0.0.1:${CL_REST_PORT:-5052}:${CL_REST_PORT:-5052}/tcp"
+    volumes:
+      - cl-data:${CL_DATADIR:-/data/lighthouse}
+      - jwtsecret:/jwt:ro
+    command:
+      - lighthouse
+      - bn
+      - --network=${NETWORK:-sepolia}
+      - --datadir=${CL_DATADIR:-/data/lighthouse}
+      - --execution-endpoint=http://execution:${EL_ENGINE_PORT:-8551}
+      - --execution-jwt=/jwt/jwtsecret
+      - --checkpoint-sync-url=${CL_CHECKPOINT_SYNC_URL:-https://sepolia.checkpoint-sync.ethpandaops.io}
+      - --port=${CL_P2P_PORT:-9000}
+      - --quic-port=${CL_QUIC_PORT:-9001}
+      - --http
+      - --http-address=0.0.0.0
+      - --http-port=${CL_REST_PORT:-5052}
+      - --debug-level=${LOG_LEVEL:-info}
+    networks:
+      default:
+        aliases:
+          - eth2
+
+volumes:
+  el-data:
+  cl-data:
+  jwtsecret:
+
+networks:
+  default:

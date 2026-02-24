@@ -26,8 +26,11 @@ func run(args []string) int {
 	datadir := fs.String("datadir", defaultDataDir(), "Data directory for the node")
 	network := fs.String("network", "mainnet", "Network to join (mainnet, sepolia, holesky)")
 	p2pPort := fs.Int("port", 30303, "P2P listening port")
+	httpAddr := fs.String("http.addr", "127.0.0.1", "HTTP-RPC server listening address")
 	httpPort := fs.Int("http.port", 8545, "HTTP-RPC server port")
+	authAddr := fs.String("authrpc.addr", "127.0.0.1", "Engine API listening address")
 	authPort := fs.Int("authrpc.port", 8551, "Engine API (authenticated RPC) port")
+	authVhosts := fs.String("authrpc.vhosts", "localhost", "Comma-separated list of virtual hostnames for Engine API (use * for all)")
 	jwtSecret := fs.String("authrpc.jwtsecret", "", "Path to JWT secret for Engine API auth")
 	syncMode := fs.String("syncmode", "snap", "Sync mode: full, snap")
 	maxPeers := fs.Int("maxpeers", 50, "Maximum number of P2P peers")
@@ -62,7 +65,7 @@ func run(args []string) int {
 	cfg := &eth2030GethConfig{
 		Node: mapNodeConfig(
 			*datadir, "eth2030-geth", *network,
-			*p2pPort, *httpPort, *authPort, *maxPeers,
+			*p2pPort, httpAddr, *httpPort, authAddr, *authPort, *authVhosts, *maxPeers,
 			[]string{"eth", "net", "web3", "txpool", "engine", "admin", "debug"},
 			*jwtSecret,
 		),
