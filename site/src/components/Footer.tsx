@@ -12,7 +12,7 @@ export default function Footer() {
               <h3 className="text-lg font-bold text-eth-purple">ETH2030</h3>
             </div>
             <p className="text-sm text-eth-dim leading-relaxed">
-              Experimental Ethereum execution client targeting the EF Protocol L1 roadmap.
+              Experimental Ethereum execution client targeting the 2028 roadmap.
             </p>
           </div>
 

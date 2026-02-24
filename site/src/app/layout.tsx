@@ -12,7 +12,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'ETH2030 — Ethereum Client for the 2028 Roadmap',
   description:
-    'Experimental Ethereum execution client implementing the EF Protocol L1 Strawmap. 50 packages, 18,000+ tests, 58 EIPs, 100% EF state test conformance. Built in Go.',
+    'Experimental Ethereum execution client targeting the 2028 roadmap. 50 packages, 18,000+ tests, 58 EIPs, 100% EF state test conformance. Built in Go.',
   keywords: [
     'Ethereum', 'ETH2030', 'execution client', 'EVM', 'zkVM',
     'PeerDAS', '3SF', 'post-quantum', 'ePBS', 'native rollups',

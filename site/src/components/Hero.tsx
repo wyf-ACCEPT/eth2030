@@ -50,7 +50,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mt-6 text-lg sm:text-xl md:text-2xl text-eth-dim max-w-2xl mx-auto leading-relaxed"
         >
-          Targeting the full EF Protocol L1 roadmap.{' '}
+          Targeting the Ethereum 2028 roadmap.{' '}
           <span className="text-eth-purple">50 packages</span>,{' '}
           <span className="text-eth-pink">18,000+ tests</span>,{' '}
           <span className="text-eth-teal">58 EIPs</span>.{' '}

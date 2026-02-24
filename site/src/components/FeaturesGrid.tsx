@@ -10,7 +10,7 @@ export default function FeaturesGrid() {
 
   return (
     <section id="features" className="py-20 md:py-28 px-4">
-      <SectionHeading title="Features" subtitle="Full coverage of the EF Protocol L1 roadmap" />
+      <SectionHeading title="Features" subtitle="Comprehensive Ethereum protocol implementation" />
 
       <div ref={ref} className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {features.map((feature, i) => (
