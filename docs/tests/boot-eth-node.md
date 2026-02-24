@@ -136,7 +136,7 @@ Configuration is in `pkg/devnet/.env`. Key variables:
 | `JWT_SECRET` | (auto-generated) | Hex-encoded 32-byte JWT secret |
 | `CL_CHECKPOINT_SYNC_URL` | `https://sepolia.beaconstate.info` | CL checkpoint sync endpoint |
 | `EL_SYNCMODE` | `snap` | EL sync mode |
-| `LIGHTHOUSE_TAG` | `latest-modern` | Lighthouse Docker image tag |
+| `LIGHTHOUSE_TAG` | `latest` | Lighthouse Docker image tag |
 
 See `pkg/devnet/docker-compose.yml` for the full setup.
 
@@ -327,7 +327,6 @@ The following configurations are **not currently available** in eth2030-geth:
 |---------------|--------|------------|
 | `--bootnodes` | Cannot specify custom bootnodes for private/dev networks | Use `admin_addPeer` RPC after startup |
 | `--http.corsdomain` | CORS is fixed to `localhost` for HTTP-RPC | No workaround available |
-| `--authrpc.vhosts` | Engine API vhosts not configurable | Defaults to empty (allow all) |
 | `--ws` / `--ws.port` | No WebSocket RPC support on HTTP port | Only Engine API has WebSocket |
 | `--cache` | No cache size configuration | Uses go-ethereum defaults |
 | `--nat` | No NAT traversal configuration | Manual port forwarding required |

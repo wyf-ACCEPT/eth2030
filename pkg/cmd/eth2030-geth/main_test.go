@@ -45,9 +45,7 @@ func TestMapEthConfigHolesky(t *testing.T) {
 }
 
 func TestMapNodeConfig(t *testing.T) {
-	httpAddr := "127.0.0.1"
-	authAddr := "127.0.0.1"
-	cfg := mapNodeConfig("/tmp/test", "test-node", "mainnet", 30303, &httpAddr, 8545, &authAddr, 8551, "localhost", 25,
+	cfg := mapNodeConfig("/tmp/test", "test-node", "mainnet", 30303, "127.0.0.1", 8545, "127.0.0.1", 8551, "localhost", 25,
 		[]string{"eth", "web3"}, "/tmp/jwt")
 	if cfg.DataDir != "/tmp/test" {
 		t.Fatalf("expected datadir /tmp/test, got %s", cfg.DataDir)
@@ -70,9 +68,7 @@ func TestMapNodeConfig(t *testing.T) {
 }
 
 func TestMapNodeConfigAuthVhostsWildcard(t *testing.T) {
-	httpAddr := "0.0.0.0"
-	authAddr := "0.0.0.0"
-	cfg := mapNodeConfig("/tmp/test", "test-node", "mainnet", 30303, &httpAddr, 8545, &authAddr, 8551, "*", 25,
+	cfg := mapNodeConfig("/tmp/test", "test-node", "mainnet", 30303, "0.0.0.0", 8545, "0.0.0.0", 8551, "*", 25,
 		[]string{"eth"}, "/tmp/jwt")
 	if len(cfg.AuthVirtualHosts) != 1 || cfg.AuthVirtualHosts[0] != "*" {
 		t.Fatalf("expected auth vhosts [*], got %v", cfg.AuthVirtualHosts)

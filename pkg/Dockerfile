@@ -1,8 +1,8 @@
-ARG COMMIT=""
-ARG VERSION=""
-
 # Build stage
 FROM golang:1.25-alpine AS builder
+
+ARG COMMIT=""
+ARG VERSION=""
 
 RUN apk add --no-cache gcc musl-dev linux-headers git
 
