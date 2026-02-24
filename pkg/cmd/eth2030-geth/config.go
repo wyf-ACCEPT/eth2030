@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth/ethconfig"
@@ -20,19 +21,20 @@ type eth2030GethConfig struct {
 }
 
 // mapNodeConfig creates a go-ethereum node.Config from CLI parameters.
-func mapNodeConfig(datadir, name, network string, p2pPort, httpPort, authPort, maxPeers int,
+func mapNodeConfig(datadir, name, network string, p2pPort int, httpAddr *string, httpPort int, authAddr *string, authPort int, authVhosts string, maxPeers int,
 	httpModules []string, jwtSecret string) gethnode.Config {
 
 	return gethnode.Config{
 		Name:             name,
 		Version:          version,
 		DataDir:          datadir,
-		HTTPHost:         "127.0.0.1",
+		HTTPHost:         *httpAddr,
 		HTTPPort:         httpPort,
 		HTTPModules:      httpModules,
 		HTTPVirtualHosts: []string{"localhost"},
-		AuthAddr:         "127.0.0.1",
+		AuthAddr:         *authAddr,
 		AuthPort:         authPort,
+		AuthVirtualHosts: splitAndTrim(authVhosts),
 		JWTSecret:        jwtSecret,
 		P2P: p2p.Config{
 			ListenAddr:       fmt.Sprintf(":%d", p2pPort),
@@ -62,6 +64,18 @@ func parseBootnodes(network string) []*enode.Node {
 		}
 	}
 	return nodes
+}
+
+// splitAndTrim splits a comma-separated string and trims whitespace from each element.
+func splitAndTrim(s string) []string {
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if v := strings.TrimSpace(p); v != "" {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 // mapEthConfig creates a go-ethereum ethconfig.Config for the selected network.
