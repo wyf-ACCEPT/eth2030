@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 
 # Go build artifacts
-pkg/eth2030
+pkg/bin/
 *.exe
 *.test
 *.out
