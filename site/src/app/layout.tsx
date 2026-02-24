@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 
 const jetbrainsMono = JetBrains_Mono({
@@ -43,6 +44,20 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={jetbrainsMono.variable}>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-X7E4QDFTLB"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-X7E4QDFTLB');
+          `}
+        </Script>
+      </head>
       <body className="bg-eth-bg text-eth-text antialiased overflow-x-hidden font-mono">
         {children}
         <div className="scanline-overlay" aria-hidden="true" />
