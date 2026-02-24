@@ -65,7 +65,7 @@ func run(args []string) int {
 	cfg := &eth2030GethConfig{
 		Node: mapNodeConfig(
 			*datadir, "eth2030-geth", *network,
-			*p2pPort, httpAddr, *httpPort, authAddr, *authPort, *authVhosts, *maxPeers,
+			*p2pPort, *httpAddr, *httpPort, *authAddr, *authPort, *authVhosts, *maxPeers,
 			[]string{"eth", "net", "web3", "txpool", "engine", "admin", "debug"},
 			*jwtSecret,
 		),

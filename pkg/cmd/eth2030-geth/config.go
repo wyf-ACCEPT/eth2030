@@ -21,18 +21,18 @@ type eth2030GethConfig struct {
 }
 
 // mapNodeConfig creates a go-ethereum node.Config from CLI parameters.
-func mapNodeConfig(datadir, name, network string, p2pPort int, httpAddr *string, httpPort int, authAddr *string, authPort int, authVhosts string, maxPeers int,
+func mapNodeConfig(datadir, name, network string, p2pPort int, httpAddr string, httpPort int, authAddr string, authPort int, authVhosts string, maxPeers int,
 	httpModules []string, jwtSecret string) gethnode.Config {
 
 	return gethnode.Config{
 		Name:             name,
 		Version:          version,
 		DataDir:          datadir,
-		HTTPHost:         *httpAddr,
+		HTTPHost:         httpAddr,
 		HTTPPort:         httpPort,
 		HTTPModules:      httpModules,
 		HTTPVirtualHosts: []string{"localhost"},
-		AuthAddr:         *authAddr,
+		AuthAddr:         authAddr,
 		AuthPort:         authPort,
 		AuthVirtualHosts: splitAndTrim(authVhosts),
 		JWTSecret:        jwtSecret,
