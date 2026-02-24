@@ -1,7 +1,7 @@
 // Package engine implements the distributed block builder auction system.
 //
 // BuilderAuction manages a second-price sealed-bid auction for block construction
-// rights in the Ethereum 2028 roadmap. Builders register with stake, submit bids
+// rights in the Ethereum 2030 roadmap. Builders register with stake, submit bids
 // for specific slots, and the auction selects the highest bidder while charging
 // the second-highest price (Vickrey auction). Misbehaving builders can be slashed.
 package engine

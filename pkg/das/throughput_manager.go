@@ -1,5 +1,5 @@
 // Package das - throughput_manager.go implements blob throughput scaling per
-// the Ethereum 2028 roadmap. It dynamically adjusts the blob limit per block
+// the Ethereum 2030 roadmap. It dynamically adjusts the blob limit per block
 // based on network utilization, scaling up when demand is high and scaling
 // down when utilization drops.
 package das

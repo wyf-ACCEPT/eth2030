@@ -1,6 +1,6 @@
 // proof_custody.go implements the proof-of-custody scheme for blob data
 // availability, part of the DAS (Data Availability Sampling) subsystem.
-// This targets the "proof custody" milestone in the Ethereum 2028 roadmap
+// This targets the "proof custody" milestone in the Ethereum 2030 roadmap
 // (Data Layer, Throughput track).
 //
 // The scheme requires nodes to post custody bonds, prove they hold specific

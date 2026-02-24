@@ -15,7 +15,7 @@ import (
 )
 
 // MaxSubaccountsPerParent is the maximum number of subaccounts a single
-// parent account may create (1 million, per the 2028 roadmap spec).
+// parent account may create (1 million, per the 2030 roadmap spec).
 const MaxSubaccountsPerParent = 1_000_000
 
 var (

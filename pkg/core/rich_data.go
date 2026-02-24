@@ -1,5 +1,5 @@
 // rich_data.go implements the Rich Data Smart Contracts system from the
-// Ethereum 2028 roadmap (CL Accessibility track). It provides structured,
+// Ethereum 2030 roadmap (CL Accessibility track). It provides structured,
 // schema-validated on-chain data storage with field-level indexing for
 // efficient queries.
 package core

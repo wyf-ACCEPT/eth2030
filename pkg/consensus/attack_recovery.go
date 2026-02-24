@@ -1,6 +1,6 @@
 // Package consensus implements Ethereum consensus-layer primitives.
 // This file implements 51% attack detection and auto-recovery per the
-// CL Accessibility track of the Ethereum 2028 roadmap.
+// CL Accessibility track of the Ethereum 2030 roadmap.
 package consensus
 
 import (

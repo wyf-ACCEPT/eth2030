@@ -3,7 +3,7 @@
 // execution context where participants share an ephemeral symmetric key
 // derived via Keccak256, and payloads are encrypted with AES-256-GCM.
 // This provides confidential cross-validator communication as part of
-// the Ethereum 2028 roadmap privacy layer.
+// the Ethereum 2030 roadmap privacy layer.
 package lethe
 
 import (

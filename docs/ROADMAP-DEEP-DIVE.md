@@ -37,7 +37,7 @@
 
 ## Executive Summary
 
-Ethereum's 2026-2028 roadmap executes a transformation from a 30 TPS chain into a
+Ethereum's 2026-2030 roadmap executes a transformation from a 30 TPS chain into a
 1 Ggas/s L1 powering a 1M+ TPS ecosystem. The strategy has five pillars:
 
 | Pillar | Target | Key Mechanism |
@@ -77,7 +77,7 @@ The first major 2026 fork focuses on execution scalability and PBS reform.
 - Aspirational: 300M gas by end of 2026
 
 **Community Status (from ethereum-magicians.org):**
-- EIP-7928 is the most actively discussed 2028 roadmap item (35+ forum posts)
+- EIP-7928 is the most actively discussed 2030 roadmap item (35+ forum posts)
 - 12+ breakout sessions documented for Block Access Lists
 - Glamsterdam stakeholder feedback thread: 26 posts
 

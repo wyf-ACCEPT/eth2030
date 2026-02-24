@@ -1,6 +1,6 @@
-# Ethereum 2028 Client Roadmap
+# Ethereum 2030 Client Roadmap
 
-> Derived from EF Protocol L1 Strawmap (Feb 2026) and community research.
+> Derived from the Ethereum 2030 roadmap and community research.
 > Last updated: 2026-02-20
 
 ## Timeline Overview
@@ -16,7 +16,7 @@
 | 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~45% |
 | 2030++ | Long term | VDF, distributed builders, shielded transfers | ~30% |
 
-## L1 Strawmap Layers
+## 2030 Roadmap Layers
 
 ### Consensus Layer (CL)
 

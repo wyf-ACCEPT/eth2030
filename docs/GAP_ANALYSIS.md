@@ -1,4 +1,4 @@
-# ETH2030 Gap Analysis vs L1 Strawmap Roadmap
+# ETH2030 Gap Analysis vs 2030 Roadmap
 
 Last updated: 2026-02-23
 

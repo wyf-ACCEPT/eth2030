@@ -1,5 +1,5 @@
 // multidim_gas.go implements a comprehensive 5-dimensional gas pricing engine
-// for the Ethereum 2028 roadmap. It extends the existing 3-dimensional model
+// for the Ethereum 2030 roadmap. It extends the existing 3-dimensional model
 // (compute, calldata, blob) with two additional dimensions (storage, witness)
 // and provides full EIP-1559-style independent base fee adjustment per dimension.
 //

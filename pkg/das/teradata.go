@@ -1,6 +1,6 @@
 // Package das implements data availability sampling.
 // This file adds Teradata L2 support for high-throughput L2 data availability,
-// targeting the M+ upgrade timeline on the Ethereum 2028 roadmap.
+// targeting the M+ upgrade timeline on the Ethereum 2030 roadmap.
 package das
 
 import (

@@ -1,5 +1,5 @@
 // gas_settlement.go implements gas futures settlement logic for the Ethereum
-// 2028 roadmap's long-dated gas futures track (M+ upgrade). It manages the
+// 2030 roadmap's long-dated gas futures track (M+ upgrade). It manages the
 // full contract lifecycle: position tracking, mark-to-market valuations,
 // collateral/margin management, liquidation of undercollateralized positions,
 // and batch settlement at expiry.

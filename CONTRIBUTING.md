@@ -31,7 +31,7 @@ go test -fuzz=FuzzDecode ./rlp/ -fuzztime=30s
 
 ### 1. EIP Implementations
 
-ETH2030 implements 58+ EIPs across the Ethereum 2028 roadmap. To add or improve
+ETH2030 implements 58+ EIPs across the Ethereum 2030 roadmap. To add or improve
 an EIP implementation:
 
 1. Check `docs/EIP_SPEC_IMPL.md` for current implementation status

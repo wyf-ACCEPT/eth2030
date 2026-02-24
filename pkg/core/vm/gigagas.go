@@ -1,7 +1,7 @@
 // Package vm implements the Ethereum Virtual Machine.
 //
 // gigagas.go implements the Gigagas Executor for high-throughput transaction
-// execution targeting 1 Ggas/sec, as outlined in the Ethereum 2028 roadmap
+// execution targeting 1 Ggas/sec, as outlined in the Ethereum 2030 roadmap
 // (EL Throughput track, M+ milestone).
 package vm
 

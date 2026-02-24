@@ -1,6 +1,6 @@
 // Package pqc provides post-quantum cryptographic primitives for Ethereum.
 // This file implements a post-quantum public key registry for validators,
-// per the CL Cryptography track of the Ethereum 2028 roadmap.
+// per the CL Cryptography track of the Ethereum 2030 roadmap.
 package pqc
 
 import (

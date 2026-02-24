@@ -1,7 +1,7 @@
 <h1 align="center">ETH2030</h1>
 
 <p align="center">
-  <strong>Ethereum execution client targeting the EF Protocol L1 Strawmap roadmap</strong>
+  <strong>Ethereum execution client targeting the 2030 roadmap</strong>
   <br />
   <a href="https://eth2030.com">eth2030.com</a>
 </p>
@@ -37,13 +37,13 @@
 
 ---
 
-> Built in Go, implementing the EF Protocol L1 Strawmap (Feb 2026) from Glamsterdam through the Giga-Gas era.
+> Built in Go, targeting the Ethereum 2030 roadmap from protocol upgrades through the Giga-Gas era.
 
 ## Features
 
 - **Full EVM execution** -- 164+ opcodes, 24 precompiles, EOF container support, go-ethereum v1.17.0 backend
 - **100% EF conformance** -- 36,126/36,126 Ethereum Foundation state tests passing via go-ethereum integration
-- **58+ EIPs implemented** -- Covering Frontier through Prague and beyond (Glamsterdam, Hogota, I+ forks)
+- **58+ EIPs implemented** -- Covering Frontier through Prague and beyond
 - **Parallel execution** -- Block Access Lists (EIP-7928) for BAL-driven parallel transaction processing
 - **Post-quantum ready** -- ML-DSA-65 (FIPS 204), Dilithium3, Falcon512, SPHINCS+ signers with hybrid mode
 - **Native rollups** -- EIP-8079 EXECUTE precompile and anchor contract
@@ -273,20 +273,15 @@ See [docs/EIP_SPEC_IMPL.md](docs/EIP_SPEC_IMPL.md) for full traceability: specs,
 
 ## Roadmap Coverage
 
-Full coverage of the EF Protocol L1 Strawmap (Feb 2026) across all upgrade phases:
+ETH2030 implements 8 upgrade phases covering consensus, data, and execution layers from 2026 through 2030+.
 
-| Phase | Year | Coverage | Highlights |
-|-------|------|----------|------------|
-| Glamsterdam | 2026 | **~99%** | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool |
-| Hogota | 2026-2027 | **~97%** | Multidim gas, payload chunking, NTT precompile, encrypted mempool reveal |
-| I+ | 2027 | **~97%** | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto, beam sync, verkle gas |
-| J+ | 2027-2028 | **~95%** | Verkle migration batching, light client, block-in-blobs, variable blobs |
-| K+ | 2028 | **~97%** | 3SF, 6-sec slots, mandatory proofs, 1M attestations, CL proofs, proof aggregation |
-| L+ | 2029 | **~97%** | Endgame finality, PQ attestations, APS, custody proofs, jeanVM, BPO4 schedule |
-| M+ | 2029+ | **~95%** | Gigagas integration, canonical zkVM, gas futures settlement, sharded mempool |
-| 2030++ | Long term | **~95%** | VDF randomness, distributed builders, shielded transfers |
+| Metric | Value |
+|--------|-------|
+| **Upgrade phases** | 8 |
+| **Roadmap items** | 65 |
+| **Completion** | 65/65 (100%) |
 
-**Gap analysis:** 65 roadmap items audited -- **65 COMPLETE**, 0 FUNCTIONAL, 0 PARTIAL, 0 MISSING. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md).
+Full roadmap details will be published when the upstream specification is made public. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
 
 ## Engine API
 

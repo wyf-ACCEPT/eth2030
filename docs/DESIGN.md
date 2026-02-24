@@ -1,7 +1,7 @@
 # ETH2030 Execution Client -- Design Document
 
-> A minimal, spec-compliant Ethereum execution client targeting the 2028 roadmap.
-> Built in Go, referencing the L1 Strawmap by EF Protocol (Feb 11, 2026).
+> A minimal, spec-compliant Ethereum execution client targeting the 2030 roadmap.
+> Built in Go, targeting the Ethereum 2030 roadmap.
 > Source: EF Architecture team (Ansgar, Barnabe, Francesco, Justin).
 
 ---
@@ -53,9 +53,9 @@
 
 ---
 
-## 2. L1 Strawmap Phase Mapping
+## 2. 2030 Roadmap Phase Mapping
 
-The L1 Strawmap defines three layers with the following upgrade timeline:
+The 2030 roadmap defines three layers with the following upgrade timeline:
 
 ### Upgrade Timeline
 

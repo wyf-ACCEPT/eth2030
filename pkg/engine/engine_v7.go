@@ -9,7 +9,7 @@ import (
 	"github.com/eth2030/eth2030/core/types"
 )
 
-// Engine API V7 extends the Engine API for the 2028 roadmap (K+ era).
+// Engine API V7 extends the Engine API for the 2030 roadmap (K+ era).
 // Adds support for DA layer configuration, proof requirements (mandatory
 // 3-of-5 proofs), and shielded transactions (encrypted mempool).
 
@@ -28,7 +28,7 @@ type EngineV7Backend interface {
 	GetPayloadV7(id PayloadID) (*ExecutionPayloadV7, error)
 }
 
-// DALayerConfig configures the data availability layer for the 2028 roadmap.
+// DALayerConfig configures the data availability layer for the 2030 roadmap.
 // Controls peerDAS parameters and blob reconstruction settings.
 type DALayerConfig struct {
 	// SampleCount is the number of DA samples required per slot.
@@ -65,7 +65,7 @@ func (pr *ProofRequirements) Validate() error {
 	return nil
 }
 
-// PayloadAttributesV7 extends V3 attributes with 2028 roadmap features.
+// PayloadAttributesV7 extends V3 attributes with 2030 roadmap features.
 type PayloadAttributesV7 struct {
 	PayloadAttributesV3
 
@@ -80,7 +80,7 @@ type PayloadAttributesV7 struct {
 	ShieldedTxs [][]byte `json:"shieldedTxs,omitempty"`
 }
 
-// ExecutionPayloadV7 extends V3 with 2028 roadmap fields.
+// ExecutionPayloadV7 extends V3 with 2030 roadmap fields.
 type ExecutionPayloadV7 struct {
 	ExecutionPayloadV3
 

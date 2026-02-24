@@ -1,5 +1,5 @@
 // multidim_market.go implements a full 3-dimensional fee market for the
-// Ethereum 2028 roadmap. It manages independent EIP-1559-style base fee
+// Ethereum 2030 roadmap. It manages independent EIP-1559-style base fee
 // adjustments for three gas dimensions: execution gas, blob gas, and
 // access gas (from the multidimensional pricing track).
 //
