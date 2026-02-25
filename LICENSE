@@ -1,0 +1,12 @@
+ETH2030 is dual-licensed under the GNU General Public License v3.0 (GPLv3)
+and the GNU Lesser General Public License v3.0 (LGPLv3).
+
+The ETH2030 library (all code outside of the `cmd` directory) is licensed
+under the GNU Lesser General Public License v3.0. See COPYING.LESSER for
+the full license text.
+
+The ETH2030 binaries (all code inside of the `cmd` directory) are licensed
+under the GNU General Public License v3.0. See COPYING for the full
+license text.
+
+This dual-license structure follows the same model used by go-ethereum.

@@ -41,7 +41,7 @@ func buildTestSimpleHaltProgram() []byte {
 	instrs := []uint32{
 		EncodeIType(0x13, 17, 0, 0, 0), // a7 = 0 (halt)
 		EncodeIType(0x13, 10, 0, 0, 0), // a0 = 0 (exit code)
-		0x00000073,                      // ECALL
+		0x00000073,                     // ECALL
 	}
 	code := make([]byte, len(instrs)*4)
 	for i, instr := range instrs {
@@ -62,7 +62,7 @@ func buildTestLongProgram(nopCount int) []byte {
 	instrs = append(instrs,
 		EncodeIType(0x13, 17, 0, 0, 0), // a7 = 0
 		EncodeIType(0x13, 10, 0, 0, 0), // a0 = 0
-		0x00000073,                      // ECALL
+		0x00000073,                     // ECALL
 	)
 	code := make([]byte, len(instrs)*4)
 	for i, instr := range instrs {
