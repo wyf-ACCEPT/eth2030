@@ -171,6 +171,21 @@ ETH2030's custom precompiles are injected into go-ethereum's EVM via `evm.SetPre
 
 ---
 
+## Devnet Validation
+
+All 65 roadmap items are validated via 31 Kurtosis devnet feature tests (15 roadmap features + 16 layer group configs), each passing consensus checks with feature verification.
+
+| Layer | Test Configs | Roadmap Items Covered | Status |
+|-------|-------------|----------------------|--------|
+| **Roadmap Features** (15) | epbs, focil, bal, native-aa, gas-repricing, blobs, multidim-gas, ssz, native-rollups, peerdas, verkle, consensus-3sf, pq-crypto, encrypted-mempool, shielded-transfers | 15 core features | ALL PASS |
+| **Consensus Layer** (5) | cl-finality, cl-validators, cl-attestations, cl-security, cl-infrastructure | Items 1-22 (fast confirm, quick slots, 1-epoch finality, endgame, beacon specs, attester cap, APS, 1 ETH includers, tech debt, PQ attestations, jeanVM, 1M attestations, 51% recovery, distributed builder, VDF, secret proposers, PQ registry, PQ chain, CL proofs) | ALL PASS |
+| **Data Layer** (4) | dl-blob-advanced, dl-reconstruction, dl-futures, dl-broadcast | Items 23-34 (sparse blobpool, cell messages, 7702 broadcast, BPO blobs, blob reconstruction, sample optimization, blob streaming, blob futures, PQ blobs, variable-size blobs, custody proofs, teragas L2) | ALL PASS |
+| **Execution Layer** (7) | el-gas-schedule, el-payload, el-proofs, el-zkvm, el-state, el-tx-advanced, el-gas-futures | Items 35-65 (repricing, proofs, gas limit, multidim gas, payload chunking, block-in-blobs, nonce, mandatory proofs, canonical guest/zkVM, gas futures, sharded mempool, gigagas, BALs, binary tree, VOPS, endgame state, native AA, purges, tx assertions, NTT, zkISA, STF, native rollups, proof aggregation, AA proofs, encrypted mempool, PQ transactions, shielded transfers) | ALL PASS |
+
+**Totals:** 31 devnet configs, 65/65 roadmap items covered, all passing consensus. See [pkg/devnet/kurtosis/README.md](../pkg/devnet/kurtosis/README.md) for the full Feature Test Matrix.
+
+---
+
 ## Reference Code Available in refs/
 
 | Reference | Reference File | Key Artifacts |

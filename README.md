@@ -105,7 +105,7 @@ ETH2030 includes Kurtosis devnet integration for multi-client consensus testing 
 kurtosis engine start
 cd pkg && docker build -t eth2030:local .
 
-# Run all 15 feature devnet tests
+# Run all 31 feature devnet tests
 cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh
 
 # Run specific features
@@ -115,7 +115,9 @@ cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh epbs focil native-aa
 cd pkg/devnet/kurtosis && ./scripts/run-devnet.sh single-client
 ```
 
-**15 Feature Tests** — All passing consensus checks:
+**31 Feature Tests** — All passing consensus checks, covering all 65 roadmap items:
+
+**15 Roadmap Feature Tests:**
 
 | Feature | EIP(s) | Feature | EIP(s) |
 |---------|--------|---------|--------|
@@ -127,6 +129,19 @@ cd pkg/devnet/kurtosis && ./scripts/run-devnet.sh single-client
 | Blobs | EIP-4844/8070 | Shielded Transfers | — |
 | Multidim Gas | EIP-7706 | SSZ | EIP-6404/7807 |
 | Native Rollups | EIP-8079 | | |
+
+**16 Layer Group Tests** (CL/DL/EL feature groups covering remaining roadmap items):
+
+| Group | Items Covered | Group | Items Covered |
+|-------|---------------|-------|---------------|
+| cl-finality | fast confirm, 1-epoch, endgame | cl-validators | attester cap, 128K, APS, 1 ETH |
+| cl-attestations | 1M attest, jeanVM, PQ attest | cl-security | 51% recovery, secret proposers |
+| cl-infrastructure | beacon specs, tech debt, VDF | dl-blob-advanced | PQ blobs, variable-size, teragas |
+| dl-reconstruction | local reconstruct, sample opt | dl-futures | blob futures, custody proofs |
+| dl-broadcast | cell msgs, 7702 broadcast, streaming | el-gas-schedule | 3x/year limit, Hogota repricing |
+| el-payload | chunking, block-in-blobs, nonce | el-proofs | optional, mandatory 3-of-5, aggregation |
+| el-zkvm | canonical guest/zkVM, STF, zkISA | el-state | binary tree, VOPS, endgame state |
+| el-tx-advanced | AA, purges, assertions, NTT | el-gas-futures | gas futures, sharded mempool, gigagas |
 
 **6 General Configs** — single-client, multi-client (cross-client consensus with upstream geth), stress-test, blob-test, eip7702-test, full-feature.
 
@@ -357,7 +372,7 @@ All 65 roadmap items are COMPLETE with real cryptographic backends wired (BLS, D
 - [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
 - [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
 - [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
-- [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (15 features, 6 configs, 10 tools)
+- [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (31 features, 6 configs, 10 tools)
 
 ## Development Stats
 
