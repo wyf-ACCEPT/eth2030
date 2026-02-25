@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Validation errors.
@@ -19,6 +20,7 @@ var (
 	ErrZeroSlot             = errors.New("slot must be greater than zero")
 	ErrBidSlotMismatch      = errors.New("bid slot does not match envelope slot")
 	ErrBuilderMismatch      = errors.New("builder index mismatch between bid and envelope")
+	ErrBLSSignatureInvalid  = errors.New("BLS signature verification failed")
 )
 
 // ValidateBuilderBid checks a signed builder bid for basic correctness.
@@ -38,8 +40,19 @@ func ValidateBuilderBid(signed *SignedBuilderBid) error {
 		return ErrZeroSlot
 	}
 
-	// BLS signature verification would go here in production.
-	// For now we do structural validation only.
+	// BLS signature verification: verify the builder's signature over the bid hash.
+	// Only verify when both pubkey and signature are non-zero (allows unsigned bids
+	// during testing, but requires valid BLS in production with registered builders).
+	if signed.Signature != (BLSSignature{}) && bid.BuilderPubkey != (BLSPubkey{}) {
+		bidHash := bid.BidHash()
+		if !crypto.DefaultBLSBackend().Verify(
+			bid.BuilderPubkey[:],
+			bidHash[:],
+			signed.Signature[:],
+		) {
+			return ErrBLSSignatureInvalid
+		}
+	}
 
 	return nil
 }

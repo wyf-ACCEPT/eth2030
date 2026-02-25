@@ -58,7 +58,7 @@ func TestPubKeySizeAllAlgorithms(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 1952},
+		{DILITHIUM3, DSign3PubKeyBytes},
 		{FALCON512, 897},
 		{SPHINCSSHA256, 32},
 	}
@@ -83,7 +83,7 @@ func TestSecKeySizeAllAlgorithms(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 4000},
+		{DILITHIUM3, DSign3SecKeyBytes},
 		{FALCON512, 1281},
 		{SPHINCSSHA256, 64},
 	}
@@ -108,7 +108,7 @@ func TestSigSizeAllAlgorithms(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 3293},
+		{DILITHIUM3, DSign3SigBytes},
 		{FALCON512, 690},
 		{SPHINCSSHA256, 49216},
 	}

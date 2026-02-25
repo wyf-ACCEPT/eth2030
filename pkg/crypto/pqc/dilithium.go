@@ -5,71 +5,61 @@ import (
 )
 
 // DilithiumSigner implements PQSigner for CRYSTALS-Dilithium3.
-// This is a stub implementation using Keccak256 for deterministic output.
-// A production implementation would use a lattice-based crypto library.
+// Uses real lattice-based key generation, signing, and verification
+// from dilithium_sign.go (Fiat-Shamir with aborts over Z_q[X]/(X^N+1)).
 type DilithiumSigner struct{}
 
 func (d *DilithiumSigner) Algorithm() PQAlgorithm { return DILITHIUM3 }
 
-// GenerateKey returns a deterministic stub key pair.
-// The keys are derived from a seed for reproducibility in tests.
+// GenerateKey generates a real Dilithium-3 lattice key pair.
+// Returns keys at the real lattice sizes (DSign3PubKeyBytes/DSign3SecKeyBytes).
 func (d *DilithiumSigner) GenerateKey() (*PQKeyPair, error) {
-	seed := crypto.Keccak256([]byte("dilithium3-stub-seed"))
+	pk, sk := DilithiumKeypair()
 
-	pk := make([]byte, Dilithium3PubKeySize)
-	sk := make([]byte, Dilithium3SecKeySize)
-
-	// Fill key material by chaining hashes.
-	fillDeterministic(pk, seed)
-	fillDeterministic(sk, crypto.Keccak256(seed))
+	// Return keys at the canonical PQKeyPair sizes. If the real lattice
+	// sizes are larger, we return the full keys. If smaller, we pad.
+	pubKey := make([]byte, Dilithium3PubKeySize)
+	secKey := make([]byte, Dilithium3SecKeySize)
+	if DSign3PubKeyBytes > Dilithium3PubKeySize {
+		pubKey = make([]byte, DSign3PubKeyBytes)
+	}
+	if DSign3SecKeyBytes > Dilithium3SecKeySize {
+		secKey = make([]byte, DSign3SecKeyBytes)
+	}
+	copy(pubKey, pk)
+	copy(secKey, sk)
 
 	return &PQKeyPair{
 		Algorithm: DILITHIUM3,
-		PublicKey: pk,
-		SecretKey: sk,
+		PublicKey: pubKey,
+		SecretKey: secKey,
 	}, nil
 }
 
-// Sign produces a stub signature: keccak256(sk || msg) padded to Dilithium3SigSize.
+// Sign produces a real Dilithium-3 lattice signature.
 func (d *DilithiumSigner) Sign(sk, msg []byte) ([]byte, error) {
-	if len(sk) != Dilithium3SecKeySize {
+	if len(sk) < DSign3SecKeyBytes {
 		return nil, ErrInvalidKeySize
 	}
-	return stubSign(sk, msg, Dilithium3SigSize), nil
+	sig := DilithiumSign(DSign3PrivateKey(sk[:DSign3SecKeyBytes]), msg)
+	if sig == nil {
+		return nil, ErrVerifyFailed
+	}
+	// Return signature at real lattice size.
+	out := make([]byte, Dilithium3SigSize)
+	if DSign3SigBytes > Dilithium3SigSize {
+		out = make([]byte, DSign3SigBytes)
+	}
+	copy(out, sig)
+	return out, nil
 }
 
-// Verify recomputes the stub signature and compares.
+// Verify checks a real Dilithium-3 lattice signature against the public key.
 func (d *DilithiumSigner) Verify(pk, msg, sig []byte) bool {
-	if len(pk) != Dilithium3PubKeySize || len(sig) != Dilithium3SigSize {
+	if len(pk) < DSign3PubKeyBytes || len(sig) < DSign3SigBytes {
 		return false
 	}
-	// In the stub, pk is not used for verification; we need the sk.
-	// For stub verification, we extract the hash prefix and check determinism.
-	// Real verification would use the public key directly.
-	return stubVerify(sig, Dilithium3SigSize)
-}
-
-// stubSign creates a deterministic stub signature: keccak256(sk || msg) repeated to fill sigSize.
-func stubSign(sk, msg []byte, sigSize int) []byte {
-	hash := crypto.Keccak256(append(sk, msg...))
-	sig := make([]byte, sigSize)
-	fillDeterministic(sig, hash)
-	return sig
-}
-
-// stubVerify checks that the signature has the expected length and non-zero content.
-// A real implementation would verify against the public key.
-func stubVerify(sig []byte, expectedSize int) bool {
-	if len(sig) != expectedSize {
-		return false
-	}
-	// Check that the signature is not all zeros (reject trivially empty sigs).
-	for _, b := range sig[:32] {
-		if b != 0 {
-			return true
-		}
-	}
-	return false
+	return DilithiumVerify(DSign3PublicKey(pk[:DSign3PubKeyBytes]), msg, DSign3Signature(sig[:DSign3SigBytes]))
 }
 
 // fillDeterministic fills buf by repeatedly hashing seed.

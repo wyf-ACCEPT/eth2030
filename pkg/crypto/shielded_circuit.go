@@ -108,20 +108,27 @@ func scSHA256(domain []byte, data ...[]byte) [32]byte {
 	return out
 }
 
-// PedersenCommitBN254 computes a Pedersen commitment on BN254:
-// C = amount * G + randomness * H
-// Simulated using SHA-256 with generator seeds derived from domain separation.
+// PedersenCommitBN254 computes a real Pedersen commitment on BN254:
+// C = amount*G + randomness*H where G, H are BN254 G1 generator points.
+// Uses the same generator points as shielded_tx.go (shieldedBN254G/H).
+// The result is the Keccak256 hash of the affine point encoding.
 func PedersenCommitBN254(amount uint64, randomness [32]byte) types.Hash {
-	var amtBuf [8]byte
-	binary.BigEndian.PutUint64(amtBuf[:], amount)
+	vScalar := new(big.Int).SetUint64(amount)
+	rScalar := new(big.Int).SetBytes(randomness[:])
+	rScalar.Mod(rScalar, bn254N)
 
-	// Derive generators G and H from domain-separated seeds.
-	gSeed := scSHA256(scDomainG)
-	hSeed := scSHA256(scDomainH)
+	// C = amount*G + randomness*H on BN254 G1.
+	vG := G1ScalarMul(shieldedBN254G, vScalar)
+	rH := G1ScalarMul(shieldedBN254H, rScalar)
+	point := g1Add(vG, rH)
 
-	// C = SHA256(domain || G_seed || amount || H_seed || randomness)
-	result := scSHA256(scDomainCommit, gSeed[:], amtBuf[:], hSeed[:], randomness[:])
-	return types.Hash(result)
+	// Serialize and hash to 32 bytes.
+	px, py := point.g1ToAffine()
+	encoded := bn254EncodeG1(px, py)
+	h := Keccak256(encoded)
+	var result types.Hash
+	copy(result[:], h)
+	return result
 }
 
 // DeriveNullifier computes a nullifier from a secret key and commitment index.

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Pipeline errors.
@@ -388,14 +389,7 @@ func (p *EndgamePipeline) Stats() PipelineStats {
 	return stats
 }
 
-// aggregateSigsForPipeline XOR-aggregates signatures as a placeholder.
-// In production, this would use real BLS signature aggregation.
+// aggregateSigsForPipeline aggregates BLS signatures using G2 point addition.
 func aggregateSigsForPipeline(sigs [][96]byte) [96]byte {
-	var agg [96]byte
-	for _, sig := range sigs {
-		for i := range agg {
-			agg[i] ^= sig[i]
-		}
-	}
-	return agg
+	return crypto.AggregateSignatures(sigs)
 }

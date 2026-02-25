@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/eth2030/eth2030/core/types"
-	"github.com/eth2030/eth2030/crypto"
+	"github.com/eth2030/eth2030/ssz"
 )
 
 // Beacon state constants.
@@ -172,18 +172,17 @@ type BeaconBlock struct {
 	BodyRoot   types.Hash
 }
 
-// BlockRoot computes the hash tree root of a beacon block.
-// In production this uses SSZ; here we use Keccak256 for simplicity.
+// BlockRoot computes the hash tree root of a beacon block using SSZ
+// merkleization. The block is treated as an SSZ container with fields:
+// slot (uint64), parent_root (Bytes32), state_root (Bytes32), body_root (Bytes32).
 func BlockRoot(block *BeaconBlock) types.Hash {
-	data := make([]byte, 0, 8+32*3)
-	// Encode slot as 8-byte little-endian.
-	s := uint64(block.Slot)
-	data = append(data, byte(s), byte(s>>8), byte(s>>16), byte(s>>24),
-		byte(s>>32), byte(s>>40), byte(s>>48), byte(s>>56))
-	data = append(data, block.ParentRoot[:]...)
-	data = append(data, block.StateRoot[:]...)
-	data = append(data, block.BodyRoot[:]...)
-	return crypto.Keccak256Hash(data)
+	fieldRoots := [][32]byte{
+		ssz.HashTreeRootUint64(uint64(block.Slot)),
+		ssz.HashTreeRootBytes32(block.ParentRoot),
+		ssz.HashTreeRootBytes32(block.StateRoot),
+		ssz.HashTreeRootBytes32(block.BodyRoot),
+	}
+	return ssz.HashTreeRootContainer(fieldRoots)
 }
 
 // StateTransition processes a beacon block and advances the state.

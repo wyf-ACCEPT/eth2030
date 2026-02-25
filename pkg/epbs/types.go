@@ -61,6 +61,7 @@ type BuilderBid struct {
 	ExecutionPayment       uint64        `json:"executionPayment"` // EL payment in Gwei
 	BlobKZGCommitments     [][]byte      `json:"blobKzgCommitments"`
 	BlobKZGCommitmentsRoot types.Hash    `json:"blobKzgCommitmentsRoot"`
+	BuilderPubkey          BLSPubkey     `json:"builderPubkey"` // BLS public key of the builder
 }
 
 // SignedBuilderBid wraps a BuilderBid with a BLS signature.

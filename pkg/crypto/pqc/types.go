@@ -61,7 +61,7 @@ var (
 func PubKeySize(alg PQAlgorithm) int {
 	switch alg {
 	case DILITHIUM3:
-		return Dilithium3PubKeySize
+		return DSign3PubKeyBytes
 	case FALCON512:
 		return Falcon512PubKeySize
 	case SPHINCSSHA256:
@@ -75,7 +75,7 @@ func PubKeySize(alg PQAlgorithm) int {
 func SecKeySize(alg PQAlgorithm) int {
 	switch alg {
 	case DILITHIUM3:
-		return Dilithium3SecKeySize
+		return DSign3SecKeyBytes
 	case FALCON512:
 		return Falcon512SecKeySize
 	case SPHINCSSHA256:
@@ -89,7 +89,7 @@ func SecKeySize(alg PQAlgorithm) int {
 func SigSize(alg PQAlgorithm) int {
 	switch alg {
 	case DILITHIUM3:
-		return Dilithium3SigSize
+		return DSign3SigBytes
 	case FALCON512:
 		return Falcon512SigSize
 	case SPHINCSSHA256:

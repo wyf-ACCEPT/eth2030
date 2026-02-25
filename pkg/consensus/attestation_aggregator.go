@@ -212,14 +212,14 @@ func TryAggregate(att1, att2 *AggregateAttestation) (*AggregateAttestation, bool
 }
 
 // mergeAggregates combines two aggregate attestations with compatible data.
-// The resulting aggregate has OR'd bits and the first attestation's signature
-// placeholder (in production, this would be an aggregated BLS signature).
+// The resulting aggregate has OR'd bits and a BLS-aggregated signature.
 func mergeAggregates(a, b *AggregateAttestation) *AggregateAttestation {
 	bits := BitfieldOR(a.AggregationBits, b.AggregationBits)
+	aggSig := crypto.AggregateSignatures([][96]byte{a.Signature, b.Signature})
 	return &AggregateAttestation{
 		Data:            a.Data,
 		AggregationBits: bits,
-		Signature:       a.Signature, // placeholder; real impl aggregates BLS sigs
+		Signature:       aggSig,
 	}
 }
 

@@ -5,7 +5,6 @@
 package pqc
 
 import (
-	"crypto/rand"
 	"errors"
 	"sync"
 
@@ -27,7 +26,7 @@ const (
 
 // Canonical signature sizes per scheme, matching actual signer output.
 const (
-	Dilithium3SignatureSize = Dilithium3SigSize    // matches DilithiumSigner output
+	Dilithium3SignatureSize = DSign3SigBytes       // matches real lattice DilithiumSigner output
 	Falcon512SignatureSize  = Falcon512SigSize     // matches FalconSigner output
 	SPHINCS128SignatureSize = SPHINCSSignerSigSize // matches SPHINCSSigner output
 )
@@ -118,19 +117,14 @@ func (s *PQTxSigner) GenerateKey() (*PQPrivateKey, *PQPublicKey, error) {
 			&PQPublicKey{Scheme: scheme, Raw: kp.PublicKey}, nil
 
 	default:
-		// Dilithium3 and others: use random key material with DilithiumSigner stub.
-		privSize, pubSize, err := keySizesForScheme(scheme)
+		// Dilithium3: use real lattice-based key generation.
+		d := &DilithiumSigner{}
+		kp, err := d.GenerateKey()
 		if err != nil {
 			return nil, nil, err
 		}
-		privRaw := make([]byte, privSize)
-		if _, err := rand.Read(privRaw); err != nil {
-			return nil, nil, err
-		}
-		pubRaw := make([]byte, pubSize)
-		fillFromSeed(pubRaw, crypto.Keccak256(privRaw))
-		return &PQPrivateKey{Scheme: scheme, Raw: privRaw},
-			&PQPublicKey{Scheme: scheme, Raw: pubRaw}, nil
+		return &PQPrivateKey{Scheme: scheme, Raw: kp.SecretKey},
+			&PQPublicKey{Scheme: scheme, Raw: kp.PublicKey}, nil
 	}
 }
 
@@ -240,7 +234,7 @@ func signHash(scheme PQSignatureType, privKey, hash []byte) ([]byte, error) {
 		return signer.Sign(privKey, hash)
 
 	case SigDilithium3:
-		// DilithiumSigner uses stub sign (keccak256-based deterministic).
+		// DilithiumSigner uses real lattice-based signing.
 		d := &DilithiumSigner{}
 		return d.Sign(privKey, hash)
 
@@ -265,7 +259,7 @@ func verifyHash(scheme PQSignatureType, pubKey, hash, sig []byte) bool {
 		return signer.Verify(pubKey, hash, sig)
 
 	case SigDilithium3:
-		// DilithiumSigner uses stub verify (length + non-zero check).
+		// DilithiumSigner uses real lattice-based verification.
 		d := &DilithiumSigner{}
 		return d.Verify(pubKey, hash, sig)
 
@@ -278,7 +272,7 @@ func verifyHash(scheme PQSignatureType, pubKey, hash, sig []byte) bool {
 func keySizesForScheme(scheme PQSignatureType) (int, int, error) {
 	switch scheme {
 	case SigDilithium3:
-		return Dilithium3SecKeySize, Dilithium3PubKeySize, nil
+		return DSign3SecKeyBytes, DSign3PubKeyBytes, nil
 	case SigFalcon512:
 		return Falcon512SecKeySize, Falcon512PubKeySize, nil
 	case SigSPHINCS128:
@@ -286,16 +280,5 @@ func keySizesForScheme(scheme PQSignatureType) (int, int, error) {
 		return 64, 32, nil
 	default:
 		return 0, 0, ErrUnsupportedScheme
-	}
-}
-
-// fillFromSeed fills buf by repeatedly hashing seed with Keccak256.
-func fillFromSeed(buf, seed []byte) {
-	offset := 0
-	current := seed
-	for offset < len(buf) {
-		n := copy(buf[offset:], current)
-		offset += n
-		current = crypto.Keccak256(current)
 	}
 }

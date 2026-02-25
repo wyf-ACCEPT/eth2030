@@ -10,6 +10,7 @@
 package das
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -279,26 +280,19 @@ func BuildDataColumnSidecar(
 	}, nil
 }
 
-// buildCommitmentInclusionProof builds a simplified Merkle inclusion proof
-// for a column index over the set of commitments. The proof consists of
-// sibling hashes along the path to the root.
+// buildCommitmentInclusionProof builds a binary Merkle inclusion proof for a
+// column index over the set of commitments using SHA-256 hashing. The proof
+// consists of sibling hashes along the path from the leaf to the root.
 func buildCommitmentInclusionProof(commitments []KZGCommitment, index uint64) [][32]byte {
 	n := len(commitments)
 	if n == 0 {
 		return nil
 	}
 
-	// Build leaf hashes.
+	// Build leaf hashes using SHA-256 with domain separation.
 	leaves := make([][32]byte, n)
 	for i, c := range commitments {
-		h := sha3.NewLegacyKeccak256()
-		h.Write(c[:])
-		var buf [8]byte
-		binary.LittleEndian.PutUint64(buf[:], index)
-		h.Write(buf[:])
-		var leaf [32]byte
-		h.Sum(leaf[:0])
-		leaves[i] = leaf
+		leaves[i] = merkleHashLeaf(c[:])
 	}
 
 	// Collect sibling hashes along the Merkle path.
@@ -307,7 +301,7 @@ func buildCommitmentInclusionProof(commitments []KZGCommitment, index uint64) []
 	idx := index % uint64(n)
 
 	for len(current) > 1 {
-		// Pad to even.
+		// Pad to even by duplicating last element.
 		if len(current)%2 != 0 {
 			current = append(current, current[len(current)-1])
 		}
@@ -317,19 +311,39 @@ func buildCommitmentInclusionProof(commitments []KZGCommitment, index uint64) []
 			proof = append(proof, current[siblingIdx])
 		}
 
-		// Compute next level.
+		// Compute next level using SHA-256 node hashing.
 		next := make([][32]byte, len(current)/2)
 		for i := 0; i < len(current); i += 2 {
-			h := sha3.NewLegacyKeccak256()
-			h.Write(current[i][:])
-			h.Write(current[i+1][:])
-			h.Sum(next[i/2][:0])
+			next[i/2] = merkleHashNode(current[i], current[i+1])
 		}
 		current = next
 		idx /= 2
 	}
 
 	return proof
+}
+
+// merkleHashLeaf computes SHA-256(0x00 || data) for a leaf node.
+// The 0x00 prefix provides domain separation from internal nodes.
+func merkleHashLeaf(data []byte) [32]byte {
+	h := sha256.New()
+	h.Write([]byte{0x00})
+	h.Write(data)
+	var out [32]byte
+	copy(out[:], h.Sum(nil))
+	return out
+}
+
+// merkleHashNode computes SHA-256(0x01 || left || right) for an internal node.
+// The 0x01 prefix provides domain separation from leaf nodes.
+func merkleHashNode(left, right [32]byte) [32]byte {
+	h := sha256.New()
+	h.Write([]byte{0x01})
+	h.Write(left[:])
+	h.Write(right[:])
+	var out [32]byte
+	copy(out[:], h.Sum(nil))
+	return out
 }
 
 // --- Reconstruction trigger ---

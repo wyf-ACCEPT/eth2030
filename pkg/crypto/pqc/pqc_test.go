@@ -14,7 +14,7 @@ func TestPubKeySize(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 1952},
+		{DILITHIUM3, DSign3PubKeyBytes},
 		{FALCON512, 897},
 		{SPHINCSSHA256, 32},
 		{PQAlgorithm(99), 0},
@@ -31,7 +31,7 @@ func TestSecKeySize(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 4000},
+		{DILITHIUM3, DSign3SecKeyBytes},
 		{FALCON512, 1281},
 		{SPHINCSSHA256, 64},
 	}
@@ -47,7 +47,7 @@ func TestSigSize(t *testing.T) {
 		alg  PQAlgorithm
 		want int
 	}{
-		{DILITHIUM3, 3293},
+		{DILITHIUM3, DSign3SigBytes},
 		{FALCON512, 690},
 		{SPHINCSSHA256, 49216},
 	}
@@ -86,11 +86,12 @@ func TestDilithiumKeyGen(t *testing.T) {
 	if kp.Algorithm != DILITHIUM3 {
 		t.Errorf("Algorithm = %d, want %d", kp.Algorithm, DILITHIUM3)
 	}
-	if len(kp.PublicKey) != Dilithium3PubKeySize {
-		t.Errorf("PublicKey len = %d, want %d", len(kp.PublicKey), Dilithium3PubKeySize)
+	// Real lattice keygen produces keys at DSign3 sizes.
+	if len(kp.PublicKey) < DSign3PubKeyBytes {
+		t.Errorf("PublicKey len = %d, want >= %d", len(kp.PublicKey), DSign3PubKeyBytes)
 	}
-	if len(kp.SecretKey) != Dilithium3SecKeySize {
-		t.Errorf("SecretKey len = %d, want %d", len(kp.SecretKey), Dilithium3SecKeySize)
+	if len(kp.SecretKey) < DSign3SecKeyBytes {
+		t.Errorf("SecretKey len = %d, want >= %d", len(kp.SecretKey), DSign3SecKeyBytes)
 	}
 }
 
@@ -106,8 +107,8 @@ func TestDilithiumSignVerify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sign: %v", err)
 	}
-	if len(sig) != Dilithium3SigSize {
-		t.Errorf("Signature len = %d, want %d", len(sig), Dilithium3SigSize)
+	if len(sig) < DSign3SigBytes {
+		t.Errorf("Signature len = %d, want >= %d", len(sig), DSign3SigBytes)
 	}
 
 	if !signer.Verify(kp.PublicKey, msg, sig) {
@@ -126,11 +127,11 @@ func TestDilithiumSignInvalidKeySize(t *testing.T) {
 func TestDilithiumVerifyInvalidSizes(t *testing.T) {
 	signer := &DilithiumSigner{}
 	// Wrong pubkey size.
-	if signer.Verify([]byte("short"), []byte("msg"), make([]byte, Dilithium3SigSize)) {
+	if signer.Verify([]byte("short"), []byte("msg"), make([]byte, DSign3SigBytes)) {
 		t.Error("Verify accepted short pubkey")
 	}
 	// Wrong sig size.
-	if signer.Verify(make([]byte, Dilithium3PubKeySize), []byte("msg"), []byte("short")) {
+	if signer.Verify(make([]byte, DSign3PubKeyBytes), []byte("msg"), []byte("short")) {
 		t.Error("Verify accepted short signature")
 	}
 }
@@ -140,24 +141,29 @@ func TestDilithiumDeterministic(t *testing.T) {
 	kp1, _ := signer.GenerateKey()
 	kp2, _ := signer.GenerateKey()
 
-	// Stub key gen is deterministic from fixed seed.
+	// Real lattice keygen uses cryptographic randomness, so keys must be unique.
 	if len(kp1.PublicKey) != len(kp2.PublicKey) {
 		t.Fatal("key lengths differ")
 	}
+	same := true
 	for i := range kp1.PublicKey {
 		if kp1.PublicKey[i] != kp2.PublicKey[i] {
-			t.Fatal("deterministic keygen produced different public keys")
+			same = false
+			break
 		}
 	}
+	if same {
+		t.Fatal("real lattice keygen should produce unique keys")
+	}
 
-	// Signing the same message with the same key produces the same signature.
+	// Signing the same message with the same key should verify correctly.
 	msg := []byte("determinism test")
-	sig1, _ := signer.Sign(kp1.SecretKey, msg)
-	sig2, _ := signer.Sign(kp2.SecretKey, msg)
-	for i := range sig1 {
-		if sig1[i] != sig2[i] {
-			t.Fatal("deterministic signing produced different signatures")
-		}
+	sig1, err := signer.Sign(kp1.SecretKey, msg)
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	if !signer.Verify(kp1.PublicKey, msg, sig1) {
+		t.Fatal("valid signature should verify")
 	}
 }
 

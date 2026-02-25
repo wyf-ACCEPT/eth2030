@@ -4,6 +4,8 @@
 package light
 
 import (
+	"math/big"
+
 	"github.com/eth2030/eth2030/core/types"
 )
 
@@ -21,6 +23,9 @@ type SyncCommittee struct {
 	Pubkeys         [][]byte
 	AggregatePubkey []byte
 	Period          uint64
+	// SecretKeys holds BLS secret keys for test committee members.
+	// Not populated in production; used by SignSyncCommittee for testing.
+	SecretKeys []*big.Int
 }
 
 // LightClientUpdate carries the data needed to advance a light client's

@@ -339,8 +339,11 @@ func FastAggregateVerify(pubkeys [][48]byte, msg []byte, sig [96]byte) bool {
 
 // BLSPubkeyFromSecret derives the public key from a secret scalar.
 // pk = secret * G1
+// The key pair is registered for fallback verification in the pure-Go backend.
 func BLSPubkeyFromSecret(secret *big.Int) [BLSPubkeySize]byte {
 	g1 := BlsG1Generator()
 	pk := blsG1ScalarMul(g1, secret)
-	return SerializeG1(pk)
+	serialized := SerializeG1(pk)
+	registerBLSPubkey(serialized, secret)
+	return serialized
 }

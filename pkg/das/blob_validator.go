@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/eth2030/eth2030/crypto"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -140,13 +141,15 @@ func (r *FormatRule) Validate(blob []byte, meta BlobMeta) error {
 }
 
 // CommitmentRule validates that the blob data matches its stated commitment.
-// The commitment is computed as keccak256(blob).
+// For full-size blobs (131072 bytes), uses the KZG backend to recompute
+// the commitment. For other sizes, falls back to keccak256(blob).
 type CommitmentRule struct{}
 
 // Name returns the rule name.
 func (r *CommitmentRule) Name() string { return "commitment" }
 
-// Validate checks that keccak256(blob) matches meta.Commitment.
+// Validate checks that the blob matches meta.Commitment. For blobs matching
+// the EIP-4844 size, the KZG backend is used for real commitment verification.
 func (r *CommitmentRule) Validate(blob []byte, meta BlobMeta) error {
 	// A zero commitment means the caller did not provide one; skip check.
 	zero := [32]byte{}
@@ -154,6 +157,24 @@ func (r *CommitmentRule) Validate(blob []byte, meta BlobMeta) error {
 		return nil
 	}
 
+	// For EIP-4844 sized blobs, use the KZG backend for real verification.
+	if len(blob) == crypto.KZGBytesPerBlob {
+		kzg := crypto.DefaultKZGBackend()
+		computed, err := kzg.BlobToCommitment(blob)
+		if err == nil {
+			// Compare the first 32 bytes of the 48-byte commitment with meta.
+			var truncated [32]byte
+			copy(truncated[:], computed[:32])
+			if truncated != meta.Commitment {
+				return fmt.Errorf("%w: KZG commitment mismatch",
+					ErrBlobValidateCommitment)
+			}
+			return nil
+		}
+		// Fall through to hash-based check if KZG backend errors.
+	}
+
+	// Fallback: keccak256-based commitment check.
 	h := sha3.NewLegacyKeccak256()
 	h.Write(blob)
 	var computed [32]byte

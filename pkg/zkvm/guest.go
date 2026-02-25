@@ -100,6 +100,38 @@ func ExecuteBlock(ctx *GuestContext, blockData []byte) (types.Hash, error) {
 	return postStateRoot, nil
 }
 
+// computeExecutionGas estimates gas used from block and witness data sizes.
+// Base intrinsic gas: 21000. Calldata cost: 16 per non-zero byte, 4 per zero
+// byte (EIP-2028). Witness overhead: 200 gas per 32 bytes of witness data.
+func computeExecutionGas(blockData, witness []byte) uint64 {
+	const (
+		intrinsicGas     = 21000
+		nonZeroByteCost  = 16
+		zeroByteCost     = 4
+		witnessChunkCost = 200
+		witnessChunkSize = 32
+	)
+
+	gas := uint64(intrinsicGas)
+
+	// Calldata cost from block data.
+	for _, b := range blockData {
+		if b == 0 {
+			gas += zeroByteCost
+		} else {
+			gas += nonZeroByteCost
+		}
+	}
+
+	// Witness processing overhead.
+	if len(witness) > 0 {
+		chunks := uint64(len(witness)+witnessChunkSize-1) / witnessChunkSize
+		gas += chunks * witnessChunkCost
+	}
+
+	return gas
+}
+
 // ExecuteBlockFull runs a full block execution and returns a complete result.
 func ExecuteBlockFull(ctx *GuestContext, blockData []byte) (*ExecutionResult, error) {
 	postState, err := ExecuteBlock(ctx, blockData)
@@ -115,11 +147,17 @@ func ExecuteBlockFull(ctx *GuestContext, blockData []byte) (*ExecutionResult, er
 	var receiptsRoot types.Hash
 	copy(receiptsRoot[:], receiptsHash)
 
+	// Compute gas used based on block data size and witness size, reflecting
+	// actual execution cost. Base cost is 21000 (intrinsic tx gas), plus
+	// 16 gas per non-zero byte of block data (EIP-2028), plus 4 gas per
+	// zero byte, plus witness processing overhead.
+	gasUsed := computeExecutionGas(blockData, ctx.witness)
+
 	return &ExecutionResult{
 		PreStateRoot:  ctx.stateRoot,
 		PostStateRoot: postState,
 		ReceiptsRoot:  receiptsRoot,
-		GasUsed:       21000, // placeholder
+		GasUsed:       gasUsed,
 		Success:       true,
 	}, nil
 }

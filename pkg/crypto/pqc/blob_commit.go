@@ -49,14 +49,21 @@ type PQCommitScheme interface {
 	Verify(commitment *PQBlobCommitment, data []byte) bool
 }
 
-// LatticeBlobCommit is a stub lattice-based blob commitment scheme.
-// It uses Keccak-256 as a placeholder for the actual lattice-based
-// polynomial commitment that will be used in production.
-type LatticeBlobCommit struct{}
+// LatticeBlobCommit uses the MLWE lattice commitment scheme from
+// lattice_commit.go for real post-quantum blob commitments.
+type LatticeBlobCommit struct {
+	inner *LatticeCommitScheme
+}
 
-// NewLatticeBlobCommit creates a new lattice blob commitment scheme.
+// NewLatticeBlobCommit creates a new lattice blob commitment scheme
+// backed by real MLWE polynomial ring operations.
 func NewLatticeBlobCommit() *LatticeBlobCommit {
-	return &LatticeBlobCommit{}
+	// Use a fixed seed for deterministic public matrix generation.
+	var seed [32]byte
+	copy(seed[:], keccak256([]byte("lattice-blob-commit-v0-seed")))
+	return &LatticeBlobCommit{
+		inner: NewLatticeCommitScheme(seed),
+	}
 }
 
 // Name returns the scheme identifier.
@@ -64,8 +71,7 @@ func (l *LatticeBlobCommit) Name() string {
 	return SchemeLatticeBlobCommit
 }
 
-// Commit generates a commitment to blob data.
-// The stub uses a two-layer hash: commitment = H(data), proof = H(H(data) || data).
+// Commit generates a commitment using real MLWE lattice operations.
 func (l *LatticeBlobCommit) Commit(data []byte) (*PQBlobCommitment, error) {
 	if data == nil {
 		return nil, ErrPQCommitNilData
@@ -74,20 +80,16 @@ func (l *LatticeBlobCommit) Commit(data []byte) (*PQBlobCommitment, error) {
 		return nil, ErrPQCommitEmptyData
 	}
 
-	// Commitment: Keccak256(data).
-	commitment := keccak256(data)
-
-	// Proof: Keccak256(commitment || data).
-	proof := keccak256(append(commitment, data...))
-
-	return &PQBlobCommitment{
-		Scheme:     SchemeLatticeBlobCommit,
-		Commitment: commitment,
-		Proof:      proof,
-	}, nil
+	pqCommit, err := l.inner.CommitToBlob(data)
+	if err != nil {
+		return nil, err
+	}
+	// Re-tag with our scheme name for interface compatibility.
+	pqCommit.Scheme = SchemeLatticeBlobCommit
+	return pqCommit, nil
 }
 
-// Verify checks that a commitment is valid for the given data.
+// Verify checks that a commitment is valid using real MLWE lattice verification.
 func (l *LatticeBlobCommit) Verify(commitment *PQBlobCommitment, data []byte) bool {
 	if commitment == nil || data == nil || len(data) == 0 {
 		return false
@@ -96,15 +98,19 @@ func (l *LatticeBlobCommit) Verify(commitment *PQBlobCommitment, data []byte) bo
 		return false
 	}
 
-	// Recompute commitment.
-	expectedCommitment := keccak256(data)
-	if !bytes.Equal(commitment.Commitment, expectedCommitment) {
+	// Recompute the commitment and check both the hash and the proof
+	// (serialized commit vector) match.
+	recomputed, err := l.inner.CommitToBlob(data)
+	if err != nil {
 		return false
 	}
-
-	// Recompute proof.
-	expectedProof := keccak256(append(expectedCommitment, data...))
-	return bytes.Equal(commitment.Proof, expectedProof)
+	if !bytes.Equal(commitment.Commitment, recomputed.Commitment) {
+		return false
+	}
+	if !bytes.Equal(commitment.Proof, recomputed.Proof) {
+		return false
+	}
+	return true
 }
 
 // MigrationPath documents the transition plan from KZG to PQ commitments.

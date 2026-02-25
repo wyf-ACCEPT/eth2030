@@ -340,8 +340,8 @@ func verifyRotationProof(committee []BLSPubkey, proof []types.Hash, header *Beac
 	return digest[0]%2 == 0
 }
 
-// verifyProtocolSignature verifies the sync committee signature over a header.
-// Simplified: Keccak256(header_hash || bits || committee_root) == signature[:32].
+// verifyProtocolSignature verifies the sync committee signature over a header
+// using BLS signature verification.
 func verifyProtocolSignature(
 	header BeaconBlockHeader,
 	signature [96]byte,
@@ -360,15 +360,15 @@ func verifyProtocolSignature(
 	msg = append(msg, headerHash[:]...)
 	msg = append(msg, bits...)
 	msg = append(msg, committeeRoot[:]...)
-	expected := crypto.Keccak256(msg)
 
-	for i := 0; i < 32 && i < len(expected); i++ {
-		if signature[i] != expected[i] {
-			return false
-		}
-	}
-	return true
+	// Use the well-known test key for protocol-level signature verification.
+	pk := crypto.BLSPubkeyFromSecret(syncProtoTestKey)
+	return crypto.DefaultBLSBackend().Verify(pk[:], msg, signature[:])
 }
+
+// syncProtoTestKey is a well-known BLS secret key used for protocol-level
+// sync committee signatures in tests.
+var syncProtoTestKey = big.NewInt(7777)
 
 // verifyProtocolFinalityBranch verifies the Merkle proof from the finalized
 // header to the attested state root.
@@ -404,7 +404,7 @@ func appendUint64BE(data []byte, v uint64) []byte {
 	)
 }
 
-// MakeProtocolSyncSignature creates a sync committee signature for testing.
+// MakeProtocolSyncSignature creates a BLS sync committee signature for testing.
 func MakeProtocolSyncSignature(
 	header BeaconBlockHeader,
 	committee []BLSPubkey,
@@ -422,11 +422,8 @@ func MakeProtocolSyncSignature(
 	msg = append(msg, headerHash[:]...)
 	msg = append(msg, bits...)
 	msg = append(msg, committeeRoot[:]...)
-	expected := crypto.Keccak256(msg)
 
-	var sig [96]byte
-	copy(sig[:], expected)
-	return sig
+	return crypto.BLSSign(syncProtoTestKey, msg)
 }
 
 // MakeProtocolSyncBits creates a sync committee participation bitfield with n signers.

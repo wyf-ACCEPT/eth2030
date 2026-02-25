@@ -4,6 +4,7 @@
 package witness
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"sort"
@@ -153,8 +154,8 @@ func (g *StateProofGenerator) GenerateStorageProof(
 	}, nil
 }
 
-// buildProofBranch constructs a deterministic Merkle proof branch derived
-// from the key, depth, and root.
+// buildProofBranch constructs a binary Merkle proof branch using SHA-256.
+// Each level produces a sibling hash by walking the key bits from root to leaf.
 func (g *StateProofGenerator) buildProofBranch(
 	root types.Hash,
 	key types.Hash,
@@ -170,19 +171,68 @@ func (g *StateProofGenerator) buildProofBranch(
 		effectiveDepth = depth
 	}
 
+	// Build a binary Merkle tree bottom-up from the key bits, then collect
+	// the sibling hashes along the path. Each node is constructed so that
+	// hashing pairs of siblings with SHA-256 leads back to the root.
 	nodes := make([]StateProofNode, effectiveDepth)
-	for i := 0; i < effectiveDepth; i++ {
-		// Derive node data: hash(root || key || depth).
-		depthBuf := make([]byte, 8)
-		binary.BigEndian.PutUint64(depthBuf, uint64(i))
-		nodeData := crypto.Keccak256(root.Bytes(), key.Bytes(), depthBuf)
-		nodeHash := crypto.Keccak256Hash(nodeData)
+
+	// Start from the leaf and walk up to the root.
+	// At each level i, the node data includes the level, direction bit, and
+	// the parent context, producing a verifiable chain.
+	current := sha256Hash(key.Bytes(), root.Bytes())
+	for i := effectiveDepth - 1; i >= 0; i-- {
+		// Direction bit from the key determines left/right child.
+		byteIdx := i / 8
+		bitIdx := uint(i % 8)
+		var dirBit byte
+		if byteIdx < len(key) {
+			dirBit = (key[byteIdx] >> bitIdx) & 1
+		}
+
+		// Construct sibling node data: SHA-256(current || level || direction).
+		levelBuf := make([]byte, 9)
+		binary.BigEndian.PutUint64(levelBuf[:8], uint64(i))
+		levelBuf[8] = dirBit
+		siblingData := sha256Concat(current, levelBuf)
+		siblingHash := sha256ToHash(siblingData)
+
 		nodes[i] = StateProofNode{
-			Hash: nodeHash,
-			Data: nodeData,
+			Hash: siblingHash,
+			Data: siblingData,
+		}
+
+		// Move up: parent = SHA-256(left || right).
+		if dirBit == 0 {
+			current = sha256Hash(current, siblingData)
+		} else {
+			current = sha256Hash(siblingData, current)
 		}
 	}
 	return nodes
+}
+
+// sha256Hash computes SHA-256 of concatenated inputs.
+func sha256Hash(parts ...[]byte) []byte {
+	h := sha256.New()
+	for _, p := range parts {
+		h.Write(p)
+	}
+	return h.Sum(nil)
+}
+
+// sha256Concat computes SHA-256(a || b).
+func sha256Concat(a, b []byte) []byte {
+	h := sha256.New()
+	h.Write(a)
+	h.Write(b)
+	return h.Sum(nil)
+}
+
+// sha256ToHash converts a SHA-256 digest to types.Hash.
+func sha256ToHash(digest []byte) types.Hash {
+	var h types.Hash
+	copy(h[:], digest)
+	return h
 }
 
 // deriveAccountRLP produces a deterministic account encoding for proofs.
@@ -233,7 +283,8 @@ func VerifyStorageProof(proof *StorageStateProof) bool {
 }
 
 // verifyProofChain checks that proof nodes are internally consistent: each
-// node hashes to its declared hash and forms a valid path from root to leaf.
+// node's data hashes to its declared hash via SHA-256, forming a valid
+// Merkle path.
 func verifyProofChain(root types.Hash, key types.Hash, nodes []StateProofNode) bool {
 	if len(nodes) > MaxStateProofDepth {
 		return false
@@ -241,31 +292,52 @@ func verifyProofChain(root types.Hash, key types.Hash, nodes []StateProofNode) b
 
 	// Verify each node: its data must hash to its declared hash.
 	for _, node := range nodes {
-		computed := crypto.Keccak256Hash(node.Data)
+		computed := sha256ToHash(sha256Hash(node.Data))
 		if computed != node.Hash {
-			return false
+			// Fall back to Keccak256 for backward compatibility with
+			// proofs generated before the SHA-256 migration.
+			computedK := crypto.Keccak256Hash(node.Data)
+			if computedK != node.Hash {
+				return false
+			}
 		}
 	}
 
-	// Verify chain linkage: the proof must relate to the root.
-	// Reconstruct the expected root node hash from the chain.
+	// Verify chain linkage: reconstruct the root from the proof nodes
+	// by walking the sibling path using key bits as direction.
 	expectedRoot := deriveRootFromProof(root, key, nodes)
 	return expectedRoot == root
 }
 
-// deriveRootFromProof recomputes the expected root from proof nodes.
+// deriveRootFromProof recomputes the expected root from proof nodes using
+// SHA-256 binary Merkle tree reconstruction. The key bits determine whether
+// each sibling node is on the left or right.
 func deriveRootFromProof(root types.Hash, key types.Hash, nodes []StateProofNode) types.Hash {
 	if len(nodes) == 0 {
 		return types.Hash{}
 	}
-	// Walk the proof: hash each node with its position to get root commitment.
-	current := nodes[0].Data
-	for i := 1; i < len(nodes); i++ {
-		current = crypto.Keccak256(current, nodes[i].Data)
+
+	// Start from the leaf: SHA-256(key || root).
+	current := sha256Hash(key.Bytes(), root.Bytes())
+
+	for i := len(nodes) - 1; i >= 0; i-- {
+		// Direction bit from key.
+		byteIdx := i / 8
+		bitIdx := uint(i % 8)
+		var dirBit byte
+		if byteIdx < len(key) {
+			dirBit = (key[byteIdx] >> bitIdx) & 1
+		}
+
+		siblingData := nodes[i].Data
+		if dirBit == 0 {
+			current = sha256Hash(current, siblingData)
+		} else {
+			current = sha256Hash(siblingData, current)
+		}
 	}
-	// Final binding to root and key.
-	rootBinding := crypto.Keccak256(root.Bytes(), key.Bytes(), current)
-	return types.BytesToHash(rootBinding)
+
+	return sha256ToHash(current)
 }
 
 // BatchProofGenerator creates multi-proof batches with node deduplication.

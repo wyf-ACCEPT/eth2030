@@ -231,14 +231,23 @@ func TestVerifyTransaction_SchemeMismatch(t *testing.T) {
 
 func TestSignTransaction_Deterministic(t *testing.T) {
 	signer, _ := NewPQTxSigner(SigDilithium3)
-	priv, _, _ := signer.GenerateKey()
+	priv, pub, _ := signer.GenerateKey()
 	tx := testLegacyTx()
 
-	sig1, _ := signer.SignTransaction(tx, priv)
-	sig2, _ := signer.SignTransaction(tx, priv)
-
-	if !pqBytesEqual(sig1, sig2) {
-		t.Error("signing same tx with same key should produce identical signatures")
+	// Real lattice signing uses random masking vectors, so two signatures
+	// for the same (tx, key) will differ. Both must verify correctly.
+	sig1, err := signer.SignTransaction(tx, priv)
+	if err != nil {
+		t.Fatalf("SignTransaction #1: %v", err)
+	}
+	sig2, err := signer.SignTransaction(tx, priv)
+	if err != nil {
+		t.Fatalf("SignTransaction #2: %v", err)
+	}
+	ok1, _ := signer.VerifyTransaction(tx, sig1, pub)
+	ok2, _ := signer.VerifyTransaction(tx, sig2, pub)
+	if !ok1 || !ok2 {
+		t.Error("both signatures should verify for the same tx and key")
 	}
 }
 
@@ -430,7 +439,7 @@ func TestKeySizesForScheme(t *testing.T) {
 		pubSz   int
 		wantErr bool
 	}{
-		{SigDilithium3, Dilithium3SecKeySize, Dilithium3PubKeySize, false},
+		{SigDilithium3, DSign3SecKeyBytes, DSign3PubKeyBytes, false},
 		{SigFalcon512, Falcon512SecKeySize, Falcon512PubKeySize, false},
 		{SigSPHINCS128, 64, 32, false},
 		{PQSignatureType(99), 0, 0, true},

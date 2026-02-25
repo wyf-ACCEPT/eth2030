@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // SSFRoundPhase represents the current phase within an SSF round.
@@ -287,14 +288,12 @@ func (e *SSFRoundEngine) AggregateVotes(slot uint64) error {
 		return fmt.Errorf("%w: expected Attest, got %s", ErrRoundWrongPhase, round.Phase)
 	}
 
-	// Placeholder aggregation: XOR all vote signatures.
-	var aggSig [96]byte
+	// Aggregate vote signatures using BLS G2 point addition.
+	var sigs [][96]byte
 	for _, v := range round.Votes {
-		for i := range aggSig {
-			aggSig[i] ^= v.Signature[i]
-		}
+		sigs = append(sigs, v.Signature)
 	}
-	round.AggregatedSig = aggSig
+	round.AggregatedSig = crypto.AggregateSignatures(sigs)
 
 	// Check if any root meets the threshold.
 	thresholdMet := false

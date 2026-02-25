@@ -17,11 +17,11 @@ func TestLatticeBlobCommit_Commit(t *testing.T) {
 	if commitment.Scheme != SchemeLatticeBlobCommit {
 		t.Errorf("wrong scheme: got %s, want %s", commitment.Scheme, SchemeLatticeBlobCommit)
 	}
-	if len(commitment.Commitment) != 32 { // Keccak256 output
+	if len(commitment.Commitment) != 32 { // Hash of MLWE commitment vector
 		t.Errorf("wrong commitment length: got %d, want 32", len(commitment.Commitment))
 	}
-	if len(commitment.Proof) != 32 {
-		t.Errorf("wrong proof length: got %d, want 32", len(commitment.Proof))
+	if len(commitment.Proof) == 0 {
+		t.Error("proof should not be empty")
 	}
 }
 

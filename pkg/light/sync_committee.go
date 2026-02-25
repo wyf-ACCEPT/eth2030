@@ -57,12 +57,8 @@ func ComputeCommitteeRoot(pubkeys [][]byte) types.Hash {
 }
 
 // VerifySyncCommitteeSignature verifies the aggregate BLS signature from a
-// sync committee. In the beacon chain, this would use BLS12-381 aggregate
-// signature verification. Here we verify a Keccak256 binding commitment:
-//
-//	expected = Keccak256(signing_root || committee_bits || committee_root)
-//
-// The signing_root is typically the hash tree root of the attested header.
+// sync committee using BLS12-381 aggregate signature verification.
+// The signing message is: signing_root || committee_bits || committee_root.
 // Returns nil on success, or an error describing the failure.
 func VerifySyncCommitteeSignature(
 	committee *SyncCommittee,
@@ -91,26 +87,37 @@ func VerifySyncCommitteeSignature(
 	// Compute the committee root for binding.
 	committeeRoot := ComputeCommitteeRoot(committee.Pubkeys)
 
-	// Verify the signature as Keccak256(signing_root || bits || committee_root).
+	// Build the signing message.
 	msg := make([]byte, 0, 32+len(committeeBits)+32)
 	msg = append(msg, signingRoot[:]...)
 	msg = append(msg, committeeBits...)
 	msg = append(msg, committeeRoot[:]...)
-	expected := crypto.Keccak256(msg)
 
-	if len(signature) != len(expected) {
+	// Collect participating pubkeys based on committee bits.
+	var participantPubkeys [][]byte
+	for i := 0; i < SyncCommitteeSize; i++ {
+		if i/8 < len(committeeBits) && committeeBits[i/8]&(1<<(uint(i)%8)) != 0 {
+			participantPubkeys = append(participantPubkeys, committee.Pubkeys[i])
+		}
+	}
+
+	if len(participantPubkeys) == 0 {
+		return ErrInsufficientParticipation
+	}
+
+	// Verify using BLS FastAggregateVerify.
+	if len(signature) != crypto.BLSSignatureSize {
 		return ErrInvalidSignature
 	}
-	for i := range expected {
-		if signature[i] != expected[i] {
-			return ErrInvalidSignature
-		}
+	if !crypto.DefaultBLSBackend().FastAggregateVerify(participantPubkeys, msg, signature) {
+		return ErrInvalidSignature
 	}
 	return nil
 }
 
-// SignSyncCommittee creates a placeholder sync committee signature for testing.
-// In production, this would be a BLS aggregate signature.
+// SignSyncCommittee creates a BLS aggregate sync committee signature.
+// Each participating committee member signs the message with their
+// secret key (derived from committee.SecretKeys if available).
 func SignSyncCommittee(
 	committee *SyncCommittee,
 	signingRoot types.Hash,
@@ -121,13 +128,25 @@ func SignSyncCommittee(
 	msg = append(msg, signingRoot[:]...)
 	msg = append(msg, committeeBits...)
 	msg = append(msg, committeeRoot[:]...)
-	return crypto.Keccak256(msg)
+
+	// Collect individual signatures from participating members.
+	var sigs [][crypto.BLSSignatureSize]byte
+	for i := 0; i < SyncCommitteeSize; i++ {
+		if i/8 < len(committeeBits) && committeeBits[i/8]&(1<<(uint(i)%8)) != 0 {
+			if i < len(committee.SecretKeys) && committee.SecretKeys[i] != nil {
+				sig := crypto.BLSSign(committee.SecretKeys[i], msg)
+				sigs = append(sigs, sig)
+			}
+		}
+	}
+
+	// Aggregate the individual signatures.
+	aggSig := crypto.AggregateSignatures(sigs)
+	return aggSig[:]
 }
 
 // NextSyncCommittee derives a deterministic next sync committee from the
-// current committee. In the real beacon chain, committee selection uses
-// the RANDAO mix and validator shuffle. Here we rotate pubkeys and re-hash
-// to simulate the transition.
+// current committee. Uses real BLS keypairs derived from the next period.
 func NextSyncCommittee(current *SyncCommittee) (*SyncCommittee, error) {
 	if current == nil {
 		return nil, ErrNilCommittee
@@ -136,34 +155,26 @@ func NextSyncCommittee(current *SyncCommittee) (*SyncCommittee, error) {
 		return nil, ErrCommitteeWrongSize
 	}
 
+	nextPeriod := current.Period + 1
 	nextPubkeys := make([][]byte, SyncCommitteeSize)
-	for i, pk := range current.Pubkeys {
-		// Derive next key: Keccak256(current_key || period+1).
-		seed := make([]byte, len(pk)+8)
-		copy(seed, pk)
-		nextPeriod := current.Period + 1
-		seed[len(pk)] = byte(nextPeriod >> 56)
-		seed[len(pk)+1] = byte(nextPeriod >> 48)
-		seed[len(pk)+2] = byte(nextPeriod >> 40)
-		seed[len(pk)+3] = byte(nextPeriod >> 32)
-		seed[len(pk)+4] = byte(nextPeriod >> 24)
-		seed[len(pk)+5] = byte(nextPeriod >> 16)
-		seed[len(pk)+6] = byte(nextPeriod >> 8)
-		seed[len(pk)+7] = byte(nextPeriod)
-		nextPubkeys[i] = crypto.Keccak256(seed)
+	nextSecretKeys := make([]*big.Int, SyncCommitteeSize)
+	for i := 0; i < SyncCommitteeSize; i++ {
+		// Derive secret key from next period and index.
+		sk := new(big.Int).SetUint64(nextPeriod*uint64(SyncCommitteeSize) + uint64(i) + 1)
+		nextSecretKeys[i] = sk
+		pk := crypto.BLSPubkeyFromSecret(sk)
+		nextPubkeys[i] = pk[:]
 	}
 
-	// Compute aggregate pubkey for the next committee.
-	aggPK := crypto.Keccak256(nextPubkeys[0])
-	for i := 1; i < len(nextPubkeys); i++ {
-		combined := append(aggPK, nextPubkeys[i]...)
-		aggPK = crypto.Keccak256(combined)
-	}
+	// Compute aggregate pubkey using BLS aggregation.
+	aggPK := crypto.AggregatePublicKeys(bls48SlicesTo48Arrays(nextPubkeys))
+	aggPKSlice := aggPK[:]
 
 	return &SyncCommittee{
 		Pubkeys:         nextPubkeys,
-		AggregatePubkey: aggPK,
-		Period:          current.Period + 1,
+		AggregatePubkey: aggPKSlice,
+		Period:          nextPeriod,
+		SecretKeys:      nextSecretKeys,
 	}, nil
 }
 
@@ -302,28 +313,41 @@ func ProcessIncrementalUpdate(
 	return nil
 }
 
-// MakeTestSyncCommittee creates a sync committee with deterministic pubkeys
-// for testing purposes.
+// MakeTestSyncCommittee creates a sync committee with real BLS keypairs
+// for testing purposes. Secret keys are deterministic based on period and index.
 func MakeTestSyncCommittee(period uint64) *SyncCommittee {
 	pubkeys := make([][]byte, SyncCommitteeSize)
+	secretKeys := make([]*big.Int, SyncCommitteeSize)
 	for i := 0; i < SyncCommitteeSize; i++ {
-		// Derive pubkey from period and index.
-		seed := new(big.Int).SetUint64(period*uint64(SyncCommitteeSize) + uint64(i))
-		pubkeys[i] = crypto.Keccak256(seed.Bytes())
+		// Derive a deterministic secret key from period and index.
+		// Use i+1 to avoid zero secret key.
+		sk := new(big.Int).SetUint64(period*uint64(SyncCommitteeSize) + uint64(i) + 1)
+		secretKeys[i] = sk
+		pk := crypto.BLSPubkeyFromSecret(sk)
+		pubkeys[i] = pk[:]
 	}
 
-	// Compute aggregate pubkey.
-	aggPK := crypto.Keccak256(pubkeys[0])
-	for i := 1; i < len(pubkeys); i++ {
-		combined := append(aggPK, pubkeys[i]...)
-		aggPK = crypto.Keccak256(combined)
-	}
+	// Compute aggregate pubkey using BLS aggregation.
+	aggPK := crypto.AggregatePublicKeys(bls48SlicesTo48Arrays(pubkeys))
+	aggPKSlice := aggPK[:]
 
 	return &SyncCommittee{
 		Pubkeys:         pubkeys,
-		AggregatePubkey: aggPK,
+		AggregatePubkey: aggPKSlice,
 		Period:          period,
+		SecretKeys:      secretKeys,
 	}
+}
+
+// bls48SlicesTo48Arrays converts [][]byte to [][48]byte for BLS operations.
+func bls48SlicesTo48Arrays(pubkeys [][]byte) [][48]byte {
+	result := make([][48]byte, len(pubkeys))
+	for i, pk := range pubkeys {
+		if len(pk) >= 48 {
+			copy(result[i][:], pk[:48])
+		}
+	}
+	return result
 }
 
 // countBits returns the number of set bits in a byte slice.

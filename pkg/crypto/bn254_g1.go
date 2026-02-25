@@ -30,6 +30,20 @@ func G1Infinity() *G1Point {
 	}
 }
 
+// Marshal serializes the G1 point to uncompressed affine bytes (64 bytes: X || Y).
+func (p *G1Point) Marshal() []byte {
+	if p.g1IsInfinity() {
+		return make([]byte, 64)
+	}
+	ax, ay := p.g1ToAffine()
+	out := make([]byte, 64)
+	axBytes := ax.Bytes()
+	ayBytes := ay.Bytes()
+	copy(out[32-len(axBytes):32], axBytes)
+	copy(out[64-len(ayBytes):64], ayBytes)
+	return out
+}
+
 // g1IsInfinity returns true if the point is the identity (Z=0).
 func (p *G1Point) g1IsInfinity() bool {
 	return p.z.Sign() == 0

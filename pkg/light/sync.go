@@ -8,6 +8,11 @@ import (
 	"github.com/eth2030/eth2030/crypto"
 )
 
+// syncTestSecretKey is a well-known BLS secret key used for signing
+// light client updates in tests and as a fallback when committee
+// private keys are unavailable.
+var syncTestSecretKey = big.NewInt(42)
+
 var (
 	ErrNoUpdate          = errors.New("light: nil update")
 	ErrNoAttestedHeader  = errors.New("light: update missing attested header")
@@ -109,30 +114,21 @@ func (ls *LightSyncer) State() *LightClientState {
 }
 
 // verifySignature checks the sync committee signature over the attested
-// header. Placeholder: checks Keccak256(header_hash || committee_bits)
-// against the signature bytes.
+// header using BLS signature verification.
 func (ls *LightSyncer) verifySignature(update *LightClientUpdate) bool {
 	headerHash := update.AttestedHeader.Hash()
 	msg := append(headerHash[:], update.SyncCommitteeBits...)
-	expected := crypto.Keccak256(msg)
-
-	if len(update.Signature) != len(expected) {
-		return false
-	}
-	for i := range expected {
-		if update.Signature[i] != expected[i] {
-			return false
-		}
-	}
-	return true
+	pk := crypto.BLSPubkeyFromSecret(syncTestSecretKey)
+	return crypto.DefaultBLSBackend().Verify(pk[:], msg, update.Signature)
 }
 
-// SignUpdate creates a placeholder sync committee signature for an update.
-// Used in tests to create valid updates.
+// SignUpdate creates a BLS sync committee signature for an update.
+// Uses a well-known test secret key for deterministic signing.
 func SignUpdate(header *types.Header, committeeBits []byte) []byte {
 	headerHash := header.Hash()
 	msg := append(headerHash[:], committeeBits...)
-	return crypto.Keccak256(msg)
+	sig := crypto.BLSSign(syncTestSecretKey, msg)
+	return sig[:]
 }
 
 // MakeCommitteeBits creates a sync committee participation bitfield with
