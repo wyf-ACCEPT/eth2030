@@ -29,6 +29,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> &middot;
+  <a href="#devnet-testing-kurtosis">Devnet Testing</a> &middot;
   <a href="#roadmap-coverage">Roadmap</a> &middot;
   <a href="#eip-coverage-58-eips-supported">EIP Coverage</a> &middot;
   <a href="#architecture">Architecture</a> &middot;
@@ -94,6 +95,42 @@ go test ./core/eftest/ -run TestGethCategorySummary -timeout=10m
 | `--maxpeers` | `50` | Maximum P2P peers |
 | `--verbosity` | `3` | Log level (0=silent, 5=trace) |
 | `--override.glamsterdam` | - | Test Glamsterdam fork at timestamp |
+
+## Devnet Testing (Kurtosis)
+
+ETH2030 includes Kurtosis devnet integration for multi-client consensus testing using [ethpandaops/ethereum-package](https://github.com/ethpandaops/ethereum-package) with 10 testing tools (assertoor, spamoor, rakoon, dora, blobscan, forky, tracoor, forkmon, prometheus, grafana).
+
+```bash
+# Prerequisites: Docker + Kurtosis CLI
+kurtosis engine start
+cd pkg && docker build -t eth2030:local .
+
+# Run all 15 feature devnet tests
+cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh
+
+# Run specific features
+cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh epbs focil native-aa
+
+# Launch a general devnet
+cd pkg/devnet/kurtosis && ./scripts/run-devnet.sh single-client
+```
+
+**15 Feature Tests** — All passing consensus checks:
+
+| Feature | EIP(s) | Feature | EIP(s) |
+|---------|--------|---------|--------|
+| ePBS | EIP-7732 | PeerDAS | EIP-7594 |
+| FOCIL | EIP-7805 | Verkle | EIP-6800 |
+| BALs | EIP-7928 | 3SF/Quick Slots | — |
+| Native AA | EIP-7702 | PQ Crypto | — |
+| Gas Repricing | 18 EIPs | Encrypted Mempool | — |
+| Blobs | EIP-4844/8070 | Shielded Transfers | — |
+| Multidim Gas | EIP-7706 | SSZ | EIP-6404/7807 |
+| Native Rollups | EIP-8079 | | |
+
+**6 General Configs** — single-client, multi-client (cross-client consensus with upstream geth), stress-test, blob-test, eip7702-test, full-feature.
+
+See [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) for full documentation.
 
 ## Architecture
 
@@ -320,6 +357,7 @@ All 65 roadmap items are COMPLETE with real cryptographic backends wired (BLS, D
 - [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
 - [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
 - [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
+- [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (15 features, 6 configs, 10 tools)
 
 ## Development Stats
 

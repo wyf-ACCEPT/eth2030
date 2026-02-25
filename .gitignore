@@ -32,6 +32,9 @@ Thumbs.db
 coverage.out
 coverage.html
 
+# Devnet test results (regenerable)
+pkg/devnet/kurtosis/results/
+
 # Claude
 CLAUDE.md
 .claude/
