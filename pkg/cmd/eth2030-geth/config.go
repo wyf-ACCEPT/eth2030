@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"net"
 	"os"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth/ethconfig"
 	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/metrics/exp"
 	gethnode "github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
@@ -77,9 +79,11 @@ func mapNodeConfig(p nodeConfigParams) gethnode.Config {
 		discAddr = fmt.Sprintf(":%d", p.discoveryPort)
 	}
 
-	// Enable metrics if requested.
+	// Enable metrics and start HTTP metrics server if requested.
 	if p.metricsEnabled {
 		metrics.Enable()
+		address := net.JoinHostPort(p.metricsAddr, fmt.Sprintf("%d", p.metricsPort))
+		exp.Setup(address)
 	}
 
 	cfg := gethnode.Config{
