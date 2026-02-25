@@ -313,9 +313,22 @@ func executeZKISAOp(selector uint32, input []byte) []byte {
 		h := sha256.Sum256(input)
 		return h[:]
 	case ZKISAOpECRecover:
-		// Simulated: return hash of input as recovered address placeholder.
+		// Real ECDSA recovery: input must be hash(32) || sig(65) = 97 bytes.
+		// Returns the 20-byte recovered address, or a hash-based fallback
+		// if the input format is invalid.
+		if len(input) >= 97 {
+			hash := input[:32]
+			sig := input[32:97]
+			pubkey, err := crypto.Ecrecover(hash, sig)
+			if err == nil && len(pubkey) > 0 {
+				// Derive address: Keccak-256 of pubkey[1:], take last 20 bytes.
+				addr := crypto.Keccak256(pubkey[1:])
+				return addr[12:] // 20 bytes
+			}
+		}
+		// Fallback for malformed input: return deterministic hash-based address.
 		h := crypto.Keccak256(input)
-		return h[12:] // 20 bytes like an address
+		return h[12:]
 	case ZKISAOpModExp:
 		// Simulated: return hash of input.
 		return crypto.Keccak256([]byte("modexp"), input)

@@ -15,7 +15,7 @@ func makeValidTestProof() *VerkleProof {
 	return &VerkleProof{
 		CommitmentsByPath: []Commitment{{0xaa}, {0xbb}},
 		D:                 Commitment{0xdd},
-		IPAProof:          []byte{0x01, 0x02, 0x03, 0x04},
+		IPAProof:          makeValidTestIPABytes(),
 		Depth:             2,
 		ExtensionPresent:  true,
 		Key:               [KeySize]byte{0x01, 0x02, 0x03},
@@ -27,12 +27,27 @@ func makeAbsenceTestProof() *VerkleProof {
 	return &VerkleProof{
 		CommitmentsByPath: []Commitment{{0xaa}, {0xbb}},
 		D:                 Commitment{0xdd},
-		IPAProof:          []byte{0x01, 0x02, 0x03},
+		IPAProof:          makeValidTestIPABytes(),
 		Depth:             2,
 		ExtensionPresent:  false,
 		Key:               [KeySize]byte{0x01, 0x02, 0x03},
 		Value:             nil,
 	}
+}
+
+// makeValidTestIPABytes returns a valid serialized IPAProofVerkle for tests.
+func makeValidTestIPABytes() []byte {
+	proof := &IPAProofVerkle{
+		CL:          make([]Commitment, 8),
+		CR:          make([]Commitment, 8),
+		FinalScalar: One(),
+	}
+	for i := 0; i < 8; i++ {
+		proof.CL[i] = Commitment{byte(i + 1)}
+		proof.CR[i] = Commitment{byte(i + 0x10)}
+	}
+	data, _ := SerializeIPAProofVerkle(proof)
+	return data
 }
 
 // --- ProofVerifier creation tests ---
@@ -328,8 +343,8 @@ func TestProofVerifierProofStatsInclusion(t *testing.T) {
 	if m.CommitmentCount != 2 {
 		t.Errorf("CommitmentCount = %d, want 2", m.CommitmentCount)
 	}
-	if m.IPAProofSize != 4 {
-		t.Errorf("IPAProofSize = %d, want 4", m.IPAProofSize)
+	if m.IPAProofSize != 545 {
+		t.Errorf("IPAProofSize = %d, want 545", m.IPAProofSize)
 	}
 	if !m.IsInclusion {
 		t.Error("expected IsInclusion=true")

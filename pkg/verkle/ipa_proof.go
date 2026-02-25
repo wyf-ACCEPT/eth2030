@@ -339,6 +339,7 @@ func IPAProofVerkleFromCrypto(proof *crypto.IPAProofData) *IPAProofVerkle {
 // IPAProofVerkleToCrypto converts an IPAProofVerkle back to crypto.IPAProofData.
 // Note: this reconstructs curve points from the commitment scalars via
 // scalar multiplication of the generator, which is an approximation.
+// For lossless round-tripping, use SerializeIPAProofCrypto/DeserializeIPAProofCrypto.
 func IPAProofVerkleToCrypto(proof *IPAProofVerkle) *crypto.IPAProofData {
 	if proof == nil {
 		return nil
@@ -357,4 +358,151 @@ func IPAProofVerkleToCrypto(proof *IPAProofVerkle) *crypto.IPAProofData {
 		result.R[i] = crypto.BanderScalarMul(g, rScalar)
 	}
 	return result
+}
+
+// IPAProofWithCommitment bundles a crypto.IPAProofData with the commitment
+// curve point and inner product, allowing lossless serialization for
+// round-trip verification.
+type IPAProofWithCommitment struct {
+	// Proof is the IPA proof data.
+	Proof *crypto.IPAProofData
+	// CommitmentPoint is the actual Banderwagon curve point used during proving.
+	CommitmentPoint *crypto.BanderPoint
+	// InnerProduct is the actual inner product <a, b> from proving.
+	InnerProduct *big.Int
+}
+
+// serializePoint serializes a Banderwagon point as (X, Y) in big-endian,
+// 64 bytes total. This is lossless, unlike BanderSerialize which normalizes.
+func serializePoint(p *crypto.BanderPoint) [64]byte {
+	var buf [64]byte
+	if p == nil || p.BanderIsIdentity() {
+		return buf
+	}
+	x, y := p.BanderToAffine()
+	xBytes := x.Bytes()
+	yBytes := y.Bytes()
+	copy(buf[32-len(xBytes):32], xBytes)
+	copy(buf[64-len(yBytes):64], yBytes)
+	return buf
+}
+
+// deserializePoint recovers a Banderwagon point from a 64-byte (X, Y) encoding.
+func deserializePoint(buf [64]byte) (*crypto.BanderPoint, error) {
+	x := new(big.Int).SetBytes(buf[:32])
+	y := new(big.Int).SetBytes(buf[32:64])
+	if x.Sign() == 0 && y.Sign() == 0 {
+		return crypto.BanderIdentity(), nil
+	}
+	return crypto.BanderFromAffine(x, y)
+}
+
+// SerializeIPAProofCrypto serializes a crypto.IPAProofData with its commitment
+// point and inner product to bytes using lossless (X,Y) affine encoding.
+//
+// Format: [commit_xy:64] [v:32] [rounds:1] [L_0_xy:64] [R_0_xy:64] ... [A:32]
+func SerializeIPAProofCrypto(proof *crypto.IPAProofData, commitPoint *crypto.BanderPoint, innerProduct *big.Int) ([]byte, error) {
+	if proof == nil {
+		return nil, errors.New("verkle/ipa_proof: nil proof")
+	}
+	rounds := len(proof.L)
+	if rounds != len(proof.R) {
+		return nil, errors.New("verkle/ipa_proof: L/R length mismatch")
+	}
+	// 64 (commit) + 32 (v) + 1 (rounds) + rounds*128 (L+R as 64 each) + 32 (A)
+	size := 64 + 32 + 1 + rounds*128 + 32
+	buf := make([]byte, 0, size)
+
+	// Serialize the commitment point as (X, Y).
+	commitXY := serializePoint(commitPoint)
+	buf = append(buf, commitXY[:]...)
+
+	// Serialize the inner product v.
+	var vBytes [32]byte
+	if innerProduct != nil {
+		b := innerProduct.Bytes()
+		copy(vBytes[32-len(b):], b)
+	}
+	buf = append(buf, vBytes[:]...)
+
+	buf = append(buf, byte(rounds))
+
+	for i := 0; i < rounds; i++ {
+		lXY := serializePoint(proof.L[i])
+		rXY := serializePoint(proof.R[i])
+		buf = append(buf, lXY[:]...)
+		buf = append(buf, rXY[:]...)
+	}
+
+	// Serialize A as a 32-byte big-endian scalar.
+	var aBytes [32]byte
+	if proof.A != nil {
+		b := proof.A.Bytes()
+		copy(aBytes[32-len(b):], b)
+	}
+	buf = append(buf, aBytes[:]...)
+	return buf, nil
+}
+
+// DeserializeIPAProofCrypto deserializes bytes to a crypto.IPAProofData
+// and its commitment point using lossless (X,Y) affine encoding.
+func DeserializeIPAProofCrypto(data []byte) (*IPAProofWithCommitment, error) {
+	if len(data) < 129 { // 64 (commit) + 32 (v) + 1 (rounds) + 32 (scalar)
+		return nil, errors.New("verkle/ipa_proof: data too short")
+	}
+
+	// Deserialize the commitment point.
+	var commitXY [64]byte
+	copy(commitXY[:], data[:64])
+	commitPt, err := deserializePoint(commitXY)
+	if err != nil {
+		return nil, errors.New("verkle/ipa_proof: failed to deserialize commitment point")
+	}
+
+	// Deserialize the inner product v.
+	var vBytes [32]byte
+	copy(vBytes[:], data[64:96])
+	v := new(big.Int).SetBytes(vBytes[:])
+
+	offset := 96
+	rounds := int(data[offset])
+	offset++
+
+	expected := 64 + 32 + 1 + rounds*128 + 32
+	if len(data) != expected {
+		return nil, errors.New("verkle/ipa_proof: invalid data length")
+	}
+
+	proof := &crypto.IPAProofData{
+		L: make([]*crypto.BanderPoint, rounds),
+		R: make([]*crypto.BanderPoint, rounds),
+	}
+
+	for i := 0; i < rounds; i++ {
+		var lXY, rXY [64]byte
+		copy(lXY[:], data[offset:offset+64])
+		copy(rXY[:], data[offset+64:offset+128])
+
+		lPt, lErr := deserializePoint(lXY)
+		if lErr != nil {
+			return nil, errors.New("verkle/ipa_proof: failed to deserialize L point")
+		}
+		rPt, rErr := deserializePoint(rXY)
+		if rErr != nil {
+			return nil, errors.New("verkle/ipa_proof: failed to deserialize R point")
+		}
+		proof.L[i] = lPt
+		proof.R[i] = rPt
+		offset += 128
+	}
+
+	var aBytes [32]byte
+	copy(aBytes[:], data[offset:offset+32])
+	proof.A = new(big.Int).SetBytes(aBytes[:])
+
+	return &IPAProofWithCommitment{
+		Proof:           proof,
+		CommitmentPoint: commitPt,
+		InnerProduct:    v,
+	}, nil
 }

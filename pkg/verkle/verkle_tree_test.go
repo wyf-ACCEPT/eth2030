@@ -14,9 +14,10 @@ func TestVerkleTreeImpl_NewEmpty(t *testing.T) {
 		t.Fatal("NewVerkleTreeImpl returned nil")
 	}
 
+	// An empty tree has an all-zero Pedersen commitment (identity point).
 	root := vt.Root()
-	if root.IsZero() {
-		t.Error("root of empty tree should not be zero hash")
+	if !root.IsZero() {
+		t.Error("root of empty tree should be zero (identity point commitment)")
 	}
 }
 

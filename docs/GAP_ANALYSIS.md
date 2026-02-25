@@ -5,11 +5,18 @@ Last updated: 2026-02-23
 ## Summary
 
 Systematic audit of all 65 roadmap items across Consensus, Data, and Execution layers.
-- **COMPLETE**: 65 items
-- **FUNCTIONAL**: 0 items
-- **PARTIAL**: 0 items
+- **COMPLETE**: 59 items (includes items delegated to go-ethereum v1.17.0 backend)
+- **FUNCTIONAL**: 4 items (placeholder crypto or simulated proofs)
+- **PARTIAL**: 2 items (verkle tree, proof verification)
 - **STUB**: 0 items
 - **MISSING**: 0 items
+
+## Classification Guide
+
+- **COMPLETE**: Full implementation with real crypto and test coverage, or delegated to a production backend (go-ethereum v1.17.0)
+- **FUNCTIONAL**: Logic works end-to-end but uses placeholder or simulated cryptography (e.g., SHA-256 hash instead of Groth16 proof)
+- **PARTIAL**: Structure and interfaces exist, but core verification is a no-op or uses wrong primitives
+- **DELEGATED**: Subset of COMPLETE -- handled entirely by go-ethereum v1.17.0 backend via `pkg/geth/` adapter
 
 ---
 
@@ -61,17 +68,17 @@ Systematic audit of all 65 roadmap items across Consensus, Data, and Execution l
 
 | # | Item | Status | Key Files | Notes |
 |---|------|--------|-----------|-------|
-| 35 | Glamsterdam repricing | COMPLETE | `core/glamsterdam_repricing.go` | 18-EIP repricing table |
+| 35 | Glamsterdam repricing | COMPLETE | `core/glamsterdam_repricing.go` | 18-EIP repricing table (gas accounting via go-ethereum v1.17.0 backend) |
 | 36 | optional proofs | COMPLETE | `proofs/optional.go` | Policy-based store + `ValidateProofPolicy()` (bounds, type support) |
-| 37 | Hogota repricing | COMPLETE | `core/hogota_repricing.go` | Repricing tables + `ValidateHogotaGas()` (gas non-zero, cold >= warm) |
+| 37 | Hogota repricing | COMPLETE | `core/hogota_repricing.go` | Repricing tables + `ValidateHogotaGas()` (gas non-zero, cold >= warm) (gas accounting via go-ethereum v1.17.0 backend) |
 | 38 | 3x/year gas limit | COMPLETE | `core/gas_limit.go` | Schedule + `ValidateGasLimitSchedule()` (monotone, 3x cap, gigagas ceiling) |
 | 39 | multidimensional pricing | COMPLETE | `core/multidim_gas.go`, `core/multidim.go` | EIP-7706/7999 + `ValidateMultidimGasConfig()`, `ValidateTotalGasUsage()` |
 | 40 | payload chunking | COMPLETE | `core/payload_chunking.go`, `engine/payload_chunking.go` | Merkle proofs + `VerifyPayloadChunks()`, `ValidateChunk()` |
 | 41 | block in blobs | COMPLETE | `core/block_in_blobs.go`, `das/block_in_blob.go` | Block-as-blob + `ValidateBlockInBlobs()` (blob count, encoding integrity) |
 | 42 | announce nonce | COMPLETE | `p2p/announce_nonce.go`, `eth/announce_nonce.go` | ETH/72 + `ValidateAnnouncedNonce()`, `Validate()` on AnnounceNonceMsg |
-| 43 | mandatory 3-of-5 proofs | COMPLETE | `proofs/mandatory_proofs.go`, `proofs/mandatory.go` | Prover assignment + `ValidateProofSubmission()` (3-of-5 threshold, type check) |
-| 44 | canonical guest | COMPLETE | `zkvm/canonical.go`, `canonical_executor.go` | GuestRegistry + `ValidateGuestProgram()` (binary hash, registry consistency) |
-| 45 | canonical zkVM | COMPLETE | `zkvm/riscv_cpu.go`, `canonical_executor.go`, `proof_backend.go` | RV32IM CPU + `ValidateCPUConfig()` (memory bounds, instruction limits) |
+| 43 | mandatory 3-of-5 proofs | PARTIAL | `proofs/mandatory_proofs.go`, `proofs/mandatory.go` | Prover assignment + `ValidateProofSubmission()` (3-of-5 threshold, type check). Structure exists but underlying proof verification uses placeholder crypto (BLS, KZG, IPA backends not wired to production libraries) |
+| 44 | canonical guest | FUNCTIONAL | `zkvm/canonical.go`, `canonical_executor.go` | GuestRegistry + `ValidateGuestProgram()` (binary hash, registry consistency). Guest execution simulated (cycles = len(program) + len(input)); RISC-V CPU emulator exists but not wired into guest path |
+| 45 | canonical zkVM | FUNCTIONAL | `zkvm/riscv_cpu.go`, `canonical_executor.go`, `proof_backend.go` | RV32IM CPU real + `ValidateCPUConfig()` (memory bounds, instruction limits). Proofs are SHA-256 simulated, not Groth16 |
 | 46 | long-dated gas futures | COMPLETE | `core/vm/gas_futures_long.go`, `core/gas_market.go` | Position/margin cycle + `ValidateGasFuturePosition()` (margin, liquidation) |
 | 47 | sharded mempool | COMPLETE | `txpool/sharding.go`, `txpool/shared/` | Consistent hash + `ValidateShardAssignment()` (power-of-two, capacity, replication) |
 | 48 | gigagas L1 | COMPLETE | `core/gigagas.go`, `gigagas_integration.go` | 4-phase parallel + `ValidateGigagasConfig()` (parallelism, conflict thresholds) |
@@ -84,10 +91,10 @@ Systematic audit of all 65 roadmap items across Consensus, Data, and Execution l
 | 55 | transaction assertions | COMPLETE | `core/tx_assertions.go`, `core/types/` | Tx assertions + `ValidateAssertionSet()` (bounds, conflict detection) |
 | 56 | NTT precompile | COMPLETE | `core/vm/precompile_ntt.go` | Number Theoretic Transform + `ValidateNTTInput()` (length, modulus, power-of-two) |
 | 57 | precompiles in zkISA | COMPLETE | `core/vm/zkisa_precompiles.go` | ExecutionProof wrappers + `ValidateZKISAPrecompile()` (proof, witness, address) |
-| 58 | STF in zkISA | COMPLETE | `zkvm/stf.go`, `stf_executor.go` | RealSTFExecutor + `ValidateSTFInput()` (state root, block bounds) |
+| 58 | STF in zkISA | FUNCTIONAL | `zkvm/stf.go`, `stf_executor.go` | RealSTFExecutor + `ValidateSTFInput()` (state root, block bounds). STF verification checks proof length, not cryptographic validity |
 | 59 | native rollups | COMPLETE | `rollup/` | EIP-8079 + `ValidateRollupExecution()` (anchor state, proof validity) |
-| 60 | proof aggregation | COMPLETE | `proofs/aggregation.go`, `proofs/recursive_aggregator.go` | KZG/SNARK/STARK + `ValidateAggregatedProof()` (count, type consistency) |
-| 61 | exposed zkISA | COMPLETE | `zkvm/zkisa_bridge.go` | ZKISABridge + `ValidateBridgeCall()` (op selector, gas, ABI format) |
+| 60 | proof aggregation | PARTIAL | `proofs/aggregation.go`, `proofs/recursive_aggregator.go` | KZG/SNARK/STARK + `ValidateAggregatedProof()` (count, type consistency). Aggregation logic works but underlying proof types use placeholder verification (Pedersen/IPA libraries exist; tree integration uses Keccak256 placeholder) |
+| 61 | exposed zkISA | FUNCTIONAL | `zkvm/zkisa_bridge.go` | ZKISABridge + `ValidateBridgeCall()` (op selector, gas, ABI format). Bridge uses hash-based placeholder address recovery |
 | 62 | AA proofs | COMPLETE | `proofs/aa_proof_circuits.go` | ZK circuits + `ValidateAAProof()` (constraints, nonce, gas bounds) |
 | 63 | encrypted mempool | COMPLETE | `txpool/encrypted/` | Commit-reveal + `ValidateEncryptedTx()` (ciphertext, threshold params) |
 | 64 | PQ transactions | COMPLETE | `core/types/pq_transaction.go`, `crypto/pqc/pq_tx_signer.go` | Type 0x07 + `ValidatePQTransaction()` (algorithm ID, signature format) |

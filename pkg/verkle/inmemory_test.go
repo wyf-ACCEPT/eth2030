@@ -127,12 +127,11 @@ func TestInMemoryVerkleTree_Commit(t *testing.T) {
 	tree := NewInMemoryVerkleTree()
 
 	// Empty tree commit.
+	// An empty Verkle tree has an all-zero Pedersen commitment (identity point),
+	// so the root hash is the zero hash.
 	root1, err := tree.Commit()
 	if err != nil {
 		t.Fatalf("Commit (empty): %v", err)
-	}
-	if root1.IsZero() {
-		t.Error("empty tree root should not be zero hash")
 	}
 
 	// Add a value and commit again.

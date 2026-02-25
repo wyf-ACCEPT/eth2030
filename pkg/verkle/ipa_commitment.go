@@ -240,6 +240,14 @@ type IPAProof struct {
 	// Inner is the raw IPA proof data (L/R points + final scalar).
 	Inner *crypto.IPAProofData
 
+	// CommitmentPoint is the actual Banderwagon curve point C = <a, G>
+	// used during proving. Needed for lossless verification round-trips.
+	CommitmentPoint *crypto.BanderPoint
+
+	// InnerProduct is the actual inner product <a, b> computed during proving.
+	// This is the value v that IPAVerify checks against.
+	InnerProduct FieldElement
+
 	// EvalPoint is the domain point at which the polynomial is evaluated.
 	EvalPoint FieldElement
 
@@ -278,15 +286,17 @@ func IPAProve(cfg *IPAConfig, polynomial []FieldElement, evalPoint, evalResult F
 	// Compute the commitment point C = <a, G>.
 	commitment := crypto.BanderMSM(cfg.Generators, aInts)
 
-	proof, _, err := crypto.IPAProve(cfg.Generators, aInts, bInts, commitment)
+	proof, v, err := crypto.IPAProve(cfg.Generators, aInts, bInts, commitment)
 	if err != nil {
 		return nil, err
 	}
 
 	return &IPAProof{
-		Inner:      proof,
-		EvalPoint:  evalPoint,
-		EvalResult: evalResult,
+		Inner:           proof,
+		CommitmentPoint: commitment,
+		InnerProduct:    NewFieldElement(v),
+		EvalPoint:       evalPoint,
+		EvalResult:      evalResult,
 	}, nil
 }
 

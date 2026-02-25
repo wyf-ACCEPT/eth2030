@@ -44,14 +44,32 @@ func TestVerkleProofIsAbsenceProofNilValue(t *testing.T) {
 
 func TestVerkleProofVerifyValid(t *testing.T) {
 	root := Commitment{0x01, 0x02}
+	// Build a valid serialized IPA proof (absence proof with no value).
+	absenceIPA := makeValidSerializedIPA()
 	proof := &VerkleProof{
 		CommitmentsByPath: []Commitment{{0xaa}},
 		Depth:             3,
-		IPAProof:          []byte{0x01, 0x02, 0x03},
+		IPAProof:          absenceIPA,
 	}
 	if !proof.Verify(root) {
 		t.Error("expected Verify=true for structurally valid proof")
 	}
+}
+
+// makeValidSerializedIPA creates a valid serialized IPAProofVerkle
+// with 8 rounds (for NodeWidth=256) for use in tests.
+func makeValidSerializedIPA() []byte {
+	proof := &IPAProofVerkle{
+		CL:          make([]Commitment, 8),
+		CR:          make([]Commitment, 8),
+		FinalScalar: One(),
+	}
+	for i := 0; i < 8; i++ {
+		proof.CL[i] = Commitment{byte(i + 1)}
+		proof.CR[i] = Commitment{byte(i + 0x10)}
+	}
+	data, _ := SerializeIPAProofVerkle(proof)
+	return data
 }
 
 func TestVerkleProofVerifyEmptyCommitments(t *testing.T) {
@@ -92,10 +110,11 @@ func TestVerkleProofVerifyEmptyIPAProof(t *testing.T) {
 
 func TestVerkleProofVerifyAtMaxDepth(t *testing.T) {
 	root := Commitment{0x01}
+	absenceIPA := makeValidSerializedIPA()
 	proof := &VerkleProof{
 		CommitmentsByPath: []Commitment{{0xaa}},
 		Depth:             uint8(MaxDepth), // exactly at max
-		IPAProof:          []byte{0x01},
+		IPAProof:          absenceIPA,
 	}
 	if !proof.Verify(root) {
 		t.Error("expected Verify=true at exactly MaxDepth")

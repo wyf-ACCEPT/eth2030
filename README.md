@@ -22,7 +22,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Packages-50-blue?style=flat-square" alt="Packages" />
   <img src="https://img.shields.io/badge/Tests-18%2C000%2B-blue?style=flat-square" alt="Tests" />
-  <img src="https://img.shields.io/badge/EIPs-58-blue?style=flat-square" alt="EIPs" />
+  <img src="https://img.shields.io/badge/EIPs-58%20supported-blue?style=flat-square" alt="EIPs supported (native + go-ethereum)" />
   <img src="https://img.shields.io/badge/EF%20State%20Tests-100%25%20(36%2C126)-brightgreen?style=flat-square" alt="EF Tests" />
   <img src="https://img.shields.io/badge/LOC-702K-blue?style=flat-square" alt="LOC" />
 </p>
@@ -30,7 +30,7 @@
 <p align="center">
   <a href="#quick-start">Quick Start</a> &middot;
   <a href="#roadmap-coverage">Roadmap</a> &middot;
-  <a href="#eip-coverage-58-eips-implemented">EIP Coverage</a> &middot;
+  <a href="#eip-coverage-58-eips-supported">EIP Coverage</a> &middot;
   <a href="#architecture">Architecture</a> &middot;
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -42,12 +42,12 @@
 ## Features
 
 - **Full EVM execution** -- 164+ opcodes, 24 precompiles, EOF container support, go-ethereum v1.17.0 backend
-- **100% EF conformance** -- 36,126/36,126 Ethereum Foundation state tests passing via go-ethereum integration
-- **58+ EIPs implemented** -- Covering Frontier through Prague and beyond
+- **100% EF conformance** -- 36,126/36,126 Ethereum Foundation state tests passing via go-ethereum v1.17.0 backend
+- **58+ EIPs supported** -- Covering Frontier through Prague and beyond (native + go-ethereum backend)
 - **Parallel execution** -- Block Access Lists (EIP-7928) for BAL-driven parallel transaction processing
 - **Post-quantum ready** -- ML-DSA-65 (FIPS 204), Dilithium3, Falcon512, SPHINCS+ signers with hybrid mode
 - **Native rollups** -- EIP-8079 EXECUTE precompile and anchor contract
-- **zkVM framework** -- RISC-V RV32IM CPU, STF executor, zkISA bridge, proof backend
+- **zkVM framework** -- RISC-V RV32IM CPU emulator, STF executor, zkISA bridge (simulated proofs, production Groth16 integration pending)
 - **Full consensus** -- 3-slot finality (3SF), quick slots (6s), 1-epoch finality, PQ attestations
 - **PeerDAS** -- Data availability sampling, custody proofs, blob streaming, variable-size blobs
 - **ePBS + FOCIL** -- Enshrined PBS with distributed builder and fork-choice enforced inclusion lists
@@ -163,6 +163,16 @@ The `eth2030-geth` binary has been verified syncing with live Ethereum networks:
 
 **Verified RPC methods:** `eth_chainId`, `eth_blockNumber`, `eth_getBlockByNumber`, `eth_syncing`, `eth_feeHistory`, `eth_getBalance`, `eth_getCode`, `net_version`, `net_peerCount`, `web3_clientVersion`, `admin_nodeInfo`, `admin_peers`, `txpool_status`, `engine_exchangeCapabilities`, and more.
 
+## Native vs Delegated Architecture
+
+ETH2030 combines native implementations with go-ethereum as a backend. This section clarifies what is built from scratch versus delegated:
+
+**go-ethereum delegated (~40 EIPs):** Core EVM opcodes, gas accounting, state root computation, trie operations, and standard precompile execution are handled by the `pkg/geth/` adapter importing go-ethereum v1.17.0 as a library. This includes all Frontier-through-Prague EVM semantics, EIP-158 empty account cleanup, and SSTORE gas metering (EIP-2200/2929/3529).
+
+**Native ETH2030 (~25 features):** Consensus layer (3SF, quick slots, 1-epoch finality, PQ attestations, endgame finality), data availability (PeerDAS, blob streaming, custody proofs, variable-size blobs), proposer-builder separation (ePBS, FOCIL, distributed builder), encrypted mempool (commit-reveal, threshold decryption), BAL parallel execution (EIP-7928), native rollups (EIP-8079), SSZ encoding (EIP-6404/7807), 13 custom precompiles (NTT, NII, field arithmetic), and the Engine API V3-V7.
+
+**Prototype/Functional:** The zkVM framework has a real RISC-V RV32IM CPU emulator but guest execution uses simulated cycle counting and proofs are SHA-256 hash-based rather than Groth16 (production ZK backend integration pending). The verkle package has real Pedersen commitment and IPA proof libraries available in `refs/` but tree integration currently uses Keccak256 as a placeholder hash function.
+
 ## Package Structure
 
 | Package | Description | Status |
@@ -182,12 +192,12 @@ The `eth2030-geth` binary has been verified syncing with live Ethereum networks:
 | `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
 | `pkg/das` | PeerDAS: sampling, custody, reconstruction, blob streaming, futures | Complete |
 | `pkg/rollup` | Native rollups (EIP-8079): EXECUTE precompile, anchor contract | Complete |
-| `pkg/zkvm` | zkVM: canonical guest (RISC-V), STF executor, zkISA bridge, proof backend | Complete |
+| `pkg/zkvm` | zkVM: canonical guest (RISC-V), STF executor, zkISA bridge, proof backend | Functional (RISC-V CPU real; proofs simulated) |
 | `pkg/proofs` | Proof aggregation: SNARK/STARK/IPA/KZG, mandatory 3-of-5 system | Complete |
 | `pkg/txpool` | Transaction pool, RBF, sparse blobpool, encrypted mempool, sharded | Complete |
 | `pkg/p2p` | TCP transport, devp2p, discovery V5, gossip, Portal network, snap sync | Complete |
 | `pkg/trie` | MPT + Binary Merkle tree (EIP-7864), SHA-256, proofs, migration | Complete |
-| `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Complete |
+| `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Functional (Pedersen/IPA libs real; tree uses Keccak placeholder) |
 | `pkg/rpc` | JSON-RPC server, 50+ methods, filters, WebSocket, Beacon API | Complete |
 | `pkg/sync` | Full sync + snap sync + beam sync pipeline | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
@@ -225,7 +235,7 @@ The `eth2030-geth` binary has been verified syncing with live Ethereum networks:
 
 </details>
 
-## EIP Coverage (58+ EIPs Implemented)
+## EIP Coverage (58+ EIPs Supported)
 
 | EIP | Name | EIP | Name |
 |-----|------|-----|------|
@@ -273,15 +283,17 @@ See [docs/EIP_SPEC_IMPL.md](docs/EIP_SPEC_IMPL.md) for full traceability: specs,
 
 ## Roadmap Coverage
 
-ETH2030 implements 8 upgrade phases covering consensus, data, and execution layers from 2026 through 2030+.
+ETH2030 tracks 8 upgrade phases covering consensus, data, and execution layers from 2026 through 2030+.
 
 | Metric | Value |
 |--------|-------|
 | **Upgrade phases** | 8 |
-| **Roadmap items** | 65 |
-| **Completion** | 65/65 (100%) |
+| **Roadmap items tracked** | 65 |
+| **Complete** | 59 (includes items delegated to go-ethereum) |
+| **Functional** | 4 (placeholder crypto or simulated proofs) |
+| **Partial** | 2 (verkle tree, proof verification) |
 
-Full roadmap details will be published when the upstream specification is made public. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
+Full roadmap details will be published when the upstream specification is made public. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit, including classification of native vs delegated items.
 
 ## Engine API
 
