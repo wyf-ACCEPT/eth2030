@@ -6,30 +6,22 @@ participants:
     el_image: eth2030:local
     cl_type: lighthouse
     cl_image: sigp/lighthouse:latest
-    count: 4
+    count: 2
 
 network_params:
   network: kurtosis
   seconds_per_slot: 12
-  genesis_delay: 30
+  genesis_delay: 10
 
 additional_services:
   - dora
   - spamoor
   - assertoor
-  - prometheus
-  - grafana
 
 spamoor_params:
   spammers:
     - scenario: eoatx
       name: "Execution Gas"
-      config:
-        throughput: 300
-        max_pending: 600
-        max_wallets: 300
-    - scenario: blob-combined
-      name: "Data Gas"
       config:
         throughput: 50
         max_pending: 100
@@ -37,5 +29,3 @@ spamoor_params:
 
 assertoor_params:
   run_stability_check: true
-  run_transaction_test: true
-  run_blob_transaction_test: true

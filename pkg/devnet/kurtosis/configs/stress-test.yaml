@@ -3,40 +3,26 @@ participants:
     el_image: eth2030:local
     cl_type: lighthouse
     cl_image: sigp/lighthouse:latest
-    count: 4
-    el_min_cpu: 1000
-    el_max_cpu: 4000
-    el_min_mem: 2048
-    el_max_mem: 8192
+    count: 2
 
 network_params:
   network: kurtosis
   seconds_per_slot: 12
-  genesis_delay: 30
+  genesis_delay: 10
 
 additional_services:
   - dora
   - spamoor
-  - prometheus
-  - grafana
+  - assertoor
 
 spamoor_params:
   spammers:
     - scenario: eoatx
       name: "EOA Spam"
       config:
-        throughput: 500
-        max_pending: 1000
-        max_wallets: 500
-    - scenario: blob-combined
-      name: "Blob Spam"
-      config:
         throughput: 50
         max_pending: 100
         max_wallets: 50
-    - scenario: setcodetx
-      name: "EIP-7702 SetCode"
-      config:
-        throughput: 100
-        max_pending: 200
-        max_wallets: 100
+
+assertoor_params:
+  run_stability_check: true

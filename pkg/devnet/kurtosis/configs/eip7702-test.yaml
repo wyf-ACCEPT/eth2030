@@ -8,7 +8,7 @@ participants:
 network_params:
   network: kurtosis
   seconds_per_slot: 12
-  genesis_delay: 20
+  genesis_delay: 10
 
 additional_services:
   - dora
@@ -17,7 +17,7 @@ additional_services:
 
 rakoon_params:
   tx_type: eip7702
-  workers: 50
+  workers: 10
   batch_size: 100
   fuzzing: true
 

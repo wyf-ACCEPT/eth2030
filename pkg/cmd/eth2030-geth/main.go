@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/metrics/exp"
 )
 
 var (
@@ -124,6 +125,13 @@ func run(args []string) int {
 	}
 	injector := newPrecompileInjector(glamTime, hogTime, nil)
 	_ = injector // Available for future RPC-level precompile injection.
+
+	// Start metrics HTTP server if enabled (required by Kurtosis).
+	if *metricsEnabled {
+		metricsAddress := fmt.Sprintf("%s:%d", *metricsAddr, *metricsPort)
+		exp.Setup(metricsAddress)
+		log.Info("Metrics HTTP server started", "addr", metricsAddress)
+	}
 
 	// Create and start the full node.
 	stack, _ := makeFullNode(cfg)

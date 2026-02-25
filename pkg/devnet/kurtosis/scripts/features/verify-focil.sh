@@ -2,8 +2,12 @@
 # Verify FOCIL: check transactions are included and blocks are produced
 set -euo pipefail
 ENCLAVE="${1:-eth2030-focil}"
-EL_SVC=$(kurtosis enclave inspect "$ENCLAVE" 2>/dev/null | grep "^el-" | head -1 | awk '{print $1}')
-RPC_URL=$(kurtosis port print "$ENCLAVE" "$EL_SVC" rpc)
+if [ -n "${2:-}" ]; then
+  RPC_URL="$2"
+else
+  EL_SVC=$(kurtosis enclave inspect "$ENCLAVE" 2>/dev/null | grep "el-[0-9]" | head -1 | awk '{print $2}')
+  RPC_URL="http://$(kurtosis port print "$ENCLAVE" "$EL_SVC" rpc)"
+fi
 
 echo "=== FOCIL Verification ==="
 BLOCK=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \

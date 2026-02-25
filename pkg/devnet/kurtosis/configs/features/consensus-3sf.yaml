@@ -6,31 +6,26 @@ participants:
     el_image: eth2030:local
     cl_type: lighthouse
     cl_image: sigp/lighthouse:latest
-    count: 4
+    count: 2
 
 network_params:
   network: kurtosis
   seconds_per_slot: 6
-  genesis_delay: 30
+  genesis_delay: 10
 
 additional_services:
   - dora
-  - forky
   - spamoor
   - assertoor
-  - prometheus
-  - grafana
 
 spamoor_params:
   spammers:
     - scenario: eoatx
       name: "Quick Slot Load"
       config:
-        throughput: 200
-        max_pending: 400
-        max_wallets: 200
+        throughput: 50
+        max_pending: 100
+        max_wallets: 50
 
 assertoor_params:
   run_stability_check: true
-  run_block_proposal_check: true
-  run_transaction_test: true

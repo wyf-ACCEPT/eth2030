@@ -17,19 +17,19 @@ echo ""
 
 ELAPSED=0
 while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
-    RESULT=$(curl -sf "$ASSERTOOR_URL/api/v1/test_status" 2>/dev/null || echo '{}')
+    RESULT=$(curl -sf "$ASSERTOOR_URL/api/v1/test_runs" 2>/dev/null || echo '{"data":[]}')
 
-    TOTAL=$(echo "$RESULT" | jq -r '.total // 0')
-    PASSED=$(echo "$RESULT" | jq -r '.passed // 0')
-    FAILED=$(echo "$RESULT" | jq -r '.failed // 0')
-    RUNNING=$(echo "$RESULT" | jq -r '.running // 0')
+    TOTAL=$(echo "$RESULT" | jq '[.data[]] | length')
+    PASSED=$(echo "$RESULT" | jq '[.data[] | select(.status == "success")] | length')
+    FAILED=$(echo "$RESULT" | jq '[.data[] | select(.status == "failure")] | length')
+    RUNNING=$(echo "$RESULT" | jq '[.data[] | select(.status == "running" or .status == "pending")] | length')
 
     echo "  [${ELAPSED}s] Total: $TOTAL, Passed: $PASSED, Failed: $FAILED, Running: $RUNNING"
 
     if [ "$FAILED" -gt 0 ]; then
         echo ""
         echo "ASSERTOOR FAILED: $FAILED test(s) failed"
-        curl -sf "$ASSERTOOR_URL/api/v1/test_status" | jq '.tests[] | select(.status == "failed")' 2>/dev/null || true
+        echo "$RESULT" | jq '.data[] | select(.status == "failure") | {name, status, test_id}' 2>/dev/null || true
         exit 1
     fi
 
