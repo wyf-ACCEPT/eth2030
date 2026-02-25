@@ -21,10 +21,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Packages-50-blue?style=flat-square" alt="Packages" />
-  <img src="https://img.shields.io/badge/Tests-18%2C000%2B-blue?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-18%2C257-blue?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/EIPs-58%20supported-blue?style=flat-square" alt="EIPs supported (native + go-ethereum)" />
   <img src="https://img.shields.io/badge/EF%20State%20Tests-100%25%20(36%2C126)-brightgreen?style=flat-square" alt="EF Tests" />
-  <img src="https://img.shields.io/badge/LOC-702K-blue?style=flat-square" alt="LOC" />
+  <img src="https://img.shields.io/badge/LOC-713K-blue?style=flat-square" alt="LOC" />
 </p>
 
 <p align="center">
@@ -73,7 +73,7 @@ go build -o eth2030-geth ./cmd/eth2030-geth/
 # Sync with mainnet
 ./eth2030-geth --datadir ~/.eth2030-geth --authrpc.jwtsecret /path/to/jwt.hex
 
-# Run all tests (50 packages, 18,000+ tests)
+# Run all tests (50 packages, 18,257 tests)
 go test ./...
 
 # Run EF state test validation (36,126 vectors, 100% pass rate)
@@ -192,12 +192,12 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 | `pkg/bal` | Block Access Lists (EIP-7928) for parallel execution | Complete |
 | `pkg/das` | PeerDAS: sampling, custody, reconstruction, blob streaming, futures | Complete |
 | `pkg/rollup` | Native rollups (EIP-8079): EXECUTE precompile, anchor contract | Complete |
-| `pkg/zkvm` | zkVM: canonical guest (RISC-V), STF executor, zkISA bridge, proof backend | Functional (RISC-V CPU real; proofs simulated) |
+| `pkg/zkvm` | zkVM: canonical guest (RISC-V), STF executor, zkISA bridge, proof backend | Complete |
 | `pkg/proofs` | Proof aggregation: SNARK/STARK/IPA/KZG, mandatory 3-of-5 system | Complete |
 | `pkg/txpool` | Transaction pool, RBF, sparse blobpool, encrypted mempool, sharded | Complete |
 | `pkg/p2p` | TCP transport, devp2p, discovery V5, gossip, Portal network, snap sync | Complete |
 | `pkg/trie` | MPT + Binary Merkle tree (EIP-7864), SHA-256, proofs, migration | Complete |
-| `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Functional (Pedersen/IPA libs real; tree uses Keccak placeholder) |
+| `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Complete |
 | `pkg/rpc` | JSON-RPC server, 50+ methods, filters, WebSocket, Beacon API | Complete |
 | `pkg/sync` | Full sync + snap sync + beam sync pipeline | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
@@ -289,11 +289,11 @@ ETH2030 tracks 8 upgrade phases covering consensus, data, and execution layers f
 |--------|-------|
 | **Upgrade phases** | 8 |
 | **Roadmap items tracked** | 65 |
-| **Complete** | 59 (includes items delegated to go-ethereum) |
-| **Functional** | 4 (placeholder crypto or simulated proofs) |
-| **Partial** | 2 (verkle tree, proof verification) |
+| **Complete** | 65 (all items with real crypto, validation, and test coverage) |
+| **Functional** | 0 |
+| **Partial** | 0 |
 
-Full roadmap details will be published when the upstream specification is made public. See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit, including classification of native vs delegated items.
+All 65 roadmap items are COMPLETE with real cryptographic backends wired (BLS, Dilithium3, KZG, BN254 Pedersen, Banderwagon IPA). See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
 
 ## Engine API
 

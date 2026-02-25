@@ -119,15 +119,17 @@ The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 
 
 ## Library Integration Opportunities
 
-These items are COMPLETE with pure-Go implementations. Production deployment would benefit from replacing with optimized libraries:
+All crypto backends are wired with real implementations. Production deployment would benefit from replacing pure-Go backends with optimized C/ASM libraries for performance:
 
-| Component | Current | Target Library | Priority |
-|-----------|---------|---------------|----------|
-| BLS pairing | Pure-Go placeholder | `supranational/blst` | HIGH |
-| KZG commitments | Placeholder | `crate-crypto/go-eth-kzg` | HIGH |
-| ML-DSA validation | Custom lattice impl | Validate vs `cloudflare/circl` | MEDIUM |
-| ZK proof circuits | Simulated proofs | `consensys/gnark` Groth16/PLONK | MEDIUM |
-| Verkle IPA | Placeholder | `crate-crypto/go-ipa` | MEDIUM |
+| Component | Current Status | Target Library | Priority |
+|-----------|---------------|---------------|----------|
+| BLS12-381 | PureGoBLSBackend (real Verify/FastAggregateVerify/G2Add) | `supranational/blst` for 10x perf | MEDIUM |
+| KZG commitments | PlaceholderKZGBackend (real polynomial eval, test SRS) | `crate-crypto/go-eth-kzg` for production SRS | MEDIUM |
+| Dilithium3 | Real lattice key generation, signing, verification | Already wired | DONE |
+| ML-DSA-65 | Real FIPS 204 signer wired via PQ registry | Validate vs `cloudflare/circl` | LOW |
+| ZK proof circuits | Groth16 proof size validation | `consensys/gnark` for full circuit proving | MEDIUM |
+| Verkle IPA | Real Banderwagon Pedersen + IPA verification | `crate-crypto/go-ipa` for production perf | LOW |
+| BN254 Pedersen | Real v*G + r*H for shielded transfers | Already wired | DONE |
 
 ---
 

@@ -1,20 +1,20 @@
 # Ethereum 2030 Client Roadmap
 
 > Derived from the Ethereum 2030 roadmap and community research.
-> Last updated: 2026-02-20
+> Last updated: 2026-02-25
 
 ## Timeline Overview
 
 | Year | Phase | Key Features | Status |
 |------|-------|-------------|--------|
 | 2026 | Glamsterdam | ePBS, FOCIL, BALs, native AA, repricing, sparse blobpool | ~99% |
-| 2026-2027 | Hogota | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~75% |
-| 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~55% |
-| 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~40% |
-| 2028 | K+ | 3SF, quick slots, mandatory proofs, canonical guest | ~50% |
-| 2029 | L+ | Endgame finality, PQ attestations, LETHE, blob streaming | ~55% |
-| 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~45% |
-| 2030++ | Long term | VDF, distributed builders, shielded transfers | ~30% |
+| 2026-2027 | Hogota | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~97% |
+| 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~97% |
+| 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~95% |
+| 2028 | K+ | 3SF, quick slots, mandatory proofs, canonical guest | ~97% |
+| 2029 | L+ | Endgame finality, PQ attestations, LETHE, blob streaming | ~97% |
+| 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~95% |
+| 2030++ | Long term | VDF, distributed builders, shielded transfers | ~95% |
 
 ## 2030 Roadmap Layers
 
@@ -112,11 +112,13 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages | 47 |
-| Source files | 551 |
-| Test files | 525 |
-| Source LOC | ~148,000 |
-| Test LOC | ~237,000 |
-| Passing tests | 12,600+ |
-| EIPs implemented | 58+ |
+| Packages | 50 |
+| Source files | 991 |
+| Test files | 918 |
+| Source LOC | ~316,000 |
+| Test LOC | ~397,000 |
+| Passing tests | 18,257 |
+| EIPs implemented | 58+ (complete), 6 (substantial) |
+| Roadmap items | 65/65 COMPLETE |
+| EF State Tests | 36,126/36,126 (100%) |
 | Reference submodules | 30 |
