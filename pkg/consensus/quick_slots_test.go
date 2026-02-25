@@ -199,44 +199,57 @@ func TestGetDuties(t *testing.T) {
 	sched := NewQuickSlotScheduler(cfg, genesis)
 
 	// With 16 validators and 4 slots per epoch, each slot gets 4 validators.
-	duties := sched.GetDuties(0, 16)
-	if duties.ProposerIndex != 0 {
-		t.Errorf("slot 0: ProposerIndex = %d, want 0", duties.ProposerIndex)
+	duties0 := sched.GetDuties(0, 16)
+	if len(duties0.CommitteeIndices) != 4 {
+		t.Errorf("slot 0: committee size = %d, want 4", len(duties0.CommitteeIndices))
 	}
-	if len(duties.CommitteeIndices) != 4 {
-		t.Errorf("slot 0: committee size = %d, want 4", len(duties.CommitteeIndices))
+	// Proposer must be a valid validator index.
+	if duties0.ProposerIndex >= 16 {
+		t.Errorf("slot 0: ProposerIndex = %d, out of range", duties0.ProposerIndex)
 	}
-	// Slot 0 should get validators [0, 1, 2, 3].
-	for i, idx := range duties.CommitteeIndices {
-		if idx != uint64(i) {
-			t.Errorf("slot 0: committee[%d] = %d, want %d", i, idx, i)
+	// Committee indices must all be valid.
+	for i, idx := range duties0.CommitteeIndices {
+		if idx >= 16 {
+			t.Errorf("slot 0: committee[%d] = %d, out of range", i, idx)
 		}
 	}
 
-	// Slot 1 should get validators [4, 5, 6, 7].
-	duties = sched.GetDuties(1, 16)
-	if duties.ProposerIndex != 1 {
-		t.Errorf("slot 1: ProposerIndex = %d, want 1", duties.ProposerIndex)
+	duties1 := sched.GetDuties(1, 16)
+	if len(duties1.CommitteeIndices) != 4 {
+		t.Errorf("slot 1: committee size = %d, want 4", len(duties1.CommitteeIndices))
 	}
-	if len(duties.CommitteeIndices) != 4 {
-		t.Errorf("slot 1: committee size = %d, want 4", len(duties.CommitteeIndices))
-	}
-	for i, idx := range duties.CommitteeIndices {
-		expected := uint64(4 + i)
-		if idx != expected {
-			t.Errorf("slot 1: committee[%d] = %d, want %d", i, idx, expected)
-		}
+	if duties1.ProposerIndex >= 16 {
+		t.Errorf("slot 1: ProposerIndex = %d, out of range", duties1.ProposerIndex)
 	}
 
-	// Slot 3 (last in epoch) should get validators [12, 13, 14, 15].
-	duties = sched.GetDuties(3, 16)
-	if duties.ProposerIndex != 3 {
-		t.Errorf("slot 3: ProposerIndex = %d, want 3", duties.ProposerIndex)
+	duties3 := sched.GetDuties(3, 16)
+	if len(duties3.CommitteeIndices) != 4 {
+		t.Errorf("slot 3: committee size = %d, want 4", len(duties3.CommitteeIndices))
 	}
-	for i, idx := range duties.CommitteeIndices {
-		expected := uint64(12 + i)
-		if idx != expected {
-			t.Errorf("slot 3: committee[%d] = %d, want %d", i, idx, expected)
+
+	// All 16 validators should be assigned exactly once across the 4 slots.
+	assigned := make(map[uint64]bool)
+	duties2 := sched.GetDuties(2, 16)
+	for _, d := range []*ValidatorDuties{duties0, duties1, duties2, duties3} {
+		for _, idx := range d.CommitteeIndices {
+			if assigned[idx] {
+				t.Errorf("validator %d assigned to multiple slots", idx)
+			}
+			assigned[idx] = true
+		}
+	}
+	if len(assigned) != 16 {
+		t.Errorf("unique validators assigned = %d, want 16", len(assigned))
+	}
+
+	// RANDAO shuffle should be deterministic: same call returns same result.
+	duties0b := sched.GetDuties(0, 16)
+	if duties0b.ProposerIndex != duties0.ProposerIndex {
+		t.Errorf("determinism: proposer mismatch on second call")
+	}
+	for i, idx := range duties0b.CommitteeIndices {
+		if idx != duties0.CommitteeIndices[i] {
+			t.Errorf("determinism: committee[%d] mismatch on second call", i)
 		}
 	}
 }
@@ -307,16 +320,23 @@ func TestGetDutiesProposerWraps(t *testing.T) {
 	genesis := time.Now()
 	sched := NewQuickSlotScheduler(cfg, genesis)
 
-	// With 3 validators, slot 3 should wrap: 3 % 3 = 0.
+	// With 3 validators, proposer must be in [0, 3).
 	duties := sched.GetDuties(3, 3)
-	if duties.ProposerIndex != 0 {
-		t.Errorf("slot 3 with 3 validators: ProposerIndex = %d, want 0", duties.ProposerIndex)
+	if duties.ProposerIndex >= 3 {
+		t.Errorf("slot 3 with 3 validators: ProposerIndex = %d, out of range", duties.ProposerIndex)
 	}
 
-	// Slot 5 with 3 validators: 5 % 3 = 2.
 	duties = sched.GetDuties(5, 3)
-	if duties.ProposerIndex != 2 {
-		t.Errorf("slot 5 with 3 validators: ProposerIndex = %d, want 2", duties.ProposerIndex)
+	if duties.ProposerIndex >= 3 {
+		t.Errorf("slot 5 with 3 validators: ProposerIndex = %d, out of range", duties.ProposerIndex)
+	}
+
+	// Different slots should generally get different proposers (RANDAO-based).
+	duties0 := sched.GetDuties(0, 3)
+	duties1 := sched.GetDuties(1, 3)
+	// They might collide, but both must be in valid range.
+	if duties0.ProposerIndex >= 3 || duties1.ProposerIndex >= 3 {
+		t.Errorf("proposer out of range: slot0=%d, slot1=%d", duties0.ProposerIndex, duties1.ProposerIndex)
 	}
 }
 

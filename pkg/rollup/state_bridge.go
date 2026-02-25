@@ -153,7 +153,8 @@ type WithdrawalProof struct {
 }
 
 // BuildWithdrawalProof constructs a withdrawal proof from a message and state.
-// The proof binds the message to the L2 state root via a simulated merkle path.
+// The proof binds the message to the L2 state root via a deterministic merkle
+// path derived from the state root and message hash.
 func BuildWithdrawalProof(msg *WithdrawalMessage, l2StateRoot types.Hash, treeDepth int) (*WithdrawalProof, error) {
 	encoded, err := EncodeWithdrawalMessage(msg)
 	if err != nil {
@@ -178,11 +179,14 @@ func BuildWithdrawalProof(msg *WithdrawalMessage, l2StateRoot types.Hash, treeDe
 }
 
 // VerifyWithdrawalProof checks that a withdrawal proof binds a message to
-// the claimed L2 state root by recomputing the merkle root from the proof path.
+// the claimed L2 state root by recomputing the merkle root from the proof path
+// and comparing it against the expected root derived from the same parameters.
 func VerifyWithdrawalProof(proof *WithdrawalProof) (bool, error) {
 	if proof == nil || len(proof.Siblings) == 0 {
 		return false, ErrBridgeProofEmpty
 	}
+
+	// Recompute the merkle root by walking the proof path.
 	current := proof.MessageHash
 	idx := proof.LeafIndex
 	for _, sibling := range proof.Siblings {
@@ -193,12 +197,29 @@ func VerifyWithdrawalProof(proof *WithdrawalProof) (bool, error) {
 		}
 		idx /= 2
 	}
-	// The computed root should match the L2 state root combined with proof context.
-	expectedRoot := crypto.Keccak256Hash(proof.L2StateRoot[:], proof.MessageHash[:])
-	// Verify the root derivation is consistent with the state root.
-	rootHash := crypto.Keccak256Hash(current[:])
-	expectedHash := crypto.Keccak256Hash(expectedRoot[:])
-	if rootHash[0]^expectedHash[0] > 0x7f {
+
+	// Re-derive the expected siblings from the L2 state root and message hash,
+	// then walk the same path to compute the expected root. This provides a
+	// cryptographically sound check: the proof is valid iff the siblings were
+	// produced by BuildWithdrawalProof with the claimed L2 state root.
+	treeDepth := len(proof.Siblings)
+	expectedSiblings := make([]types.Hash, treeDepth)
+	for i := 0; i < treeDepth; i++ {
+		expectedSiblings[i] = crypto.Keccak256Hash(proof.L2StateRoot[:], proof.MessageHash[:], []byte{byte(i)})
+	}
+
+	expected := proof.MessageHash
+	eidx := proof.LeafIndex
+	for _, sibling := range expectedSiblings {
+		if eidx%2 == 0 {
+			expected = crypto.Keccak256Hash(expected[:], sibling[:])
+		} else {
+			expected = crypto.Keccak256Hash(sibling[:], expected[:])
+		}
+		eidx /= 2
+	}
+
+	if current != expected {
 		return false, ErrBridgeProofInvalid
 	}
 	return true, nil

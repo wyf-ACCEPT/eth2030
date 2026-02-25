@@ -265,37 +265,75 @@ func TestExecutePrecompileRunBlockDataTooLarge(t *testing.T) {
 	}
 }
 
-func TestComputeSimulatedStateRootDeterministic(t *testing.T) {
+func TestComputeSTFStateRootDeterministic(t *testing.T) {
 	preState := types.BytesToHash([]byte{0x01})
-	blockData := []byte{0xaa, 0xbb}
+	txRoot := types.BytesToHash([]byte{0xaa, 0xbb})
 
-	root1 := computeSimulatedStateRoot(preState, blockData)
-	root2 := computeSimulatedStateRoot(preState, blockData)
+	root1 := computeSTFStateRoot(preState, txRoot, 21000)
+	root2 := computeSTFStateRoot(preState, txRoot, 21000)
 
 	if root1 != root2 {
-		t.Error("computeSimulatedStateRoot should be deterministic")
+		t.Error("computeSTFStateRoot should be deterministic")
 	}
 }
 
-func TestComputeSimulatedStateRootDifferentInputs(t *testing.T) {
+func TestComputeSTFStateRootDifferentInputs(t *testing.T) {
 	preState1 := types.BytesToHash([]byte{0x01})
 	preState2 := types.BytesToHash([]byte{0x02})
-	blockData := []byte{0xaa}
+	txRoot := types.BytesToHash([]byte{0xaa})
 
-	root1 := computeSimulatedStateRoot(preState1, blockData)
-	root2 := computeSimulatedStateRoot(preState2, blockData)
+	root1 := computeSTFStateRoot(preState1, txRoot, 21000)
+	root2 := computeSTFStateRoot(preState2, txRoot, 21000)
 
 	if root1 == root2 {
 		t.Error("different preStateRoots should produce different outputs")
 	}
 }
 
-func TestComputeSimulatedReceiptsRootDeterministic(t *testing.T) {
-	data := []byte{0x01, 0x02, 0x03}
-	root1 := computeSimulatedReceiptsRoot(data)
-	root2 := computeSimulatedReceiptsRoot(data)
+func TestComputeReceiptsRootFromTxsDeterministic(t *testing.T) {
+	// With no txs, should still be deterministic.
+	root1 := computeReceiptsRootFromTxs(nil, 21000)
+	root2 := computeReceiptsRootFromTxs(nil, 21000)
 	if root1 != root2 {
-		t.Error("computeSimulatedReceiptsRoot should be deterministic")
+		t.Error("computeReceiptsRootFromTxs should be deterministic")
+	}
+}
+
+func TestDecodeAndProcessTransactionsNonRLP(t *testing.T) {
+	// Non-RLP data should return base gas and a hash.
+	blockData := []byte{0x01, 0x02, 0x03}
+	txs, gas, txRoot := decodeAndProcessTransactions(blockData)
+	if txs != nil {
+		t.Error("expected nil txs for non-RLP data")
+	}
+	if gas != stfTxGas {
+		t.Errorf("expected gas=%d for non-RLP data, got %d", stfTxGas, gas)
+	}
+	if txRoot == (types.Hash{}) {
+		t.Error("expected non-zero txRoot for non-RLP data")
+	}
+}
+
+func TestComputeTxMerkleRoot(t *testing.T) {
+	h1 := types.BytesToHash([]byte{0x01})
+	h2 := types.BytesToHash([]byte{0x02})
+
+	// Single hash.
+	root1 := computeTxMerkleRoot([]types.Hash{h1})
+	if root1 != h1 {
+		t.Error("single-element Merkle root should equal the element")
+	}
+
+	// Two hashes.
+	root2 := computeTxMerkleRoot([]types.Hash{h1, h2})
+	if root2 == (types.Hash{}) {
+		t.Error("expected non-zero Merkle root for two elements")
+	}
+
+	// Empty.
+	root0 := computeTxMerkleRoot(nil)
+	if root0 != (types.Hash{}) {
+		t.Error("expected zero Merkle root for empty input")
 	}
 }
 

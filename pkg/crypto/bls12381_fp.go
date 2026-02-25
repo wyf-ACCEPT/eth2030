@@ -21,6 +21,11 @@ var (
 	blsB = big.NewInt(4)
 )
 
+// BLSScalarOrder returns the BLS12-381 subgroup order r.
+func BLSScalarOrder() *big.Int {
+	return new(big.Int).Set(blsR)
+}
+
 // blsFpAdd returns (a + b) mod p.
 func blsFpAdd(a, b *big.Int) *big.Int {
 	r := new(big.Int).Add(a, b)

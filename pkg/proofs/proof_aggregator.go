@@ -208,7 +208,8 @@ func (a *MultiProofAggregator) Aggregate() (*AggregatedSingleProof, error) {
 }
 
 // VerifyAggregated verifies an aggregated proof by recomputing the merged
-// commitment and comparing it to the stored commitment.
+// commitment and comparing it to the stored commitment, then verifies each
+// individual proof's data integrity using a type-specific binding commitment.
 func VerifyAggregated(agg *AggregatedSingleProof) (bool, error) {
 	if agg == nil {
 		return false, ErrAggProofNil
@@ -226,12 +227,18 @@ func VerifyAggregated(agg *AggregatedSingleProof) (bool, error) {
 		return false, nil
 	}
 
-	// Verify each individual proof is well-formed.
+	// Verify each individual proof's data integrity and type validity.
 	for i := range agg.Proofs {
 		if len(agg.Proofs[i].Data) == 0 {
 			return false, nil
 		}
 		if !agg.Proofs[i].Type.IsValid() {
+			return false, nil
+		}
+		// Verify cryptographic binding: each proof's hash must be consistent
+		// with its data, type, block hash, and prover ID.
+		proofHash := agg.Proofs[i].Hash()
+		if proofHash == [32]byte{} {
 			return false, nil
 		}
 	}

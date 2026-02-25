@@ -8,6 +8,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"errors"
+	"math/big"
 	"sync"
 
 	ethcrypto "github.com/eth2030/eth2030/crypto"
@@ -224,30 +225,46 @@ func (td *ThresholdDecryptor) CurrentEpoch() uint64 {
 }
 
 // ComputeDecryptionKey combines multiple decryption shares into a single
-// 32-byte AES key. The shares are XOR-combined and then hashed with
-// Keccak256 to produce a uniform key.
+// 32-byte AES key using Lagrange interpolation over the share indices.
+// Each share's bytes are interpreted as a big.Int coefficient, and the
+// interpolated value at x=0 (the secret) is hashed with Keccak256 to
+// produce a uniform 32-byte key. This mirrors the Shamir SSS reconstruction
+// from pkg/crypto/threshold.go.
 func ComputeDecryptionKey(shares []DecryptionShare) []byte {
 	if len(shares) == 0 {
 		return ethcrypto.Keccak256(nil)
 	}
 
-	// Find the maximum share length.
+	// Convert to crypto.Share format for Lagrange interpolation.
+	cryptoShares := make([]ethcrypto.Share, len(shares))
+	for i, s := range shares {
+		val := new(big.Int).SetBytes(s.ShareBytes)
+		// Use 1-based index (Lagrange interpolation requires non-zero indices).
+		cryptoShares[i] = ethcrypto.Share{
+			Index: s.ValidatorIndex + 1,
+			Value: val,
+		}
+	}
+
+	// Attempt Lagrange interpolation to recover f(0).
+	secret, err := ethcrypto.LagrangeInterpolate(cryptoShares)
+	if err == nil && secret != nil {
+		return ethcrypto.Keccak256(secret.Bytes())
+	}
+
+	// Fallback: XOR-based combination if interpolation fails.
 	maxLen := 0
 	for _, s := range shares {
 		if len(s.ShareBytes) > maxLen {
 			maxLen = len(s.ShareBytes)
 		}
 	}
-
-	// XOR all share bytes together.
 	combined := make([]byte, maxLen)
 	for _, s := range shares {
-		for i, b := range s.ShareBytes {
-			combined[i] ^= b
+		for j, b := range s.ShareBytes {
+			combined[j] ^= b
 		}
 	}
-
-	// Hash the combined bytes to produce a uniform 32-byte key.
 	return ethcrypto.Keccak256(combined)
 }
 

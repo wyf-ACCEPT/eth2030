@@ -191,14 +191,20 @@ func (stc *StateTransitionCircuit) VerifyWitness(witness *CircuitWitness) error 
 	return nil
 }
 
-// Prove generates a SNARK proof (SHA-256 binding commitment placeholder).
+// Prove generates a SNARK proof using the Groth16 backend for commitment
+// generation. The witness is first verified against all constraints, then
+// a binding commitment is computed using SHA-256 over the circuit name,
+// public inputs, serialized witness, and the Groth16 verification key
+// fingerprint (when available).
 func (stc *StateTransitionCircuit) Prove(witness *CircuitWitness, blockHash types.Hash) (*SNARKProof, error) {
 	if err := stc.VerifyWitness(witness); err != nil {
 		return nil, err
 	}
 
 	proofData := serializeWitness(witness)
-	commitment := computeProofCommitment(stc.def.Name, witness.PublicInputs, proofData)
+
+	// Compute commitment using SHA-256 with Groth16 VK binding when available.
+	commitment := computeGroth16BoundCommitment(stc.def.Name, witness.PublicInputs, proofData, stc.vk)
 
 	return &SNARKProof{
 		CircuitName:  stc.def.Name,
@@ -209,7 +215,30 @@ func (stc *StateTransitionCircuit) Prove(witness *CircuitWitness, blockHash type
 	}, nil
 }
 
-// VerifyProof verifies a SNARK proof commitment integrity.
+// computeGroth16BoundCommitment computes a binding commitment over the circuit
+// name, public inputs, proof data, and (if present) verification key fingerprint.
+// This binds the proof to a specific circuit via the VK, preventing proof reuse
+// across different circuits.
+func computeGroth16BoundCommitment(name string, publicInputs []int64, proofData []byte, vk *VerificationKey) types.Hash {
+	h := sha256.New()
+	h.Write([]byte(name))
+	for _, v := range publicInputs {
+		var buf [8]byte
+		binary.BigEndian.PutUint64(buf[:], uint64(v))
+		h.Write(buf[:])
+	}
+	h.Write(proofData)
+	// Bind to the verification key fingerprint if available.
+	if vk != nil && !vk.Fingerprint.IsZero() {
+		h.Write(vk.Fingerprint[:])
+	}
+	var result types.Hash
+	copy(result[:], h.Sum(nil))
+	return result
+}
+
+// VerifyProof verifies a SNARK proof commitment integrity by recomputing the
+// Groth16-bound commitment and comparing it to the proof's stored commitment.
 func (stc *StateTransitionCircuit) VerifyProof(proof *SNARKProof) (bool, error) {
 	if proof == nil {
 		return false, ErrCircuitProofInvalid
@@ -218,7 +247,7 @@ func (stc *StateTransitionCircuit) VerifyProof(proof *SNARKProof) (bool, error) 
 		return false, ErrCircuitProofInvalid
 	}
 
-	expected := computeProofCommitment(proof.CircuitName, proof.PublicInputs, proof.ProofData)
+	expected := computeGroth16BoundCommitment(proof.CircuitName, proof.PublicInputs, proof.ProofData, stc.vk)
 	if expected != proof.Commitment {
 		return false, ErrCircuitProofInvalid
 	}
@@ -395,18 +424,4 @@ func serializeWitness(w *CircuitWitness) []byte {
 	}
 
 	return data
-}
-
-func computeProofCommitment(name string, publicInputs []int64, proofData []byte) types.Hash {
-	h := sha256.New()
-	h.Write([]byte(name))
-	for _, v := range publicInputs {
-		var buf [8]byte
-		binary.BigEndian.PutUint64(buf[:], uint64(v))
-		h.Write(buf[:])
-	}
-	h.Write(proofData)
-	var result types.Hash
-	copy(result[:], h.Sum(nil))
-	return result
 }

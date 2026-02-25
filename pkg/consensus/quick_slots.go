@@ -1,9 +1,13 @@
 package consensus
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/eth2030/eth2030/core/types"
+	"github.com/eth2030/eth2030/crypto"
 )
 
 // Quick slots validation errors.
@@ -181,35 +185,46 @@ type ValidatorDuties struct {
 	CommitteeIndices []uint64
 }
 
-// GetDuties computes deterministic duty assignments for a given slot.
-// With only 4 slots per epoch, each slot gets approximately 1/4 of the
-// validator set as committee members. The proposer is selected by
-// slot mod validatorCount.
-//
-// In production this would use a RANDAO-based shuffle; here we use
-// a simple deterministic assignment for correctness testing.
+// GetDuties computes deterministic duty assignments for a given slot using
+// RANDAO-based shuffling. The validator set is shuffled using a Fisher-Yates
+// shuffle with Keccak256 domain separation (same pattern as APS
+// ShuffleValidators), then split into per-slot committees. The proposer is
+// selected from the shuffled set.
 func (s *QuickSlotScheduler) GetDuties(slot uint64, validatorCount int) *ValidatorDuties {
 	if validatorCount == 0 {
 		return &ValidatorDuties{}
 	}
 
-	// Proposer: simple deterministic selection.
-	proposer := slot % uint64(validatorCount)
-
-	// Committee: assign ~1/SlotsPerEpoch of validators to each slot.
-	// Slot offset within epoch determines which segment of validators
-	// is assigned.
 	slotsPerEpoch := s.config.SlotsPerEpoch
 	if slotsPerEpoch == 0 {
 		slotsPerEpoch = 1
 	}
+
+	// Derive the epoch and compute a RANDAO seed for shuffling.
+	epoch := slot / slotsPerEpoch
 	slotInEpoch := slot % slotsPerEpoch
 
-	// Divide validators into SlotsPerEpoch segments.
+	// Build the epoch seed with domain separation, matching APS pattern.
+	seedBuf := make([]byte, 8+7) // epoch + "quicksl"
+	binary.BigEndian.PutUint64(seedBuf[0:8], epoch)
+	copy(seedBuf[8:], []byte("quicksl"))
+	var seed types.Hash
+	copy(seed[:], crypto.Keccak256(seedBuf))
+
+	// Build the validator index list and shuffle it using the RANDAO seed.
+	validators := make([]uint64, validatorCount)
+	for i := 0; i < validatorCount; i++ {
+		validators[i] = uint64(i)
+	}
+	shuffled := ShuffleValidators(validators, seed)
+
+	// Proposer: selected from the shuffled set using the slot as offset.
+	proposer := shuffled[slot%uint64(validatorCount)]
+
+	// Divide shuffled validators into SlotsPerEpoch segments.
 	segmentSize := validatorCount / int(slotsPerEpoch)
 	remainder := validatorCount % int(slotsPerEpoch)
 
-	// Calculate start and end indices for this slot's segment.
 	start := int(slotInEpoch) * segmentSize
 	if int(slotInEpoch) < remainder {
 		start += int(slotInEpoch)
@@ -224,7 +239,7 @@ func (s *QuickSlotScheduler) GetDuties(slot uint64, validatorCount int) *Validat
 
 	committee := make([]uint64, size)
 	for i := 0; i < size; i++ {
-		committee[i] = uint64(start + i)
+		committee[i] = shuffled[start+i]
 	}
 
 	return &ValidatorDuties{

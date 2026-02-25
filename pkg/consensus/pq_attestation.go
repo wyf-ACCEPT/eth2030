@@ -50,6 +50,7 @@ type PQAttestation struct {
 	SourceEpoch      uint64
 	TargetEpoch      uint64
 	PQSignature      []byte // Dilithium signature (64 bytes)
+	PQPublicKey      []byte // Dilithium public key for verification
 	ClassicSignature []byte // ECDSA signature (65 bytes)
 	ValidatorIndex   uint64
 }
@@ -91,7 +92,10 @@ func (v *PQAttestationVerifier) VerifyAttestation(att *PQAttestation) (bool, err
 
 	// Try PQ verification first.
 	if hasPQ && v.config.UsePQSignatures {
-		if pqc.VerifyDilithium(nil, nil, att.PQSignature) {
+		// Compute the attestation signing message and verify with the real
+		// public key and message via VerifyDilithium.
+		msg := attestationMessage(att.Slot, att.CommitteeIndex, att.BeaconBlockRoot, att.SourceEpoch, att.TargetEpoch)
+		if pqc.VerifyDilithium(att.PQPublicKey, msg, att.PQSignature) {
 			v.verified.Add(1)
 			return true, nil
 		}
@@ -194,6 +198,7 @@ func CreatePQAttestation(
 		SourceEpoch:     sourceEpoch,
 		TargetEpoch:     targetEpoch,
 		PQSignature:     sig,
+		PQPublicKey:     pqKey.PublicKey,
 		ValidatorIndex:  validatorIndex,
 	}, nil
 }
