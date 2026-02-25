@@ -171,7 +171,7 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 
 **Native ETH2030 (~25 features):** Consensus layer (3SF, quick slots, 1-epoch finality, PQ attestations, endgame finality), data availability (PeerDAS, blob streaming, custody proofs, variable-size blobs), proposer-builder separation (ePBS, FOCIL, distributed builder), encrypted mempool (commit-reveal, threshold decryption), BAL parallel execution (EIP-7928), native rollups (EIP-8079), SSZ encoding (EIP-6404/7807), 13 custom precompiles (NTT, NII, field arithmetic), and the Engine API V3-V7.
 
-**Prototype/Functional:** The zkVM framework has a real RISC-V RV32IM CPU emulator but guest execution uses simulated cycle counting and proofs are SHA-256 hash-based rather than Groth16 (production ZK backend integration pending). The verkle package has real Pedersen commitment and IPA proof libraries available in `refs/` but tree integration currently uses Keccak256 as a placeholder hash function.
+**Prototype/Functional:** The zkVM framework has a real RISC-V RV32IM CPU emulator with witness collection and cycle counting, but proofs are SHA-256 hash-based rather than Groth16 (production ZK backend integration pending). The verkle package uses real Pedersen vector commitments over the Banderwagon curve and real IPA (Inner Product Argument) verification for proofs.
 
 ## Package Structure
 
