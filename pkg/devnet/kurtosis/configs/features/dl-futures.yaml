@@ -1,0 +1,21 @@
+# DL Futures — Short-Dated Blob Futures + Proofs of Custody
+# Tests: blob futures market, custody proof generation and verification
+# Verify: blocks produced, chain progresses
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 10
+
+additional_services:
+  - dora
+  - assertoor
+
+assertoor_params:
+  run_stability_check: true

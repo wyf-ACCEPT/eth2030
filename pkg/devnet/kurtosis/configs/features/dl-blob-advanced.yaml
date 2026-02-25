@@ -1,0 +1,32 @@
+# DL Blob Advanced — BPO Blobs Increase + Blob Streaming + PQ Blobs + Variable-Size Blobs
+# Tests: BPO1/BPO2 schedules, chunk-based streaming, lattice commitments, variable blob sizes
+# Verify: blocks produced, blob gas fields in block headers
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 10
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: blob-combined
+      name: "Blob Advanced Flood"
+      config:
+        throughput: 30
+        max_pending: 60
+        max_wallets: 30
+        sidecars_per_tx: 3
+
+assertoor_params:
+  run_stability_check: true

@@ -1,0 +1,33 @@
+# CL Finality — Fast Confirmation, Endgame Finality, Fast L1 Finality
+# Tests: fast confirmation (consensus/fast_confirm.go), endgame finality
+#   (consensus/endgame_finality.go, finality_bls_adapter.go), fast L1 finality
+#   in seconds (consensus/endgame_engine.go)
+# Verify: blocks produced with fast confirmation, block timestamps show rapid finality
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 6
+  genesis_delay: 10
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "CL Finality Load"
+      config:
+        throughput: 50
+        max_pending: 100
+        max_wallets: 50
+
+assertoor_params:
+  run_stability_check: true

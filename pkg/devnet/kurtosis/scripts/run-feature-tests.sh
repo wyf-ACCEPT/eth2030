@@ -2,7 +2,7 @@
 # run-feature-tests.sh — Run devnet tests for ETH2030 features one by one.
 #
 # Usage:
-#   ./run-feature-tests.sh              # Run all 15 feature tests
+#   ./run-feature-tests.sh              # Run all 31 feature tests
 #   ./run-feature-tests.sh epbs focil   # Run specific features
 #   ./run-feature-tests.sh --list       # List available features
 #
@@ -39,6 +39,22 @@ FEATURES=(
   pq-crypto
   encrypted-mempool
   shielded-transfers
+  cl-finality
+  cl-validators
+  cl-attestations
+  cl-security
+  cl-infrastructure
+  dl-blob-advanced
+  dl-reconstruction
+  dl-futures
+  dl-broadcast
+  el-gas-schedule
+  el-payload
+  el-proofs
+  el-zkvm
+  el-state
+  el-tx-advanced
+  el-gas-futures
 )
 
 FEATURE_DESCRIPTIONS=(
@@ -57,6 +73,22 @@ FEATURE_DESCRIPTIONS=(
   "PQ Crypto — Post-Quantum Cryptography"
   "Encrypted Mempool — Commit-Reveal Ordering"
   "Shielded Transfers — Private L1 Transactions"
+  "CL Finality — Fast Confirmation + Endgame Finality + Fast L1 Finality"
+  "CL Validators — Attester Caps + APS + 1 ETH Includers"
+  "CL Attestations — jeanVM Aggregation + 1M Attestations/Slot"
+  "CL Security — Attack Recovery + VDF Randomness + Secret Proposers"
+  "CL Infrastructure — Beacon Specs + Tech Debt + Distributed Builder + CL Proofs"
+  "DL Blob Advanced — BPO Blobs + Blob Streaming + PQ Blobs + Variable Blobs"
+  "DL Reconstruction — Cell Messages + Blob Reconstruction + Sample Size"
+  "DL Futures — Blob Futures + Custody Proofs"
+  "DL Broadcast — EIP-7702 Broadcast + Teragas L2"
+  "EL Gas Schedule — Hogota Repricing + 3x/Year Gas Limit"
+  "EL Payload — Payload Chunking + Block in Blobs + Announce Nonce"
+  "EL Proofs — Mandatory 3-of-5 + Optional + Aggregation + AA Proofs"
+  "EL zkVM — Canonical Guest + zkVM + STF + zkISA + Exposed zkISA"
+  "EL State — Binary Tree + VOPS + Endgame State + Misc Purges"
+  "EL Tx Advanced — Tx Assertions + NTT Precompile + PQ Tx + Sharded Mempool"
+  "EL Gas Futures — Long-Dated Gas Futures + Gigagas L1"
 )
 
 # Show usage

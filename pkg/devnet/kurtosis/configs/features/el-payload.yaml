@@ -1,0 +1,31 @@
+# EL Payload — Payload Chunking + Block in Blobs + Announce Nonce
+# Tests: chunked payload delivery, block encoding in blobs, ETH/72 announce nonce
+# Verify: blocks produced, block structure via eth_getBlockByNumber
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 10
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "Payload Stress"
+      config:
+        throughput: 50
+        max_pending: 100
+        max_wallets: 50
+
+assertoor_params:
+  run_stability_check: true

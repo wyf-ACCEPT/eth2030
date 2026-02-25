@@ -1,0 +1,32 @@
+# DL Reconstruction — Cell-Level Messages + Local Blob Reconstruction + Decrease Sample Size
+# Tests: cell gossip routing, erasure-coded blob reconstruction, optimized sampling
+# Verify: blocks produced, blob support active
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 10
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: blob-combined
+      name: "Reconstruction Blobs"
+      config:
+        throughput: 30
+        max_pending: 60
+        max_wallets: 30
+        sidecars_per_tx: 2
+
+assertoor_params:
+  run_stability_check: true
