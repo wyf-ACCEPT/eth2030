@@ -7,6 +7,7 @@ package rpc
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/eth2030/eth2030/core/types"
@@ -322,7 +323,10 @@ func parseBlockNumber(s string) BlockNumber {
 		return FinalizedBlockNumber
 	default:
 		n := parseHexUint64(s)
-		return BlockNumber(n)
+		if n > uint64(math.MaxInt64) {
+			return LatestBlockNumber
+		}
+		return BlockNumber(n) //nolint:gosec // overflow guarded above
 	}
 }
 

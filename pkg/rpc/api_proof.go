@@ -262,7 +262,7 @@ func (api *EthAPI) getTransactionByBlockHashAndIndex(req *Request) *Response {
 	}
 
 	txs := block.Transactions()
-	if int(index) >= len(txs) {
+	if index >= uint64(len(txs)) {
 		return successResponse(req.ID, nil)
 	}
 
@@ -294,7 +294,7 @@ func (api *EthAPI) getTransactionByBlockNumberAndIndex(req *Request) *Response {
 	}
 
 	txs := block.Transactions()
-	if int(index) >= len(txs) {
+	if index >= uint64(len(txs)) {
 		return successResponse(req.ID, nil)
 	}
 

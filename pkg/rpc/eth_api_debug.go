@@ -6,6 +6,7 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -458,9 +459,12 @@ func (d *DbgAPI) setHead(req *Request) *Response {
 	if targetNum == 0 {
 		return errorResponse(req.ID, ErrCodeInvalidParams, "cannot rewind to block 0")
 	}
+	if targetNum > uint64(math.MaxInt64) {
+		return errorResponse(req.ID, ErrCodeInvalidParams, "block number overflow")
+	}
 
 	// Verify the target block exists.
-	header := d.backend.HeaderByNumber(BlockNumber(targetNum))
+	header := d.backend.HeaderByNumber(BlockNumber(targetNum)) //nolint:gosec // overflow guarded above
 	if header == nil {
 		return errorResponse(req.ID, ErrCodeInternal, "target block not found")
 	}

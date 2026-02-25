@@ -6,6 +6,7 @@ package rpc
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -231,9 +232,12 @@ func (api *BeaconAPI) getBlock(req *Request) *Response {
 		return beaconErrorResponse(req.ID, BeaconErrBadRequest, "invalid slot parameter")
 	}
 	slot := parseHexUint64(slotStr)
+	if slot > uint64(math.MaxInt64) {
+		return beaconErrorResponse(req.ID, BeaconErrBadRequest, "slot number overflow")
+	}
 
 	// Map slot to EL block number (simplified 1:1 mapping).
-	header := api.backend.HeaderByNumber(BlockNumber(slot))
+	header := api.backend.HeaderByNumber(BlockNumber(slot)) //nolint:gosec // overflow guarded above
 	if header == nil {
 		return beaconErrorResponse(req.ID, BeaconErrNotFound, fmt.Sprintf("block at slot %d not found", slot))
 	}
@@ -258,8 +262,11 @@ func (api *BeaconAPI) getBlockHeader(req *Request) *Response {
 		return beaconErrorResponse(req.ID, BeaconErrBadRequest, "invalid slot parameter")
 	}
 	slot := parseHexUint64(slotStr)
+	if slot > uint64(math.MaxInt64) {
+		return beaconErrorResponse(req.ID, BeaconErrBadRequest, "slot number overflow")
+	}
 
-	header := api.backend.HeaderByNumber(BlockNumber(slot))
+	header := api.backend.HeaderByNumber(BlockNumber(slot)) //nolint:gosec // overflow guarded above
 	if header == nil {
 		return beaconErrorResponse(req.ID, BeaconErrNotFound, fmt.Sprintf("header at slot %d not found", slot))
 	}
@@ -309,7 +316,10 @@ func (api *BeaconAPI) getStateRoot(req *Request) *Response {
 		header = api.backend.HeaderByNumber(BlockNumber(epoch * 32))
 	default:
 		slot := parseHexUint64(stateID)
-		header = api.backend.HeaderByNumber(BlockNumber(slot))
+		if slot > uint64(math.MaxInt64) {
+			return beaconErrorResponse(req.ID, BeaconErrBadRequest, "slot number overflow")
+		}
+		header = api.backend.HeaderByNumber(BlockNumber(slot)) //nolint:gosec // overflow guarded above
 	}
 
 	if header == nil {
