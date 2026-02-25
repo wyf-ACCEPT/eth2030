@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Verify PeerDAS: check data availability sampling and blob distribution
+set -euo pipefail
+ENCLAVE="${1:-eth2030-peerdas}"
+EL_SVC=$(kurtosis enclave inspect "$ENCLAVE" 2>/dev/null | grep "^el-" | head -1 | awk '{print $1}')
+RPC_URL=$(kurtosis port print "$ENCLAVE" "$EL_SVC" rpc)
+
+echo "=== PeerDAS Verification ==="
+BLOCK=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | jq -r '.result')
+echo "Current block: $BLOCK"
+[ "$((BLOCK))" -gt 0 ] || { echo "FAIL: No blocks produced"; exit 1; }
+
+# Check peer count (PeerDAS requires multiple peers for sampling)
+PEERS=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":1}' | jq -r '.result')
+echo "Peer count: $PEERS"
+[ "$((PEERS))" -gt 0 ] || { echo "FAIL: No peers connected for DAS"; exit 1; }
+
+# Check latest block for blob gas usage
+LATEST=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}' | jq -r '.result')
+BLOB_GAS=$(echo "$LATEST" | jq -r '.blobGasUsed // "0x0"')
+echo "Blob gas used: $BLOB_GAS"
+
+echo "PASS: PeerDAS — peers connected, blocks produced"

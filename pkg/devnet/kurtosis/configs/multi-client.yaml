@@ -1,0 +1,26 @@
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 1
+  - el_type: geth
+    el_image: ethereum/client-go:latest
+    cl_type: prysm
+    cl_image: gcr.io/prysmaticlabs/prysm/beacon-chain:latest
+    count: 1
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 20
+
+additional_services:
+  - dora
+  - forkmon
+  - assertoor
+
+assertoor_params:
+  run_stability_check: true
+  run_block_proposal_check: true
+  run_transaction_test: true

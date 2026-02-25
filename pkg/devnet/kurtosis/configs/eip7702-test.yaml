@@ -1,0 +1,26 @@
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 20
+
+additional_services:
+  - dora
+  - rakoon
+  - assertoor
+
+rakoon_params:
+  tx_type: eip7702
+  workers: 50
+  batch_size: 100
+  fuzzing: true
+
+assertoor_params:
+  run_stability_check: true
+  run_transaction_test: true

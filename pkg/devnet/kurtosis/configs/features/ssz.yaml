@@ -1,0 +1,39 @@
+# SSZ — SSZ-Encoded Transactions (EIP-6404) and Blocks (EIP-7807)
+# Tests: SSZ encode/decode round-trip, ProgressiveList (EIP-7916)
+# Verify: blocks serialize correctly, transactions roundtrip, merkleization works
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 20
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "SSZ TX Load"
+      config:
+        throughput: 200
+        max_pending: 400
+        max_wallets: 200
+    - scenario: blob-combined
+      name: "SSZ Blob Load"
+      config:
+        throughput: 30
+        max_pending: 60
+        max_wallets: 30
+
+assertoor_params:
+  run_stability_check: true
+  run_transaction_test: true
+  run_blob_transaction_test: true

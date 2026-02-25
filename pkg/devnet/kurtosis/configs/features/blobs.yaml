@@ -1,0 +1,41 @@
+# Blobs — Blob Transactions (EIP-4844) + Sparse Blobpool (EIP-8070)
+# Tests: blob submission, KZG commitments, sparse blobpool eviction
+# Verify: blobs propagate, commitments verify, pool handles sparse data
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 4
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 30
+
+additional_services:
+  - dora
+  - blobscan
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: blob-combined
+      name: "Blob Stress"
+      config:
+        throughput: 100
+        max_pending: 200
+        max_wallets: 100
+        sidecars_per_tx: 2
+    - scenario: blob-combined
+      name: "Heavy Blobs"
+      config:
+        throughput: 50
+        max_pending: 100
+        max_wallets: 50
+        sidecars_per_tx: 6
+
+assertoor_params:
+  run_stability_check: true
+  run_blob_transaction_test: true

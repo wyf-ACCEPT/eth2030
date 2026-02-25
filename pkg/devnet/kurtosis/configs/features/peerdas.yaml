@@ -1,0 +1,36 @@
+# PeerDAS — Data Availability Sampling (EIP-7594)
+# Tests: column custody, sampling, blob reconstruction
+# Verify: nodes maintain custody, sampling succeeds, blobs reconstruct
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 8
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 30
+
+additional_services:
+  - dora
+  - blobscan
+  - spamoor
+  - assertoor
+  - prometheus
+  - grafana
+
+spamoor_params:
+  spammers:
+    - scenario: blob-combined
+      name: "DAS Blob Flood"
+      config:
+        throughput: 100
+        max_pending: 200
+        max_wallets: 100
+        sidecars_per_tx: 6
+
+assertoor_params:
+  run_stability_check: true
+  run_blob_transaction_test: true

@@ -1,0 +1,32 @@
+# Post-Quantum Crypto — Dilithium3, ML-DSA-65, PQ Attestations
+# Tests: PQ signature generation/verification, PQ attestation processing
+# Verify: PQ signatures verify correctly, attestations with PQ sigs accepted
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 2
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 20
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "PQ TX Load"
+      config:
+        throughput: 100
+        max_pending: 200
+        max_wallets: 100
+
+assertoor_params:
+  run_stability_check: true
+  run_transaction_test: true

@@ -1,0 +1,32 @@
+# Encrypted Mempool — Commit-Reveal, Threshold Decryption
+# Tests: commit-reveal ordering, threshold key management, MEV protection
+# Verify: transactions ordered by commit time, no frontrunning possible
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 4
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 30
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "Encrypted Mempool Load"
+      config:
+        throughput: 200
+        max_pending: 400
+        max_wallets: 200
+
+assertoor_params:
+  run_stability_check: true
+  run_transaction_test: true

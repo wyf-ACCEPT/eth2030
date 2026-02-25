@@ -1,0 +1,34 @@
+# FOCIL — Fork-Choice Enforced Inclusion Lists (EIP-7805)
+# Tests: inclusion list building, validation, compliance scoring
+# Verify: transactions get included per IL rules, compliance scores >0
+participants:
+  - el_type: geth
+    el_image: eth2030:local
+    cl_type: lighthouse
+    cl_image: sigp/lighthouse:latest
+    count: 4
+
+network_params:
+  network: kurtosis
+  seconds_per_slot: 12
+  genesis_delay: 30
+
+additional_services:
+  - dora
+  - spamoor
+  - assertoor
+  - forkmon
+
+spamoor_params:
+  spammers:
+    - scenario: eoatx
+      name: "FOCIL TX Load"
+      config:
+        throughput: 300
+        max_pending: 600
+        max_wallets: 300
+
+assertoor_params:
+  run_stability_check: true
+  run_block_proposal_check: true
+  run_transaction_test: true
