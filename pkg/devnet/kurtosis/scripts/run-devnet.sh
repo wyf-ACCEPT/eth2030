@@ -24,7 +24,7 @@ fi
 ENCLAVE="${2:-eth2030-devnet}"
 
 echo "=== Building eth2030-geth Docker image ==="
-docker build -t eth2030:local "$PKG_DIR"
+docker build --no-cache -t eth2030:local "$PKG_DIR"
 
 echo ""
 echo "=== Launching devnet: $CONFIG ==="
