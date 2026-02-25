@@ -171,12 +171,41 @@ for feature in "${SELECTED[@]}"; do
   echo "Waiting 30s for blocks..."
   sleep 30
 
+  # Resolve EL RPC URL early — services may stop during assertoor check.
+  INSPECT=$(kurtosis enclave inspect "$ENCLAVE" 2>/dev/null || true)
+  EL_SVC=$(echo "$INSPECT" | grep "el-[0-9]" | head -1 | awk '{print $2}' || true)
+  EL_SVC="${EL_SVC:-el-1-geth-lighthouse}"
+  EARLY_RPC_URL=$(kurtosis port print "$ENCLAVE" "$EL_SVC" rpc 2>/dev/null || true)
+  # Filter out kurtosis error messages — only keep valid host:port
+  if ! echo "$EARLY_RPC_URL" | grep -qE '^[0-9.]+:[0-9]+$'; then
+    EARLY_RPC_URL=""
+  fi
+
   # Check consensus
   echo "Checking consensus..."
   if bash "$SCRIPT_DIR/check-consensus.sh" "$ENCLAVE" 2>&1 | tee -a "$LOG_FILE"; then
     CONSENSUS="PASS"
   else
     CONSENSUS="FAIL"
+  fi
+
+  # Feature-specific verification — run before assertoor to avoid EL service timeout.
+  FEATURE_CHECK="N/A"
+  FEATURE_SCRIPT="$SCRIPT_DIR/features/verify-${feature}.sh"
+  if [ -x "$FEATURE_SCRIPT" ]; then
+    echo "Running feature verification..."
+    RPC_URL="$EARLY_RPC_URL"
+    if [ -n "$RPC_URL" ]; then
+      [[ "$RPC_URL" == http* ]] || RPC_URL="http://$RPC_URL"
+      if bash "$FEATURE_SCRIPT" "$ENCLAVE" "$RPC_URL" 2>&1 | tee -a "$LOG_FILE"; then
+        FEATURE_CHECK="PASS"
+      else
+        FEATURE_CHECK="FAIL"
+      fi
+    else
+      echo "  Could not resolve RPC URL — skipping feature check"
+      FEATURE_CHECK="N/A"
+    fi
   fi
 
   # Check assertoor (if available — informational, not blocking)
@@ -189,25 +218,6 @@ for feature in "${SELECTED[@]}"; do
     else
       # Assertoor stability check needs many epochs — timeout is expected for quick tests.
       ASSERTOOR="TIMEOUT"
-    fi
-  fi
-
-  # Feature-specific verification — extract RPC URL from enclave inspect (more reliable than port print).
-  FEATURE_CHECK="N/A"
-  FEATURE_SCRIPT="$SCRIPT_DIR/features/verify-${feature}.sh"
-  if [ -x "$FEATURE_SCRIPT" ]; then
-    echo "Running feature verification..."
-    INSPECT=$(kurtosis enclave inspect "$ENCLAVE" 2>/dev/null)
-    RPC_URL=$(echo "$INSPECT" | grep -P '^\s+rpc:' | head -1 | grep -oP '127\.0\.0\.1:\d+' || true)
-    if [ -n "$RPC_URL" ]; then
-      if bash "$FEATURE_SCRIPT" "$ENCLAVE" "http://$RPC_URL" 2>&1 | tee -a "$LOG_FILE"; then
-        FEATURE_CHECK="PASS"
-      else
-        FEATURE_CHECK="FAIL"
-      fi
-    else
-      echo "  Could not resolve RPC URL — skipping feature check"
-      FEATURE_CHECK="N/A"
     fi
   fi
 
