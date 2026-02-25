@@ -3,7 +3,7 @@ participants:
     el_image: eth2030:local
     cl_type: lighthouse
     cl_image: sigp/lighthouse:latest
-    count: 2
+    count: 1
 
 network_params:
   network: kurtosis
