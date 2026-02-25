@@ -21,7 +21,6 @@ additional_services:
   - dora
   - tracoor
   - forky
-  - blobscan
   - forkmon
   - prometheus
   - grafana

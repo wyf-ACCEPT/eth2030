@@ -12,7 +12,6 @@ network_params:
 
 additional_services:
   - dora
-  - blobscan
   - spamoor
   - assertoor
 
