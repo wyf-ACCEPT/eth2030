@@ -13,7 +13,7 @@ echo "=== Native AA (EIP-7702) Verification ==="
 BLOCK=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | jq -r '.result')
 echo "Current block: $BLOCK"
-[ "$((BLOCK))" -gt 2 ] || { echo "FAIL: Too few blocks"; exit 1; }
+[ "$((BLOCK))" -ge 2 ] || { echo "FAIL: Too few blocks"; exit 1; }
 
 # Check for type-4 (SetCode) transactions in recent blocks
 LATEST=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \

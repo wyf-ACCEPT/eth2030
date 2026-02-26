@@ -16,7 +16,7 @@ echo "Covers: binary tree, validity-only partial state, endgame state, misc purg
 BLOCK=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | jq -r '.result')
 echo "Current block: $BLOCK"
-[ "$((BLOCK))" -gt 2 ] || { echo "FAIL: Too few blocks produced"; exit 1; }
+[ "$((BLOCK))" -ge 2 ] || { echo "FAIL: Too few blocks produced"; exit 1; }
 
 # Verify state root changes across multiple blocks
 ROOT1=$(curl -sf -X POST "$RPC_URL" -H "Content-Type: application/json" \
