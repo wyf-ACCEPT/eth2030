@@ -1,5 +1,5 @@
-# Downloaded research data (large, regenerable)
-data/
+# Benchmark datasets (raw JSON is large; only .zip is tracked)
+data/*.json
 
 # Python
 __pycache__/
