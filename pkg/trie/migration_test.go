@@ -239,22 +239,22 @@ func TestGasAccountant_ChargeProof(t *testing.T) {
 	}
 }
 
-// --- MPTToVerkleTrieMigrator tests ---
+// --- MPTToBinaryTrieMigrator tests ---
 
-func TestMPTToVerkleTrieMigrator_NilSource(t *testing.T) {
-	_, err := NewMPTToVerkleTrieMigrator(nil, 10, 0)
+func TestMPTToBinaryTrieMigrator_NilSource(t *testing.T) {
+	_, err := NewMPTToBinaryTrieMigrator(nil, 10, 0)
 	if err != ErrMigrationNilSource {
 		t.Fatalf("expected ErrMigrationNilSource, got %v", err)
 	}
 }
 
-func TestMPTToVerkleTrieMigrator_FullMigration(t *testing.T) {
+func TestMPTToBinaryTrieMigrator_FullMigration(t *testing.T) {
 	tr := New()
 	tr.Put([]byte("alpha"), []byte("one"))
 	tr.Put([]byte("bravo"), []byte("two"))
 	tr.Put([]byte("charlie"), []byte("three"))
 
-	m, err := NewMPTToVerkleTrieMigrator(tr, 2, 0)
+	m, err := NewMPTToBinaryTrieMigrator(tr, 2, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,11 +287,11 @@ func TestMPTToVerkleTrieMigrator_FullMigration(t *testing.T) {
 	}
 }
 
-func TestMPTToVerkleTrieMigrator_AlreadyDone(t *testing.T) {
+func TestMPTToBinaryTrieMigrator_AlreadyDone(t *testing.T) {
 	tr := New()
 	tr.Put([]byte("x"), []byte("y"))
 
-	m, _ := NewMPTToVerkleTrieMigrator(tr, 100, 0)
+	m, _ := NewMPTToBinaryTrieMigrator(tr, 100, 0)
 	m.MigrateBatch()
 	_, _, err := m.MigrateBatch()
 	if err != ErrMigrationAlreadyDone {
@@ -299,9 +299,9 @@ func TestMPTToVerkleTrieMigrator_AlreadyDone(t *testing.T) {
 	}
 }
 
-func TestMPTToVerkleTrieMigrator_EmptySource(t *testing.T) {
+func TestMPTToBinaryTrieMigrator_EmptySource(t *testing.T) {
 	tr := New()
-	m, _ := NewMPTToVerkleTrieMigrator(tr, 10, 0)
+	m, _ := NewMPTToBinaryTrieMigrator(tr, 10, 0)
 	count, done, err := m.MigrateBatch()
 	if err != nil {
 		t.Fatal(err)
@@ -311,7 +311,7 @@ func TestMPTToVerkleTrieMigrator_EmptySource(t *testing.T) {
 	}
 }
 
-func TestMPTToVerkleTrieMigrator_GasExhaustion(t *testing.T) {
+func TestMPTToBinaryTrieMigrator_GasExhaustion(t *testing.T) {
 	tr := New()
 	for i := 0; i < 10; i++ {
 		tr.Put([]byte{byte(i)}, []byte{byte(i + 1)})
@@ -319,7 +319,7 @@ func TestMPTToVerkleTrieMigrator_GasExhaustion(t *testing.T) {
 
 	// Very small gas budget: 200 read + 5000 write = 5200 per key.
 	// Budget of 10000 allows ~1 key.
-	m, err := NewMPTToVerkleTrieMigrator(tr, 5, 10000)
+	m, err := NewMPTToBinaryTrieMigrator(tr, 5, 10000)
 	if err != nil {
 		t.Fatal(err)
 	}

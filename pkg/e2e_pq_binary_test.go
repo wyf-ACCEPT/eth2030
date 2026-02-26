@@ -1,4 +1,4 @@
-// End-to-end tests for post-quantum cryptography, Verkle/binary trie,
+// End-to-end tests for post-quantum cryptography, binary trie,
 // proof systems, light client, and cross-feature integrations.
 package e2e_test
 
@@ -23,9 +23,9 @@ import (
 // PQ Crypto Pipeline Tests
 // ==========================================================================
 
-// TestE2E_PQVerkle_PQTransactionSignVerify tests ML-DSA-65 key generation,
+// TestE2E_PQBinary_PQTransactionSignVerify tests ML-DSA-65 key generation,
 // transaction signing, and verification through the PQTxSigner.
-func TestE2E_PQVerkle_PQTransactionSignVerify(t *testing.T) {
+func TestE2E_PQBinary_PQTransactionSignVerify(t *testing.T) {
 	signer, err := pqc.NewPQTxSigner(pqc.SigDilithium3)
 	if err != nil {
 		t.Fatalf("NewPQTxSigner: %v", err)
@@ -60,9 +60,9 @@ func TestE2E_PQVerkle_PQTransactionSignVerify(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_PQTransactionPoolSubmit tests PQ-signed transaction
+// TestE2E_PQBinary_PQTransactionPoolSubmit tests PQ-signed transaction
 // creation and basic validation.
-func TestE2E_PQVerkle_PQTransactionPoolSubmit(t *testing.T) {
+func TestE2E_PQBinary_PQTransactionPoolSubmit(t *testing.T) {
 	to := types.BytesToAddress([]byte{0x20})
 	pqTx := types.NewPQTransaction(
 		big.NewInt(1337), 0, &to, big.NewInt(1000), 21000, big.NewInt(2000), nil,
@@ -91,9 +91,9 @@ func TestE2E_PQVerkle_PQTransactionPoolSubmit(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_PQBlobCommitment tests lattice-based blob commitment
+// TestE2E_PQBinary_PQBlobCommitment tests lattice-based blob commitment
 // and proof generation/verification.
-func TestE2E_PQVerkle_PQBlobCommitment(t *testing.T) {
+func TestE2E_PQBinary_PQBlobCommitment(t *testing.T) {
 	data := e2e.MakeBlobData(4096, 0xBB)
 
 	commitment, err := das.CommitBlob(data)
@@ -127,9 +127,9 @@ func TestE2E_PQVerkle_PQBlobCommitment(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_PQAttestationCycle tests PQ attestation creation,
+// TestE2E_PQBinary_PQAttestationCycle tests PQ attestation creation,
 // verification, and counter tracking.
-func TestE2E_PQVerkle_PQAttestationCycle(t *testing.T) {
+func TestE2E_PQBinary_PQAttestationCycle(t *testing.T) {
 	verifier := consensus.NewPQAttestationVerifier(consensus.DefaultPQAttestationConfig())
 	root := e2e.DeterministicHash(42)
 	att := e2e.MakePQAttestation(10, 5, root)
@@ -143,9 +143,9 @@ func TestE2E_PQVerkle_PQAttestationCycle(t *testing.T) {
 	_ = valid
 }
 
-// TestE2E_PQVerkle_PQChainSecurityLevels tests PQ chain security level
+// TestE2E_PQBinary_PQChainSecurityLevels tests PQ chain security level
 // enforcement at different epochs.
-func TestE2E_PQVerkle_PQChainSecurityLevels(t *testing.T) {
+func TestE2E_PQBinary_PQChainSecurityLevels(t *testing.T) {
 	// Level: Required -- always enforces PQ after transition epoch.
 	cfg := &consensus.PQChainConfig{
 		SecurityLevel:      consensus.PQSecurityRequired,
@@ -182,9 +182,9 @@ func TestE2E_PQVerkle_PQChainSecurityLevels(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_PQAlgorithmRegistry tests algorithm registration,
+// TestE2E_PQBinary_PQAlgorithmRegistry tests algorithm registration,
 // lookup, and gas cost verification.
-func TestE2E_PQVerkle_PQAlgorithmRegistry(t *testing.T) {
+func TestE2E_PQBinary_PQAlgorithmRegistry(t *testing.T) {
 	reg := pqc.NewPQAlgorithmRegistry()
 	customType := pqc.AlgorithmType(100)
 	err := reg.RegisterAlgorithm(
@@ -224,12 +224,12 @@ func TestE2E_PQVerkle_PQAlgorithmRegistry(t *testing.T) {
 }
 
 // ==========================================================================
-// Verkle & State Migration Tests
+// Binary Trie & State Migration Tests
 // ==========================================================================
 
-// TestE2E_PQVerkle_BinaryTrieInsertProve tests insert, hash, prove, and
+// TestE2E_PQBinary_BinaryTrieInsertProve tests insert, hash, prove, and
 // verify cycle on the EIP-7864 binary trie.
-func TestE2E_PQVerkle_BinaryTrieInsertProve(t *testing.T) {
+func TestE2E_PQBinary_BinaryTrieInsertProve(t *testing.T) {
 	trie := bintrie.New()
 
 	// Insert several key-value pairs.
@@ -271,9 +271,9 @@ func TestE2E_PQVerkle_BinaryTrieInsertProve(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_BinaryTrieDeleteAndReprove tests deletion followed
+// TestE2E_PQBinary_BinaryTrieDeleteAndReprove tests deletion followed
 // by re-proving to verify trie consistency.
-func TestE2E_PQVerkle_BinaryTrieDeleteAndReprove(t *testing.T) {
+func TestE2E_PQBinary_BinaryTrieDeleteAndReprove(t *testing.T) {
 	trie := bintrie.New()
 
 	key := make([]byte, bintrie.HashSize)
@@ -296,9 +296,9 @@ func TestE2E_PQVerkle_BinaryTrieDeleteAndReprove(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_TreeKeyDerivation tests binary tree key computation
+// TestE2E_PQBinary_TreeKeyDerivation tests binary tree key computation
 // for accounts and storage slots.
-func TestE2E_PQVerkle_TreeKeyDerivation(t *testing.T) {
+func TestE2E_PQBinary_TreeKeyDerivation(t *testing.T) {
 	addr := types.BytesToAddress([]byte{0x42})
 
 	basicKey := bintrie.GetBinaryTreeKeyBasicData(addr)
@@ -328,9 +328,9 @@ func TestE2E_PQVerkle_TreeKeyDerivation(t *testing.T) {
 // Proof System Tests
 // ==========================================================================
 
-// TestE2E_PQVerkle_ProofAggregation tests aggregating multiple execution
+// TestE2E_PQBinary_ProofAggregation tests aggregating multiple execution
 // proofs using SimpleAggregator.
-func TestE2E_PQVerkle_ProofAggregation(t *testing.T) {
+func TestE2E_PQBinary_ProofAggregation(t *testing.T) {
 	agg := proofs.NewSimpleAggregator()
 	epSlice := make([]proofs.ExecutionProof, 8)
 	for i := range epSlice {
@@ -362,9 +362,9 @@ func TestE2E_PQVerkle_ProofAggregation(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_ExecutionProofGeneration tests execution proof
+// TestE2E_PQBinary_ExecutionProofGeneration tests execution proof
 // access log recording and commitment generation.
-func TestE2E_PQVerkle_ExecutionProofGeneration(t *testing.T) {
+func TestE2E_PQBinary_ExecutionProofGeneration(t *testing.T) {
 	log := proofs.NewStateAccessLog()
 	addr := types.BytesToAddress([]byte{0x10})
 	slot := types.BytesToHash([]byte{0x01})
@@ -384,9 +384,9 @@ func TestE2E_PQVerkle_ExecutionProofGeneration(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_MandatoryProofThreeOfFive tests the full 3-of-5
+// TestE2E_PQBinary_MandatoryProofThreeOfFive tests the full 3-of-5
 // prover lifecycle: register, assign, submit, verify, check.
-func TestE2E_PQVerkle_MandatoryProofThreeOfFive(t *testing.T) {
+func TestE2E_PQBinary_MandatoryProofThreeOfFive(t *testing.T) {
 	cfg := proofs.DefaultMandatoryProofConfig()
 	sys := proofs.NewMandatoryProofSystem(cfg)
 
@@ -432,9 +432,9 @@ func TestE2E_PQVerkle_MandatoryProofThreeOfFive(t *testing.T) {
 	_ = ids
 }
 
-// TestE2E_PQVerkle_RecursiveProofAggregation tests hierarchical proof
+// TestE2E_PQBinary_RecursiveProofAggregation tests hierarchical proof
 // aggregation: aggregate sub-batches then aggregate the aggregates.
-func TestE2E_PQVerkle_RecursiveProofAggregation(t *testing.T) {
+func TestE2E_PQBinary_RecursiveProofAggregation(t *testing.T) {
 	agg := proofs.NewSimpleAggregator()
 
 	// Create two batches of proofs.
@@ -477,9 +477,9 @@ func TestE2E_PQVerkle_RecursiveProofAggregation(t *testing.T) {
 // Cross-Feature Tests
 // ==========================================================================
 
-// TestE2E_PQVerkle_PQTransactionInBlock tests creating a PQ transaction
+// TestE2E_PQBinary_PQTransactionInBlock tests creating a PQ transaction
 // type and encoding/decoding it for block inclusion.
-func TestE2E_PQVerkle_PQTransactionInBlock(t *testing.T) {
+func TestE2E_PQBinary_PQTransactionInBlock(t *testing.T) {
 	to := types.BytesToAddress([]byte{0x20})
 	pqTx := types.NewPQTransaction(
 		big.NewInt(1), 42, &to, big.NewInt(1e15), 100000, big.NewInt(5000), []byte{0x60, 0x00},
@@ -506,9 +506,9 @@ func TestE2E_PQVerkle_PQTransactionInBlock(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_NativeRollupExecution tests the EXECUTE precompile
+// TestE2E_PQBinary_NativeRollupExecution tests the EXECUTE precompile
 // with a minimal valid input.
-func TestE2E_PQVerkle_NativeRollupExecution(t *testing.T) {
+func TestE2E_PQBinary_NativeRollupExecution(t *testing.T) {
 	precompile := &rollup.ExecutePrecompile{}
 
 	// Build a minimal input: chainID(8) + preStateRoot(32) + lengths(12) + blockData
@@ -535,9 +535,9 @@ func TestE2E_PQVerkle_NativeRollupExecution(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_LightClientSync tests the light client syncer
+// TestE2E_PQBinary_LightClientSync tests the light client syncer
 // processing an update and storing a finalized header.
-func TestE2E_PQVerkle_LightClientSync(t *testing.T) {
+func TestE2E_PQBinary_LightClientSync(t *testing.T) {
 	client := light.NewLightClient()
 	if err := client.Start(); err != nil {
 		t.Fatalf("Start: %v", err)
@@ -579,9 +579,9 @@ func TestE2E_PQVerkle_LightClientSync(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_CLProofCircuit tests CL state proof and validator
+// TestE2E_PQBinary_CLProofCircuit tests CL state proof and validator
 // proof generation and verification.
-func TestE2E_PQVerkle_CLProofCircuit(t *testing.T) {
+func TestE2E_PQBinary_CLProofCircuit(t *testing.T) {
 	prover := light.NewCLProver(light.DefaultCLProverConfig())
 
 	stateRoot := e2e.DeterministicHash(42)
@@ -606,9 +606,9 @@ func TestE2E_PQVerkle_CLProofCircuit(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_WitnessCollectorFullBlock tests that the access log
+// TestE2E_PQBinary_WitnessCollectorFullBlock tests that the access log
 // correctly tracks reads and writes across multiple addresses.
-func TestE2E_PQVerkle_WitnessCollectorFullBlock(t *testing.T) {
+func TestE2E_PQBinary_WitnessCollectorFullBlock(t *testing.T) {
 	log := proofs.NewStateAccessLog()
 
 	// Simulate multi-tx access pattern.
@@ -636,9 +636,9 @@ func TestE2E_PQVerkle_WitnessCollectorFullBlock(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_BlobReconstructionFromCells tests blob cell creation
+// TestE2E_PQBinary_BlobReconstructionFromCells tests blob cell creation
 // and validates that we can reconstruct blob data from cells.
-func TestE2E_PQVerkle_BlobReconstructionFromCells(t *testing.T) {
+func TestE2E_PQBinary_BlobReconstructionFromCells(t *testing.T) {
 	blobSize := das.BytesPerCell * das.ReconstructionThreshold
 	data := e2e.MakeBlobData(blobSize, 0x55)
 
@@ -665,9 +665,9 @@ func TestE2E_PQVerkle_BlobReconstructionFromCells(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_VDFProposerSelection tests VDF evaluation and use
+// TestE2E_PQBinary_VDFProposerSelection tests VDF evaluation and use
 // for deterministic proposer randomness.
-func TestE2E_PQVerkle_VDFProposerSelection(t *testing.T) {
+func TestE2E_PQBinary_VDFProposerSelection(t *testing.T) {
 	params := &crypto.VDFParams{T: 50, Lambda: 128}
 	vdf := crypto.NewWesolowskiVDF(params)
 
@@ -694,9 +694,9 @@ func TestE2E_PQVerkle_VDFProposerSelection(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_PQBlockHashSHA3 tests that PQ-resistant block hashing
+// TestE2E_PQBinary_PQBlockHashSHA3 tests that PQ-resistant block hashing
 // produces consistent results.
-func TestE2E_PQVerkle_PQBlockHashSHA3(t *testing.T) {
+func TestE2E_PQBinary_PQBlockHashSHA3(t *testing.T) {
 	header := &types.Header{
 		Number:   big.NewInt(42),
 		GasLimit: 30_000_000,
@@ -734,9 +734,9 @@ func TestE2E_PQVerkle_PQBlockHashSHA3(t *testing.T) {
 	}
 }
 
-// TestE2E_PQVerkle_MLDSAKeyGenSignVerify tests the real ML-DSA-65
+// TestE2E_PQBinary_MLDSAKeyGenSignVerify tests the real ML-DSA-65
 // lattice signer key generation, signing, and verification.
-func TestE2E_PQVerkle_MLDSAKeyGenSignVerify(t *testing.T) {
+func TestE2E_PQBinary_MLDSAKeyGenSignVerify(t *testing.T) {
 	signer := pqc.NewMLDSASigner()
 	kp, err := signer.GenerateKey()
 	if err != nil {

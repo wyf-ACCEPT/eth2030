@@ -42,7 +42,7 @@
               │
      ┌────────▼──────────────────────┐
      │     Trie Database              │
-     │  MPT -> Verkle (EIP-6800)     │
+     │  MPT -> Binary (EIP-7864)     │
      └────────┬──────────────────────┘
               │
      ┌────────▼──────────────────────┐
@@ -64,9 +64,9 @@ The L1 Strawmap defines three layers with the following upgrade timeline:
 | **Glamsterdam** | 2026 | fast confirmation, ePBS, FOCIL | peerDAS | native AA, BALS, conversion repricing |
 | **Hegotá** | 2026-2027 | quick slots, modernized beacon specs | blob throughput increase, local blob reconstruction | Hegotá repricing, payload shrinking, multidimensional pricing |
 | **I+** | 2027 | 1-epoch finality, post-quantum custody | decrease sample size | announce binary tree, NII precompile(s), encrypted mempool |
-| **J+** | 2027-2028 | 4-slot epochs, beacon & blob sync | short-dated blob futures | verkle/portal state, precompiles in eWASM, STF in eRISC |
+| **J+** | 2027-2028 | 4-slot epochs, beacon & blob sync | short-dated blob futures | precompiles in eWASM, STF in eRISC |
 | **K+** | 2028 | 6-sec slots, 1MiB attestor cap, KPS | 3-RPO slots increase | block in blobs, mandatory 3-of-5 proofs, canonical guest |
-| **L+** | 2029 | endgame finality, LETHE insulation | L-RPO blob increase, post-quantum blobs | advance state, native rollups, proof aggregation |
+| **L+** | 2029 | endgame finality | L-RPO blob increase, post-quantum blobs | advance state, native rollups, proof aggregation |
 | **M+** | 2029+ | fast L1 finality in seconds, post-quantum attestations | forward-cast blobs | canonical zxVM, long-dated gas futures, shared mempools, gigas L1 |
 | **Longer term** | 2030++ | distributed block building, VDF | teradata L2, proof custody | exposed ELSA, post-quantum transactions, private L1 shielded compute |
 
@@ -272,26 +272,12 @@ Each dimension has independent base fees and targets.
 
 ### Phase 3: I+ (2027)
 
-#### 3.3.1 Announce Binary Tree (Verkle Transition Preparation)
-
-**Spec:** `refs/EIPs/EIPS/eip-6800.md`
-**Feature Spec:** `refs/consensus-specs/specs/_features/eip6800/`
-
-Announces the Verkle tree structure to prepare for state migration. The MPT state trie is frozen and a new Verkle tree grows alongside it.
-
-**EL Implementation:**
-1. Dual-tree state: frozen MPT + growing Verkle
-2. Key derivation: `get_tree_key(address, tree_index, sub_index)`
-3. Verkle node types: inner (branching factor 256), leaf
-4. Pedersen commitment using Bandersnatch curve (IPA)
-5. State migration: new writes go to Verkle, reads check both
-
-#### 3.3.2 EIP-4762: Statelessness Gas Cost Changes
+#### 3.3.1 EIP-4762: Statelessness Gas Cost Changes
 
 **Spec:** `refs/EIPs/EIPS/eip-4762.md`
 **Status:** Draft | Standards Track | Core
 
-**Abstract:** Changes gas schedule to reflect costs of creating execution witnesses for stateless validation. Restructures gas costs around Verkle tree leaf access patterns.
+**Abstract:** Changes gas schedule to reflect costs of creating execution witnesses for stateless validation. Restructures gas costs around tree leaf access patterns.
 
 **Key Concepts:**
 - Access events: `(address, sub_key, leaf_key)` tuples
@@ -307,13 +293,13 @@ Announces the Verkle tree structure to prepare for state migration. The MPT stat
 | Code chunk | 0 | SUBTREE_EDIT_COST | WITNESS_BRANCH_COST + WITNESS_CHUNK_COST |
 
 **EL Implementation:**
-1. Verkle-aware gas table in `core/vm/gas_table.go`
+1. Stateless-aware gas table in `core/vm/gas_table.go`
 2. Access event tracking during execution
-3. Warm/cold distinction per Verkle leaf (not per account)
+3. Warm/cold distinction per tree leaf (not per account)
 4. Code chunking: 31 bytes per chunk, tracked individually
-5. `IsVerkleGas(time)` fork check
+5. `IsStatelessGas(time)` fork check
 
-#### 3.3.3 NII Precompile(s) (Cryptography)
+#### 3.3.2 NII Precompile(s) (Cryptography)
 
 New precompiles for numeric/integer/infinite-precision arithmetic, supporting:
 - Modular exponentiation improvements
@@ -325,7 +311,7 @@ New precompiles for numeric/integer/infinite-precision arithmetic, supporting:
 2. Gas cost models
 3. Integration with crypto package
 
-#### 3.3.4 Encrypted Mempool
+#### 3.3.3 Encrypted Mempool
 
 Privacy-preserving transaction pool using:
 - Threshold encryption (TEE or MPC-based)
@@ -341,17 +327,7 @@ Privacy-preserving transaction pool using:
 
 ### Phase 4: J+ (2027-2028)
 
-#### 3.4.1 Verkle/Portal State
-
-Full Verkle tree state migration complete. MPT frozen, all reads/writes go through Verkle tree.
-
-**EL Implementation:**
-1. Complete MPT -> Verkle migration
-2. Verkle proof generation for all state accesses
-3. Portal Network integration for historical state
-4. State pruning of MPT data
-
-#### 3.4.2 Precompiles in eWASM
+#### 3.4.1 Precompiles in eWASM
 
 Move precompile implementations from native Go to eWASM (Ethereum WebAssembly):
 - Enables on-chain upgradability
@@ -364,7 +340,7 @@ Move precompile implementations from native Go to eWASM (Ethereum WebAssembly):
 3. Gas metering for WASM execution
 4. Migration path from native precompiles
 
-#### 3.4.3 STF in eRISC
+#### 3.4.2 STF in eRISC
 
 State Transition Function compilation to RISC-V for ZK-proving:
 - EVM bytecode -> RISC-V translation
@@ -542,7 +518,6 @@ Execution Layer State Access interface for external provers and validators:
 | 4895 | `eip-4895.md` | Beacon Chain Withdrawals | Final | Shanghai |
 | 5656 | `eip-5656.md` | MCOPY Instruction | Final | Cancun |
 | 6780 | `eip-6780.md` | SELFDESTRUCT Restriction | Final | Cancun |
-| 6800 | `eip-6800.md` | Ethereum State Using Verkle Trees | Draft | J+ |
 | 7251 | `eip-7251.md` | Increase MAX_EFFECTIVE_BALANCE | Final | Electra |
 | 7594 | `eip-7594.md` | PeerDAS | Draft | Glamsterdam |
 | 7619 | `eip-7619.md` | Falcon-512 Precompile | Draft | M+ |
@@ -572,7 +547,6 @@ Execution Layer State Access interface for external provers and validators:
 |-----------|-------------|
 | `fulu/` | PeerDAS, blob scheduling, polynomial commitments |
 | `gloas/` | ePBS, builder registry |
-| `_features/eip6800/` | Verkle Trees (beacon-chain integration) |
 | `_features/eip7805/` | FOCIL (fork-choice enforced inclusion lists) |
 | `_features/eip7928/` | Block Access Lists (CL integration) |
 | `_features/eip8025/` | Execution Proofs (proof engine, prover interface) |
@@ -585,14 +559,14 @@ Execution Layer State Access interface for external provers and validators:
 
 | Metric | Value |
 |--------|-------|
-| Packages | 50 (all passing) |
+| Packages | 48 (all passing) |
 | Source files | 986 |
 | Test files | 916 |
 | Source LOC | ~310,000 |
 | Test LOC | ~392,000 |
 | Total LOC | ~702,000 |
 | Passing tests | 18,000+ |
-| EIPs complete | 58+ (6 substantial) |
+| EIPs complete | 58+ (5 substantial) |
 | EF State Tests | 36,126/36,126 (100%) |
 
 ### go-ethereum Embedded Binary (eth2030-geth)
@@ -626,7 +600,7 @@ This architecture closes the production networking and database gaps: go-ethereu
 
 ### Package Completeness
 
-All 50 packages are complete and passing tests. Key packages:
+All 48 packages are complete and passing tests. Key packages:
 
 | Package | Status | Description |
 |---------|--------|-------------|
@@ -658,7 +632,7 @@ ETH2030 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` a
 
 ### Remaining Gaps for Production
 
-1. **Real crypto backends** - Wire blst/circl/go-ipa/gnark submodules as backends (BLS12-381 and KZG adapters already wired)
+1. **Real crypto backends** - Wire blst/circl/gnark submodules as backends (BLS12-381 and KZG adapters already wired)
 2. ~~**RLPx encryption**~~ - CLOSED: `eth2030-geth` binary uses go-ethereum's production RLPx P2P networking
 3. ~~**Database backend**~~ - CLOSED: `eth2030-geth` binary uses Pebble (go-ethereum's default production DB)
 4. **Conformance testing** - EF state tests: 36,126/36,126 (100%) passing via go-ethereum backend

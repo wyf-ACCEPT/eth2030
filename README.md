@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Packages-50-blue?style=flat-square" alt="Packages" />
+  <img src="https://img.shields.io/badge/Packages-48-blue?style=flat-square" alt="Packages" />
   <img src="https://img.shields.io/badge/Tests-18%2C257-blue?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/EIPs-58%20supported-blue?style=flat-square" alt="EIPs supported (native + go-ethereum)" />
   <img src="https://img.shields.io/badge/EF%20State%20Tests-100%25%20(36%2C126)-brightgreen?style=flat-square" alt="EF Tests" />
@@ -74,7 +74,7 @@ go build -o eth2030-geth ./cmd/eth2030-geth/
 # Sync with mainnet
 ./eth2030-geth --datadir ~/.eth2030-geth --authrpc.jwtsecret /path/to/jwt.hex
 
-# Run all tests (50 packages, 18,257 tests)
+# Run all tests (48 packages, 18,257 tests)
 go test ./...
 
 # Run EF state test validation (36,126 vectors, 100% pass rate)
@@ -105,7 +105,7 @@ ETH2030 includes Kurtosis devnet integration for multi-client consensus testing 
 kurtosis engine start
 cd pkg && docker build -t eth2030:local .
 
-# Run all 31 feature devnet tests
+# Run all 30 feature devnet tests
 cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh
 
 # Run specific features
@@ -115,20 +115,19 @@ cd pkg/devnet/kurtosis && ./scripts/run-feature-tests.sh epbs focil native-aa
 cd pkg/devnet/kurtosis && ./scripts/run-devnet.sh single-client
 ```
 
-**31 Feature Tests** — All passing consensus checks, covering all 65 roadmap items:
+**30 Feature Tests** — All passing consensus checks, covering all 65 roadmap items:
 
-**15 Roadmap Feature Tests:**
+**14 Roadmap Feature Tests:**
 
 | Feature | EIP(s) | Feature | EIP(s) |
 |---------|--------|---------|--------|
 | ePBS | EIP-7732 | PeerDAS | EIP-7594 |
-| FOCIL | EIP-7805 | Verkle | EIP-6800 |
-| BALs | EIP-7928 | 3SF/Quick Slots | — |
-| Native AA | EIP-7702 | PQ Crypto | — |
-| Gas Repricing | 18 EIPs | Encrypted Mempool | — |
-| Blobs | EIP-4844/8070 | Shielded Transfers | — |
-| Multidim Gas | EIP-7706 | SSZ | EIP-6404/7807 |
-| Native Rollups | EIP-8079 | | |
+| FOCIL | EIP-7805 | 3SF/Quick Slots | — |
+| BALs | EIP-7928 | PQ Crypto | — |
+| Native AA | EIP-7702 | Encrypted Mempool | — |
+| Gas Repricing | 18 EIPs | Shielded Transfers | — |
+| Blobs | EIP-4844/8070 | SSZ | EIP-6404/7807 |
+| Multidim Gas | EIP-7706 | Native Rollups | EIP-8079 |
 
 **16 Layer Group Tests** (CL/DL/EL feature groups covering remaining roadmap items):
 
@@ -181,8 +180,8 @@ See [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) for full docu
  +--------+--------------------------+     +-------------------+
           |
  +--------v--------------------------+     +-------------------+
- |     Trie / Verkle                  |---->|  P2P / Sync       |
- |  MPT + Binary + Verkle            |     | Discovery, Portal |
+ |     Trie / Binary                  |---->|  P2P / Sync       |
+ |  MPT + Binary (EIP-7864)          |     | Discovery, Portal |
  +--------+--------------------------+     +-------------------+
           |
  +--------v--------------------------+     +-------------------+
@@ -223,7 +222,7 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 
 **Native ETH2030 (~25 features):** Consensus layer (3SF, quick slots, 1-epoch finality, PQ attestations, endgame finality), data availability (PeerDAS, blob streaming, custody proofs, variable-size blobs), proposer-builder separation (ePBS, FOCIL, distributed builder), encrypted mempool (commit-reveal, threshold decryption), BAL parallel execution (EIP-7928), native rollups (EIP-8079), SSZ encoding (EIP-6404/7807), 13 custom precompiles (NTT, NII, field arithmetic), and the Engine API V3-V7.
 
-**Prototype/Functional:** The zkVM framework has a real RISC-V RV32IM CPU emulator with witness collection and cycle counting, but proofs are SHA-256 hash-based rather than Groth16 (production ZK backend integration pending). The verkle package uses real Pedersen vector commitments over the Banderwagon curve and real IPA (Inner Product Argument) verification for proofs.
+**Prototype/Functional:** The zkVM framework has a real RISC-V RV32IM CPU emulator with witness collection and cycle counting, but proofs are SHA-256 hash-based rather than Groth16 (production ZK backend integration pending).
 
 ## Package Structure
 
@@ -249,14 +248,13 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 | `pkg/txpool` | Transaction pool, RBF, sparse blobpool, encrypted mempool, sharded | Complete |
 | `pkg/p2p` | TCP transport, devp2p, discovery V5, gossip, Portal network, snap sync | Complete |
 | `pkg/trie` | MPT + Binary Merkle tree (EIP-7864), SHA-256, proofs, migration | Complete |
-| `pkg/verkle` | Verkle tree, Pedersen commitments, state migration, witness generation | Complete |
 | `pkg/rpc` | JSON-RPC server, 50+ methods, filters, WebSocket, Beacon API | Complete |
 | `pkg/sync` | Full sync + snap sync + beam sync pipeline | Complete |
 | `pkg/rlp` | RLP encoding/decoding per Yellow Paper Appendix B | Complete |
 | `pkg/ssz` | SSZ encoding/decoding, merkleization, EIP-7916 ProgressiveList | Complete |
 
 <details>
-<summary>All 50 packages (click to expand)</summary>
+<summary>All 48 packages (click to expand)</summary>
 
 | Package | Description |
 |---------|-------------|
@@ -264,9 +262,8 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 | `pkg/core/state/snapshot` | Layered diff/disk snapshots, account/storage iterators |
 | `pkg/core/state/pruner` | State pruner with bloom filter reachability |
 | `pkg/core/vops` | Validity-Only Partial Statelessness: executor, validator, witness |
-| `pkg/consensus/lethe` | LETHE insulation protocol for validator privacy |
 | `pkg/das/erasure` | Reed-Solomon erasure coding (Lagrange interpolation) |
-| `pkg/witness` | Execution witness (EIP-6800/8025), collector, verifier |
+| `pkg/witness` | Execution witness (EIP-8025), collector, verifier |
 | `pkg/txpool/encrypted` | Encrypted mempool: commit-reveal, threshold decryption |
 | `pkg/txpool/shared` | Sharded mempool with consistent hashing |
 | `pkg/light` | Light client: header sync, proof cache, sync committee, CL proofs |
@@ -318,7 +315,7 @@ ETH2030 combines native implementations with go-ethereum as a backend. This sect
 | 8077 | Announce Nonce | 8079 | Native Rollups |
 | 8141 | Frame Transactions | | |
 
-**Substantially implemented:** EIP-6800 (Verkle), EIP-7732 (ePBS), EIP-7805 (FOCIL), EIP-7864 (Binary Merkle Tree), EIP-8025 (Execution Proofs), PQC (Dilithium3/Falcon512/SPHINCS+)
+**Substantially implemented:** EIP-7732 (ePBS), EIP-7805 (FOCIL), EIP-7864 (Binary Merkle Tree), EIP-8025 (Execution Proofs), PQC (Dilithium3/Falcon512/SPHINCS+)
 
 See [docs/EIP_SPEC_IMPL.md](docs/EIP_SPEC_IMPL.md) for full traceability: specs, implementations, and tests for each EIP.
 
@@ -345,7 +342,7 @@ ETH2030 tracks 8 upgrade phases from the [L1 Strawmap](https://strawmap.org/) co
 | **Functional** | 0 |
 | **Partial** | 0 |
 
-All 65 strawmap items are COMPLETE with real cryptographic backends wired (BLS, Dilithium3, KZG, BN254 Pedersen, Banderwagon IPA). See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
+All 65 strawmap items are COMPLETE with real cryptographic backends wired (BLS, Dilithium3, KZG, BN254 Pedersen). See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
 
 ## Engine API
 
@@ -372,7 +369,7 @@ All 65 strawmap items are COMPLETE with real cryptographic backends wired (BLS, 
 - [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
 - [docs/ROADMAP.md](docs/ROADMAP.md) -- L1 Strawmap timeline overview
 - [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
-- [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (31 features, 6 configs, 10 tools)
+- [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (30 features, 6 configs, 10 tools)
 
 ## Development Stats
 
@@ -404,7 +401,7 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 **Reference client:** go-ethereum
 
-**Cryptography:** blst (BLS12-381), circl (PQC: ML-DSA, ML-KEM, SLH-DSA), go-eth-kzg (KZG), gnark (ZK proofs), gnark-crypto, c-kzg-4844, go-ipa (Verkle IPA), go-verkle
+**Cryptography:** blst (BLS12-381), circl (PQC: ML-DSA, ML-KEM, SLH-DSA), go-eth-kzg (KZG), gnark (ZK proofs), gnark-crypto, c-kzg-4844
 
 **Devops:** ethereum-package, benchmarkoor, erigone, xatu, consensoor
 

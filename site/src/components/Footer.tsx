@@ -47,7 +47,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-eth-dim">
               <li>Go 1.23</li>
               <li>go-ethereum v1.17.0</li>
-              <li>50 packages, 702K LOC</li>
+              <li>48 packages, 702K LOC</li>
               <li>LGPL-3.0 / GPL-3.0</li>
             </ul>
           </div>

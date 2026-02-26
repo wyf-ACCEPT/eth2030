@@ -132,7 +132,7 @@ export default function RoadmapTimeline() {
         >
           <span className="text-eth-teal font-semibold">65/65</span> strawmap items implemented across{' '}
           <span className="text-eth-purple font-semibold">8 upgrade phases</span> &middot;{' '}
-          <span className="text-eth-pink font-semibold">31 devnet tests</span> passing
+          <span className="text-eth-pink font-semibold">30 devnet tests</span> passing
         </motion.div>
       </div>
     </section>

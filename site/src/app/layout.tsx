@@ -12,7 +12,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'ETH2030 — Ethereum Client for the L1 Strawmap',
   description:
-    'Experimental Ethereum execution client targeting the L1 Strawmap (strawmap.org). 50 packages, 18,000+ tests, 58 EIPs, 100% EF state test conformance. Built in Go.',
+    'Experimental Ethereum execution client targeting the L1 Strawmap (strawmap.org). 48 packages, 18,000+ tests, 58 EIPs, 100% EF state test conformance. Built in Go.',
   keywords: [
     'Ethereum', 'ETH2030', 'execution client', 'EVM', 'zkVM',
     'PeerDAS', '3SF', 'post-quantum', 'ePBS', 'native rollups',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ETH2030 — Ethereum Client for the L1 Strawmap',
     description:
-      '50 packages, 18,000+ tests, 58 EIPs, 702K LOC. Full EVM, PQ crypto, native rollups, zkVM, 3SF, PeerDAS, ePBS.',
+      '48 packages, 18,000+ tests, 58 EIPs, 702K LOC. Full EVM, PQ crypto, native rollups, zkVM, 3SF, PeerDAS, ePBS.',
     siteName: 'ETH2030',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'ETH2030' }],
     locale: 'en_US',
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'ETH2030 — Ethereum Client for the L1 Strawmap',
-    description: '50 packages, 18,000+ tests, 58 EIPs, 702K LOC.',
+    description: '48 packages, 18,000+ tests, 58 EIPs, 702K LOC.',
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },

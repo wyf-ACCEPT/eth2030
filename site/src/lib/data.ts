@@ -27,7 +27,7 @@ export interface ArchitectureLayer {
 }
 
 export const stats: Stat[] = [
-  { label: 'Packages', value: 50 },
+  { label: 'Packages', value: 48 },
   { label: 'Tests', value: 18000, suffix: '+' },
   { label: 'EIPs Implemented', value: 58 },
   { label: 'LOC', value: 702, suffix: 'K' },
@@ -145,7 +145,7 @@ export const roadmapPhases: RoadmapPhase[] = [
     name: 'J+',
     year: '2027-28',
     coverage: '~95%',
-    highlights: ['Light client', 'Verkle migration', 'Variable blobs', 'Reed-Solomon pipeline'],
+    highlights: ['Light client', 'STF in zkISA', 'Variable blobs', 'Reed-Solomon pipeline', 'Block-in-blobs'],
   },
   {
     name: 'K+',
@@ -178,34 +178,92 @@ export const architectureLayers: ArchitectureLayer[] = [
     name: 'Consensus Layer',
     color: 'purple',
     tracks: [
-      { name: 'Latency', items: ['Quick slots', '3SF', '1-epoch finality', '6s slots'] },
-      { name: 'Accessibility', items: ['ePBS', 'FOCIL', 'APS', '1M attestations'] },
-      { name: 'Cryptography', items: ['PQ attestations', 'CL proofs', 'VDF', 'Secret proposers'] },
+      {
+        name: 'Latency',
+        items: [
+          'Fast confirmation', 'Quick slots', '1-epoch finality', '4-slot epochs',
+          '6-sec slots', 'Endgame finality', 'Fast L1 finality',
+        ],
+      },
+      {
+        name: 'Accessibility',
+        items: [
+          'ePBS', 'FOCIL', 'Modernized beacon specs', 'Attester stake cap',
+          '128K attester cap', 'APS', '1 ETH includers', 'Tech debt reset',
+          'PQ attestations', 'jeanVM aggregation', '1M attestations/slot',
+          '51% attack auto-recovery', 'Distributed block building',
+        ],
+      },
+      {
+        name: 'Cryptography',
+        items: [
+          'PQ pubkey registry', 'PQ available chain', 'Real-time CL proofs',
+          'PQ L1 hash-based', 'VDF randomness', 'Secret proposers',
+        ],
+      },
     ],
   },
   {
     name: 'Data Layer',
     color: 'teal',
     tracks: [
-      { name: 'Throughput', items: ['Sparse blobpool', 'Blob reconstruction', 'BPO schedules'] },
-      { name: 'Types', items: ['Blob streaming', 'Futures', 'Variable-size', 'Custody proofs'] },
+      {
+        name: 'Throughput',
+        items: [
+          'Sparse blobpool', 'Cell-level messages', 'EIP-7702 broadcast',
+          'BPO blobs increase', 'Local blob reconstruction', 'Decrease sample size',
+          'Teragas L2',
+        ],
+      },
+      {
+        name: 'Types',
+        items: [
+          'Blob streaming', 'Short-dated blob futures', 'PQ blobs',
+          'Variable-size blobs', 'Proofs of custody',
+        ],
+      },
     ],
   },
   {
     name: 'Execution Layer',
     color: 'blue',
     tracks: [
-      { name: 'Throughput', items: ['Gas repricing', 'Multidim gas', 'Payload chunking', 'Gigagas'] },
-      { name: 'EVM', items: ['Native AA', 'NTT precompile', 'Native rollups', 'zkISA'] },
-      { name: 'Sustainability', items: ['BALs', 'Binary tree', 'VOPS', 'Endgame state'] },
-      { name: 'Cryptography', items: ['Encrypted mempool', 'PQ transactions', 'Shielded transfers'] },
+      {
+        name: 'Throughput',
+        items: [
+          'Glamsterdam repricing', 'Optional proofs', 'Hegota repricing',
+          '3x/year gas limit', 'Multidimensional pricing', 'Payload chunking',
+          'Block in blobs', 'Announce nonce', 'Mandatory 3-of-5 proofs',
+          'Canonical guest', 'Canonical zkVM', 'Long-dated gas futures',
+          'Sharded mempool', 'Gigagas L1',
+        ],
+      },
+      {
+        name: 'EVM',
+        items: [
+          'Native AA', 'Misc purges', 'Transaction assertions', 'NTT precompile(s)',
+          'Precompiles in zkISA', 'STF in zkISA', 'Native rollups',
+          'Proof aggregation', 'Exposed zkISA', 'AA proofs',
+        ],
+      },
+      {
+        name: 'Sustainability',
+        items: [
+          'BALs', 'Binary tree', 'Announce nonce',
+          'Validity-only partial state', 'Endgame state',
+        ],
+      },
+      {
+        name: 'Cryptography',
+        items: ['Encrypted mempool', 'PQ transactions', 'Private L1 shielded transfers'],
+      },
     ],
   },
 ];
 
 export const gettingStartedCommands = [
   { comment: '# Clone the repository', command: 'git clone https://github.com/jiayaoqijia/eth2030.git' },
-  { comment: '# Build all 50 packages', command: 'cd eth2030/pkg && go build ./...' },
+  { comment: '# Build all 48 packages', command: 'cd eth2030/pkg && go build ./...' },
   { comment: '# Run 18,000+ tests', command: 'go test ./...' },
   { comment: '# Build the geth-embedded node', command: 'go build -o eth2030-geth ./cmd/eth2030-geth/' },
   { comment: '# Sync with Sepolia testnet', command: './eth2030-geth --network sepolia --datadir ~/.eth2030-sepolia' },

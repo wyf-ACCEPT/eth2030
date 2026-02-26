@@ -6,15 +6,15 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages | 50 |
+| Packages | 48 |
 | Source files | 991 |
 | Test files | 918 |
 | Source LOC | ~316,000 |
 | Test LOC | ~397,000 |
 | Total LOC | ~713,000 |
 | Passing tests | 18,257 |
-| Test packages | 50/50 passing |
-| EIPs implemented | 58+ (complete), 6 (substantial) |
+| Test packages | 48/48 passing |
+| EIPs implemented | 58+ (complete), 5 (substantial) |
 | Roadmap coverage | 65 items (65 COMPLETE, 0 FUNCTIONAL, 0 PARTIAL) |
 | EF State Tests | 36,126/36,126 (100%) via go-ethereum backend |
 
@@ -121,10 +121,9 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 | `geth` | Complete | go-ethereum adapter: type conversion, block processor, precompile injection, state management |
 | `rlp` | Complete | Full Yellow Paper Appendix B with fuzz testing |
 | `ssz` | Complete | SSZ encode/decode, merkleization, EIP-7916 ProgressiveList |
-| `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381 (incl. aggregate sigs), Banderwagon, IPA, VDF, threshold, shielded |
+| `crypto` | Complete | Keccak-256, secp256k1, BN254, BLS12-381 (incl. aggregate sigs), VDF, threshold, shielded |
 | `crypto/pqc` | Complete | Dilithium3 (real lattice crypto), Falcon512, SPHINCS+ (hash-based), hybrid signer, lattice blob commitments |
 | `consensus` | Complete | 3SF (3-slot finality), quick slots, Casper FFG finality, committee selection, BLS operations, attestations, beacon state, block producer, reward calc, slashing |
-| `consensus/lethe` | Complete | LETHE insulation protocol for validator privacy |
 | `engine` | Complete | Engine API V3-V7, forkchoice, payload building, ePBS, distributed builder, Vickrey auctions |
 | `epbs` | Complete | Enshrined PBS: BuilderBid, PayloadEnvelope, builder registry, auctions |
 | `focil` | Complete | FOCIL: inclusion list building, validation, compliance scoring |
@@ -138,7 +137,6 @@ All 57 test categories pass at 100%. The go-ethereum backend provides correct ga
 | `rpc` | Complete | 50+ methods, filters, WebSocket subscriptions, Beacon API (16 endpoints) |
 | `trie` | Complete | MPT with proofs, persistence, concurrent healing |
 | `trie/bintrie` | Complete | Binary Merkle trie (EIP-7864): SHA-256, proofs, migration |
-| `verkle` | Complete | Verkle tree, IPA commitments/multiproofs, Pedersen commitments, state migration, StateDB adapter, witness gen |
 | `rollup` | Complete | Native rollups (EIP-8079): EXECUTE precompile, anchor contract |
 | `zkvm` | Complete | Guest programs, canonical guest (RISC-V), STF framework, Poseidon hash, R1CS circuit builder |
 | `proofs` | Complete | Proof aggregation: ZKSNARK/ZKSTARK/IPA/KZG, mandatory 3-of-5 system, async proof queue, execution proofs |
@@ -172,9 +170,8 @@ EIP-7702, EIP-7706, EIP-7742, EIP-7745, EIP-7807, EIP-7825, EIP-7898,
 EIP-7904, EIP-7916, EIP-7918, EIP-7928, EIP-7939, EIP-8024, EIP-8070,
 EIP-8077, EIP-8079, EIP-8141
 
-### Substantial (6)
+### Substantial (5)
 
-- **EIP-6800** (Verkle Trees): Banderwagon curve, IPA proofs, Pedersen commitments, state migration, witness gen
 - **EIP-7732** (ePBS): Builder types, registry, bid management, commitment/reveal, distributed builder API
 - **EIP-7805** (FOCIL): Inclusion lists, validation, compliance scoring
 - **EIP-7864** (Binary Merkle Tree): SHA-256, iterator, proofs, MPT migration
@@ -187,8 +184,8 @@ EIP-8077, EIP-8079, EIP-8141
 |-------|------|----------|-----------|
 | Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool, frame tx |
 | Hegotá | 2026-2027 | ~97% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks, encrypted mempool reveal |
-| I+ | 2027 | ~97% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync, verkle gas, rollup anchor |
-| J+ | 2027-2028 | ~95% | Verkle migration batching, encrypted mempool, light client, variable blobs, BPO3 schedule |
+| I+ | 2027 | ~97% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync, rollup anchor |
+| J+ | 2027-2028 | ~95% | Encrypted mempool, light client, variable blobs, BPO3 schedule |
 | K+ | 2028 | ~97% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce, CL proof circuits, proof aggregation round-trip |
 | L+ | 2029 | ~97% | Endgame finality (BLS adapter), PQ attestations, APS, custody proofs, distributed builder, jeanVM aggregation, BPO4 schedule |
 | M+ | 2029+ | ~95% | PQ L1 (ML-DSA-65 signer), gigagas integration, sharded mempool resize, real-time CL proofs, PQ chain security, gas futures settlement |
@@ -203,7 +200,6 @@ EIP-8077, EIP-8079, EIP-8141
 - Dilithium3: Real lattice-based key generation, signing, verification
 - KZG: PlaceholderKZGBackend with real polynomial evaluation for DAS cells, blobs, engine
 - BN254 Pedersen: Real v*G + r*H commitments for shielded transfers
-- Banderwagon IPA: Real Pedersen vector commitments and IPA verification for verkle proofs
 - ML-DSA-65: Real FIPS 204 signer wired into PQ algorithm registry
 
 **Remaining for production performance**: Replace pure-Go backends with optimized C libraries (blst for BLS, go-eth-kzg for production SRS, gnark for Groth16 circuits).
@@ -243,7 +239,7 @@ See `docs/GAP_ANALYSIS.md` for the full audit.
 | P2P (transport, discovery, gossip) | 7 | 1000+ | Good |
 | Sync (full, snap, beam) | 1 | 200+ | Good |
 | RPC (JSON-RPC, Beacon API) | 1 | 300+ | Good |
-| Trie (MPT, binary, verkle) | 3 | 500+ | Excellent |
+| Trie (MPT, binary) | 2 | 500+ | Excellent |
 | Transaction pool (base, encrypted, shared) | 3 | 300+ | Good |
 | Proofs/rollup/zkvm/light | 4 | 400+ | Good |
 | Geth adapter (processor, extensions) | 1 | 200+ | Good |

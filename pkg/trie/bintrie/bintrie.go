@@ -1,6 +1,6 @@
 // Package bintrie implements the EIP-7864 binary trie for Ethereum state.
 //
-// The binary trie replaces verkle/MPT tries with a SHA-256-based binary
+// The binary trie replaces MPT tries with a SHA-256-based binary
 // tree structure that supports efficient stateless proofs. Each key is
 // 32 bytes: the first 31 bytes form the "stem" that navigates through
 // the internal nodes, and the final byte selects one of 256 leaves in
@@ -32,8 +32,8 @@ var (
 	headerStorageOffset                 = new(big.Int).SetUint64(64)
 	codeOffset                          = new(big.Int).SetUint64(128)
 	codeStorageDelta                    = new(big.Int).Sub(codeOffset, headerStorageOffset)
-	verkleNodeWidthLog2                 = 8
-	mainStorageOffsetLshVerkleNodeWidth = new(big.Int).Lsh(big.NewInt(1), 248-uint(verkleNodeWidthLog2))
+	nodeWidthLog2                 = 8
+	mainStorageOffsetLshNodeWidth = new(big.Int).Lsh(big.NewInt(1), 248-uint(nodeWidthLog2))
 )
 
 // GetBinaryTreeKey computes the SHA-256 tree key for an address and value key.
@@ -101,8 +101,8 @@ func StorageIndex(storageKey []byte) (*big.Int, byte) {
 		return new(big.Int), suffix
 	}
 	suffix := storageKey[len(storageKey)-1]
-	key.Rsh(&key, uint(verkleNodeWidthLog2))
-	key.Add(&key, mainStorageOffsetLshVerkleNodeWidth)
+	key.Rsh(&key, uint(nodeWidthLog2))
+	key.Add(&key, mainStorageOffsetLshNodeWidth)
 	return &key, suffix
 }
 

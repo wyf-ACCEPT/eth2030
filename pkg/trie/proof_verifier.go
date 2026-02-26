@@ -1,5 +1,5 @@
 // proof_verifier.go provides standalone Merkle proof verification for
-// MPT (Merkle Patricia Trie), binary trie, and Verkle trie proof types.
+// MPT (Merkle Patricia Trie) and binary trie proof types.
 // It is designed as a stateless verifier: no trie database is needed,
 // only the root hash and the proof data.
 package trie
@@ -20,7 +20,6 @@ var (
 	ErrRootMismatch      = errors.New("proof_verifier: root hash mismatch")
 	ErrProofTruncated    = errors.New("proof_verifier: proof is truncated")
 	ErrMultiProofInvalid = errors.New("proof_verifier: multi-proof verification failed")
-	ErrVerkleProofFailed = errors.New("proof_verifier: verkle proof verification failed")
 )
 
 // emptyRootMPT is the hash of an empty MPT trie (used by proof_verifier).
@@ -114,79 +113,6 @@ func VerifyBinaryProof(rootHash types.Hash, proof *BinaryProof) (*BinaryProofRes
 	if current != rootHash {
 		return nil, fmt.Errorf("%w: computed %s, expected %s", ErrRootMismatch, current.Hex(), rootHash.Hex())
 	}
-	return result, nil
-}
-
-// VerkleProofData holds the data needed for standalone Verkle proof verification.
-type VerkleProofData struct {
-	// CommitmentsByPath are the commitments along the trie path.
-	CommitmentsByPath [][32]byte
-	// D is the polynomial commitment in the IPA proof.
-	D [32]byte
-	// IPAProof is the serialized IPA proof.
-	IPAProof []byte
-	// Depth at which the leaf was found.
-	Depth uint8
-	// ExtensionPresent indicates a leaf was found at the path.
-	ExtensionPresent bool
-	// Key is the 32-byte key being proven.
-	Key [32]byte
-	// Value is the 32-byte value (nil for absence proofs).
-	Value *[32]byte
-}
-
-// VerkleProofResult holds the outcome of a Verkle proof verification.
-type VerkleProofResult struct {
-	Key    [32]byte
-	Value  *[32]byte
-	Exists bool
-}
-
-// VerifyVerkleProof verifies a Verkle tree IPA proof against a root commitment.
-// The proof demonstrates inclusion or absence of a key. Since full IPA
-// verification requires the Banderwagon curve library, this performs
-// structural validation and commitment path checks.
-func VerifyVerkleProof(root [32]byte, proof *VerkleProofData) (*VerkleProofResult, error) {
-	if proof == nil {
-		return nil, ErrProofNilInput
-	}
-
-	result := &VerkleProofResult{
-		Key:    proof.Key,
-		Value:  proof.Value,
-		Exists: proof.ExtensionPresent && proof.Value != nil,
-	}
-
-	// Structural validation.
-	if len(proof.CommitmentsByPath) == 0 {
-		return nil, fmt.Errorf("%w: no path commitments", ErrVerkleProofFailed)
-	}
-	if proof.Depth > 31 {
-		return nil, fmt.Errorf("%w: invalid depth %d", ErrVerkleProofFailed, proof.Depth)
-	}
-	if len(proof.IPAProof) == 0 {
-		return nil, fmt.Errorf("%w: empty IPA proof data", ErrVerkleProofFailed)
-	}
-
-	// The first commitment in the path must correspond to the root.
-	if proof.CommitmentsByPath[0] != root {
-		return nil, fmt.Errorf("%w: root commitment mismatch", ErrVerkleProofFailed)
-	}
-
-	// Verify path commitment chain: each commitment must be non-zero.
-	for i, c := range proof.CommitmentsByPath {
-		allZero := true
-		for _, b := range c {
-			if b != 0 {
-				allZero = false
-				break
-			}
-		}
-		if allZero {
-			return nil, fmt.Errorf("%w: zero commitment at path index %d", ErrVerkleProofFailed, i)
-		}
-	}
-
 	return result, nil
 }
 

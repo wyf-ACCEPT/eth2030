@@ -52,7 +52,7 @@ export default function Hero() {
         >
           Targeting the{' '}
           <a href="https://strawmap.org/" target="_blank" rel="noopener noreferrer" className="underline decoration-eth-purple/50 hover:decoration-eth-purple">L1 Strawmap</a>.{' '}
-          <span className="text-eth-purple">50 packages</span>,{' '}
+          <span className="text-eth-purple">48 packages</span>,{' '}
           <span className="text-eth-pink">18,000+ tests</span>,{' '}
           <span className="text-eth-teal">58 EIPs</span>.{' '}
           Built in Go.

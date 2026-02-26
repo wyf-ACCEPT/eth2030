@@ -8,11 +8,11 @@ import (
 	"github.com/eth2030/eth2030/crypto"
 )
 
-// OverlayConfig controls the overlay trie behavior during MPT-to-Verkle migration.
+// OverlayConfig controls the overlay trie behavior during MPT-to-binary migration.
 type OverlayConfig struct {
 	// ReadFromOld enables reads from the old (MPT) trie when key is not in the new trie.
 	ReadFromOld bool
-	// WriteToNew enables writes to the new (Verkle-targeted) trie.
+	// WriteToNew enables writes to the new (binary-targeted) trie.
 	WriteToNew bool
 }
 
@@ -28,7 +28,7 @@ func DefaultOverlayConfig() OverlayConfig {
 var deletedSentinel = []byte{0xDE, 0xAD}
 
 // OverlayTrie provides an overlay that reads from an old (MPT) trie
-// while writing to a new trie. This supports the MPT-to-Verkle migration
+// while writing to a new trie. This supports the MPT-to-binary migration
 // by allowing gradual state transfer. Reads check the new trie first;
 // if the key is not found, they fall back to the old trie.
 type OverlayTrie struct {

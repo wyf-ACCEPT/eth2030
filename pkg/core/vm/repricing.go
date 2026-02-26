@@ -158,11 +158,11 @@ func allRepricingRules() map[ForkLevel][]*RepricingRule {
 	rules[ForkI] = []*RepricingRule{
 		{
 			Opcode: byte(EXTCODESIZE), OldGas: ColdAccountAccessGlamst, NewGas: 100,
-			Fork: ForkI, Reason: "I+ repricing: EXTCODESIZE reduction with verkle proofs",
+			Fork: ForkI, Reason: "I+ repricing: EXTCODESIZE reduction with stateless proofs",
 		},
 		{
 			Opcode: byte(EXTCODEHASH), OldGas: ColdAccountAccessGlamst, NewGas: 200,
-			Fork: ForkI, Reason: "I+ repricing: EXTCODEHASH reduction with verkle proofs",
+			Fork: ForkI, Reason: "I+ repricing: EXTCODEHASH reduction with stateless proofs",
 		},
 	}
 

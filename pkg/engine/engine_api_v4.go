@@ -1,7 +1,7 @@
 // engine_api_v4.go implements Engine API V4 for Prague/Electra, adding
-// Verkle proof parameters to newPayload, execution request processing
-// (deposits EIP-6110, withdrawal requests EIP-7002, consolidation
-// requests EIP-7251), and an extended getPayload response.
+// execution request processing (deposits EIP-6110, withdrawal requests
+// EIP-7002, consolidation requests EIP-7251), and an extended getPayload
+// response.
 package engine
 
 import (
@@ -43,7 +43,6 @@ var (
 	ErrV4RequestTooLarge      = errors.New("engine_v4: execution request exceeds maximum size")
 	ErrV4MissingRequests      = errors.New("engine_v4: execution requests required for Prague")
 	ErrV4InvalidRequestOrder  = errors.New("engine_v4: execution requests not in type-ascending order")
-	ErrV4VerkleProofInvalid   = errors.New("engine_v4: invalid verkle proof")
 	ErrV4DuplicateRequestType = errors.New("engine_v4: duplicate execution request type")
 )
 
@@ -89,27 +88,7 @@ type ExecutionRequestsV4 struct {
 	Consolidations []ConsolidationRequest `json:"consolidations"`
 }
 
-// VerkleProofData contains Verkle proof material for stateless validation.
-type VerkleProofData struct {
-	// D is the proof polynomial commitment.
-	D []byte `json:"d"`
-
-	// DepthExtensionPresent encodes the node type per stem.
-	DepthExtensionPresent []byte `json:"depthExtensionPresent"`
-
-	// CommitmentsByPath maps stem paths to their commitments.
-	CommitmentsByPath [][]byte `json:"commitmentsByPath"`
-
-	// OtherStems lists stems referenced by the proof that are not in the
-	// main key set.
-	OtherStems [][]byte `json:"otherStems"`
-
-	// IpaProof is the Inner Product Argument proof.
-	IpaProof []byte `json:"ipaProof"`
-}
-
-// GetPayloadV4Result extends the V3 result with execution requests and
-// Verkle proof data.
+// GetPayloadV4Result extends the V3 result with execution requests.
 type GetPayloadV4Result struct {
 	ExecutionPayload  *ExecutionPayloadV3 `json:"executionPayload"`
 	BlockValue        *big.Int            `json:"blockValue"`
@@ -327,63 +306,6 @@ func EncodeConsolidationRequest(c *ConsolidationRequest) []byte {
 	copy(buf[20:68], c.SourcePubkey[:])
 	copy(buf[68:116], c.TargetPubkey[:])
 	return buf
-}
-
-// NewPayloadV4WithVerkle validates and processes a Prague payload with
-// an optional Verkle proof parameter for stateless validation.
-func (v4 *EngV4) NewPayloadV4WithVerkle(
-	payload *ExecutionPayloadV3,
-	expectedBlobVersionedHashes []types.Hash,
-	parentBeaconBlockRoot types.Hash,
-	executionRequests [][]byte,
-	verkleProof *VerkleProofData,
-) (PayloadStatusV1, error) {
-	if payload == nil {
-		return PayloadStatusV1{}, ErrV4NilPayload
-	}
-
-	// Fork check: must be Prague.
-	if !v4.backend.IsPrague(payload.Timestamp) {
-		return PayloadStatusV1{}, ErrUnsupportedFork
-	}
-
-	// EIP-4788: beacon root must be provided.
-	if parentBeaconBlockRoot == (types.Hash{}) {
-		return PayloadStatusV1{}, ErrMissingBeaconRoot
-	}
-
-	// EIP-7685: execution requests validation.
-	if err := ValidateExecutionRequests(executionRequests); err != nil {
-		errMsg := err.Error()
-		return PayloadStatusV1{
-			Status:          StatusInvalid,
-			ValidationError: &errMsg,
-		}, nil
-	}
-
-	// EIP-4844: validate blob versioned hashes.
-	if err := validateBlobHashes(payload, expectedBlobVersionedHashes); err != nil {
-		errMsg := err.Error()
-		return PayloadStatusV1{
-			Status:          StatusInvalid,
-			ValidationError: &errMsg,
-		}, nil
-	}
-
-	// Verify block hash matches the computed hash.
-	computedHash := computePayloadBlockHash(payload)
-	if payload.BlockHash != computedHash {
-		errMsg := fmt.Sprintf("block hash mismatch: got %s, computed %s",
-			payload.BlockHash.Hex(), computedHash.Hex())
-		return PayloadStatusV1{
-			Status:          StatusInvalidBlockHash,
-			ValidationError: &errMsg,
-		}, nil
-	}
-
-	// Delegate to backend for full execution.
-	return v4.backend.ProcessBlockV4(payload, expectedBlobVersionedHashes,
-		parentBeaconBlockRoot, executionRequests)
 }
 
 // GetPayloadV4 retrieves a previously built Prague payload and returns

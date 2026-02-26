@@ -60,9 +60,9 @@ func (e *ProofSizeEstimator) EstimateBinaryProofSize(trieDepth, valueSize int) i
 	return trieDepth*32 + 32 + valueSize
 }
 
-// EstimateVerkleProofSize estimates the byte size of a Verkle proof.
-// Verkle proofs contain commitments (32 bytes each) plus IPA proof data.
-func (e *ProofSizeEstimator) EstimateVerkleProofSize(pathDepth int) int {
+// EstimateIPAProofSize estimates the byte size of an IPA-based proof.
+// IPA proofs contain commitments (32 bytes each) plus IPA proof data.
+func (e *ProofSizeEstimator) EstimateIPAProofSize(pathDepth int) int {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if pathDepth <= 0 {

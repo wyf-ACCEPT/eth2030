@@ -11,7 +11,7 @@ Complete traceability matrix mapping every EIP to its specification, implementat
 | Category | Count |
 |----------|-------|
 | EIPs Complete | 58 |
-| EIPs Substantial | 6 |
+| EIPs Substantial | 5 |
 | EIPs Referenced/Partial | 30+ |
 | Total unique EIPs | 94+ |
 | EF State Tests | 36,126/36,126 (100%) |
@@ -92,7 +92,6 @@ Complete traceability matrix mapping every EIP to its specification, implementat
 | 7251 | Max Effective Balance (2048 ETH) | Complete | [EIP-7251](https://eips.ethereum.org/EIPS/eip-7251) | `consensus/validator.go`, `consensus/consolidation.go`, `consensus/consolidation_manager.go` | `consensus/consolidation_test.go`, `consensus/validator_test.go` |
 | 7549 | Attestation Committee Index | Complete | [EIP-7549](https://eips.ethereum.org/EIPS/eip-7549) | `consensus/eip7549.go`, `consensus/attestation.go`, `consensus/attestation_aggregator.go` | via consensus tests |
 | 4762 | Verkle Gas Cost Changes | Complete | [EIP-4762](https://eips.ethereum.org/EIPS/eip-4762) | `core/vm/eip4762_gas.go`, `core/state/access_events.go` | `core/vm/eip4762_gas_test.go` |
-| 6800 | Verkle Tree State | Substantial | [EIP-6800](https://eips.ethereum.org/EIPS/eip-6800) | `verkle/` (entire package), `witness/block_witness.go` | `verkle/*_test.go`, `witness/verifier_test.go` |
 | 8025 | Execution Proofs | Substantial | [EIP-8025](https://eips.ethereum.org/EIPS/eip-8025) | `witness/block_witness.go`, `witness/producer.go`, `witness/verifier.go` | `witness/verifier_test.go` |
 | 7864 | Binary Merkle Trie | Substantial | [EIP-7864](https://eips.ethereum.org/EIPS/eip-7864) | `trie/bintrie/bintrie.go` | `trie/bintrie/*_test.go` |
 | 7594 | PeerDAS | Complete | [EIP-7594](https://eips.ethereum.org/EIPS/eip-7594) | `das/types.go`, `das/custody_manager.go`, `das/column_builder.go`, `das/column_sampling.go` | `das/*_test.go` |
@@ -360,7 +359,7 @@ All 65 roadmap items mapped to their EIP and implementation status:
 | Roadmap items: PARTIAL | 5/65 |
 | Roadmap items: MISSING | 0/65 |
 | EIPs: Complete | 58 |
-| EIPs: Substantial | 6 |
+| EIPs: Substantial | 5 |
 | Total unique EIPs referenced | 94+ |
 | EF State Tests (go-ethereum backend) | 36,126/36,126 (100%) |
 | Custom precompiles (geth-injected) | 13 |

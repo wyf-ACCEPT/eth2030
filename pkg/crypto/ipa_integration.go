@@ -6,7 +6,6 @@
 //   - PureGoIPABackend using existing ipa.go code with proper halving verification
 //   - GoIPABackend as a build-tag-ready adapter for the go-ipa library
 //   - Structural validation, Fiat-Shamir challenge generation, and b-vector computation
-//   - Verkle-specific constants matching the EIP-6800 specification
 //
 // The verifier follows the protocol from go-ipa/ipa/verifier.go:
 //  1. Reconstruct challenges via Fiat-Shamir transcript
@@ -23,12 +22,12 @@ import (
 	"sync"
 )
 
-// Verkle tree IPA constants matching go-ipa/common and EIP-6800.
+// IPA constants for Banderwagon-based proofs.
 const (
-	// VerkleVectorSize is the polynomial evaluation domain size (256 for Verkle).
-	VerkleVectorSize = 256
-	// VerkleNumRounds is log2(VerkleVectorSize) = 8 IPA halving rounds.
-	VerkleNumRounds = 8
+	// DefaultVectorSize is the polynomial evaluation domain size (256).
+	DefaultVectorSize = 256
+	// DefaultNumRounds is log2(DefaultVectorSize) = 8 IPA halving rounds.
+	DefaultNumRounds = 8
 	// BanderwagonFieldSize is the byte length of a Banderwagon field element.
 	BanderwagonFieldSize = 32
 )
@@ -78,11 +77,11 @@ type IPAIntegrationConfig struct {
 	Q *BanderPoint
 }
 
-// DefaultIPAIntegrationConfig returns a Verkle-compatible configuration.
+// DefaultIPAIntegrationConfig returns a standard IPA configuration.
 func DefaultIPAIntegrationConfig() *IPAIntegrationConfig {
 	return &IPAIntegrationConfig{
-		VectorSize: VerkleVectorSize,
-		NumRounds:  VerkleNumRounds,
+		VectorSize: DefaultVectorSize,
+		NumRounds:  DefaultNumRounds,
 	}
 }
 
@@ -392,7 +391,7 @@ func GenerateIPAChallenges(commitment *BanderPoint, v *big.Int, proof *IPAProofD
 	}
 
 	rounds := len(proof.L)
-	transcript := newIPATranscript("ipa_verkle")
+	transcript := newIPATranscript("ipa")
 	transcript.appendPoint(commitment)
 	transcript.appendScalar(v)
 
@@ -438,8 +437,8 @@ func FoldScalar(challenges []*big.Int, index int) *big.Int {
 	return scalar
 }
 
-// IPAProofSizeForVerkle returns the expected proof size (number of rounds)
-// for the standard Verkle tree vector size (256).
-func IPAProofSizeForVerkle() int {
-	return VerkleNumRounds
+// DefaultIPAProofSize returns the expected proof size (number of rounds)
+// for the standard vector size (256).
+func DefaultIPAProofSize() int {
+	return DefaultNumRounds
 }

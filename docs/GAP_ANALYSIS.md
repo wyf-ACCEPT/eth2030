@@ -111,7 +111,7 @@ Status of production-readiness gaps beyond roadmap feature coverage:
 | Production Networking | CLOSED | `eth2030-geth` binary embeds go-ethereum's RLPx encryption, devp2p, peer discovery, NAT traversal |
 | Database Backend | CLOSED | `eth2030-geth` binary uses Pebble (go-ethereum's default production LSM-tree DB) |
 | Consensus Integration | PARTIALLY CLOSED | `eth2030-geth` registers Engine API via `catalyst.Register()`, CL client can connect on port 8551; ETH2030's own consensus components (3SF, quick slots, PQ attestations) still need wiring into the node lifecycle |
-| Real Cryptographic Backends | MOSTLY CLOSED | BLS verification wired via PureGoBLSBackend (Verify, FastAggregateVerify, G2 aggregation), Dilithium3 wired to real lattice ops, KZG via PlaceholderKZGBackend (real polynomial eval, test SRS), BN254 Pedersen for shielded transfers, Banderwagon IPA for verkle proofs. Remaining: wire blst for production BLS performance, go-eth-kzg for production SRS, gnark for Groth16 ZK circuits |
+| Real Cryptographic Backends | MOSTLY CLOSED | BLS verification wired via PureGoBLSBackend (Verify, FastAggregateVerify, G2 aggregation), Dilithium3 wired to real lattice ops, KZG via PlaceholderKZGBackend (real polynomial eval, test SRS), BN254 Pedersen for shielded transfers. Remaining: wire blst for production BLS performance, go-eth-kzg for production SRS, gnark for Groth16 ZK circuits |
 
 The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library, providing snap/full sync, Pebble DB, RLPx P2P networking, Engine API (port 8551), and JSON-RPC (port 8545). It supports mainnet (default), sepolia, and holesky networks, with 13 custom precompiles injected at Glamsterdam, Hegotá, and I+ fork levels.
 
@@ -128,7 +128,6 @@ All crypto backends are wired with real implementations. Production deployment w
 | Dilithium3 | Real lattice key generation, signing, verification | Already wired | DONE |
 | ML-DSA-65 | Real FIPS 204 signer wired via PQ registry | Validate vs `cloudflare/circl` | LOW |
 | ZK proof circuits | Groth16 proof size validation | `consensys/gnark` for full circuit proving | MEDIUM |
-| Verkle IPA | Real Banderwagon Pedersen + IPA verification | `crate-crypto/go-ipa` for production perf | LOW |
 | BN254 Pedersen | Real v*G + r*H for shielded transfers | Already wired | DONE |
 
 ---
@@ -173,16 +172,16 @@ ETH2030's custom precompiles are injected into go-ethereum's EVM via `evm.SetPre
 
 ## Devnet Validation
 
-All 65 roadmap items are validated via 31 Kurtosis devnet feature tests (15 roadmap features + 16 layer group configs), each passing consensus checks with feature verification.
+All 65 roadmap items are validated via 30 Kurtosis devnet feature tests (14 roadmap features + 16 layer group configs), each passing consensus checks with feature verification.
 
 | Layer | Test Configs | Roadmap Items Covered | Status |
 |-------|-------------|----------------------|--------|
-| **Roadmap Features** (15) | epbs, focil, bal, native-aa, gas-repricing, blobs, multidim-gas, ssz, native-rollups, peerdas, verkle, consensus-3sf, pq-crypto, encrypted-mempool, shielded-transfers | 15 core features | ALL PASS |
+| **Roadmap Features** (14) | epbs, focil, bal, native-aa, gas-repricing, blobs, multidim-gas, ssz, native-rollups, peerdas, consensus-3sf, pq-crypto, encrypted-mempool, shielded-transfers | 14 core features | ALL PASS |
 | **Consensus Layer** (5) | cl-finality, cl-validators, cl-attestations, cl-security, cl-infrastructure | Items 1-22 (fast confirm, quick slots, 1-epoch finality, endgame, beacon specs, attester cap, APS, 1 ETH includers, tech debt, PQ attestations, jeanVM, 1M attestations, 51% recovery, distributed builder, VDF, secret proposers, PQ registry, PQ chain, CL proofs) | ALL PASS |
 | **Data Layer** (4) | dl-blob-advanced, dl-reconstruction, dl-futures, dl-broadcast | Items 23-34 (sparse blobpool, cell messages, 7702 broadcast, BPO blobs, blob reconstruction, sample optimization, blob streaming, blob futures, PQ blobs, variable-size blobs, custody proofs, teragas L2) | ALL PASS |
 | **Execution Layer** (7) | el-gas-schedule, el-payload, el-proofs, el-zkvm, el-state, el-tx-advanced, el-gas-futures | Items 35-65 (repricing, proofs, gas limit, multidim gas, payload chunking, block-in-blobs, nonce, mandatory proofs, canonical guest/zkVM, gas futures, sharded mempool, gigagas, BALs, binary tree, VOPS, endgame state, native AA, purges, tx assertions, NTT, zkISA, STF, native rollups, proof aggregation, AA proofs, encrypted mempool, PQ transactions, shielded transfers) | ALL PASS |
 
-**Totals:** 31 devnet configs, 65/65 roadmap items covered, all passing consensus. See [pkg/devnet/kurtosis/README.md](../pkg/devnet/kurtosis/README.md) for the full Feature Test Matrix.
+**Totals:** 30 devnet configs, 65/65 roadmap items covered, all passing consensus. See [pkg/devnet/kurtosis/README.md](../pkg/devnet/kurtosis/README.md) for the full Feature Test Matrix.
 
 ---
 
@@ -210,6 +209,5 @@ All 65 roadmap items are validated via 31 Kurtosis devnet feature tests (15 road
 | KZG | `crate-crypto/go-eth-kzg` | ~300 | In refs/, pure-Go KZG (EIP-4844/7594) |
 | PQ crypto | `cloudflare/circl` | ~1,600 | In refs/, ML-DSA/ML-KEM/SLH-DSA |
 | ZK proofs | `Consensys/gnark` | ~1,700 | In refs/, Groth16/PLONK circuits |
-| Verkle IPA | `crate-crypto/go-ipa` | ~100 | In refs/, Banderwagon/IPA proofs |
 | SSZ codec | `ferranbt/fastssz` | ~300 | Tier 2 candidate, code-gen SSZ |
 | Reed-Solomon | `klauspost/reedsolomon` | ~2,000 | Tier 2 candidate |

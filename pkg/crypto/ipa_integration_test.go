@@ -294,8 +294,8 @@ func TestIPAIntegrationConcurrentVerification(t *testing.T) {
 	wg.Wait()
 }
 
-func TestIPAIntegrationVerkleConstants(t *testing.T) {
-	if VerkleVectorSize != 256 || VerkleNumRounds != 8 || BanderwagonFieldSize != 32 || IPAProofSizeForVerkle() != 8 {
+func TestIPAIntegrationConstants(t *testing.T) {
+	if DefaultVectorSize != 256 || DefaultNumRounds != 8 || BanderwagonFieldSize != 32 || DefaultIPAProofSize() != 8 {
 		t.Fatal("constants wrong")
 	}
 }

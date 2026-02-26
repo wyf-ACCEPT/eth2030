@@ -42,7 +42,7 @@ Run devnet tests for each ETH2030 strawmap feature:
 ```bash
 cd pkg/devnet/kurtosis
 
-# Run ALL 31 feature tests sequentially
+# Run ALL 30 feature tests sequentially
 ./scripts/run-feature-tests.sh
 
 # Run specific features
@@ -68,34 +68,33 @@ Each test: start devnet -> wait 30s for blocks -> consensus check -> assertoor c
 | 8 | SSZ | `features/ssz.yaml` | EIP-6404/7807 | spamoor, assertoor | PASS |
 | 9 | Native Rollups | `features/native-rollups.yaml` | EIP-8079 | spamoor, assertoor | PASS |
 | 10 | PeerDAS | `features/peerdas.yaml` | EIP-7594 | spamoor, assertoor | PASS |
-| 11 | Verkle | `features/verkle.yaml` | EIP-6800 | spamoor, assertoor | PASS |
-| 12 | 3SF/Quick Slots | `features/consensus-3sf.yaml` | — | assertoor, dora | PASS |
-| 13 | PQ Crypto | `features/pq-crypto.yaml` | — | spamoor, assertoor | PASS |
-| 14 | Encrypted Mempool | `features/encrypted-mempool.yaml` | — | spamoor, assertoor | PASS |
-| 15 | Shielded Transfers | `features/shielded-transfers.yaml` | — | spamoor, assertoor | PASS |
+| 11 | 3SF/Quick Slots | `features/consensus-3sf.yaml` | — | assertoor, dora | PASS |
+| 12 | PQ Crypto | `features/pq-crypto.yaml` | — | spamoor, assertoor | PASS |
+| 13 | Encrypted Mempool | `features/encrypted-mempool.yaml` | — | spamoor, assertoor | PASS |
+| 14 | Shielded Transfers | `features/shielded-transfers.yaml` | — | spamoor, assertoor | PASS |
 
 **Layer Group Tests** (16 additional configs covering remaining roadmap items):
 
 | # | Feature Group | Config | Items Covered | Status |
 |---|---------------|--------|---------------|--------|
-| 16 | CL Finality | `features/cl-finality.yaml` | fast confirm, 1-epoch finality, endgame finality | PASS |
-| 17 | CL Validators | `features/cl-validators.yaml` | attester cap, 128K cap, APS, 1 ETH includers | PASS |
-| 18 | CL Attestations | `features/cl-attestations.yaml` | 1M attestations, jeanVM aggregation, PQ attestations | PASS |
-| 19 | CL Security | `features/cl-security.yaml` | 51% attack recovery, secret proposers | PASS |
-| 20 | CL Infrastructure | `features/cl-infrastructure.yaml` | beacon specs, tech debt reset, VDF randomness | PASS |
-| 21 | DL Blob Advanced | `features/dl-blob-advanced.yaml` | PQ blobs, variable-size blobs, teragas L2 | PASS |
-| 22 | DL Reconstruction | `features/dl-reconstruction.yaml` | local blob reconstruction, sample size optimization | PASS |
-| 23 | DL Futures | `features/dl-futures.yaml` | blob futures, custody proofs | PASS |
-| 24 | DL Broadcast | `features/dl-broadcast.yaml` | cell messages, 7702 broadcast, blob streaming | PASS |
-| 25 | EL Gas Schedule | `features/el-gas-schedule.yaml` | 3x/year gas limit, Hegotá repricing | PASS |
-| 26 | EL Payload | `features/el-payload.yaml` | payload chunking, block-in-blobs, announce nonce | PASS |
-| 27 | EL Proofs | `features/el-proofs.yaml` | optional proofs, mandatory 3-of-5, proof aggregation | PASS |
-| 28 | EL zkVM | `features/el-zkvm.yaml` | canonical guest, canonical zkVM, STF in zkISA, zkISA bridge | PASS |
-| 29 | EL State | `features/el-state.yaml` | binary tree, VOPS, endgame state | PASS |
-| 30 | EL Tx Advanced | `features/el-tx-advanced.yaml` | native AA, purges, tx assertions, NTT precompile | PASS |
-| 31 | EL Gas Futures | `features/el-gas-futures.yaml` | gas futures, sharded mempool, gigagas L1 | PASS |
+| 15 | CL Finality | `features/cl-finality.yaml` | fast confirm, 1-epoch finality, endgame finality | PASS |
+| 16 | CL Validators | `features/cl-validators.yaml` | attester cap, 128K cap, APS, 1 ETH includers | PASS |
+| 17 | CL Attestations | `features/cl-attestations.yaml` | 1M attestations, jeanVM aggregation, PQ attestations | PASS |
+| 18 | CL Security | `features/cl-security.yaml` | 51% attack recovery, secret proposers | PASS |
+| 19 | CL Infrastructure | `features/cl-infrastructure.yaml` | beacon specs, tech debt reset, VDF randomness | PASS |
+| 20 | DL Blob Advanced | `features/dl-blob-advanced.yaml` | PQ blobs, variable-size blobs, teragas L2 | PASS |
+| 21 | DL Reconstruction | `features/dl-reconstruction.yaml` | local blob reconstruction, sample size optimization | PASS |
+| 22 | DL Futures | `features/dl-futures.yaml` | blob futures, custody proofs | PASS |
+| 23 | DL Broadcast | `features/dl-broadcast.yaml` | cell messages, 7702 broadcast, blob streaming | PASS |
+| 24 | EL Gas Schedule | `features/el-gas-schedule.yaml` | 3x/year gas limit, Hegotá repricing | PASS |
+| 25 | EL Payload | `features/el-payload.yaml` | payload chunking, block-in-blobs, announce nonce | PASS |
+| 26 | EL Proofs | `features/el-proofs.yaml` | optional proofs, mandatory 3-of-5, proof aggregation | PASS |
+| 27 | EL zkVM | `features/el-zkvm.yaml` | canonical guest, canonical zkVM, STF in zkISA, zkISA bridge | PASS |
+| 28 | EL State | `features/el-state.yaml` | binary tree, VOPS, endgame state | PASS |
+| 29 | EL Tx Advanced | `features/el-tx-advanced.yaml` | native AA, purges, tx assertions, NTT precompile | PASS |
+| 30 | EL Gas Futures | `features/el-gas-futures.yaml` | gas futures, sharded mempool, gigagas L1 | PASS |
 
-All 31 features pass consensus checks. Each config uses 2 eth2030-geth nodes + 2 Lighthouse CLs with `genesis_delay: 10` for fast startup.
+All 30 features pass consensus checks. Each config uses 2 eth2030-geth nodes + 2 Lighthouse CLs with `genesis_delay: 10` for fast startup.
 
 ### General Configs
 
@@ -120,7 +119,7 @@ Verified: ecAdd (0x06), ecMul (0x07), blake2f (0x09) return correct results via 
 
 | Script | Purpose |
 |--------|---------|
-| `run-feature-tests.sh [features...]` | Run per-feature devnet tests (all 31 or specific) |
+| `run-feature-tests.sh [features...]` | Run per-feature devnet tests (all 30 or specific) |
 | `run-devnet.sh [config] [enclave]` | Build Docker image and launch a devnet |
 | `check-consensus.sh [enclave] [tolerance]` | Verify all EL nodes agree on head block |
 | `check-assertoor.sh [enclave] [timeout]` | Poll assertoor API until tests pass/fail/timeout |

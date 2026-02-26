@@ -15,7 +15,6 @@ import (
 	"github.com/eth2030/eth2030/engine"
 	"github.com/eth2030/eth2030/rlp"
 	"github.com/eth2030/eth2030/txpool"
-	"github.com/eth2030/eth2030/verkle"
 	"github.com/eth2030/eth2030/witness"
 )
 
@@ -187,50 +186,6 @@ func TestEndToEndBALTracking(t *testing.T) {
 	if len(groups) < 2 {
 		t.Logf("note: conflicting txs on receiver address, expecting 2 groups")
 	}
-}
-
-// TestEndToEndVerkleTree exercises the Verkle tree with account state.
-func TestEndToEndVerkleTree(t *testing.T) {
-	tree := verkle.NewTree()
-
-	addr := types.BytesToAddress([]byte{0x42})
-
-	// Store account fields.
-	balKey := verkle.GetTreeKeyForBalance(addr)
-	nonceKey := verkle.GetTreeKeyForNonce(addr)
-	codeHashKey := verkle.GetTreeKeyForCodeHash(addr)
-
-	var balVal [32]byte
-	big.NewInt(1_000_000).FillBytes(balVal[:])
-	tree.Put(balKey, balVal)
-
-	var nonceVal [32]byte
-	nonceVal[31] = 5
-	tree.Put(nonceKey, nonceVal)
-
-	tree.Put(codeHashKey, types.EmptyCodeHash)
-
-	// Retrieve and verify.
-	gotBal, _ := tree.Get(balKey)
-	if gotBal == nil {
-		t.Fatal("balance not found in tree")
-	}
-	gotBalBig := new(big.Int).SetBytes(gotBal[:])
-	if gotBalBig.Cmp(big.NewInt(1_000_000)) != 0 {
-		t.Errorf("balance = %s, want 1000000", gotBalBig)
-	}
-
-	gotNonce, _ := tree.Get(nonceKey)
-	if gotNonce == nil || gotNonce[31] != 5 {
-		t.Errorf("nonce mismatch")
-	}
-
-	// Root commitment should be non-zero.
-	root := tree.RootCommitment()
-	if root.IsZero() {
-		t.Error("root commitment should not be zero")
-	}
-	t.Logf("Verkle root commitment: %x", root[:8])
 }
 
 // TestEndToEndRequestsHash tests EIP-7685 request hash computation and validation.

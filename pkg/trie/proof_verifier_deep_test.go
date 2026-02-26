@@ -44,18 +44,18 @@ func TestProofSizeEstimator_BinaryZeroDepth(t *testing.T) {
 	}
 }
 
-func TestProofSizeEstimator_Verkle(t *testing.T) {
+func TestProofSizeEstimator_IPA(t *testing.T) {
 	e := NewProofSizeEstimator()
-	size := e.EstimateVerkleProofSize(5)
+	size := e.EstimateIPAProofSize(5)
 	// 5*32 + 544 + 32 = 736
 	if size != 736 {
 		t.Errorf("expected 736, got %d", size)
 	}
 }
 
-func TestProofSizeEstimator_VerkleZeroDepth(t *testing.T) {
+func TestProofSizeEstimator_IPAZeroDepth(t *testing.T) {
 	e := NewProofSizeEstimator()
-	if e.EstimateVerkleProofSize(0) != 0 {
+	if e.EstimateIPAProofSize(0) != 0 {
 		t.Error("expected 0 for zero depth")
 	}
 }

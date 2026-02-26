@@ -2,7 +2,7 @@
 # run-feature-tests.sh — Run devnet tests for ETH2030 features one by one.
 #
 # Usage:
-#   ./run-feature-tests.sh              # Run all 31 feature tests
+#   ./run-feature-tests.sh              # Run all 30 feature tests
 #   ./run-feature-tests.sh epbs focil   # Run specific features
 #   ./run-feature-tests.sh --list       # List available features
 #
@@ -34,7 +34,6 @@ FEATURES=(
   ssz
   native-rollups
   peerdas
-  verkle
   consensus-3sf
   pq-crypto
   encrypted-mempool
@@ -68,7 +67,6 @@ FEATURE_DESCRIPTIONS=(
   "SSZ — SSZ Transactions & Blocks (EIP-6404/7807)"
   "Native Rollups — EXECUTE Precompile (EIP-8079)"
   "PeerDAS — Data Availability Sampling (EIP-7594)"
-  "Verkle State — Verkle Trees (EIP-6800)"
   "3SF — 3-Slot Finality + Quick Slots"
   "PQ Crypto — Post-Quantum Cryptography"
   "Encrypted Mempool — Commit-Reveal Ordering"

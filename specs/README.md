@@ -39,7 +39,6 @@ EIP specifications and roadmap reference documents used in ETH2030.
 
 | EIP | Name |
 |-----|------|
-| [EIP-6800](eips/eip-6800.md) | Verkle Trees (Banderwagon, IPA, Pedersen) |
 | [EIP-7732](eips/eip-7732.md) | Enshrined PBS (Builder API, registry, bids) |
 | [EIP-7864](eips/eip-7864.md) | Binary Merkle Tree |
 

@@ -18,7 +18,6 @@
    - [Giga-Gas & Real-Time ZK Proving](#giga-gas--real-time-zk-proving)
    - [RISC-V & LeanVM](#risc-v--leanvm)
 4. [Lean Mode -- Efficiency](#lean-mode----efficiency)
-   - [Verkle Trees (EIP-6800)](#verkle-trees-eip-6800)
    - [History Expiry (EIP-4444)](#history-expiry-eip-4444)
    - [Beam Chain / Lean Consensus](#beam-chain--lean-consensus)
 5. [Fort Mode -- Quantum Resistance](#fort-mode----quantum-resistance)
@@ -43,7 +42,7 @@ The [L1 Strawmap](https://strawmap.org/) executes a transformation from a 30 TPS
 | Pillar | Target | Key Mechanism |
 |--------|--------|---------------|
 | **Beast Mode** | 10,000+ TPS on L1 | Parallel execution, real-time ZK proving, native rollups |
-| **Lean Mode** | Run nodes on phones | Verkle trees, history expiry, ZK-native consensus |
+| **Lean Mode** | Run nodes on phones | Binary trees, history expiry, ZK-native consensus |
 | **Fort Mode** | Quantum-safe by 2029 | ML-DSA signatures, XMSS+STARK aggregation |
 | **Decentralization** | 1 ETH solo staking | MaxEB increase + ZK signature aggregation |
 | **Fast Finality** | 12-second irreversibility | 3-Slot Finality protocol replacing Gasper |
@@ -300,50 +299,6 @@ The shift from "Execute Blocks" to "Verify Proofs" enables dramatic gas limit in
 
 ## Lean Mode -- Efficiency
 
-### Verkle Trees (EIP-6800)
-
-**Status:** Stagnant (spec), but active implementation | **Category:** Core
-
-Replaces Merkle-Patricia tries with Verkle Trees for dramatically smaller witnesses.
-
-**Technical Specification:**
-- Bandersnatch curve with Pedersen commitments
-- `VERKLE_NODE_WIDTH = 256` children per node
-- Witness size: ~200 bytes (vs ~3 KB average for Patricia)
-- Key layout:
-  - `BASIC_DATA_LEAF_KEY = 0`: version, code_size, nonce, balance
-  - `CODE_HASH_LEAF_KEY = 1`: code hash
-  - `HEADER_STORAGE_OFFSET = 64`: header storage 0-63
-  - `CODE_OFFSET = 128`: contract code chunks (31 bytes each)
-  - `MAIN_STORAGE_OFFSET = 256^31`: main storage
-- Dual tree during transition: Patricia frozen (not deleted), Verkle grows
-
-**Gas Impact:**
-- Adjacent storage: 200 gas (vs 2100 currently) -- 10x reduction
-- Enables stateless clients on mobile/laptop hardware
-
-**Geth Support:**
-- `go-verkle` submodule under `refs/`
-- `triedb/pathdb/` with `IsVerkle` flag
-- `core/stateless/` package for witness generation
-- `debug_executionWitness` RPC endpoint (already used by Optimism's Kona)
-
-**Consensus Specs (from `_features/eip6800/`):**
-- IPA proofs, Banderwagon commitments
-- ExecutionWitness in Deneb containers
-- Max 65,536 stems
-
-**Community Discussion (ethereum-magicians.org):**
-- "Proposed Verkle tree scheme for Ethereum state" (26 posts)
-- "EIP-7864: Unified binary tree" (12 posts) -- recent alternative
-- Stateless Implementers Calls ongoing since 2021
-
-**Execution API (from `execution-apis/src/engine/amsterdam.md`):**
-- `engine_newPayloadV5`: `ExecutionPayloadV4` with `blockAccessList`
-- Access lists tied to Verkle state transitions
-
----
-
 ### History Expiry (EIP-4444)
 
 **Status:** Stagnant (spec) | **Category:** Networking
@@ -569,7 +524,6 @@ Phase0 -> Altair -> Bellatrix -> Capella -> Deneb -> Electra -> Fulu (stable) ->
 | **Gloas** | TBD | ePBS (EIP-7732), builder registry |
 
 **Feature Specs (in `_features/`):**
-- `eip6800/` -- Verkle Trees
 - `eip6914/` -- Validator Index Reuse
 - `eip7441/` -- Whisk (Single-Slot Leader Election)
 - `eip7805/` -- FOCIL (Inclusion Lists)
@@ -579,7 +533,7 @@ Phase0 -> Altair -> Bellatrix -> Capella -> Deneb -> Electra -> Fulu (stable) ->
 **Execution API Progression:**
 - Prague: `engine_newPayloadV4` (execution requests)
 - Osaka: `engine_getPayloadV5` (blob cell proofs)
-- Amsterdam: `engine_newPayloadV5` (block access lists, Verkle prep)
+- Amsterdam: `engine_newPayloadV5` (block access lists)
 
 ---
 
@@ -608,11 +562,10 @@ Phase0 -> Altair -> Bellatrix -> Capella -> Deneb -> Electra -> Fulu (stable) ->
 - `core/state/trie_prefetcher.go`: Parallel trie node fetching
 - Sequential execution in `core/state_processor.go` -- to be parallelized by EIP-7928
 
-**Stateless/Verkle:**
+**Stateless:**
 - `core/stateless/witness.go`: Witness data structure
 - `core/state/access_events.go`: Tracks all state accesses
 - `eth/catalyst/witness.go`: `ForkchoiceUpdatedWithWitnessV1/V2/V3`
-- `triedb/pathdb/database.go`: `IsVerkle` flag for Verkle mode
 
 **ZK Integration (Ziren):**
 - `crypto/keccak_ziren.go`: ZK-optimized Keccak via `zkvm_runtime.Keccak256`
@@ -649,13 +602,12 @@ Block Arrival -> P2P Handler (eth/)
 1. EIP-4444: History Expiry -- 46 posts
 2. EIP-7928: Block Access Lists -- 35+ posts
 3. Glamsterdam Stakeholder Feedback -- 26 posts
-4. Verkle Tree Scheme -- 26 posts
-5. ePBS (EIP-7732) -- 14 posts + 13 breakout sessions
+4. ePBS (EIP-7732) -- 14 posts + 13 breakout sessions
 
 **Discussion Patterns:**
 - Regular All Core Devs calls (21+ documented)
 - Dedicated breakout sessions per major feature
-- Stateless Implementers Calls for Verkle/state expiry
+- Stateless Implementers Calls for state expiry
 - Fork-specific proposal threads (Glamsterdam, Hegota)
 
 ### Ethresear.ch
@@ -694,10 +646,9 @@ For client developers building toward 2028:
 
 | Priority | Feature | EIP | Fork |
 |----------|---------|-----|------|
-| P1 | Verkle Tree support | EIP-6800 | TBD |
 | P1 | History Expiry | EIP-4444 | The Purge |
 | P1 | ZK proof verification (optional) | EIP-8025 | Phase 1 |
-| P2 | Stateless client mode | -- | With Verkle |
+| P2 | Stateless client mode | -- | With Binary Tree |
 | P2 | Execution Proofs engine | EIP-8025 | Phase 2 |
 
 ### Plan For (2028)
@@ -728,7 +679,6 @@ For client developers building toward 2028:
 **EIP Specs:**
 - `refs/EIPs/EIPS/eip-7732.md` -- ePBS
 - `refs/EIPs/EIPS/eip-7928.md` -- Block Access Lists
-- `refs/EIPs/EIPS/eip-6800.md` -- Verkle Trees
 - `refs/EIPs/EIPS/eip-4444.md` -- History Expiry
 - `refs/EIPs/EIPS/eip-7251.md` -- MaxEB / Flexible Staking
 - `refs/EIPs/EIPS/eip-7594.md` -- PeerDAS
@@ -739,7 +689,7 @@ For client developers building toward 2028:
 **Consensus Specs:**
 - `refs/consensus-specs/specs/fulu/` -- PeerDAS, blob scheduling
 - `refs/consensus-specs/specs/gloas/` -- ePBS, builder registry
-- `refs/consensus-specs/specs/_features/` -- Verkle, FOCIL, Block Access Lists, Execution Proofs
+- `refs/consensus-specs/specs/_features/` -- FOCIL, Block Access Lists, Execution Proofs
 
 **Execution APIs:**
 - `refs/execution-apis/src/engine/prague.md` -- Execution requests

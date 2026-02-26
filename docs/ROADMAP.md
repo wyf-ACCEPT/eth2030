@@ -10,9 +10,9 @@
 | 2026 | Glamsterdam | ePBS, FOCIL, BALs, native AA, repricing, sparse blobpool | ~99% |
 | 2026-2027 | Hegotá | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~97% |
 | 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~97% |
-| 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~95% |
+| 2027-2028 | J+ | Encrypted mempool, light client, variable blobs | ~95% |
 | 2028 | K+ | 3SF, quick slots, mandatory proofs, canonical guest | ~97% |
-| 2029 | L+ | Endgame finality, PQ attestations, LETHE, blob streaming | ~97% |
+| 2029 | L+ | Endgame finality, PQ attestations, blob streaming | ~97% |
 | 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~95% |
 | 2030++ | Long term | VDF, distributed builders, shielded transfers | ~95% |
 
@@ -35,7 +35,6 @@
 | Accessibility | Attester stake cap | L+ | Done |
 | Accessibility | 1 ETH includers | L+ | Done |
 | Accessibility | APS (committee selection) | L+ | Done |
-| Accessibility | LETHE insulation | L+ | Done |
 | Accessibility | PQ attestations | L+ | Done |
 | Accessibility | Distributed block building | 2030++ | Done |
 | Cryptography | PQ custody replacer | I+ | Done |
@@ -79,7 +78,6 @@
 | Sustainability | BALS | Glamsterdam | Done |
 | Sustainability | Binary tree | Hegotá | Done |
 | Sustainability | Payload shrinking | Hegotá | Done |
-| Sustainability | Verkle/portal state | J+ | Done |
 | Sustainability | Advance state | L+ | Done |
 | Sustainability | Native rollups | L+ | Done |
 | Sustainability | Exposed ELSA | 2030++ | Done |
@@ -99,7 +97,6 @@
 
 - **EIP-7732**: Enshrined Proposer-Builder Separation (ePBS)
 - **EIP-7928**: Parallel EVM execution via access lists
-- **EIP-6800**: Ethereum state using Verkle Trees
 - **EIP-4844**: Blob transactions with KZG commitments
 - **EIP-7594**: PeerDAS (data availability sampling)
 - **EIP-7702**: Set code for EOAs (native account abstraction)
@@ -112,13 +109,13 @@
 
 | Metric | Value |
 |--------|-------|
-| Packages | 50 |
+| Packages | 48 |
 | Source files | 991 |
 | Test files | 918 |
 | Source LOC | ~316,000 |
 | Test LOC | ~397,000 |
 | Passing tests | 18,257 |
-| EIPs implemented | 58+ (complete), 6 (substantial) |
+| EIPs implemented | 58+ (complete), 5 (substantial) |
 | Roadmap items | 65/65 COMPLETE |
 | EF State Tests | 36,126/36,126 (100%) |
 | Reference submodules | 30 |

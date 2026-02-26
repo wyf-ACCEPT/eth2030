@@ -1,4 +1,4 @@
-// migration.go implements MPT-to-Verkle trie migration with batch processing,
+// migration.go implements MPT-to-binary trie migration with batch processing,
 // address space splitting for parallelism, state proof generation during
 // migration, crash-recovery checkpointing, and gas accounting.
 package trie
@@ -24,7 +24,7 @@ var (
 )
 
 // BatchConverter processes accounts in configurable batch sizes during
-// MPT-to-Verkle migration. Each batch collects key-value pairs and
+// MPT-to-binary migration. Each batch collects key-value pairs and
 // inserts them into the destination trie.
 type BatchConverter struct {
 	batchSize int
@@ -313,9 +313,9 @@ func (ga *GasAccountant) Remaining() uint64 {
 	return ga.budget - ga.total
 }
 
-// MPTToVerkleTrieMigrator orchestrates full MPT-to-binary-trie migration
+// MPTToBinaryTrieMigrator orchestrates full MPT-to-binary-trie migration
 // with batching, checkpointing, parallelism, and gas accounting.
-type MPTToVerkleTrieMigrator struct {
+type MPTToBinaryTrieMigrator struct {
 	mu           sync.Mutex
 	source       *Trie
 	dest         *BinaryTrie
@@ -330,12 +330,12 @@ type MPTToVerkleTrieMigrator struct {
 	keysMigrated atomic.Uint64
 }
 
-// NewMPTToVerkleTrieMigrator creates a new full-featured migrator.
-func NewMPTToVerkleTrieMigrator(
+// NewMPTToBinaryTrieMigrator creates a new full-featured migrator.
+func NewMPTToBinaryTrieMigrator(
 	source *Trie,
 	batchSize int,
 	gasBudget uint64,
-) (*MPTToVerkleTrieMigrator, error) {
+) (*MPTToBinaryTrieMigrator, error) {
 	if source == nil {
 		return nil, ErrMigrationNilSource
 	}
@@ -344,7 +344,7 @@ func NewMPTToVerkleTrieMigrator(
 		return nil, err
 	}
 
-	return &MPTToVerkleTrieMigrator{
+	return &MPTToBinaryTrieMigrator{
 		source:       source,
 		dest:         NewBinaryTrie(),
 		converter:    bc,
@@ -355,7 +355,7 @@ func NewMPTToVerkleTrieMigrator(
 }
 
 // MigrateBatch migrates one batch. Returns number migrated and done flag.
-func (m *MPTToVerkleTrieMigrator) MigrateBatch() (int, bool, error) {
+func (m *MPTToBinaryTrieMigrator) MigrateBatch() (int, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -405,33 +405,33 @@ func (m *MPTToVerkleTrieMigrator) MigrateBatch() (int, bool, error) {
 }
 
 // Destination returns the destination binary trie.
-func (m *MPTToVerkleTrieMigrator) Destination() *BinaryTrie {
+func (m *MPTToBinaryTrieMigrator) Destination() *BinaryTrie {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.dest
 }
 
 // KeysMigrated returns the count of keys migrated.
-func (m *MPTToVerkleTrieMigrator) KeysMigrated() uint64 {
+func (m *MPTToBinaryTrieMigrator) KeysMigrated() uint64 {
 	return m.keysMigrated.Load()
 }
 
 // Checkpointer returns the migration checkpointer.
-func (m *MPTToVerkleTrieMigrator) Checkpointer() *MigrationCheckpointer {
+func (m *MPTToBinaryTrieMigrator) Checkpointer() *MigrationCheckpointer {
 	return m.checkpointer
 }
 
 // GasAccountant returns the gas accountant.
-func (m *MPTToVerkleTrieMigrator) GasAccountant() *GasAccountant {
+func (m *MPTToBinaryTrieMigrator) GasAccountant() *GasAccountant {
 	return m.gasAcct
 }
 
 // ProofGenerator returns the state proof generator.
-func (m *MPTToVerkleTrieMigrator) ProofGenerator() *StateProofGenerator {
+func (m *MPTToBinaryTrieMigrator) ProofGenerator() *StateProofGenerator {
 	return m.proofGen
 }
 
-func (m *MPTToVerkleTrieMigrator) collectPairs() []migrationPair {
+func (m *MPTToBinaryTrieMigrator) collectPairs() []migrationPair {
 	it := NewIterator(m.source)
 	var pairs []migrationPair
 	for it.Next() {
