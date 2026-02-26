@@ -12,3 +12,4 @@ export const COLORS = {
 
 export const GITHUB_URL = 'https://github.com/jiayaoqijia/eth2030';
 export const DOCS_URL = 'https://github.com/jiayaoqijia/eth2030/tree/master/docs';
+export const STRAWMAP_URL = 'https://strawmap.org/';

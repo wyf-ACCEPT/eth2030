@@ -71,7 +71,7 @@ cd pkg && go build -o eth2030-geth ./cmd/eth2030-geth/
 | Engine API | Port 8551 (for CL client connection) |
 | JSON-RPC | Port 8545 (standard Ethereum JSON-RPC) |
 | Networks | mainnet (default), sepolia, holesky |
-| Custom precompiles | 13 precompiles injected at Glamsterdam, Hogota, and I+ fork levels |
+| Custom precompiles | 13 precompiles injected at Glamsterdam, Hegotá, and I+ fork levels |
 
 **Tested capabilities:**
 - Binary starts and initializes Pebble DB
@@ -186,7 +186,7 @@ EIP-8077, EIP-8079, EIP-8141
 | Phase | Year | Coverage | Key Items |
 |-------|------|----------|-----------|
 | Glamsterdam | 2026 | ~99% | ePBS, FOCIL, BALs, native AA, repricing (18 EIPs), sparse blobpool, frame tx |
-| Hogota | 2026-2027 | ~97% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks, encrypted mempool reveal |
+| Hegotá | 2026-2027 | ~97% | BPO blob schedules, multidim gas, payload chunking, block-in-blobs, SSZ tx/blocks, encrypted mempool reveal |
 | I+ | 2027 | ~97% | Native rollups, zkVM/STF, VOPS, proof aggregation, PQ crypto, beam sync, verkle gas, rollup anchor |
 | J+ | 2027-2028 | ~95% | Verkle migration batching, encrypted mempool, light client, variable blobs, BPO3 schedule |
 | K+ | 2028 | ~97% | SSF, quick slots, mandatory proofs, canonical guest, announce nonce, CL proof circuits, proof aggregation round-trip |

@@ -37,7 +37,7 @@
 
 ## Executive Summary
 
-Ethereum's 2026-2030 roadmap executes a transformation from a 30 TPS chain into a
+The [L1 Strawmap](https://strawmap.org/) executes a transformation from a 30 TPS chain into a
 1 Ggas/s L1 powering a 1M+ TPS ecosystem. The strategy has five pillars:
 
 | Pillar | Target | Key Mechanism |

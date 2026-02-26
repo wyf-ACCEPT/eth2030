@@ -1,8 +1,8 @@
 # ETH2030 Execution Client -- Design Document
 
-> A minimal, spec-compliant Ethereum execution client targeting the 2030 roadmap.
-> Built in Go, targeting the Ethereum 2030 roadmap.
-> Source: EF Architecture team (Ansgar, Barnabe, Francesco, Justin).
+> A minimal, spec-compliant Ethereum execution client targeting the [L1 Strawmap](https://strawmap.org/).
+> Built in Go, targeting the L1 Strawmap.
+> Source: [strawmap.org](https://strawmap.org/) — EF Architecture team (Ansgar Dietrichs, Barnabé Monnot, Francesco D'Amato, Justin Drake).
 
 ---
 
@@ -53,16 +53,16 @@
 
 ---
 
-## 2. 2030 Roadmap Phase Mapping
+## 2. L1 Strawmap Phase Mapping
 
-The 2030 roadmap defines three layers with the following upgrade timeline:
+The L1 Strawmap defines three layers with the following upgrade timeline:
 
 ### Upgrade Timeline
 
 | Phase | Year | CL Headline | DL Headline | EL Headline |
 |-------|------|-------------|-------------|-------------|
-| **Glamsterdan** | 2026 | fast confirmation, ePBS, FOCIL | peerDAS | native AA, BALS, conversion repricing |
-| **Hogota** | 2026-2027 | quick slots, modernized beacon specs | blob throughput increase, local blob reconstruction | Hogota repricing, payload shrinking, multidimensional pricing |
+| **Glamsterdam** | 2026 | fast confirmation, ePBS, FOCIL | peerDAS | native AA, BALS, conversion repricing |
+| **Hegotá** | 2026-2027 | quick slots, modernized beacon specs | blob throughput increase, local blob reconstruction | Hegotá repricing, payload shrinking, multidimensional pricing |
 | **I+** | 2027 | 1-epoch finality, post-quantum custody | decrease sample size | announce binary tree, NII precompile(s), encrypted mempool |
 | **J+** | 2027-2028 | 4-slot epochs, beacon & blob sync | short-dated blob futures | verkle/portal state, precompiles in eWASM, STF in eRISC |
 | **K+** | 2028 | 6-sec slots, 1MiB attestor cap, KPS | 3-RPO slots increase | block in blobs, mandatory 3-of-5 proofs, canonical guest |
@@ -74,9 +74,9 @@ The 2030 roadmap defines three layers with the following upgrade timeline:
 
 ## 3. Phase-by-Phase EL Implementation Details
 
-### Phase 1: Glamsterdan (H1 2026)
+### Phase 1: Glamsterdam (H1 2026)
 
-The Glamsterdan fork is the first major post-Pectra upgrade, introducing the foundation for parallel execution and native account abstraction.
+The Glamsterdam fork is the first major post-Pectra upgrade, introducing the foundation for parallel execution and native account abstraction.
 
 #### 3.1.1 EIP-7928: Block-Level Access Lists (BALs)
 
@@ -196,12 +196,12 @@ authorization_list = [[chain_id, address, nonce, y_parity, r, s], ...]
 | POINT_EVALUATION | 50000 | 89363 | 1.8x |
 
 **EL Implementation:**
-1. Update jump table gas costs for Glamsterdan fork
-2. Add new `GlamsterdanInstructionSet` in `core/vm/jump_table.go`
+1. Update jump table gas costs for Glamsterdam fork
+2. Add new `GlamsterdamInstructionSet` in `core/vm/jump_table.go`
 3. Update precompile gas costs in `core/vm/precompiles.go`
-4. Fork-aware gas table: `IsGlamsterdan(time)` check
+4. Fork-aware gas table: `IsGlamsterdam(time)` check
 
-**Current Status:** Gas table structure exists. Need Glamsterdan-specific repricing.
+**Current Status:** Gas table structure exists. Need Glamsterdam-specific repricing.
 
 #### 3.1.4 Engine API: Amsterdam Methods
 
@@ -229,16 +229,16 @@ authorization_list = [[chain_id, address, nonce, y_parity, r, s], ...]
 
 ---
 
-### Phase 2: Hogota (H2 2026 - 2027)
+### Phase 2: Hegotá (H2 2026 - 2027)
 
-#### 3.2.1 Hogota Repricing
+#### 3.2.1 Hegotá Repricing
 
-Further gas cost adjustments based on empirical benchmarks across all 5 major clients (besu, erigon, geth, nethermind, reth). Targets operations still below the throughput target after Glamsterdan repricing.
+Further gas cost adjustments based on empirical benchmarks across all 5 major clients (besu, erigon, geth, nethermind, reth). Targets operations still below the throughput target after Glamsterdam repricing.
 
 **EL Implementation:**
 1. Additional opcode gas cost updates
-2. New `HogotaInstructionSet` in jump table
-3. `IsHogota(time)` fork check
+2. New `HegotáInstructionSet` in jump table
+3. `IsHegotá(time)` fork check
 
 #### 3.2.2 Payload Shrinking
 
@@ -544,15 +544,15 @@ Execution Layer State Access interface for external provers and validators:
 | 6780 | `eip-6780.md` | SELFDESTRUCT Restriction | Final | Cancun |
 | 6800 | `eip-6800.md` | Ethereum State Using Verkle Trees | Draft | J+ |
 | 7251 | `eip-7251.md` | Increase MAX_EFFECTIVE_BALANCE | Final | Electra |
-| 7594 | `eip-7594.md` | PeerDAS | Draft | Glamsterdan |
+| 7594 | `eip-7594.md` | PeerDAS | Draft | Glamsterdam |
 | 7619 | `eip-7619.md` | Falcon-512 Precompile | Draft | M+ |
 | 7685 | `eip-7685.md` | Execution Layer Requests | Final | Prague |
-| 7702 | `eip-7702.md` | Set Code for EOAs (Type 4) | Final | Glamsterdan |
-| 7732 | `eip-7732.md` | Enshrined PBS | Draft | Glamsterdan |
-| 7805 | `eip-7805.md` | FOCIL (Fork-Choice IL) | Draft | Glamsterdan |
+| 7702 | `eip-7702.md` | Set Code for EOAs (Type 4) | Final | Glamsterdam |
+| 7732 | `eip-7732.md` | Enshrined PBS | Draft | Glamsterdam |
+| 7805 | `eip-7805.md` | FOCIL (Fork-Choice IL) | Draft | Glamsterdam |
 | 7840 | `eip-7840.md` | Blob Schedule Configuration | Draft | Cancun+ |
-| 7904 | `eip-7904.md` | Gas Cost Repricing | Draft | Glamsterdan |
-| 7928 | `eip-7928.md` | Block-Level Access Lists | Draft | Glamsterdan |
+| 7904 | `eip-7904.md` | Gas Cost Repricing | Draft | Glamsterdam |
+| 7928 | `eip-7928.md` | Block-Level Access Lists | Draft | Glamsterdam |
 | 8079 | `eip-8079.md` | Native Rollups (EXECUTE) | Draft | K+ |
 
 ### Engine API Specifications (refs/execution-apis/src/engine/)
@@ -612,7 +612,7 @@ The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 
     │  Full Node      │ │ (catalyst)  │ │  (13 custom, injected  │
     │  - Pebble DB    │ │  Port 8551  │ │   at fork levels)      │
     │  - RLPx P2P     │ │             │ │  - Glamsterdam (4)     │
-    │  - Snap sync    │ │             │ │  - Hogota (0)          │
+    │  - Snap sync    │ │             │ │  - Hegotá (0)          │
     │  - JSON-RPC     │ │             │ │  - I+ (9: NTT+NII+    │
     │    Port 8545    │ │             │ │        field arith)    │
     └────────────────┘ └─────────────┘ └───────────────────────┘
@@ -682,7 +682,7 @@ ETH2030 imports go-ethereum v1.17.0 as a Go module dependency. The `pkg/geth/` a
 
 ### End-to-End Tests
 - Multi-block chain construction with transactions
-- Fork transitions (Glamsterdan, Hogota activation)
+- Fork transitions (Glamsterdam, Hegotá activation)
 - Reorg handling with state rollback
 - Contract deployment and interaction (LOG, SSTORE, CALL)
 

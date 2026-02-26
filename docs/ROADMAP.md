@@ -1,6 +1,6 @@
-# Ethereum 2030 Client Roadmap
+# L1 Strawmap — ETH2030 Implementation
 
-> Derived from the Ethereum 2030 roadmap and community research.
+> Derived from the [L1 Strawmap](https://strawmap.org/) — the EF Architecture team's Ethereum protocol roadmap.
 > Last updated: 2026-02-25
 
 ## Timeline Overview
@@ -8,7 +8,7 @@
 | Year | Phase | Key Features | Status |
 |------|-------|-------------|--------|
 | 2026 | Glamsterdam | ePBS, FOCIL, BALs, native AA, repricing, sparse blobpool | ~99% |
-| 2026-2027 | Hogota | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~97% |
+| 2026-2027 | Hegotá | Blob throughput, multidim gas, SSZ blocks/tx, payload chunking | ~97% |
 | 2027 | I+ | Native rollups, zkVM, VOPS, proof aggregation, PQ crypto | ~97% |
 | 2027-2028 | J+ | Verkle migration, encrypted mempool, light client, variable blobs | ~95% |
 | 2028 | K+ | 3SF, quick slots, mandatory proofs, canonical guest | ~97% |
@@ -16,7 +16,7 @@
 | 2029+ | M+ | Gigagas, canonical zkVM, gas futures, PQ transactions | ~95% |
 | 2030++ | Long term | VDF, distributed builders, shielded transfers | ~95% |
 
-## 2030 Roadmap Layers
+## Strawmap Layers
 
 ### Consensus Layer (CL)
 
@@ -31,7 +31,7 @@
 | Latency | Fast L1 finality in seconds | M+ | Done |
 | Accessibility | ePBS | Glamsterdam | Done |
 | Accessibility | FOCIL | Glamsterdam | Done |
-| Accessibility | Modernized beacon state | Hogota | Done |
+| Accessibility | Modernized beacon state | Hegotá | Done |
 | Accessibility | Attester stake cap | L+ | Done |
 | Accessibility | 1 ETH includers | L+ | Done |
 | Accessibility | APS (committee selection) | L+ | Done |
@@ -50,8 +50,8 @@
 |-------|---------|-------|--------|
 | Throughput | PeerDAS | Glamsterdam | Done |
 | Throughput | Sparse blobpool (EIP-8070) | Glamsterdam | Done |
-| Throughput | Blob throughput increase | Hogota | Done |
-| Throughput | Local blob reconstruction | Hogota | Done |
+| Throughput | Blob throughput increase | Hegotá | Done |
+| Throughput | Local blob reconstruction | Hegotá | Done |
 | Throughput | Decrease sample size | I+ | Done |
 | Throughput | PQ blobs | M+ | Done |
 | Throughput | Teradata L2 | 2030++ | Done |
@@ -66,9 +66,9 @@
 | Track | Feature | Phase | Status |
 |-------|---------|-------|--------|
 | Throughput | Conversion repricing | Glamsterdam | Done |
-| Throughput | Natural gas limit | Hogota | Done |
-| Throughput | Access gas limit | Hogota | Done |
-| Throughput | Multidimensional pricing | Hogota | Done |
+| Throughput | Natural gas limit | Hegotá | Done |
+| Throughput | Access gas limit | Hegotá | Done |
+| Throughput | Multidimensional pricing | Hegotá | Done |
 | Throughput | Block in blobs | K+ | Done |
 | Throughput | Mandatory 3-of-5 proofs | K+ | Done |
 | Throughput | Canonical guest | K+ | Done |
@@ -77,15 +77,15 @@
 | Throughput | Shared mempools | M+ | Done |
 | Throughput | Gigagas L1 (1 Ggas/sec) | M+ | Done |
 | Sustainability | BALS | Glamsterdam | Done |
-| Sustainability | Binary tree | Hogota | Done |
-| Sustainability | Payload shrinking | Hogota | Done |
+| Sustainability | Binary tree | Hegotá | Done |
+| Sustainability | Payload shrinking | Hegotá | Done |
 | Sustainability | Verkle/portal state | J+ | Done |
 | Sustainability | Advance state | L+ | Done |
 | Sustainability | Native rollups | L+ | Done |
 | Sustainability | Exposed ELSA | 2030++ | Done |
 | EVM | Native AA | Glamsterdam | Done |
-| EVM | Misc purges | Hogota | Done |
-| EVM | Transaction assertions | Hogota | Done |
+| EVM | Misc purges | Hegotá | Done |
+| EVM | Transaction assertions | Hegotá | Done |
 | EVM | NTT precompile(s) | I+ | Done |
 | EVM | Precompiles in zkISA | J+ | Done |
 | EVM | STF in zkISA | J+ | Done |

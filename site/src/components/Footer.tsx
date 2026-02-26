@@ -12,7 +12,9 @@ export default function Footer() {
               <h3 className="text-lg font-bold text-eth-purple">ETH2030</h3>
             </div>
             <p className="text-sm text-eth-dim leading-relaxed">
-              Experimental Ethereum execution client targeting the 2030 roadmap.
+              Experimental Ethereum execution client targeting the{' '}
+              <a href="https://strawmap.org/" target="_blank" rel="noopener noreferrer"
+                 className="text-eth-purple hover:underline">L1 Strawmap</a>.
             </p>
           </div>
 

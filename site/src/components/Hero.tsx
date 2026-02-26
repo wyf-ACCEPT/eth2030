@@ -50,7 +50,8 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mt-6 text-lg sm:text-xl md:text-2xl text-eth-dim max-w-2xl mx-auto leading-relaxed"
         >
-          Targeting the Ethereum 2030 roadmap.{' '}
+          Targeting the{' '}
+          <a href="https://strawmap.org/" target="_blank" rel="noopener noreferrer" className="underline decoration-eth-purple/50 hover:decoration-eth-purple">L1 Strawmap</a>.{' '}
           <span className="text-eth-purple">50 packages</span>,{' '}
           <span className="text-eth-pink">18,000+ tests</span>,{' '}
           <span className="text-eth-teal">58 EIPs</span>.{' '}

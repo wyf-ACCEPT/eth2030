@@ -66,7 +66,7 @@ Complete traceability matrix mapping every EIP to its specification, implementat
 
 ---
 
-## Hogota (2026-2027, ~85% complete)
+## Hegotá (2026-2027, ~85% complete)
 
 | EIP | Title | Status | Spec | Implementation | Tests |
 |-----|-------|--------|------|----------------|-------|
@@ -319,7 +319,7 @@ All 65 roadmap items mapped to their EIP and implementation status:
 |---|---------|--------|--------|-------------------|
 | 35 | Glamsterdam repricing | 7904,7778,2780,8037,8038,7623,7976 | **Complete** | `core/glamsterdam_repricing.go` |
 | 36 | Optional proofs | 8025 | Functional | `proofs/optional.go` |
-| 37 | Hogota repricing | - | Functional | `core/hogota_repricing.go` |
+| 37 | Hegotá repricing | - | Functional | `core/hogota_repricing.go` |
 | 38 | 3x/year gas limit | - | Functional | `core/gas_limit.go` |
 | 39 | Multidim pricing | 7706,7999 | Functional | `core/multidim_gas.go` |
 | 40 | Payload chunking | - | Functional | `core/payload_chunking.go` |

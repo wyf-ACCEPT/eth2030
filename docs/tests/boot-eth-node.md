@@ -156,7 +156,7 @@ See `pkg/devnet/docker-compose.yml` for the full setup.
 | `--maxpeers` | `50` | Maximum P2P peers |
 | `--verbosity` | `3` | Log level (0=silent, 5=trace) |
 | `--override.glamsterdam` | - | Override Glamsterdam fork timestamp (testing) |
-| `--override.hogota` | - | Override Hogota fork timestamp (testing) |
+| `--override.hogota` | - | Override Hegotá fork timestamp (testing) |
 
 ## Step 4: Peer Discovery (Bootnodes)
 

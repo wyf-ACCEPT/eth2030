@@ -1,10 +1,10 @@
-# ETH2030 Gap Analysis vs 2030 Roadmap
+# ETH2030 Gap Analysis vs L1 Strawmap
 
 Last updated: 2026-02-25
 
 ## Summary
 
-Systematic audit of all 65 roadmap items across Consensus, Data, and Execution layers.
+Systematic audit of all 65 [L1 Strawmap](https://strawmap.org/) items across Consensus, Data, and Execution layers.
 - **COMPLETE**: 65 items (all roadmap items have validation, edge-case handling, and test coverage)
 - **FUNCTIONAL**: 0 items
 - **PARTIAL**: 0 items
@@ -70,7 +70,7 @@ Systematic audit of all 65 roadmap items across Consensus, Data, and Execution l
 |---|------|--------|-----------|-------|
 | 35 | Glamsterdam repricing | COMPLETE | `core/glamsterdam_repricing.go` | 18-EIP repricing table (gas accounting via go-ethereum v1.17.0 backend) |
 | 36 | optional proofs | COMPLETE | `proofs/optional.go` | Policy-based store + `ValidateProofPolicy()` (bounds, type support) |
-| 37 | Hogota repricing | COMPLETE | `core/hogota_repricing.go` | Repricing tables + `ValidateHogotaGas()` (gas non-zero, cold >= warm) (gas accounting via go-ethereum v1.17.0 backend) |
+| 37 | Hegotá repricing | COMPLETE | `core/hogota_repricing.go` | Repricing tables + `ValidateHogotaGas()` (gas non-zero, cold >= warm) (gas accounting via go-ethereum v1.17.0 backend) |
 | 38 | 3x/year gas limit | COMPLETE | `core/gas_limit.go` | Schedule + `ValidateGasLimitSchedule()` (monotone, 3x cap, gigagas ceiling) |
 | 39 | multidimensional pricing | COMPLETE | `core/multidim_gas.go`, `core/multidim.go` | EIP-7706/7999 + `ValidateMultidimGasConfig()`, `ValidateTotalGasUsage()` |
 | 40 | payload chunking | COMPLETE | `core/payload_chunking.go`, `engine/payload_chunking.go` | Merkle proofs + `VerifyPayloadChunks()`, `ValidateChunk()` |
@@ -113,7 +113,7 @@ Status of production-readiness gaps beyond roadmap feature coverage:
 | Consensus Integration | PARTIALLY CLOSED | `eth2030-geth` registers Engine API via `catalyst.Register()`, CL client can connect on port 8551; ETH2030's own consensus components (3SF, quick slots, PQ attestations) still need wiring into the node lifecycle |
 | Real Cryptographic Backends | MOSTLY CLOSED | BLS verification wired via PureGoBLSBackend (Verify, FastAggregateVerify, G2 aggregation), Dilithium3 wired to real lattice ops, KZG via PlaceholderKZGBackend (real polynomial eval, test SRS), BN254 Pedersen for shielded transfers, Banderwagon IPA for verkle proofs. Remaining: wire blst for production BLS performance, go-eth-kzg for production SRS, gnark for Groth16 ZK circuits |
 
-The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library, providing snap/full sync, Pebble DB, RLPx P2P networking, Engine API (port 8551), and JSON-RPC (port 8545). It supports mainnet (default), sepolia, and holesky networks, with 13 custom precompiles injected at Glamsterdam, Hogota, and I+ fork levels.
+The `eth2030-geth` binary at `pkg/cmd/eth2030-geth/` embeds go-ethereum v1.17.0 as a library, providing snap/full sync, Pebble DB, RLPx P2P networking, Engine API (port 8551), and JSON-RPC (port 8545). It supports mainnet (default), sepolia, and holesky networks, with 13 custom precompiles injected at Glamsterdam, Hegotá, and I+ fork levels.
 
 ---
 

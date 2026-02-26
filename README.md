@@ -1,7 +1,7 @@
 <h1 align="center">ETH2030</h1>
 
 <p align="center">
-  <strong>Ethereum execution client targeting the 2030 roadmap</strong>
+  <strong>Ethereum execution client targeting the L1 Strawmap</strong>
   <br />
   <a href="https://eth2030.com">eth2030.com</a>
 </p>
@@ -38,7 +38,7 @@
 
 ---
 
-> Built in Go, targeting the Ethereum 2030 roadmap from protocol upgrades through the Giga-Gas era.
+> Built in Go, targeting the [L1 Strawmap](https://strawmap.org/) — the EF Architecture team's Ethereum protocol roadmap through the Giga-Gas era.
 
 ## Features
 
@@ -138,7 +138,7 @@ cd pkg/devnet/kurtosis && ./scripts/run-devnet.sh single-client
 | cl-attestations | 1M attest, jeanVM, PQ attest | cl-security | 51% recovery, secret proposers |
 | cl-infrastructure | beacon specs, tech debt, VDF | dl-blob-advanced | PQ blobs, variable-size, teragas |
 | dl-reconstruction | local reconstruct, sample opt | dl-futures | blob futures, custody proofs |
-| dl-broadcast | cell msgs, 7702 broadcast, streaming | el-gas-schedule | 3x/year limit, Hogota repricing |
+| dl-broadcast | cell msgs, 7702 broadcast, streaming | el-gas-schedule | 3x/year limit, Hegotá repricing |
 | el-payload | chunking, block-in-blobs, nonce | el-proofs | optional, mandatory 3-of-5, aggregation |
 | el-zkvm | canonical guest/zkVM, STF, zkISA | el-state | binary tree, VOPS, endgame state |
 | el-tx-advanced | AA, purges, assertions, NTT | el-gas-futures | gas futures, sharded mempool, gigagas |
@@ -335,7 +335,7 @@ See [docs/EIP_SPEC_IMPL.md](docs/EIP_SPEC_IMPL.md) for full traceability: specs,
 
 ## Roadmap Coverage
 
-ETH2030 tracks 8 upgrade phases covering consensus, data, and execution layers from 2026 through 2030+.
+ETH2030 tracks 8 upgrade phases from the [L1 Strawmap](https://strawmap.org/) covering consensus, data, and execution layers from 2026 through 2030+.
 
 | Metric | Value |
 |--------|-------|
@@ -345,7 +345,7 @@ ETH2030 tracks 8 upgrade phases covering consensus, data, and execution layers f
 | **Functional** | 0 |
 | **Partial** | 0 |
 
-All 65 roadmap items are COMPLETE with real cryptographic backends wired (BLS, Dilithium3, KZG, BN254 Pedersen, Banderwagon IPA). See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
+All 65 strawmap items are COMPLETE with real cryptographic backends wired (BLS, Dilithium3, KZG, BN254 Pedersen, Banderwagon IPA). See [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) for the full audit.
 
 ## Engine API
 
@@ -370,7 +370,7 @@ All 65 roadmap items are COMPLETE with real cryptographic backends wired (BLS, D
 - [docs/GAP_ANALYSIS.md](docs/GAP_ANALYSIS.md) -- Full audit of 65 roadmap items
 - [docs/PROGRESS.md](docs/PROGRESS.md) -- Progress report and completion tracking
 - [docs/DESIGN.md](docs/DESIGN.md) -- Architecture and implementation design
-- [docs/ROADMAP.md](docs/ROADMAP.md) -- Timeline overview
+- [docs/ROADMAP.md](docs/ROADMAP.md) -- L1 Strawmap timeline overview
 - [docs/ROADMAP-DEEP-DIVE.md](docs/ROADMAP-DEEP-DIVE.md) -- EIP research and analysis
 - [pkg/devnet/kurtosis/README.md](pkg/devnet/kurtosis/README.md) -- Kurtosis devnet testing (31 features, 6 configs, 10 tools)
 

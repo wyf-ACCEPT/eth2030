@@ -37,7 +37,7 @@ kurtosis run github.com/ethpandaops/ethereum-package \
 
 ## Feature-by-Feature Testing
 
-Run devnet tests for each ETH2030 roadmap feature:
+Run devnet tests for each ETH2030 strawmap feature:
 
 ```bash
 cd pkg/devnet/kurtosis
@@ -87,7 +87,7 @@ Each test: start devnet -> wait 30s for blocks -> consensus check -> assertoor c
 | 22 | DL Reconstruction | `features/dl-reconstruction.yaml` | local blob reconstruction, sample size optimization | PASS |
 | 23 | DL Futures | `features/dl-futures.yaml` | blob futures, custody proofs | PASS |
 | 24 | DL Broadcast | `features/dl-broadcast.yaml` | cell messages, 7702 broadcast, blob streaming | PASS |
-| 25 | EL Gas Schedule | `features/el-gas-schedule.yaml` | 3x/year gas limit, Hogota repricing | PASS |
+| 25 | EL Gas Schedule | `features/el-gas-schedule.yaml` | 3x/year gas limit, Hegotá repricing | PASS |
 | 26 | EL Payload | `features/el-payload.yaml` | payload chunking, block-in-blobs, announce nonce | PASS |
 | 27 | EL Proofs | `features/el-proofs.yaml` | optional proofs, mandatory 3-of-5, proof aggregation | PASS |
 | 28 | EL zkVM | `features/el-zkvm.yaml` | canonical guest, canonical zkVM, STF in zkISA, zkISA bridge | PASS |

@@ -130,7 +130,7 @@ export const roadmapPhases: RoadmapPhase[] = [
     highlights: ['ePBS', 'FOCIL', 'BALs', 'Native AA', '18 EIP repricing', 'Sparse blobpool'],
   },
   {
-    name: 'Hogota',
+    name: 'Hegotá',
     year: '2026-27',
     coverage: '~97%',
     highlights: ['Multidim gas', 'Payload chunking', 'NTT precompile', 'Encrypted mempool', 'SSZ transactions'],
