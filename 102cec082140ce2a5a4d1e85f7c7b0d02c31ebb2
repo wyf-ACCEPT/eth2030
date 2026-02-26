@@ -1,0 +1,29 @@
+.gitignore
+  3b2b75534dc1bc67 1-2
+pkg/core/eftest/dataset_bench.go
+  3b2b75534dc1bc67 1-338
+pkg/core/eftest/dataset_bench_test.go
+  3b2b75534dc1bc67 1-23,25-62,64-114
+tools/convert_dataset.py
+  3b2b75534dc1bc67 12-25,49-53,94-95,97,102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "102cec082140ce2a5a4d1e85f7c7b0d02c31ebb2",
+  "prompts": {
+    "3b2b75534dc1bc67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1f57cea-f37b-4f69-8863-7dc26b374dff",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "wyf-ACCEPT <importwyf@gmail.com>",
+      "messages": [],
+      "total_additions": 490,
+      "total_deletions": 20,
+      "accepted_lines": 475,
+      "overriden_lines": 3
+    }
+  }
+}
