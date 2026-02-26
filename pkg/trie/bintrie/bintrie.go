@@ -28,10 +28,10 @@ const (
 )
 
 var (
-	zeroHash                            = types.Hash{}
-	headerStorageOffset                 = new(big.Int).SetUint64(64)
-	codeOffset                          = new(big.Int).SetUint64(128)
-	codeStorageDelta                    = new(big.Int).Sub(codeOffset, headerStorageOffset)
+	zeroHash                      = types.Hash{}
+	headerStorageOffset           = new(big.Int).SetUint64(64)
+	codeOffset                    = new(big.Int).SetUint64(128)
+	codeStorageDelta              = new(big.Int).Sub(codeOffset, headerStorageOffset)
 	nodeWidthLog2                 = 8
 	mainStorageOffsetLshNodeWidth = new(big.Int).Lsh(big.NewInt(1), 248-uint(nodeWidthLog2))
 )
