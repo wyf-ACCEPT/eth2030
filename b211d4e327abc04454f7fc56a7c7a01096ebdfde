@@ -1,0 +1,23 @@
+docs/BENCHMARK_zh.md
+  3b2b75534dc1bc67 1-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "b211d4e327abc04454f7fc56a7c7a01096ebdfde",
+  "prompts": {
+    "3b2b75534dc1bc67": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f1f57cea-f37b-4f69-8863-7dc26b374dff",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "wyf-ACCEPT <importwyf@gmail.com>",
+      "messages": [],
+      "total_additions": 153,
+      "total_deletions": 0,
+      "accepted_lines": 153,
+      "overriden_lines": 0
+    }
+  }
+}
