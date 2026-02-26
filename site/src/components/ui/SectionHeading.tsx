@@ -1,8 +1,10 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 interface SectionHeadingProps {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
 }
 
 export default function SectionHeading({ title, subtitle }: SectionHeadingProps) {
